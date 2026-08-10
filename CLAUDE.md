@@ -36,7 +36,9 @@ wenn die Umsetzung selbst größer ist als diese Fixkosten.
 
 Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
 
-1. **Diff vollständig lesen**, Datei für Datei.
+1. **Diff vollständig lesen**, Datei für Datei — nie den Bericht statt
+   des Diffs. Ein Bericht kann nur Fehler enthalten, die der Ausführende
+   kennt; Fehler sind definitionsgemäß das, was er nicht kennt.
 2. **Beweise sichten statt nachbauen:** Der Executer liefert Testausgaben
    wörtlich und bei UI-Änderungen Screenshots MIT (steht in seiner
    Definition). Der Haupt-Agent beurteilt sie; Stichproben bleiben erlaubt.
@@ -49,6 +51,33 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
    (beides passiert am 10.08.2026).
 5. Erst dann Commit und Push. PR-Nummern erst nennen, wenn GitHub sie
    bestätigt hat.
+6. **Die CI ist die letzte Instanz, nicht der eigene Prüfstand.** Fertig
+   ist, was GitHub Actions grün nennt. Der Merge-Link geht deshalb ERST
+   nach grüner CI an den Betreiber (10.08.2026: die lokale Suite meldete
+   grün, während die CI rot war; und drei PRs wurden 30–84 Sekunden vor
+   dem Ende ihrer Prüfungen gemergt, weil der Link zu früh kam).
+
+## Prüfstand-Regeln (10.08.2026)
+
+Der Prüfstand war großzügiger als jede echte Umgebung und meldete
+deshalb grün, was rot war. Daraus folgt:
+
+- **Im unprivilegiertesten Umfeld prüfen, nicht im bequemsten.** Der
+  Arbeitscontainer läuft als root, der CI-Runner nicht. Wo Rechte eine
+  Rolle spielen, zusätzlich unprivilegiert laufen lassen
+  (`sudo -u nobody env HOME=/tmp node …`).
+- **Tests fassen weder echtes Dateisystem noch echte Prozesse an.**
+  Dieselbe Suite läuft auf dem Live-Server als Deploy-Gate — ein Test,
+  der dort `pm2`, `nginx` oder `/var/www` anfasst, ist eine Waffe.
+  Stubben; der Stub ist dann zugleich der Beweis, dass das Richtige
+  aufgerufen wurde.
+- **Leeres Ergebnis ist nicht sauberes Ergebnis.** Ein Lauf, dessen
+  Prüfstufe abgestürzt ist, meldet „keine Befunde" und meint „niemand
+  hat geprüft". Jedes Gate muss „geprüft und sauber" von „nicht
+  geprüft" unterscheiden können.
+- **Ein Agent, der abbricht, ist wertvoller als einer, der immer
+  liefert.** Fehlt eine Vorbedingung, ist der Abbruch mit Rückfrage das
+  richtige Ergebnis — nicht etwas Plausibles hinzubauen.
 
 ## Kontext
 
