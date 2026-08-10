@@ -53,6 +53,38 @@ dessen, was es unten kostet. Deshalb:
 - **Weniger, größere Aufträge.** Die Fixkosten fallen je Delegation an, nicht
   je Änderung.
 
+## Recherche-Regeln (10.08.2026, empirisch geprüft)
+
+Bei einer Markenrecherche meldeten fünf von sechs Agenten „Register nicht
+erreichbar" und lieferten damit keine Aussage. Einer lieferte eine belastbare:
+Er suchte zusätzlich nach einem Namen, den es GEBEN musste, fand ihn — und
+hatte damit bewiesen, dass seine Abfrage funktioniert. Erst danach war sein
+„0 Treffer" etwas wert.
+
+- **Die Positivkontrolle ist Pflicht.** Ein negatives Ergebnis zählt nur, wenn
+  dieselbe Methode nachweislich ein positives liefern kann. „Nichts gefunden"
+  ohne Gegenprobe heißt „nicht gesucht" — es ist dieselbe Falle wie das leere
+  Prüfergebnis, nur in der Recherche.
+- **Der erste Fehlschlag ist keine Antwort.** 503, leere Seite, Zeitüberschreitung:
+  Das ist der Anfang der Suche, nicht ihr Ende. Andere Endpunkte, andere
+  Werkzeuge, andere Formulierung — und wenn wirklich nichts geht, wird die
+  Lücke ausdrücklich benannt statt in ein „keine Treffer" verkleidet.
+- **Diese Anforderung gehört in den Auftrag.** Agenten in einem Rechercheauftrag
+  lesen diese Datei nicht; die Positivkontrolle muss im Prompt stehen.
+
+Was die Umgebung hier WIRKLICH kann (am 10.08.2026 nachgemessen, nicht vermutet):
+
+- `curl` über den Proxy erreicht das offene Netz (example.com und tmdn.org je
+  HTTP 200). Für APIs und einfache Seiten ist das der verlässlichste Weg.
+- **Der Browser (Chromium/Playwright) erreicht das Internet NICHT** — selbst
+  example.com scheitert mit ERR_CONNECTION_RESET. Er ist ausschließlich für
+  lokale Server da (Screenshots der eigenen Anwendung — das funktioniert und
+  wurde heute mehrfach genutzt). Wer ihn für eine öffentliche Seite einplant,
+  plant einen Fehlschlag ein.
+- Viele Register (TMview, EUIPO) sind reine JavaScript-Anwendungen: `curl`
+  bekommt dort nur die leere Hülle. Deshalb sind solche Auskünfte hier
+  grundsätzlich unvollständig — und das ist zu sagen, nicht zu kaschieren.
+
 ## Prüf-Ritual des Haupt-Agenten (Verfeinerung 10.08.2026)
 
 Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
