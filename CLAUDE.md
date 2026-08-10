@@ -134,14 +134,25 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
    grün, während die CI rot war; und drei PRs wurden 30–84 Sekunden vor
    dem Ende ihrer Prüfungen gemergt, weil der Link zu früh kam).
 
-7. **Nach dem Merge: `bash tools/live-check.sh`.** Der öffentliche Teil des
-   Live-Betriebs IST von hier aus erreichbar — das war lange eine falsche
-   Annahme meinerseits. Der Check prüft von außen, ob der Betrieb noch steht
-   (Landingpage, Echtheitsprüfung, Abweisung auf der Studio-Subdomain,
-   ausgelieferte Handbuch-Version, Zertifikatslaufzeit). Bei GymDocu ist er
-   nach jedem Merge fällig, weil der Merge dort automatisch deployt.
-   Achtung: Er sagt „der Betrieb läuft", NICHT „die Änderung wirkt richtig" —
-   was in der Datenbank steht, bleibt unsichtbar und soll es bleiben.
+7. **Nach dem Merge zweierlei prüfen — steht der Betrieb, und ist er
+   aktuell?**
+   - `bash tools/live-check.sh` beantwortet das ERSTE: Landingpage,
+     Echtheitsprüfung, Abweisung auf der Studio-Subdomain, ausgelieferte
+     Handbuch-Version, Zertifikatslaufzeit. Der öffentliche Teil des
+     Live-Betriebs ist von hier aus erreichbar — das war lange eine
+     falsche Annahme meinerseits.
+   - Das ZWEITE beantwortet er NICHT, und daran ist am 10.08.2026 ein
+     ganzer Tag verloren gegangen: Der Deploy war sechsmal in Folge rot
+     (eine unversionierte Datei im Prod-Worktree), der Server lief 24
+     Stunden auf einem zwölf Commits alten Stand, und der live-check
+     meldete durchgehend grün — völlig zu Recht, denn der Betrieb LIEF,
+     er war nur alt. Deshalb: den Deploy-Lauf im Actions-Reiter ansehen
+     (`actions_list` auf `deploy.yml`, Ergebnis `success`?), bevor eine
+     Änderung als ausgeliefert gemeldet wird. Serverseitig wacht dafür
+     `ops/gymdocu-deploy-drift.js` stündlich.
+   - Und in beiden Fällen gilt: Diese Prüfungen sagen „der Betrieb läuft
+     und ist aktuell", NICHT „die Änderung wirkt richtig". Was in der
+     Datenbank steht, bleibt unsichtbar und soll es bleiben.
 
 ## Prüfstand-Regeln (10.08.2026)
 
