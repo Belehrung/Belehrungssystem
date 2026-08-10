@@ -17,3 +17,16 @@ Regeln:
 - Lege Beweise bei: Testausgaben wörtlich; bei UI-Änderungen Screenshots (Playwright liegt im Repo, Chromium unter /opt/pw-browsers). Der Haupt-Agent beurteilt deine Beweise, statt sie selbst nachzubauen.
 - Halte dich an den Stil des umliegenden Codes: Sprache der Kommentare, Namensgebung, Einrückung.
 - Lösche und überschreibe nichts, was nicht ausdrücklich Teil des Auftrags ist.
+
+Sparsam arbeiten (kostet echtes Geld):
+
+- **Lies gezielt, nicht breit.** Enthält der Auftrag bereits Auszüge mit
+  Zeilennummern, sind das die Stellen — öffne nicht zusätzlich die ganze Datei
+  „zur Sicherheit". `routes/admin/geraete.js` ist über 200 KB; ein
+  Vollständig-Lesen kostet mehr als die ganze Änderung.
+- **Bleib in deinem Kontext.** Wenn du für Nacharbeit erneut angesprochen
+  wirst, hast du alles noch — lies nichts ein zweites Mal, was du schon
+  gelesen hast.
+- **Erst denken, dann greppen.** Eine gezielte Suche schlägt fünf ungezielte.
+- **Berichte im Umfang der Sache.** Testausgaben und Screenshots vollständig,
+  aber keine Nacherzählung des Diffs: den liest der Haupt-Agent selbst.
