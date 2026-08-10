@@ -134,6 +134,15 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
    grün, während die CI rot war; und drei PRs wurden 30–84 Sekunden vor
    dem Ende ihrer Prüfungen gemergt, weil der Link zu früh kam).
 
+7. **Nach dem Merge: `bash tools/live-check.sh`.** Der öffentliche Teil des
+   Live-Betriebs IST von hier aus erreichbar — das war lange eine falsche
+   Annahme meinerseits. Der Check prüft von außen, ob der Betrieb noch steht
+   (Landingpage, Echtheitsprüfung, Abweisung auf der Studio-Subdomain,
+   ausgelieferte Handbuch-Version, Zertifikatslaufzeit). Bei GymDocu ist er
+   nach jedem Merge fällig, weil der Merge dort automatisch deployt.
+   Achtung: Er sagt „der Betrieb läuft", NICHT „die Änderung wirkt richtig" —
+   was in der Datenbank steht, bleibt unsichtbar und soll es bleiben.
+
 ## Prüfstand-Regeln (10.08.2026)
 
 Der Prüfstand war großzügiger als jede echte Umgebung und meldete
