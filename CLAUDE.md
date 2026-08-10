@@ -32,6 +32,27 @@ wenn die Umsetzung selbst größer ist als diese Fixkosten.
   Projektregeln stehen deshalb DORT und werden nicht in jedem Auftrag
   wiederholt.
 
+## Vorarbeit nach unten (Betreiber-Vorgabe 10.08.2026)
+
+Der teuerste Posten ist nicht das Bauen, sondern das LESEN — und zwar das des
+Haupt-Agenten. Suchen im Code kostet auf dem starken Modell ein Vielfaches
+dessen, was es unten kostet. Deshalb:
+
+- **Suchen und Lokalisieren gehen an den `kundschafter`** (Haiku, nur lesend):
+  „Wo steht X, wie sieht Y aus, welche Stellen betrifft Z?" Er liefert Pfade,
+  Zeilennummern und wörtliche Auszüge. Der Haupt-Agent liest große Dateien
+  nicht mehr selbst durch.
+- **Beurteilen bleibt oben.** Der Kundschafter sagt, WO etwas steht — nie, ob
+  es gut ist. Diffs, Entwürfe und Abnahmen liest der Haupt-Agent im Original;
+  eine Zusammenfassung enthält nur die Fehler, die ihr Verfasser kennt.
+- **Auszüge in den Auftrag legen.** Was der Kundschafter geliefert hat, kommt
+  wörtlich in den Executer-Auftrag. Dann muss der Executer die Datei nicht
+  noch einmal suchen und lesen — dieselbe Arbeit wird sonst dreimal bezahlt.
+- **Nacharbeit geht an DENSELBEN Agenten** (Fortsetzung statt Neustart). Ein
+  neuer Agent liest alles noch einmal von null; der bestehende hat es schon.
+- **Weniger, größere Aufträge.** Die Fixkosten fallen je Delegation an, nicht
+  je Änderung.
+
 ## Prüf-Ritual des Haupt-Agenten (Verfeinerung 10.08.2026)
 
 Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
