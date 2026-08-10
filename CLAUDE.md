@@ -53,6 +53,30 @@ dessen, was es unten kostet. Deshalb:
 - **Weniger, größere Aufträge.** Die Fixkosten fallen je Delegation an, nicht
   je Änderung.
 
+## Große Recherche-Läufe: die teuerste Einzelentscheidung
+
+Am 10.08.2026 kosteten drei vielköpfige Recherche-Läufe zusammen rund vier
+Millionen Subagenten-Token — mehr als sämtliche Bau-Aufträge des Tages
+zusammen. Einer davon starb an einem Sitzungslimit und lieferte gar nichts.
+Das ist der größte Kostenhebel, den es gibt; alles andere ist Feinjustierung.
+
+Vor jedem vielköpfigen Lauf beantworten:
+
+1. **Hängt eine Entscheidung daran?** Eine Frage, die nur Neugier befriedigt,
+   rechtfertigt keinen Fächer aus zwölf Agenten. Eine, die über Geld,
+   Rechtssicherheit oder eine Architektur entscheidet, schon.
+2. **Reicht ein Agent?** Der Fächer lohnt, wenn die Frage GENUINE Blickwinkel
+   hat, die einander nicht sehen. Fünf Agenten, die dasselbe googeln, kosten
+   fünfmal so viel für dasselbe Ergebnis.
+3. **Was ist die billigste Antwort, die die Frage erledigt?** Ein `grep`, ein
+   Test, ein Blick ins Repo — sehr oft ist es das. Erst wenn das nicht trägt,
+   ein Agent; erst wenn EIN Agent nicht trägt, mehrere.
+4. **Klein anfangen.** Lieber ein Lauf mit vier Agenten und danach gezielt
+   nachlegen als einer mit vierundzwanzig, von dem zwanzig am Limit sterben.
+
+Und: Ein Lauf, der abbricht, hat NICHTS geliefert — nicht „keine Befunde".
+Das Ergebnis dann als das benennen, was es ist: ungeprüft.
+
 ## Recherche-Regeln (10.08.2026, empirisch geprüft)
 
 Bei einer Markenrecherche meldeten fünf von sechs Agenten „Register nicht
