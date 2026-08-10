@@ -32,6 +32,24 @@ wenn die Umsetzung selbst größer ist als diese Fixkosten.
   Projektregeln stehen deshalb DORT und werden nicht in jedem Auftrag
   wiederholt.
 
+## Prüf-Ritual des Haupt-Agenten (Verfeinerung 10.08.2026)
+
+Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
+
+1. **Diff vollständig lesen**, Datei für Datei.
+2. **Beweise sichten statt nachbauen:** Der Executer liefert Testausgaben
+   wörtlich und bei UI-Änderungen Screenshots MIT (steht in seiner
+   Definition). Der Haupt-Agent beurteilt sie; Stichproben bleiben erlaubt.
+3. **Vier Augen bei nicht-trivialen Diffs** (mehr als eine Datei echter
+   Logik): unabhängige Review über den Diff (/code-review) — der
+   Entwerfer ist für die Fehler seines eigenen Entwurfs blind.
+4. **Volle Testsuite** (test/run.sh). WÄHREND des Laufs keine parallelen
+   Skripte gegen dieselbe DB: der Studio-Zähl-Wächter schlägt sonst
+   falsch an, und eine Pipe (`| tail`) verschluckt seinen Fehler-Exit
+   (beides passiert am 10.08.2026).
+5. Erst dann Commit und Push. PR-Nummern erst nennen, wenn GitHub sie
+   bestätigt hat.
+
 ## Kontext
 
 Die eigentliche Arbeit findet meist im GymDocu-Repo statt
