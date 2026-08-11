@@ -18,7 +18,15 @@ fehler=0
 ok()   { echo "  ✓ $*"; }
 warn() { echo "  ⚠ $*"; fehler=$((fehler+1)); }
 
-code() { curl -sS -o "$2" -w '%{http_code}' --max-time 20 "$1" 2>/dev/null || echo 000; }
+# $1 = URL, $2 = Zieldatei, $3 = optionale curl-Zusatzflags (z.B. -L).
+# Kein `|| echo 000`: curl schreibt über -w bei einem Transportfehler SELBST schon
+# "000" — der Zusatz hängte ein zweites an, und der Betreiber las "HTTP 000000"
+# (Review-Befund 11.08.2026). Nur der wirklich leere Fall wird ersetzt.
+code() {
+    local c
+    c=$(curl -sS -o "$2" -w '%{http_code}' --max-time 20 ${3:-} "$1" 2>/dev/null)
+    echo "${c:-000}"
+}
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 
 echo "── Live-Sichtprüfung $(date -u '+%Y-%m-%d %H:%M UTC') ──"
@@ -30,7 +38,7 @@ c=$(code https://gymdocu.de/ "$TMP/land.html")
 
 # 2. Echtheitsprüfung — der beste Funktionsnachweis: eine echte Seite AUS der
 #    Anwendung, öffentlich und mandantenlos. Antwortet sie richtig, lebt der Prozess.
-c=$(curl -sSL -o "$TMP/verify.html" -w '%{http_code}' --max-time 20 https://verify.gymdocu.de/ 2>/dev/null || echo 000)
+c=$(code https://verify.gymdocu.de/ "$TMP/verify.html" -L)
 if [ "$c" = 200 ] && grep -qi "Echtheitsprüfung" "$TMP/verify.html"; then
     ok "Echtheitsprüfung rendert (Anwendung läuft)"
 else
@@ -49,22 +57,44 @@ esac
 # 4. Handbuch — der einzige öffentliche Versionsmarker. Zeigt, welcher Stand
 #    wirklich ausgeliefert wird (am 09.08. lag hier tagelang die alte Fassung).
 c=$(code https://gymdocu.de/handbuch.pdf "$TMP/hb.pdf")
-if [ "$c" = 200 ]; then
-    v=$(pdftotext -f 1 -l 2 "$TMP/hb.pdf" - 2>/dev/null | grep -oE 'Version [0-9]+\.[0-9]+ · Stand [0-9.]+' | head -1)
-    ok "Handbuch ausgeliefert: ${v:-(Version nicht lesbar, $(wc -c <"$TMP/hb.pdf") B)}"
-else
+if [ "$c" != 200 ]; then
     warn "Handbuch nicht abrufbar (HTTP $c)"
+elif ! command -v pdftotext >/dev/null 2>&1; then
+    # Werkzeug fehlt = ungeprüft, nicht in Ordnung. Ein Haken hier hieße
+    # "Version stimmt", obwohl niemand nachgesehen hat.
+    warn "Handbuch: pdftotext fehlt — ausgelieferte Version NICHT geprüft"
+else
+    v=$(pdftotext -f 1 -l 2 "$TMP/hb.pdf" - 2>/dev/null | grep -oE 'Version [0-9]+\.[0-9]+ · Stand [0-9.]+' | head -1)
+    if [ -n "$v" ]; then
+        ok "Handbuch ausgeliefert: $v"
+    else
+        # Review-Befund 11.08.2026: Hier stand ein ok() mit dem Zusatz
+        # "(Version nicht lesbar)" — also ein grüner Haken für ein leeres
+        # Ergebnis. Eine HTML-Fehlerseite mit Status 200 unter /handbuch.pdf
+        # hätte den Prüfstand passiert. Das ist genau der Fehler, gegen den
+        # die Hausregel "leeres Ergebnis ist nicht sauberes Ergebnis"
+        # geschrieben wurde — im Werkzeug, das sie durchsetzen soll.
+        warn "Handbuch: Version nicht lesbar ($(wc -c <"$TMP/hb.pdf") B) — HTTP 200 allein beweist nichts"
+    fi
 fi
 
 # 5. Zertifikat — ein abgelaufenes Zertifikat legt alles still, und zwar schlagartig.
-ende=$(echo | openssl s_client -servername gymdocu.de -connect gymdocu.de:443 2>/dev/null \
+# `timeout` davor (Review-Befund 11.08.2026): Jeder curl-Aufruf oben ist mit
+# --max-time gedeckelt, openssl war es nicht. Ein Host, der Pakete verschluckt
+# statt abzulehnen, ließ die Prüfung nach einem Merge minutenlang hängen —
+# ausgerechnet das Werkzeug, das den Ausfall melden soll, blieb dann stumm.
+ende=$(timeout 20 openssl s_client -servername gymdocu.de -connect gymdocu.de:443 </dev/null 2>/dev/null \
        | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
-if [ -n "$ende" ]; then
-    tage=$(( ( $(date -d "$ende" +%s) - $(date +%s) ) / 86400 ))
+if [ -z "$ende" ]; then
+    warn "Zertifikatslaufzeit nicht ermittelbar"
+elif ! ende_ts=$(date -d "$ende" +%s 2>/dev/null); then
+    # Vorher ungeprüft: Bei unlesbarem Datum wurde die Subtraktion zu einem
+    # unären Minus und die Meldung lautete "läuft in -20676 Tagen ab".
+    warn "Zertifikat: Ablaufdatum '$ende' nicht lesbar — Laufzeit NICHT geprüft"
+else
+    tage=$(( (ende_ts - $(date +%s)) / 86400 ))
     [ "$tage" -ge "$WARN_TAGE" ] && ok "Zertifikat gültig, noch $tage Tage" \
                                  || warn "Zertifikat läuft in $tage Tagen ab ($ende) — Erneuerung prüfen"
-else
-    warn "Zertifikatslaufzeit nicht ermittelbar"
 fi
 
 echo
