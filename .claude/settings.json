@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "c=$(jq -r '.tool_input.command // \"\"'); case \"$c\" in *test/run.sh*|*'node test_'*) ;; *) exit 0 ;; esac; case \"$c\" in *\\|*tail*|*\\|*head*|*\\|*grep*) printf '%s' '{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"Der Exit-Code geht in der Pipe verloren - der Lauf kann rot sein und trotzdem EXIT=0 melden. Stattdessen: Ausgabe in eine Datei umleiten, Exit-Code separat pruefen, dann die Datei ansehen. (Hausregel, Vorfall 11.08.2026)\"}}' ;; *) exit 0 ;; esac",
+            "command": "c=$(jq -r '.tool_input.command // \"\"'); case \"$c\" in *test/run.sh*|*'node test_'*) ;; *) exit 0 ;; esac; case \"$c\" in *pipefail*|*PIPESTATUS*) exit 0 ;; esac; s=${c//||/ @@ODER@@ }; case \"$s\" in *\\|*tail*|*\\|*head*|*\\|*grep*) printf '%s' '{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"Der Exit-Code geht in der Pipe verloren - der Lauf kann rot sein und trotzdem EXIT=0 melden. Stattdessen: Ausgabe in eine Datei umleiten, Exit-Code separat pruefen, dann die Datei ansehen. Wer die Pipe wirklich braucht: 'set -o pipefail;' davor oder ${PIPESTATUS[0]} pruefen. (Hausregel, Vorfall 11.08.2026)\"}}' ;; *) exit 0 ;; esac",
             "timeout": 10,
             "statusMessage": "Pruefe auf verschluckten Exit-Code"
           }
