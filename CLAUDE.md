@@ -229,6 +229,40 @@ deshalb grün, was rot war. Daraus folgt:
   liefert.** Fehlt eine Vorbedingung, ist der Abbruch mit Rückfrage das
   richtige Ergebnis — nicht etwas Plausibles hinzubauen.
 
+## Werkzeuge, die schon da sind (12.08.2026)
+
+Auf die Frage nach besseren Werkzeugen für Grafik und Arbeitsweise war der
+erste Befund unangenehm: Von sechs aktiven Plugins hatte ich keines je
+benutzt, und fünf Fähigkeiten lagen ungenutzt in derselben Sitzung. Ein
+Werkzeug, das installiert ist und nicht aufgerufen wird, ist teurer als
+keines — es kostet Beschaffung und liefert nichts.
+
+- **Bei jeder Änderung an der Oberfläche** gehören `/design:critique` und
+  bei neuen Bedienelementen `/design:accessibility` (WCAG) dazu — von
+  selbst, nicht auf Zuruf.
+- **Diagramme, Kennzahlen, Cockpit-Auswertungen:** vorher die Fähigkeit
+  `dataviz` laden. Sie legt Farbregeln, Diagrammform und Legende fest,
+  BEVOR die erste Zeile Diagramm-Code entsteht.
+- **Landingpage und Handbuch-Optik:** `theme-factory`.
+- Der Browser hier erreicht das Internet nicht, `localhost` aber schon.
+  Screenshots der eigenen Anwendung sind deshalb die einzige verlässliche
+  Sichtprüfung — und sie funktionieren.
+
+## Ein Ort für den Stil (Befund 12.08.2026)
+
+Gemessen, nicht geschätzt: **47 eigene `<style>`-Blöcke in 24 Dateien**,
+kein einziges CSS-File im ganzen Repo. Jede Seite bringt ihre eigenen
+Farben, Abstände und Radien mit.
+
+Solange das so ist, macht kein Design-Werkzeug das System schöner — es
+macht eine von 24 Stellen schöner. Das Gegenbeispiel steht im selben Haus:
+`core/icons.js` hält 114 Icons zentral, einheitlich und an einer Stelle
+änderbar. Genau dieses Muster braucht der Stil auch.
+
+Regel für Neues: **keine neuen Farb-, Abstands- oder Radienwerte direkt in
+einen `<style>`-Block schreiben.** Was gebraucht wird, kommt aus der
+zentralen Stil-Quelle; fehlt es dort, wird es dort ergänzt.
+
 ## Kontext
 
 Die eigentliche Arbeit findet meist im GymDocu-Repo statt
