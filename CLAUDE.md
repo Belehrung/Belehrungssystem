@@ -109,6 +109,59 @@ Was die Umgebung hier WIRKLICH kann (am 10.08.2026 nachgemessen, nicht vermutet)
   bekommt dort nur die leere Hülle. Deshalb sind solche Auskünfte hier
   grundsätzlich unvollständig — und das ist zu sagen, nicht zu kaschieren.
 
+## Abhängigkeiten anheben (11.08.2026, teuer gelernt)
+
+Ein Dependabot-PR hob sechs Pakete auf einmal an, darunter drei
+Hauptversionssprünge. Einer davon entfernte einen Export, an dem die
+Zwei-Faktor-Anmeldung hing — und verlangte beim Prüfen längere Geheimnisse,
+als die Vorgängerversion selbst erzeugt hatte. Ein Durchwinken hätte jeden
+bestehenden Administrator ausgesperrt. Die Testsuite war grün.
+
+- **Bei jedem Hauptversionssprung zuerst `npm diff`.** Kostet nichts, ist
+  installiert, braucht keine Abhängigkeit:
+
+      npm diff --diff=<paket>@<alt> --diff=<paket>@<neu> --diff-name-only
+      npm diff --diff=<paket>@<alt> --diff=<paket>@<neu> -- index.d.ts
+
+  Beim otplib-Fall zeigte die zweite Zeile in einer Sekunde `-export * from
+  '@otplib/preset-default';` — genau den verschwundenen Export. Das ist der
+  billigste Erstgriff, der existiert.
+- **Majors gehören in einen eigenen PR.** In beiden Repos steht dafür jetzt
+  `update-types: ["minor", "patch"]` in der Dependabot-Gruppe. Der Gewinn ist
+  nicht weniger Rauschen, sondern eindeutige Schuldzuweisung: Ein roter Lauf
+  zeigt auf EIN Paket statt auf sechs.
+- **Eine grüne Suite beweist nur, was geprüft wurde.** Die 2FA-Tests erzeugten
+  ihre Geheimnisse frisch, also im neuen Format; der einzige Fall, den die
+  Wirklichkeit kennt — ein ALTES Geheimnis aus der Datenbank —, kam in keinem
+  Test vor. Wo ein Format sich ändern kann, gehört ein wörtlich eingetragener
+  Altwert in den Test. Kein Werkzeug ersetzt das; recherchiert und bestätigt.
+
+## Hooks: Regeln, die sich selbst durchsetzen (11.08.2026)
+
+Zwei Regeln dieser Datei wurden an einem einzigen Tag von mir selbst verletzt,
+obwohl sie hier wörtlich stehen. Eine Regel braucht Aufmerksamkeit, ein Hook
+nicht. In `.claude/settings.json` stehen deshalb zwei PreToolUse-Wächter: gegen
+den durch eine Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter
+`/var/www`.
+
+Was das Bauen dieser zwei Hooks an einem Nachmittag gelehrt hat — jede Zeile
+ein eigener Fehlschlag:
+
+- **Hooks laufen unter `/bin/sh`, nicht unter `bash`.** `${var//a/b}` warf dort
+  „Bad substitution" — bei JEDEM Bash-Aufruf. Geprüft hatte ich mit `bash -c`,
+  also im bequemeren Umfeld. Prüfen im tatsächlichen Umfeld, nicht im
+  angenehmen; das steht unten schon einmal, gilt aber auch hier.
+- **Ein logisches `||` enthält denselben senkrechten Strich wie eine Pipe.** Vor
+  dem Suchen neutralisieren, sonst Fehlalarm.
+- **Wer das Problem schon gelöst hat, darf nicht aufgehalten werden.**
+  Ausdrücklicher Opt-out bei `pipefail`/`PIPESTATUS` — und die Fehlermeldung
+  nennt den Ausweg, statt nur zu verbieten.
+- **Ein Hook muss offen ausfallen.** Fehlt `jq`, ist die Prüfung wirkungslos —
+  aber sie darf nicht jeden Befehl der Sitzung blockieren.
+- **Nach jeder Änderung ALLE Fälle neu messen, nicht nur die geänderten.** Eine
+  Nachbesserung machte den Wächter komplett wirkungslos; aufgefallen ist das
+  nur, weil auch die unveränderten Fälle noch einmal liefen.
+
 ## Prüf-Ritual des Haupt-Agenten (Verfeinerung 10.08.2026)
 
 Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:

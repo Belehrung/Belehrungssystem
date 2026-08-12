@@ -64,7 +64,15 @@ elif ! command -v pdftotext >/dev/null 2>&1; then
     # "Version stimmt", obwohl niemand nachgesehen hat.
     warn "Handbuch: pdftotext fehlt — ausgelieferte Version NICHT geprüft"
 else
-    v=$(pdftotext -f 1 -l 2 "$TMP/hb.pdf" - 2>/dev/null | grep -oE 'Version [0-9]+\.[0-9]+ · Stand [0-9.]+' | head -1)
+    # Zweite und dritte Stelle beide moeglich (12.08.2026): Das Handbuch zaehlt
+    # seit der Umstellung dreistellig (2.9.1, 2.9.2), weil "2.10" sich fuer
+    # einen Leser wie ein Rueckschritt hinter 2.9 las. Das alte Muster
+    # 'Version [0-9]+\.[0-9]+' passte darauf NICHT — der Live-Check meldete
+    # daraufhin "Version nicht lesbar", obwohl die Version gut lesbar dastand.
+    # Dass das auffiel und nicht durchrutschte, ist dem Umbau von ok() auf
+    # warn() zu verdanken (PR #8): Vorher haette hier ein gruener Haken mit
+    # dem Zusatz "(Version nicht lesbar)" gestanden.
+    v=$(pdftotext -f 1 -l 2 "$TMP/hb.pdf" - 2>/dev/null | grep -oE 'Version [0-9]+(\.[0-9]+)+ · Stand [0-9.]+' | head -1)
     if [ -n "$v" ]; then
         ok "Handbuch ausgeliefert: $v"
     else
