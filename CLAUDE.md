@@ -237,9 +237,11 @@ benutzt, und fünf Fähigkeiten lagen ungenutzt in derselben Sitzung. Ein
 Werkzeug, das installiert ist und nicht aufgerufen wird, ist teurer als
 keines — es kostet Beschaffung und liefert nichts.
 
-- **Bei jeder Änderung an der Oberfläche** gehören `/design:critique` und
-  bei neuen Bedienelementen `/design:accessibility` (WCAG) dazu — von
-  selbst, nicht auf Zuruf.
+- **Bei jeder Änderung, die das Aussehen einer Seite verändert**, gehören
+  `/design:critique` und bei neuen Bedienelementen `/design:accessibility`
+  (WCAG) dazu — vom Haupt-Agenten, von selbst, nicht auf Zuruf. Die
+  Bagatellgrenze oben gilt weiter: Ein Tippfehler im Text oder ein
+  umbenannter Button ist keine Änderung am Aussehen.
 - **Diagramme, Kennzahlen, Cockpit-Auswertungen:** vorher die Fähigkeit
   `dataviz` laden. Sie legt Farbregeln, Diagrammform und Legende fest,
   BEVOR die erste Zeile Diagramm-Code entsteht.
@@ -250,18 +252,30 @@ keines — es kostet Beschaffung und liefert nichts.
 
 ## Ein Ort für den Stil (Befund 12.08.2026)
 
-Gemessen, nicht geschätzt: **47 eigene `<style>`-Blöcke in 24 Dateien**,
-kein einziges CSS-File im ganzen Repo. Jede Seite bringt ihre eigenen
-Farben, Abstände und Radien mit.
+In **GymDocu** gemessen, nicht geschätzt: 47 eigene `<style>`-Blöcke in 24
+Dateien, kein einziges CSS-File. Jede Seite brachte ihre eigenen Farben,
+Abstände und Radien mit. Solange das so ist, macht kein Design-Werkzeug das
+System schöner — es macht eine von 24 Stellen schöner.
 
-Solange das so ist, macht kein Design-Werkzeug das System schöner — es
-macht eine von 24 Stellen schöner. Das Gegenbeispiel steht im selben Haus:
-`core/icons.js` hält 114 Icons zentral, einheitlich und an einer Stelle
-änderbar. Genau dieses Muster braucht der Stil auch.
+**Die zentrale Quelle existiert seit dem 12.08.2026: `core/design.js` im
+GymDocu-Repo**, exportiert `DESIGN_CSS` (ein `:root{}`-Block mit
+`--gd-…`-Token), Vorbild `core/icons.js` mit seinen 114 Icons. Sie ist zu
+BENUTZEN, nicht neu zu erfinden — wer hier eine zweite Stil-Quelle anlegt,
+hat das Problem verdoppelt statt gelöst. Wie sie eingebunden wird und was
+bereits umgestellt ist, steht in `/workspace/gymdocu/CLAUDE.md`; dort
+gehört es hin, weil der Executer die CLAUDE.md seines Zielrepos liest.
 
-Regel für Neues: **keine neuen Farb-, Abstands- oder Radienwerte direkt in
-einen `<style>`-Block schreiben.** Was gebraucht wird, kommt aus der
-zentralen Stil-Quelle; fehlt es dort, wird es dort ergänzt.
+Regel für Neues in GymDocu: **keine neuen Farb-, Abstands-, Radien- oder
+Schriftgrößenwerte direkt in einen `<style>`-Block schreiben.** Was
+gebraucht wird, kommt aus `DESIGN_CSS`; fehlt es dort, wird es dort
+ergänzt.
+
+**Dieses Repo hat dieselbe Krankheit und noch keine Kur.** `server.js`
+bringt in seinem `<head>` eigene Farben mit (`#111418`, `#1c2128`,
+`#2a2f36`, `#e60023`), eigene Radien und Segoe UI — ohne jede zentrale
+Quelle. Die Regel oben ist hier also derzeit gar nicht erfüllbar. Das ist
+eine bekannte Lücke, kein Versehen: Wer hier an der Oberfläche baut,
+benennt sie, statt so zu tun, als gälte die Regel schon.
 
 ## Kontext
 
