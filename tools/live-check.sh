@@ -107,4 +107,8 @@ fi
 
 echo
 [ "$fehler" -eq 0 ] && echo "── Live-Betrieb unauffällig ──" || echo "── $fehler Befund(e) — nicht als erledigt melden ──"
-exit "$fehler"
+# Nicht "exit $fehler": Der Kopf verspricht "Exit 1 = mindestens ein Befund",
+# der Zaehler haette bei zwei Befunden aber 2 geliefert. Ein Aufrufer, der auf
+# "-eq 1" prueft, haette genau die schlimmeren Laeufe uebersehen (Befund
+# 13.08.2026). Die Anzahl steht in der Zeile darueber, sie geht nicht verloren.
+[ "$fehler" -eq 0 ] && exit 0 || exit 1

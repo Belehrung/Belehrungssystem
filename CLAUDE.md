@@ -162,6 +162,32 @@ ein eigener Fehlschlag:
   Nachbesserung machte den Wächter komplett wirkungslos; aufgefallen ist das
   nur, weil auch die unveränderten Fälle noch einmal liefen.
 
+**Und genau das ist am 13.08.2026 trotzdem wieder passiert** — mit demselben
+Hook, zwei Tage nachdem der Absatz oben geschrieben wurde. Im Meldungstext
+stand `'set -o pipefail;'` in Apostrophen; die schlossen die umgebende
+Zeichenkette vorzeitig. Der Rest der Meldung lief als Befehl, den es nicht gibt.
+Ergebnis: abgeschnittenes JSON und Exit 127 statt einer Ablehnung — der Wächter
+hat **nie** blockiert. Gefunden hat das eine unabhängige Review, nicht ich.
+
+Daraus die Verschärfung, die wirklich trägt:
+
+- **Ein Hook, der nie ausgeführt wurde, ist eine Absichtserklärung.** Nach jeder
+  Änderung an `.claude/settings.json` die Hooks gegen echte Eingabe-JSON laufen
+  lassen und BEIDES prüfen: den Exit-Code UND ob die Ausgabe gültiges JSON ist
+  (`jq -e .`). Ein Hook, dessen Ausgabe niemand parsen kann, ist wirkungslos,
+  sieht aber im Editor vollständig aus.
+- **Ein Wächter, der nur den Sperrfall prüft, prüft nichts.** Zu jedem Lauf
+  gehören die Durchlass-Fälle mit: Die Zeile, die den Alarm auslöst, und die
+  Zeilen, die ihn NICHT auslösen dürfen — sonst merkt man eine wirkungslose
+  Fassung nicht von einer wirksamen zu unterscheiden.
+- **Apostrophe gehören nicht in eine einfach gequotete Zeichenkette.** Für
+  Code-Beispiele in Hook-Meldungen Backticks nehmen; die sind in
+  Single-Quotes literal und können nichts schließen.
+- **Was eine Datei verspricht, muss das Werkzeug erzwingen, nicht die Prosa.**
+  Der `kundschafter` war als „ändert nichts" beschrieben und hatte `Bash` in
+  seiner Werkzeugliste. Beschreibung geändert wäre falsch gewesen — die
+  Werkzeugliste ist die Zusicherung, also flog `Bash` raus.
+
 ## Prüf-Ritual des Haupt-Agenten (Verfeinerung 10.08.2026)
 
 Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
@@ -228,6 +254,54 @@ deshalb grün, was rot war. Daraus folgt:
 - **Ein Agent, der abbricht, ist wertvoller als einer, der immer
   liefert.** Fehlt eine Vorbedingung, ist der Abbruch mit Rückfrage das
   richtige Ergebnis — nicht etwas Plausibles hinzubauen.
+
+## Werkzeuge, die schon da sind (12.08.2026)
+
+Auf die Frage nach besseren Werkzeugen für Grafik und Arbeitsweise war der
+erste Befund unangenehm: Von sechs aktiven Plugins hatte ich keines je
+benutzt, und fünf Fähigkeiten lagen ungenutzt in derselben Sitzung. Ein
+Werkzeug, das installiert ist und nicht aufgerufen wird, ist teurer als
+keines — es kostet Beschaffung und liefert nichts.
+
+- **Bei jeder Änderung, die das Aussehen einer Seite verändert**, gehören
+  `/design:critique` und bei neuen Bedienelementen `/design:accessibility`
+  (WCAG) dazu — vom Haupt-Agenten, von selbst, nicht auf Zuruf. Die
+  Bagatellgrenze oben gilt weiter: Ein Tippfehler im Text oder ein
+  umbenannter Button ist keine Änderung am Aussehen.
+- **Diagramme, Kennzahlen, Cockpit-Auswertungen:** vorher die Fähigkeit
+  `dataviz` laden. Sie legt Farbregeln, Diagrammform und Legende fest,
+  BEVOR die erste Zeile Diagramm-Code entsteht.
+- **Landingpage und Handbuch-Optik:** `theme-factory`.
+- Der Browser hier erreicht das Internet nicht, `localhost` aber schon.
+  Screenshots der eigenen Anwendung sind deshalb die einzige verlässliche
+  Sichtprüfung — und sie funktionieren.
+
+## Ein Ort für den Stil (Befund 12.08.2026)
+
+In **GymDocu** gemessen, nicht geschätzt: 47 eigene `<style>`-Blöcke in 24
+Dateien, kein einziges CSS-File. Jede Seite brachte ihre eigenen Farben,
+Abstände und Radien mit. Solange das so ist, macht kein Design-Werkzeug das
+System schöner — es macht eine von 24 Stellen schöner.
+
+**Die zentrale Quelle existiert seit dem 12.08.2026: `core/design.js` im
+GymDocu-Repo**, exportiert `DESIGN_CSS` (ein `:root{}`-Block mit
+`--gd-…`-Token), Vorbild `core/icons.js` mit seinen 114 Icons. Sie ist zu
+BENUTZEN, nicht neu zu erfinden — wer hier eine zweite Stil-Quelle anlegt,
+hat das Problem verdoppelt statt gelöst. Wie sie eingebunden wird und was
+bereits umgestellt ist, steht in `/workspace/gymdocu/CLAUDE.md`; dort
+gehört es hin, weil der Executer die CLAUDE.md seines Zielrepos liest.
+
+Regel für Neues in GymDocu: **keine neuen Farb-, Abstands-, Radien- oder
+Schriftgrößenwerte direkt in einen `<style>`-Block schreiben.** Was
+gebraucht wird, kommt aus `DESIGN_CSS`; fehlt es dort, wird es dort
+ergänzt.
+
+**Dieses Repo hat dieselbe Krankheit und noch keine Kur.** `server.js`
+bringt in seinem `<head>` eigene Farben mit (`#111418`, `#1c2128`,
+`#2a2f36`, `#e60023`), eigene Radien und Segoe UI — ohne jede zentrale
+Quelle. Die Regel oben ist hier also derzeit gar nicht erfüllbar. Das ist
+eine bekannte Lücke, kein Versehen: Wer hier an der Oberfläche baut,
+benennt sie, statt so zu tun, als gälte die Regel schon.
 
 ## Kontext
 
