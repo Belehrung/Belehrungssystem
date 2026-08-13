@@ -162,6 +162,32 @@ ein eigener Fehlschlag:
   Nachbesserung machte den Wächter komplett wirkungslos; aufgefallen ist das
   nur, weil auch die unveränderten Fälle noch einmal liefen.
 
+**Und genau das ist am 13.08.2026 trotzdem wieder passiert** — mit demselben
+Hook, zwei Tage nachdem der Absatz oben geschrieben wurde. Im Meldungstext
+stand `'set -o pipefail;'` in Apostrophen; die schlossen die umgebende
+Zeichenkette vorzeitig. Der Rest der Meldung lief als Befehl, den es nicht gibt.
+Ergebnis: abgeschnittenes JSON und Exit 127 statt einer Ablehnung — der Wächter
+hat **nie** blockiert. Gefunden hat das eine unabhängige Review, nicht ich.
+
+Daraus die Verschärfung, die wirklich trägt:
+
+- **Ein Hook, der nie ausgeführt wurde, ist eine Absichtserklärung.** Nach jeder
+  Änderung an `.claude/settings.json` die Hooks gegen echte Eingabe-JSON laufen
+  lassen und BEIDES prüfen: den Exit-Code UND ob die Ausgabe gültiges JSON ist
+  (`jq -e .`). Ein Hook, dessen Ausgabe niemand parsen kann, ist wirkungslos,
+  sieht aber im Editor vollständig aus.
+- **Ein Wächter, der nur den Sperrfall prüft, prüft nichts.** Zu jedem Lauf
+  gehören die Durchlass-Fälle mit: Die Zeile, die den Alarm auslöst, und die
+  Zeilen, die ihn NICHT auslösen dürfen — sonst merkt man eine wirkungslose
+  Fassung nicht von einer wirksamen zu unterscheiden.
+- **Apostrophe gehören nicht in eine einfach gequotete Zeichenkette.** Für
+  Code-Beispiele in Hook-Meldungen Backticks nehmen; die sind in
+  Single-Quotes literal und können nichts schließen.
+- **Was eine Datei verspricht, muss das Werkzeug erzwingen, nicht die Prosa.**
+  Der `kundschafter` war als „ändert nichts" beschrieben und hatte `Bash` in
+  seiner Werkzeugliste. Beschreibung geändert wäre falsch gewesen — die
+  Werkzeugliste ist die Zusicherung, also flog `Bash` raus.
+
 ## Prüf-Ritual des Haupt-Agenten (Verfeinerung 10.08.2026)
 
 Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
