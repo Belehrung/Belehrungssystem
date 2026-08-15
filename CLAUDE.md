@@ -263,18 +263,45 @@ benutzt, und fünf Fähigkeiten lagen ungenutzt in derselben Sitzung. Ein
 Werkzeug, das installiert ist und nicht aufgerufen wird, ist teurer als
 keines — es kostet Beschaffung und liefert nichts.
 
-- **Bei jeder Änderung, die das Aussehen einer Seite verändert**, gehören
-  `/design:critique` und bei neuen Bedienelementen `/design:accessibility`
-  (WCAG) dazu — vom Haupt-Agenten, von selbst, nicht auf Zuruf. Die
-  Bagatellgrenze oben gilt weiter: Ein Tippfehler im Text oder ein
-  umbenannter Button ist keine Änderung am Aussehen.
-- **Diagramme, Kennzahlen, Cockpit-Auswertungen:** vorher die Fähigkeit
-  `dataviz` laden. Sie legt Farbregeln, Diagrammform und Legende fest,
-  BEVOR die erste Zeile Diagramm-Code entsteht.
-- **Landingpage und Handbuch-Optik:** `theme-factory`.
+**Korrektur 14.08.2026:** Zwei der vier Punkte unten zeigten auf Werkzeuge, die
+es hier gar nicht gibt, und einer empfahl das falsche. Nachgeprüft, nicht
+vermutet — jeder Aufruf einmal ausgeführt.
+
+- **Eine automatische Design-Kritik gibt es hier NICHT.** Die Marktplatz-Plugins
+  (`design`, `engineering`, `data`, `marketing` …) sind im Konto aktiv und
+  listen ihre Fähigkeiten auch auf — geladen sind sie in Claude-Code-Sitzungen
+  trotzdem nicht. Am 14.08.2026 ausprobiert: `design:critique` (Kurzname aus der
+  Plugin-Beschreibung), `design:design-critique` (der echte Komponentenname) und
+  `engineering:code-review` — alle drei „Unknown skill". Positivkontrolle
+  daneben, sonst hieße das nur „falsch aufgerufen": `dataviz` und
+  `theme-factory` luden in derselben Sitzung fehlerfrei. Solange das so ist,
+  bleibt bei Änderungen am
+  Aussehen der Screenshot die Prüfung, Kontraste werden von Hand nachgerechnet
+  — und die fehlende WCAG-Prüfung wird ausdrücklich BENANNT statt stillschweigend
+  übergangen. Genau daran lag der Fehler bis zum 14.08.: Die Regel stand hier,
+  war nicht ausführbar, und niemand merkte es. Die Bagatellgrenze oben gilt
+  weiter: Ein Tippfehler oder ein umbenannter Button ist keine Änderung am
+  Aussehen.
+- **Diagramme, Kennzahlen, Cockpit-Auswertungen:** vorher `dataviz` laden —
+  das funktioniert (14.08.2026 geprüft). Das Wesentliche daraus: Form zuerst,
+  Farbe ZULETZT; die Palette wird mit `scripts/validate_palette.js` gerechnet
+  statt nach Gefühl beurteilt; niemals zwei y-Achsen.
+- **`theme-factory` ist für Dokumente, nicht für die Landingpage.** Es liefert
+  je Thema vier Hex-Farben und zwei Schriften (Dokumentschriften wie DejaVu),
+  sonst nichts — kein Prüfer, kein Design-System. Für das Handbuch-PDF und für
+  Verkaufsunterlagen ist es richtig. Die Landingpage hat eine eigene,
+  ausgearbeitete Optik (Grün, DM Mono, eigene Schattenwerte); eines der zehn
+  Fertigthemen darüberzulegen würde sie ERSETZEN, nicht verbessern. Wer dort
+  vereinheitlichen will, schreibt die vorhandenen Werte als eigenes Thema fest,
+  statt ein fremdes zu übernehmen.
 - Der Browser hier erreicht das Internet nicht, `localhost` aber schon.
   Screenshots der eigenen Anwendung sind deshalb die einzige verlässliche
   Sichtprüfung — und sie funktionieren.
+- **Was `ListSkills` auflistet, ist nicht alles.** `dataviz` steht dort nicht
+  und ist trotzdem da (gebündelte Fähigkeit); `design:critique` ist als Plugin
+  gelistet und trotzdem nicht aufrufbar. Verfügbarkeit wird ausprobiert, nicht
+  aus einer Liste geschlossen — dieselbe Positivkontrolle wie in der Recherche,
+  nur auf das eigene Werkzeug angewandt.
 
 ## Ein Ort für den Stil (Befund 12.08.2026)
 
