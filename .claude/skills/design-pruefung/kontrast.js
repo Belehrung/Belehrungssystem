@@ -22,7 +22,10 @@
  *     Rückfall auf "text".
  *
  *   node kontrast.js --selbsttest
- *     Prüft die Rechnung gegen bekannte Werte, siehe selbsttest().
+ *     Prüft die Rechnung gegen bekannte Werte, siehe selbsttest(). Nur OHNE
+ *     zusätzliche Farbpaare gültig — --selbsttest zusammen mit Paaren ist
+ *     ein Aufruffehler (siehe Exit-Code 2), kein stiller Vorrang für eine
+ *     der beiden Aufrufarten.
  *
  * Exit-Codes:
  *   0  alle Paare bestehen ihre MAßGEBLICHE (rollenabhängige) Schwelle
@@ -30,7 +33,7 @@
  *   1  mindestens ein Paar fällt bei seiner maßgeblichen Schwelle durch
  *      (bzw. Selbsttest: FAIL)
  *   2  ungültiger Aufruf (keine/falsche Argumente, ungültige Hex-Farbe,
- *      unbekannte Rolle)
+ *      unbekannte Rolle, --selbsttest zusammen mit Farbpaaren)
  */
 
 const { spawnSync } = require('node:child_process');
@@ -44,8 +47,14 @@ const ROLLEN_SCHWELLEN = { text: 4.5, grosstext: 3.0, flaeche: 3.0 };
 const ROLLEN_ERLAUBT = Object.keys(ROLLEN_SCHWELLEN);
 
 function fehlerUndAbbruch(nachricht) {
+  // Setzt nur den Exit-Code und schreibt die Meldung — beendet den Prozess
+  // NICHT selbst. process.exit() direkt nach console.log() kann Ausgaben
+  // abschneiden, wenn stdout in eine Pipe geht (Node puffert dort asynchron).
+  // Aufrufer MÜSSEN nach diesem Aufruf selbst abbrechen (return), sonst
+  // läuft der Ablauf weiter und überschreibt den Exit-Code 2 am Ende mit
+  // 0 oder 1.
   process.stderr.write(`Fehler: ${nachricht}\n`);
-  process.exit(2);
+  process.exitCode = 2;
 }
 
 function hexZuRgb(hex, kontext) {
@@ -53,6 +62,7 @@ function hexZuRgb(hex, kontext) {
     fehlerUndAbbruch(
       `ungültige Hex-Farbe "${hex}"${kontext ? ` (${kontext})` : ''} — erwartet z. B. #112233 oder #123`
     );
+    return undefined; // Abbruch wurde bereits gemeldet; Aufrufer müssen stoppen.
   }
   let h = hex.trim();
   if (h.startsWith('#')) h = h.slice(1);
@@ -99,11 +109,13 @@ function parsePaar(paarStr) {
         `"vordergrund:hintergrund:rolle" (Rolle: ${ROLLEN_ERLAUBT.join(', ')}), ` +
         `z. B. "#111418:#e6e6e6" oder "#e60023:#1c2128:flaeche"`
     );
+    return undefined; // Abbruch wurde bereits gemeldet; Aufrufer müssen stoppen.
   }
   const [vordergrund, hintergrund, rolleRoh] = teile;
-  // Löst bei ungültiger Hex-Farbe selbst den Abbruch mit Kontext aus.
-  hexZuRgb(vordergrund, `Vordergrund von "${paarStr}"`);
-  hexZuRgb(hintergrund, `Hintergrund von "${paarStr}"`);
+  // Löst bei ungültiger Hex-Farbe selbst den Abbruch mit Kontext aus und
+  // gibt dann undefined zurück — dann hier ebenfalls sofort stoppen.
+  if (hexZuRgb(vordergrund, `Vordergrund von "${paarStr}"`) === undefined) return undefined;
+  if (hexZuRgb(hintergrund, `Hintergrund von "${paarStr}"`) === undefined) return undefined;
 
   let rolle = 'text';
   if (rolleRoh !== undefined) {
@@ -111,6 +123,7 @@ function parsePaar(paarStr) {
       fehlerUndAbbruch(
         `ungültige Rolle "${rolleRoh}" im Paar "${paarStr}" — erlaubt sind: ${ROLLEN_ERLAUBT.join(', ')}`
       );
+      return undefined; // Abbruch wurde bereits gemeldet; Aufrufer müssen stoppen.
     }
     rolle = rolleRoh;
   }
@@ -139,7 +152,9 @@ function pruefePaare(paare) {
   let massgeblichFehlgeschlagen = false;
 
   for (const paarStr of paare) {
-    const { vordergrund, hintergrund, rolle } = parsePaar(paarStr);
+    const geparst = parsePaar(paarStr);
+    if (geparst === undefined) return; // Abbruch wurde bereits gemeldet (Exit-Code 2 gesetzt).
+    const { vordergrund, hintergrund, rolle } = geparst;
     const verhaeltnis = kontrastverhaeltnis(vordergrund, hintergrund, paarStr);
     const fliesstext = urteil(verhaeltnis, SCHWELLE_FLIESSTEXT);
     const grosstext = urteil(verhaeltnis, SCHWELLE_GROSSTEXT);
@@ -169,7 +184,11 @@ function pruefePaare(paare) {
     console.log(formatiereZeile(zeile, breiten));
   }
 
-  process.exit(massgeblichFehlgeschlagen ? 1 : 0);
+  // Nur den Exit-Code setzen und normal zurückkehren, NICHT process.exit()
+  // aufrufen: Bei vielen Zeilen (z. B. tausenden Paaren) geht stdout in eine
+  // Pipe asynchron, und process.exit() direkt danach schneidet die noch
+  // nicht geschriebene Ausgabe ab.
+  process.exitCode = massgeblichFehlgeschlagen ? 1 : 0;
 }
 
 // Startet dieselbe Datei als eigenen Prozess mit den gegebenen Argumenten
@@ -234,6 +253,17 @@ function selbsttest() {
     detail: `Exit-Code: ${exitFlaeche}`,
   });
 
+  // grosstext teilt ihre Schwelle (3.0) mit flaeche, wurde aber bisher nie
+  // eigens geprüft — eine falsche grosstext-Schwelle wäre unbemerkt grün
+  // geblieben. Derselbe Wert (3.38:1) muss als grosstext BESTEHEN, wie unten
+  // als text DURCHFALLEN: derselbe Wert, zwei Rollen, zwei Ergebnisse.
+  const exitGrosstext = exitCodeUeberUnterprozess(['#e60023:#1c2128:grosstext']);
+  faelle.push({
+    name: 'Exit-Code für "#e60023:#1c2128:grosstext" == 0 (3.38 >= 3.0)',
+    ok: exitGrosstext === 0,
+    detail: `Exit-Code: ${exitGrosstext}`,
+  });
+
   const exitText = exitCodeUeberUnterprozess(['#e60023:#1c2128:text']);
   faelle.push({
     name: 'Exit-Code für "#e60023:#1c2128:text" == 1 (3.38 < 4.5)',
@@ -254,26 +284,46 @@ function selbsttest() {
     if (!fall.ok) fehlgeschlagen = true;
   }
 
-  process.exit(fehlgeschlagen ? 1 : 0);
+  // Nur den Exit-Code setzen, siehe Kommentar in pruefePaare() — derselbe
+  // Grund: process.exit() direkt nach vielen console.log()-Aufrufen kann bei
+  // einer Pipe Ausgaben abschneiden.
+  process.exitCode = fehlgeschlagen ? 1 : 0;
 }
 
 function main() {
   const argv = process.argv.slice(2);
+  const enthaeltSelbsttest = argv.includes('--selbsttest');
+  const paare = argv.filter((a) => a !== '--selbsttest');
 
-  if (argv.includes('--selbsttest')) {
+  // --selbsttest UND Farbpaare zusammen sind ein Aufruffehler, kein
+  // stillschweigender Vorrang für eine der beiden Aufrufarten: Wer das
+  // Werkzeug so in ein Skript einbaut, soll nicht versehentlich grün
+  // bekommen, ohne dass geprüft wurde.
+  if (enthaeltSelbsttest && paare.length > 0) {
+    fehlerUndAbbruch(
+      `ungültiger Aufruf: --selbsttest wurde zusammen mit ${paare.length} ` +
+        'Farbpaar(en) übergeben. Erlaubt ist entweder "node kontrast.js ' +
+        '--selbsttest" (ohne weitere Argumente) oder "node kontrast.js ' +
+        '\\"vordergrund:hintergrund[:rolle]\\" ..." (ohne --selbsttest) — nicht beides.'
+    );
+    return;
+  }
+
+  if (enthaeltSelbsttest) {
     selbsttest();
     return;
   }
 
-  if (argv.length === 0) {
+  if (paare.length === 0) {
     fehlerUndAbbruch(
       'keine Farbpaare übergeben. Aufruf: node kontrast.js "#111418:#e6e6e6" ' +
         `["#abc:#def:rolle" ...] (Rolle optional, erlaubt: ${ROLLEN_ERLAUBT.join(', ')}; ` +
         'Standard ohne Angabe: text) oder node kontrast.js --selbsttest'
     );
+    return;
   }
 
-  pruefePaare(argv);
+  pruefePaare(paare);
 }
 
 main();

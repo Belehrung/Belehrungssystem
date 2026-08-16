@@ -267,21 +267,26 @@ keines — es kostet Beschaffung und liefert nichts.
 es hier gar nicht gibt, und einer empfahl das falsche. Nachgeprüft, nicht
 vermutet — jeder Aufruf einmal ausgeführt.
 
-- **Eine automatische Design-Kritik gibt es hier NICHT.** Die Marktplatz-Plugins
-  (`design`, `engineering`, `data`, `marketing` …) sind im Konto aktiv und
-  listen ihre Fähigkeiten auch auf — geladen sind sie in Claude-Code-Sitzungen
-  trotzdem nicht. Am 14.08.2026 ausprobiert: `design:critique` (Kurzname aus der
-  Plugin-Beschreibung), `design:design-critique` (der echte Komponentenname) und
+- **Eine automatische Design-Kritik über die Marktplatz-Plugins gibt es hier
+  NICHT — aber eine eigene, ladbare Fähigkeit dafür: `/design-pruefung`.**
+  Die Marktplatz-Plugins (`design`, `engineering`, `data`, `marketing` …)
+  sind im Konto aktiv und listen ihre Fähigkeiten auch auf — geladen sind sie
+  in Claude-Code-Sitzungen trotzdem nicht. Am 14.08.2026 ausprobiert:
+  `design:critique` (Kurzname aus der Plugin-Beschreibung),
+  `design:design-critique` (der echte Komponentenname) und
   `engineering:code-review` — alle drei „Unknown skill". Positivkontrolle
   daneben, sonst hieße das nur „falsch aufgerufen": `dataviz` und
-  `theme-factory` luden in derselben Sitzung fehlerfrei. Solange das so ist,
-  bleibt bei Änderungen am
-  Aussehen der Screenshot die Prüfung, Kontraste werden von Hand nachgerechnet
-  — und die fehlende WCAG-Prüfung wird ausdrücklich BENANNT statt stillschweigend
-  übergangen. Genau daran lag der Fehler bis zum 14.08.: Die Regel stand hier,
-  war nicht ausführbar, und niemand merkte es. Die Bagatellgrenze oben gilt
-  weiter: Ein Tippfehler oder ein umbenannter Button ist keine Änderung am
-  Aussehen.
+  `theme-factory` luden in derselben Sitzung fehlerfrei. Deshalb bei jeder
+  Änderung am Aussehen den Skill `/design-pruefung` laden (liegt in
+  `.claude/skills/design-pruefung/`); dessen Kontrastrechner lässt sich auch
+  direkt und ohne den Skill aufrufen: `node
+  .claude/skills/design-pruefung/kontrast.js "<vordergrund>:<hintergrund>
+  [:<rolle>]" ...` (Exit-Code 1, sobald ein Paar seine Schwelle reißt —
+  damit auch als Gate einsetzbar). Auch das ersetzt keine vollständige
+  Barrierefreiheitsprüfung (siehe dortige SKILL.md, Abschnitt „Was diese
+  Prüfung NICHT leistet") — das Fehlende wird dort ausdrücklich BENANNT statt
+  stillschweigend übergangen. Die Bagatellgrenze oben gilt weiter: Ein
+  Tippfehler oder ein umbenannter Button ist keine Änderung am Aussehen.
 - **Diagramme, Kennzahlen, Cockpit-Auswertungen:** vorher `dataviz` laden —
   das funktioniert (14.08.2026 geprüft). Das Wesentliche daraus: Form zuerst,
   Farbe ZULETZT; die Palette wird mit `scripts/validate_palette.js` gerechnet
