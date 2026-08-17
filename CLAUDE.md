@@ -1,5 +1,9 @@
 # Arbeitsweise in diesem Projekt
 
+Diese Datei enthält nur Anweisungen. Wo eine Begründung dabeisteht, ist sie
+kurz und dient dazu, die Regel im Zweifel richtig auszulegen — nicht dazu, zu
+erzählen, wie sie entstand.
+
 ## Umsetzung nur über den Executer-Agenten
 
 Vorgabe des Betreibers (10.08.2026): Der Haupt-Agent baut selbst nichts.
@@ -12,183 +16,7 @@ Vorgabe des Betreibers (10.08.2026): Der Haupt-Agent baut selbst nichts.
 - Lesen, Diagnose, Recherche und Git-Verwaltung darf der Haupt-Agent weiterhin
   selbst erledigen; nur das Bauen ist delegiert.
 
-## Kostenregeln (Verfeinerung 10.08.2026, vom Betreiber gebilligt)
-
-Ziel: Qualität halten, Kosten senken. Delegation hat Fixkosten (Auftrag
-formulieren, Einlesen des Subagenten, Bericht, Prüfung) — sie lohnt erst,
-wenn die Umsetzung selbst größer ist als diese Fixkosten.
-
-- **Bagatellgrenze:** Kleinstkorrekturen (einzelne Zeilen, Tippfehler,
-  Config-Werte) und Textdokumente, deren Inhalt der Haupt-Agent ohnehin
-  wörtlich vorgibt, schreibt er direkt — ein Kopier-Subagent kostet nur.
-  Ab etwa einer Datei echter Umsetzung: Executer.
-- **Bündeln:** Mehrere kleine Änderungen in EINEN Executer-Auftrag packen
-  statt einzeln zu delegieren.
-- **Kostenbewusst prüfen:** Diffs und geänderte Stellen gezielt lesen und
-  die Tests laufen lassen — nicht ganze Dateien nacherzählen lassen. Die
-  Prüfung selbst bleibt Pflicht, nur ihr Umfang ist gezielt.
-- **Hausregeln gehören ins Zielrepo:** Der Executer liest zu Beginn die
-  CLAUDE.md des Repos, in dem er arbeitet (steht in seiner Definition).
-  Projektregeln stehen deshalb DORT und werden nicht in jedem Auftrag
-  wiederholt.
-
-## Vorarbeit nach unten (Betreiber-Vorgabe 10.08.2026)
-
-Der teuerste Posten ist nicht das Bauen, sondern das LESEN — und zwar das des
-Haupt-Agenten. Suchen im Code kostet auf dem starken Modell ein Vielfaches
-dessen, was es unten kostet. Deshalb:
-
-- **Suchen und Lokalisieren gehen an den `kundschafter`** (Haiku, nur lesend):
-  „Wo steht X, wie sieht Y aus, welche Stellen betrifft Z?" Er liefert Pfade,
-  Zeilennummern und wörtliche Auszüge. Der Haupt-Agent liest große Dateien
-  nicht mehr selbst durch.
-- **Beurteilen bleibt oben.** Der Kundschafter sagt, WO etwas steht — nie, ob
-  es gut ist. Diffs, Entwürfe und Abnahmen liest der Haupt-Agent im Original;
-  eine Zusammenfassung enthält nur die Fehler, die ihr Verfasser kennt.
-- **Auszüge in den Auftrag legen.** Was der Kundschafter geliefert hat, kommt
-  wörtlich in den Executer-Auftrag. Dann muss der Executer die Datei nicht
-  noch einmal suchen und lesen — dieselbe Arbeit wird sonst dreimal bezahlt.
-- **Nacharbeit geht an DENSELBEN Agenten** (Fortsetzung statt Neustart). Ein
-  neuer Agent liest alles noch einmal von null; der bestehende hat es schon.
-- **Weniger, größere Aufträge.** Die Fixkosten fallen je Delegation an, nicht
-  je Änderung.
-
-## Große Recherche-Läufe: die teuerste Einzelentscheidung
-
-Am 10.08.2026 kosteten drei vielköpfige Recherche-Läufe zusammen rund vier
-Millionen Subagenten-Token — mehr als sämtliche Bau-Aufträge des Tages
-zusammen. Einer davon starb an einem Sitzungslimit und lieferte gar nichts.
-Das ist der größte Kostenhebel, den es gibt; alles andere ist Feinjustierung.
-
-Vor jedem vielköpfigen Lauf beantworten:
-
-1. **Hängt eine Entscheidung daran?** Eine Frage, die nur Neugier befriedigt,
-   rechtfertigt keinen Fächer aus zwölf Agenten. Eine, die über Geld,
-   Rechtssicherheit oder eine Architektur entscheidet, schon.
-2. **Reicht ein Agent?** Der Fächer lohnt, wenn die Frage GENUINE Blickwinkel
-   hat, die einander nicht sehen. Fünf Agenten, die dasselbe googeln, kosten
-   fünfmal so viel für dasselbe Ergebnis.
-3. **Was ist die billigste Antwort, die die Frage erledigt?** Ein `grep`, ein
-   Test, ein Blick ins Repo — sehr oft ist es das. Erst wenn das nicht trägt,
-   ein Agent; erst wenn EIN Agent nicht trägt, mehrere.
-4. **Klein anfangen.** Lieber ein Lauf mit vier Agenten und danach gezielt
-   nachlegen als einer mit vierundzwanzig, von dem zwanzig am Limit sterben.
-
-Und: Ein Lauf, der abbricht, hat NICHTS geliefert — nicht „keine Befunde".
-Das Ergebnis dann als das benennen, was es ist: ungeprüft.
-
-## Recherche-Regeln (10.08.2026, empirisch geprüft)
-
-Bei einer Markenrecherche meldeten fünf von sechs Agenten „Register nicht
-erreichbar" und lieferten damit keine Aussage. Einer lieferte eine belastbare:
-Er suchte zusätzlich nach einem Namen, den es GEBEN musste, fand ihn — und
-hatte damit bewiesen, dass seine Abfrage funktioniert. Erst danach war sein
-„0 Treffer" etwas wert.
-
-- **Die Positivkontrolle ist Pflicht.** Ein negatives Ergebnis zählt nur, wenn
-  dieselbe Methode nachweislich ein positives liefern kann. „Nichts gefunden"
-  ohne Gegenprobe heißt „nicht gesucht" — es ist dieselbe Falle wie das leere
-  Prüfergebnis, nur in der Recherche.
-- **Der erste Fehlschlag ist keine Antwort.** 503, leere Seite, Zeitüberschreitung:
-  Das ist der Anfang der Suche, nicht ihr Ende. Andere Endpunkte, andere
-  Werkzeuge, andere Formulierung — und wenn wirklich nichts geht, wird die
-  Lücke ausdrücklich benannt statt in ein „keine Treffer" verkleidet.
-- **Diese Anforderung gehört in den Auftrag.** Agenten in einem Rechercheauftrag
-  lesen diese Datei nicht; die Positivkontrolle muss im Prompt stehen.
-
-Was die Umgebung hier WIRKLICH kann (am 10.08.2026 nachgemessen, nicht vermutet):
-
-- `curl` über den Proxy erreicht das offene Netz (example.com und tmdn.org je
-  HTTP 200). Für APIs und einfache Seiten ist das der verlässlichste Weg.
-- **Der Browser (Chromium/Playwright) erreicht das Internet NICHT** — selbst
-  example.com scheitert mit ERR_CONNECTION_RESET. Er ist ausschließlich für
-  lokale Server da (Screenshots der eigenen Anwendung — das funktioniert und
-  wurde heute mehrfach genutzt). Wer ihn für eine öffentliche Seite einplant,
-  plant einen Fehlschlag ein.
-- Viele Register (TMview, EUIPO) sind reine JavaScript-Anwendungen: `curl`
-  bekommt dort nur die leere Hülle. Deshalb sind solche Auskünfte hier
-  grundsätzlich unvollständig — und das ist zu sagen, nicht zu kaschieren.
-
-## Abhängigkeiten anheben (11.08.2026, teuer gelernt)
-
-Ein Dependabot-PR hob sechs Pakete auf einmal an, darunter drei
-Hauptversionssprünge. Einer davon entfernte einen Export, an dem die
-Zwei-Faktor-Anmeldung hing — und verlangte beim Prüfen längere Geheimnisse,
-als die Vorgängerversion selbst erzeugt hatte. Ein Durchwinken hätte jeden
-bestehenden Administrator ausgesperrt. Die Testsuite war grün.
-
-- **Bei jedem Hauptversionssprung zuerst `npm diff`.** Kostet nichts, ist
-  installiert, braucht keine Abhängigkeit:
-
-      npm diff --diff=<paket>@<alt> --diff=<paket>@<neu> --diff-name-only
-      npm diff --diff=<paket>@<alt> --diff=<paket>@<neu> -- index.d.ts
-
-  Beim otplib-Fall zeigte die zweite Zeile in einer Sekunde `-export * from
-  '@otplib/preset-default';` — genau den verschwundenen Export. Das ist der
-  billigste Erstgriff, der existiert.
-- **Majors gehören in einen eigenen PR.** In beiden Repos steht dafür jetzt
-  `update-types: ["minor", "patch"]` in der Dependabot-Gruppe. Der Gewinn ist
-  nicht weniger Rauschen, sondern eindeutige Schuldzuweisung: Ein roter Lauf
-  zeigt auf EIN Paket statt auf sechs.
-- **Eine grüne Suite beweist nur, was geprüft wurde.** Die 2FA-Tests erzeugten
-  ihre Geheimnisse frisch, also im neuen Format; der einzige Fall, den die
-  Wirklichkeit kennt — ein ALTES Geheimnis aus der Datenbank —, kam in keinem
-  Test vor. Wo ein Format sich ändern kann, gehört ein wörtlich eingetragener
-  Altwert in den Test. Kein Werkzeug ersetzt das; recherchiert und bestätigt.
-
-## Hooks: Regeln, die sich selbst durchsetzen (11.08.2026)
-
-Zwei Regeln dieser Datei wurden an einem einzigen Tag von mir selbst verletzt,
-obwohl sie hier wörtlich stehen. Eine Regel braucht Aufmerksamkeit, ein Hook
-nicht. In `.claude/settings.json` stehen deshalb zwei PreToolUse-Wächter: gegen
-den durch eine Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter
-`/var/www`.
-
-Was das Bauen dieser zwei Hooks an einem Nachmittag gelehrt hat — jede Zeile
-ein eigener Fehlschlag:
-
-- **Hooks laufen unter `/bin/sh`, nicht unter `bash`.** `${var//a/b}` warf dort
-  „Bad substitution" — bei JEDEM Bash-Aufruf. Geprüft hatte ich mit `bash -c`,
-  also im bequemeren Umfeld. Prüfen im tatsächlichen Umfeld, nicht im
-  angenehmen; das steht unten schon einmal, gilt aber auch hier.
-- **Ein logisches `||` enthält denselben senkrechten Strich wie eine Pipe.** Vor
-  dem Suchen neutralisieren, sonst Fehlalarm.
-- **Wer das Problem schon gelöst hat, darf nicht aufgehalten werden.**
-  Ausdrücklicher Opt-out bei `pipefail`/`PIPESTATUS` — und die Fehlermeldung
-  nennt den Ausweg, statt nur zu verbieten.
-- **Ein Hook muss offen ausfallen.** Fehlt `jq`, ist die Prüfung wirkungslos —
-  aber sie darf nicht jeden Befehl der Sitzung blockieren.
-- **Nach jeder Änderung ALLE Fälle neu messen, nicht nur die geänderten.** Eine
-  Nachbesserung machte den Wächter komplett wirkungslos; aufgefallen ist das
-  nur, weil auch die unveränderten Fälle noch einmal liefen.
-
-**Und genau das ist am 13.08.2026 trotzdem wieder passiert** — mit demselben
-Hook, zwei Tage nachdem der Absatz oben geschrieben wurde. Im Meldungstext
-stand `'set -o pipefail;'` in Apostrophen; die schlossen die umgebende
-Zeichenkette vorzeitig. Der Rest der Meldung lief als Befehl, den es nicht gibt.
-Ergebnis: abgeschnittenes JSON und Exit 127 statt einer Ablehnung — der Wächter
-hat **nie** blockiert. Gefunden hat das eine unabhängige Review, nicht ich.
-
-Daraus die Verschärfung, die wirklich trägt:
-
-- **Ein Hook, der nie ausgeführt wurde, ist eine Absichtserklärung.** Nach jeder
-  Änderung an `.claude/settings.json` die Hooks gegen echte Eingabe-JSON laufen
-  lassen und BEIDES prüfen: den Exit-Code UND ob die Ausgabe gültiges JSON ist
-  (`jq -e .`). Ein Hook, dessen Ausgabe niemand parsen kann, ist wirkungslos,
-  sieht aber im Editor vollständig aus.
-- **Ein Wächter, der nur den Sperrfall prüft, prüft nichts.** Zu jedem Lauf
-  gehören die Durchlass-Fälle mit: Die Zeile, die den Alarm auslöst, und die
-  Zeilen, die ihn NICHT auslösen dürfen — sonst merkt man eine wirkungslose
-  Fassung nicht von einer wirksamen zu unterscheiden.
-- **Apostrophe gehören nicht in eine einfach gequotete Zeichenkette.** Für
-  Code-Beispiele in Hook-Meldungen Backticks nehmen; die sind in
-  Single-Quotes literal und können nichts schließen.
-- **Was eine Datei verspricht, muss das Werkzeug erzwingen, nicht die Prosa.**
-  Der `kundschafter` war als „ändert nichts" beschrieben und hatte `Bash` in
-  seiner Werkzeugliste. Beschreibung geändert wäre falsch gewesen — die
-  Werkzeugliste ist die Zusicherung, also flog `Bash` raus.
-
-## Prüf-Ritual des Haupt-Agenten (Verfeinerung 10.08.2026)
+## Prüf-Ritual des Haupt-Agenten
 
 Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
 
@@ -203,141 +31,235 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
    Entwerfer ist für die Fehler seines eigenen Entwurfs blind.
 4. **Volle Testsuite** (test/run.sh). WÄHREND des Laufs keine parallelen
    Skripte gegen dieselbe DB: der Studio-Zähl-Wächter schlägt sonst
-   falsch an, und eine Pipe (`| tail`) verschluckt seinen Fehler-Exit
-   (beides passiert am 10.08.2026).
+   falsch an, und eine Pipe (`| tail`) verschluckt seinen Fehler-Exit.
 5. Erst dann Commit und Push. PR-Nummern erst nennen, wenn GitHub sie
    bestätigt hat.
 6. **Die CI ist die letzte Instanz, nicht der eigene Prüfstand.** Fertig
    ist, was GitHub Actions grün nennt. Der Merge-Link geht deshalb ERST
-   nach grüner CI an den Betreiber (10.08.2026: die lokale Suite meldete
-   grün, während die CI rot war; und drei PRs wurden 30–84 Sekunden vor
-   dem Ende ihrer Prüfungen gemergt, weil der Link zu früh kam).
-
+   nach grüner CI an den Betreiber — die lokale Suite hat schon grün
+   gemeldet, während die CI rot war.
 7. **Nach dem Merge zweierlei prüfen — steht der Betrieb, und ist er
    aktuell?**
    - `bash tools/live-check.sh` beantwortet das ERSTE: Landingpage,
      Echtheitsprüfung, Abweisung auf der Studio-Subdomain, ausgelieferte
-     Handbuch-Version, Zertifikatslaufzeit. Der öffentliche Teil des
-     Live-Betriebs ist von hier aus erreichbar — das war lange eine
-     falsche Annahme meinerseits.
-   - Das ZWEITE beantwortet er NICHT, und daran ist am 10.08.2026 ein
-     ganzer Tag verloren gegangen: Der Deploy war sechsmal in Folge rot
-     (eine unversionierte Datei im Prod-Worktree), der Server lief 24
-     Stunden auf einem zwölf Commits alten Stand, und der live-check
-     meldete durchgehend grün — völlig zu Recht, denn der Betrieb LIEF,
-     er war nur alt. Deshalb: den Deploy-Lauf im Actions-Reiter ansehen
-     (`actions_list` auf `deploy.yml`, Ergebnis `success`?), bevor eine
-     Änderung als ausgeliefert gemeldet wird. Serverseitig wacht dafür
-     `ops/gymdocu-deploy-drift.js` stündlich.
-   - Und in beiden Fällen gilt: Diese Prüfungen sagen „der Betrieb läuft
-     und ist aktuell", NICHT „die Änderung wirkt richtig". Was in der
-     Datenbank steht, bleibt unsichtbar und soll es bleiben.
+     Handbuch-Version, Zertifikatslaufzeit.
+   - Das ZWEITE beantwortet er NICHT. Ein Betrieb kann laufen und trotzdem
+     zwölf Commits alt sein; der live-check meldet dann völlig zu Recht
+     grün. Deshalb den Deploy-Lauf ansehen (`actions_list` auf
+     `deploy.yml`, Ergebnis `success`?), bevor eine Änderung als
+     ausgeliefert gemeldet wird. Serverseitig wacht `gymdocu-deploy-drift.js`.
+   - **Hauptserver hat KEINEN automatischen Deploy.** Dort braucht es
+     `git pull --ff-only origin master` auf dem Server — und für alles, was
+     unter `/usr/local/bin/` liegt, zusätzlich ein `install`. Ohne das läuft
+     die alte Fassung weiter.
+   - In beiden Fällen gilt: Diese Prüfungen sagen „der Betrieb läuft und ist
+     aktuell", NICHT „die Änderung wirkt richtig". Was in der Datenbank
+     steht, bleibt unsichtbar und soll es bleiben.
 
-## Prüfstand-Regeln (10.08.2026)
+## Kosten
 
-Der Prüfstand war großzügiger als jede echte Umgebung und meldete
-deshalb grün, was rot war. Daraus folgt:
+Delegation hat Fixkosten (Auftrag formulieren, Einlesen, Bericht, Prüfung) —
+sie lohnt erst, wenn die Umsetzung größer ist als diese Fixkosten.
+
+- **Bagatellgrenze:** Kleinstkorrekturen (einzelne Zeilen, Tippfehler,
+  Config-Werte) und Textdokumente, deren Inhalt der Haupt-Agent ohnehin
+  wörtlich vorgibt, schreibt er direkt. Ab etwa einer Datei echter
+  Umsetzung: Executer.
+- **Bündeln:** Mehrere kleine Änderungen in EINEN Auftrag.
+- **Kostenbewusst prüfen:** Diffs und geänderte Stellen gezielt lesen, Tests
+  laufen lassen — nicht ganze Dateien nacherzählen lassen. Die Prüfung bleibt
+  Pflicht, nur ihr Umfang ist gezielt.
+- **Hausregeln gehören ins Zielrepo.** Der Executer liest die CLAUDE.md des
+  Repos, in dem er arbeitet. Projektregeln stehen DORT, nicht in jedem Auftrag.
+
+## Vorarbeit nach unten
+
+Der teuerste Posten ist nicht das Bauen, sondern das LESEN des Haupt-Agenten.
+
+- **Suchen und Lokalisieren gehen an den `kundschafter`** (Haiku, nur lesend):
+  „Wo steht X, wie sieht Y aus, welche Stellen betrifft Z?" Er liefert Pfade,
+  Zeilennummern und wörtliche Auszüge.
+- **Beurteilen bleibt oben.** Der Kundschafter sagt, WO etwas steht — nie, ob
+  es gut ist. Diffs, Entwürfe und Abnahmen liest der Haupt-Agent im Original.
+- **Auszüge in den Auftrag legen.** Was der Kundschafter geliefert hat, kommt
+  wörtlich in den Executer-Auftrag — sonst wird dieselbe Arbeit dreimal bezahlt.
+- **Nacharbeit geht an DENSELBEN Agenten** (Fortsetzung statt Neustart).
+- **Weniger, größere Aufträge.** Fixkosten fallen je Delegation an.
+- **Gelieferte Listen sind Hinweise, keine Befunde.** Wer eine Fundstellenliste
+  bekommt, lässt sie beim Umsetzen nachprüfen — sie ist regelmäßig richtig und
+  unvollständig zugleich.
+
+## Vielköpfige Recherche-Läufe
+
+Der größte Kostenhebel überhaupt: Drei solche Läufe kosteten an einem Tag mehr
+als sämtliche Bau-Aufträge zusammen, und einer starb am Sitzungslimit ohne
+Ergebnis. Vor jedem Fächer beantworten:
+
+1. **Hängt eine Entscheidung daran?** Neugier rechtfertigt keinen Fächer.
+2. **Reicht ein Agent?** Der Fächer lohnt nur bei GENUINE verschiedenen
+   Blickwinkeln. Fünf Agenten, die dasselbe googeln, kosten fünfmal so viel.
+3. **Was ist die billigste Antwort?** Ein `grep`, ein Test, ein Blick ins Repo
+   — sehr oft ist es das. Erst dann ein Agent, erst dann mehrere.
+4. **Klein anfangen** und gezielt nachlegen.
+
+Ein Lauf, der abbricht, hat NICHTS geliefert — nicht „keine Befunde". Das
+Ergebnis dann als das benennen, was es ist: ungeprüft.
+
+## Prüfen: was ein Ergebnis wert ist
+
+- **Positivkontrolle ist Pflicht.** Ein negatives Ergebnis zählt nur, wenn
+  dieselbe Methode nachweislich ein positives liefern kann. „Nichts gefunden"
+  ohne Gegenprobe heißt „nicht gesucht". In Rechercheaufträgen muss diese
+  Anforderung im Prompt stehen — Subagenten lesen diese Datei nicht.
+- **Gegenprobe zu jeder neuen Prüfung.** Fehler herstellen, ROT messen,
+  zurücknehmen, GRÜN messen — beides wörtlich melden. Ohne diesen Nachweis ist
+  eine Prüfung Dekoration. Am 17.08.2026 rutschten fünf konstruierte Verstöße
+  mit 46 PASS durch einen brandneuen Wächter.
+- **Leeres Ergebnis ist nicht sauberes Ergebnis.** Ein Lauf, dessen Prüfstufe
+  abgestürzt ist, meldet „keine Befunde" und meint „niemand hat geprüft". Jedes
+  Gate muss „geprüft und sauber" von „nicht geprüft" unterscheiden können.
+- **Eine grüne Suite beweist nur, was geprüft wurde.** Wo ein Format sich
+  ändern kann, gehört ein wörtlich eingetragener Altwert in den Test; frisch
+  erzeugte Testdaten haben immer das neue Format.
+- **Ein Agent, der abbricht, ist wertvoller als einer, der immer liefert.**
+  Fehlt eine Vorbedingung, ist der Abbruch mit Rückfrage das richtige Ergebnis.
+- **Sollwerte statt geratener Schwellen.** Wer eine Prüfanweisung an den
+  Betreiber gibt, nennt den erwarteten Wert oder den Vergleich gegen eine
+  Quelle — keine aus dem Bauch gegriffene Grenze.
+
+## Prüfstand-Regeln
 
 - **Im unprivilegiertesten Umfeld prüfen, nicht im bequemsten.** Der
-  Arbeitscontainer läuft als root, der CI-Runner nicht. Wo Rechte eine
-  Rolle spielen, zusätzlich unprivilegiert laufen lassen
+  Arbeitscontainer läuft als root, der CI-Runner nicht. Wo Rechte eine Rolle
+  spielen, zusätzlich unprivilegiert laufen lassen
   (`sudo -u nobody env HOME=/tmp node …`).
-- **Tests fassen weder echtes Dateisystem noch echte Prozesse an.**
-  Dieselbe Suite läuft auf dem Live-Server als Deploy-Gate — ein Test,
-  der dort `pm2`, `nginx` oder `/var/www` anfasst, ist eine Waffe.
-  Stubben; der Stub ist dann zugleich der Beweis, dass das Richtige
-  aufgerufen wurde.
-- **Leeres Ergebnis ist nicht sauberes Ergebnis.** Ein Lauf, dessen
-  Prüfstufe abgestürzt ist, meldet „keine Befunde" und meint „niemand
-  hat geprüft". Jedes Gate muss „geprüft und sauber" von „nicht
-  geprüft" unterscheiden können.
-- **Ein Agent, der abbricht, ist wertvoller als einer, der immer
-  liefert.** Fehlt eine Vorbedingung, ist der Abbruch mit Rückfrage das
-  richtige Ergebnis — nicht etwas Plausibles hinzubauen.
+- **Tests fassen weder echtes Dateisystem noch echte Prozesse an.** Dieselbe
+  Suite läuft auf dem Live-Server als Deploy-Gate — ein Test, der dort `pm2`,
+  `nginx` oder `/var/www` anfasst, ist eine Waffe. Stubben; der Stub ist dann
+  zugleich der Beweis, dass das Richtige aufgerufen wurde.
+- **Tests dürfen nicht an Prosa scheitern.** Statische Prüfungen über Quelltext
+  entfernen zuerst Kommentarzeilen — sonst schlägt der Wächter am erklärenden
+  Kommentar an und wird abgeschaltet statt gelesen. Dazu eine Positivkontrolle,
+  dass nach dem Abzug überhaupt noch etwas übrig ist.
 
-## Werkzeuge, die schon da sind (12.08.2026)
+## Dieselbe Aussage an zwei Orten
 
-Auf die Frage nach besseren Werkzeugen für Grafik und Arbeitsweise war der
-erste Befund unangenehm: Von sechs aktiven Plugins hatte ich keines je
-benutzt, und fünf Fähigkeiten lagen ungenutzt in derselben Sitzung. Ein
-Werkzeug, das installiert ist und nicht aufgerufen wird, ist teurer als
-keines — es kostet Beschaffung und liefert nichts.
+Die häufigste Fehlerquelle in diesem Projekt. Am 17.08.2026 in fünf
+Verkleidungen an einem Tag: zwei Kopien derselben Hilfetexte (eine korrigiert,
+eine vergessen), zwei Darstellungen desselben Eintrags, eine Aussage im Text
+und dieselbe als Konstante im Code.
 
-**Korrektur 14.08.2026:** Zwei der vier Punkte unten zeigten auf Werkzeuge, die
-es hier gar nicht gibt, und einer empfahl das falsche. Nachgeprüft, nicht
-vermutet — jeder Aufruf einmal ausgeführt.
+- Vor jeder Korrektur fragen: **Wo steht das noch, und ist es dort noch
+  richtig?** Besonders: Text und Verhalten sind zwei Orte. Wer eine Aussage in
+  einem Hilfetext korrigiert, hat die Konstante nicht korrigiert, die daraus
+  einen Datensatz erzeugt.
+- Eine zweite Kopie wird gelöscht, nicht nachgezogen — es sei denn, es gibt
+  einen benannten Grund (etwa: `core/` importiert nicht aus `routes/`). Dann
+  steht der Grund im Kopf der Datei.
 
-- **Eine automatische Design-Kritik über die Marktplatz-Plugins gibt es hier
-  NICHT — aber eine eigene, ladbare Fähigkeit dafür: `/design-pruefung`.**
-  Die Marktplatz-Plugins (`design`, `engineering`, `data`, `marketing` …)
-  sind im Konto aktiv und listen ihre Fähigkeiten auch auf — geladen sind sie
-  in Claude-Code-Sitzungen trotzdem nicht. Am 14.08.2026 ausprobiert:
-  `design:critique` (Kurzname aus der Plugin-Beschreibung),
-  `design:design-critique` (der echte Komponentenname) und
-  `engineering:code-review` — alle drei „Unknown skill". Positivkontrolle
-  daneben, sonst hieße das nur „falsch aufgerufen": `dataviz` und
-  `theme-factory` luden in derselben Sitzung fehlerfrei. Deshalb bei jeder
-  Änderung am Aussehen den Skill `/design-pruefung` laden (liegt in
-  `.claude/skills/design-pruefung/`); dessen Kontrastrechner lässt sich auch
-  direkt und ohne den Skill aufrufen: `node
-  .claude/skills/design-pruefung/kontrast.js "<vordergrund>:<hintergrund>
-  [:<rolle>]" ...` (Exit-Code 1, sobald ein Paar seine Schwelle reißt —
-  damit auch als Gate einsetzbar). Auch das ersetzt keine vollständige
-  Barrierefreiheitsprüfung (siehe dortige SKILL.md, Abschnitt „Was diese
-  Prüfung NICHT leistet") — das Fehlende wird dort ausdrücklich BENANNT statt
-  stillschweigend übergangen. Die Bagatellgrenze oben gilt weiter: Ein
-  Tippfehler oder ein umbenannter Button ist keine Änderung am Aussehen.
-- **Diagramme, Kennzahlen, Cockpit-Auswertungen:** vorher `dataviz` laden —
-  das funktioniert (14.08.2026 geprüft). Das Wesentliche daraus: Form zuerst,
-  Farbe ZULETZT; die Palette wird mit `scripts/validate_palette.js` gerechnet
-  statt nach Gefühl beurteilt; niemals zwei y-Achsen.
-- **`theme-factory` ist für Dokumente, nicht für die Landingpage.** Es liefert
-  je Thema vier Hex-Farben und zwei Schriften (Dokumentschriften wie DejaVu),
-  sonst nichts — kein Prüfer, kein Design-System. Für das Handbuch-PDF und für
-  Verkaufsunterlagen ist es richtig. Die Landingpage hat eine eigene,
-  ausgearbeitete Optik (Grün, DM Mono, eigene Schattenwerte); eines der zehn
-  Fertigthemen darüberzulegen würde sie ERSETZEN, nicht verbessern. Wer dort
-  vereinheitlichen will, schreibt die vorhandenen Werte als eigenes Thema fest,
-  statt ein fremdes zu übernehmen.
-- Der Browser hier erreicht das Internet nicht, `localhost` aber schon.
-  Screenshots der eigenen Anwendung sind deshalb die einzige verlässliche
-  Sichtprüfung — und sie funktionieren.
-- **Was `ListSkills` auflistet, ist nicht alles.** `dataviz` steht dort nicht
-  und ist trotzdem da (gebündelte Fähigkeit); `design:critique` ist als Plugin
-  gelistet und trotzdem nicht aufrufbar. Verfügbarkeit wird ausprobiert, nicht
-  aus einer Liste geschlossen — dieselbe Positivkontrolle wie in der Recherche,
-  nur auf das eigene Werkzeug angewandt.
+## Hooks und Werkzeuge, die sich selbst durchsetzen
 
-## Ein Ort für den Stil (Befund 12.08.2026)
+In `.claude/settings.json` stehen zwei PreToolUse-Wächter: gegen den durch eine
+Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
 
-In **GymDocu** gemessen, nicht geschätzt: 47 eigene `<style>`-Blöcke in 24
-Dateien, kein einziges CSS-File. Jede Seite brachte ihre eigenen Farben,
-Abstände und Radien mit. Solange das so ist, macht kein Design-Werkzeug das
-System schöner — es macht eine von 24 Stellen schöner.
+- **Hooks laufen unter `/bin/sh`, nicht unter `bash`.** Im tatsächlichen Umfeld
+  prüfen, nicht im bequemen.
+- **Ein Hook, der nie ausgeführt wurde, ist eine Absichtserklärung.** Nach jeder
+  Änderung an `.claude/settings.json` gegen echte Eingabe-JSON laufen lassen und
+  BEIDES prüfen: Exit-Code UND ob die Ausgabe gültiges JSON ist (`jq -e .`).
+- **Ein Wächter, der nur den Sperrfall prüft, prüft nichts.** Die Durchlass-Fälle
+  gehören zu jedem Lauf dazu.
+- **Ein Hook muss offen ausfallen.** Fehlt `jq`, ist die Prüfung wirkungslos —
+  aber sie darf nicht jeden Befehl der Sitzung blockieren.
+- **Wer das Problem schon gelöst hat, darf nicht aufgehalten werden.**
+  Opt-out bei `pipefail`/`PIPESTATUS`, und die Meldung nennt den Ausweg.
+- **Apostrophe gehören nicht in eine einfach gequotete Zeichenkette.** Für
+  Code-Beispiele in Hook-Meldungen Backticks nehmen.
+- **Was eine Datei verspricht, muss das Werkzeug erzwingen, nicht die Prosa.**
+  Der `kundschafter` war als „ändert nichts" beschrieben und hatte `Bash` in
+  der Werkzeugliste — die Werkzeugliste ist die Zusicherung, also flog `Bash` raus.
 
-**Die zentrale Quelle existiert seit dem 12.08.2026: `core/design.js` im
-GymDocu-Repo**, exportiert `DESIGN_CSS` (ein `:root{}`-Block mit
-`--gd-…`-Token), Vorbild `core/icons.js` mit seinen 114 Icons. Sie ist zu
-BENUTZEN, nicht neu zu erfinden — wer hier eine zweite Stil-Quelle anlegt,
-hat das Problem verdoppelt statt gelöst. Wie sie eingebunden wird und was
-bereits umgestellt ist, steht in `/workspace/gymdocu/CLAUDE.md`; dort
-gehört es hin, weil der Executer die CLAUDE.md seines Zielrepos liest.
+## Abhängigkeiten anheben
 
-Regel für Neues in GymDocu: **keine neuen Farb-, Abstands-, Radien- oder
-Schriftgrößenwerte direkt in einen `<style>`-Block schreiben.** Was
-gebraucht wird, kommt aus `DESIGN_CSS`; fehlt es dort, wird es dort
-ergänzt.
+- **Bei jedem Hauptversionssprung zuerst `npm diff`.** Kostet nichts, ist
+  installiert:
 
-**Dieses Repo hat dieselbe Krankheit und noch keine Kur.** `server.js`
-bringt in seinem `<head>` eigene Farben mit (`#111418`, `#1c2128`,
-`#2a2f36`, `#e60023`), eigene Radien und Segoe UI — ohne jede zentrale
-Quelle. Die Regel oben ist hier also derzeit gar nicht erfüllbar. Das ist
-eine bekannte Lücke, kein Versehen: Wer hier an der Oberfläche baut,
-benennt sie, statt so zu tun, als gälte die Regel schon.
+      npm diff --diff=<paket>@<alt> --diff=<paket>@<neu> --diff-name-only
+      npm diff --diff=<paket>@<alt> --diff=<paket>@<neu> -- index.d.ts
+
+  Beim otplib-Fall zeigte die zweite Zeile in einer Sekunde den verschwundenen
+  Export, an dem die Zwei-Faktor-Anmeldung hing. Billigster Erstgriff.
+- **Majors gehören in einen eigenen PR.** In beiden Repos steht dafür
+  `update-types: ["minor", "patch"]` in der Dependabot-Gruppe. Gewinn ist nicht
+  weniger Rauschen, sondern eindeutige Schuldzuweisung.
+
+## Was diese Umgebung wirklich kann (nachgemessen)
+
+- **`curl` erreicht das offene Netz.** Für APIs und einfache Seiten der
+  verlässlichste Weg. `gesetze-im-internet.de` liefert brauchbaren Volltext.
+- **Der Browser (Chromium/Playwright) erreicht das Internet NICHT** — selbst
+  example.com scheitert. Er ist ausschließlich für lokale Server da; Screenshots
+  der eigenen Anwendung funktionieren und sind die einzige verlässliche
+  Sichtprüfung.
+- **Viele Seiten sind reine JavaScript-Anwendungen** (TMview, EUIPO,
+  publikationen.dguv.de): `curl` bekommt nur die leere Hülle. Erkennbar daran,
+  dass Wurzel und 404-Seite gleich groß sind. Andere blocken mit einer
+  JavaScript-Prüfung (HTTP 403, „Please enable JavaScript"). Solche Auskünfte
+  sind unvollständig — und das ist zu sagen, nicht zu kaschieren.
+- **Der erste Fehlschlag ist keine Antwort.** 503, leere Seite, Zeitüberschreitung:
+  Anfang der Suche, nicht ihr Ende. Andere Endpunkte, andere Werkzeuge, andere
+  Formulierung — und wenn nichts geht, wird die Lücke benannt.
+- **Umlaute in `grep`:** `.` matcht ein Byte, ein Umlaut belegt in UTF-8 zwei.
+  `gef.hrdungsbeurteilung` findet nichts. Ohne Umlaut suchen oder `-P`.
+
+## Werkzeuge
+
+- **Bei jeder Änderung am Aussehen den Skill `/design-pruefung` laden**
+  (`.claude/skills/design-pruefung/`). Der Kontrastrechner geht auch direkt:
+  `node .claude/skills/design-pruefung/kontrast.js "<vg>:<bg>[:<rolle>]" …`
+  — Rollen sind `text`, `grosstext`, `flaeche`; Exit 1, sobald ein Paar seine
+  Schwelle reißt, damit auch als Gate einsetzbar. Ersetzt keine vollständige
+  Barrierefreiheitsprüfung; was fehlt, steht in der dortigen SKILL.md. Die
+  Bagatellgrenze gilt weiter: ein umbenannter Button ist keine Änderung am
+  Aussehen.
+- **Diagramme und Kennzahlen:** vorher `dataviz` laden. Form zuerst, Farbe
+  ZULETZT; Palette mit `scripts/validate_palette.js` rechnen; nie zwei y-Achsen.
+- **`theme-factory` ist für Dokumente, nicht für die Landingpage.** Vier
+  Hex-Farben und zwei Schriften je Thema, kein Design-System. Für Handbuch-PDF
+  und Verkaufsunterlagen richtig; die Landingpage hat eine eigene, ausgearbeitete
+  Optik, die ein Fertigthema ERSETZEN statt verbessern würde.
+- **Die Marktplatz-Plugins sind in Claude-Code-Sitzungen NICHT geladen.**
+  `design:critique`, `design:design-critique`, `engineering:code-review` — alle
+  „Unknown skill", obwohl im Konto aktiv und aufgelistet.
+- **Verfügbarkeit wird ausprobiert, nicht aus einer Liste geschlossen.**
+  `dataviz` steht in keiner Liste und ist da; `design:critique` steht drin und
+  ist es nicht. Dieselbe Positivkontrolle wie in der Recherche.
+
+## Ein Ort für den Stil
+
+**Die zentrale Quelle ist `core/design.js` im GymDocu-Repo**, exportiert
+`DESIGN_CSS` (ein `:root{}`-Block mit `--gd-…`-Token). Sie ist zu BENUTZEN,
+nicht neu zu erfinden. Einbindung und Umstellungsstand stehen in
+`/workspace/gymdocu/CLAUDE.md`, weil der Executer die CLAUDE.md seines
+Zielrepos liest.
+
+Regel für Neues in GymDocu: **keine neuen Farb-, Radien- oder
+Schriftgrößenwerte direkt in einen `<style>`-Block.** Was fehlt, wird in
+`DESIGN_CSS` ergänzt.
+
+Zwei bekannte Lücken, die zu BENENNEN sind statt zu übergehen:
+
+- **Für Abstände gibt es kein Token**, und der Rohwert-Wächter deckt sie nicht
+  ab (`ALLE_TYPEN` in `test/rohwert-scan.js` kennt nur farbe/radius/
+  schriftgroesse/schriftfamilie). Die Regel ist dort derzeit nicht erfüllbar.
+- **Dieses Repo hat keine zentrale Quelle.** `server.js` bringt in seinem
+  `<head>` eigene Farben (`#111418`, `#1c2128`, `#2a2f36`, `#e60023`), eigene
+  Radien und Segoe UI mit.
 
 ## Kontext
 
-Die eigentliche Arbeit findet meist im GymDocu-Repo statt
-(/workspace/gymdocu, github.com/Belehrung/Gymdocu). Etablierte Regeln dort:
-Deaktivieren statt Löschen, Migrationen für alle Studios, PR-Nummern erst
-nennen, wenn GitHub sie bestätigt hat.
+Die eigentliche Arbeit findet meist im GymDocu-Repo statt (/workspace/gymdocu,
+github.com/Belehrung/Gymdocu), daneben im Hauptserver
+(/workspace/gymdocu-hauptserver). Etablierte Regeln dort: Deaktivieren statt
+Löschen, jede Abfrage trägt `studio_id`, Migrationen für alle Studios,
+PR-Nummern erst nennen, wenn GitHub sie bestätigt hat.
