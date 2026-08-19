@@ -42,7 +42,12 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
    aktuell?**
    - `bash tools/live-check.sh` beantwortet das ERSTE: Landingpage,
      Echtheitsprüfung, Abweisung auf der Studio-Subdomain, ausgelieferte
-     Handbuch-Version, Zertifikatslaufzeit.
+     Handbuch-Version. Die **Zertifikatslaufzeit NICHT** — jede TLS-Verbindung
+     aus dieser Umgebung wird vom Egress-Proxy neu signiert, gemessen würde
+     dessen 30-Tage-Zertifikat statt des echten. Das Skript sagt das seit dem
+     19.08.2026 selbst (ℹ statt ✓) und zählt den Punkt als ungeprüft. Wer die
+     Laufzeit wissen will, liest den Wochenreport (Telegram, Mo 06:00 UTC) —
+     der misst auf dem Server und warnt unter 21 Tagen.
    - Das ZWEITE beantwortet er NICHT. Ein Betrieb kann laufen und trotzdem
      zwölf Commits alt sein; der live-check meldet dann völlig zu Recht
      grün. Deshalb den Deploy-Lauf ansehen (`actions_list` auf
