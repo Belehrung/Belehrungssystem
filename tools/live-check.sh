@@ -11,12 +11,23 @@
 # angesichts unterschriebener Protokolle echter Menschen auch nicht vertretbar.
 #
 # Exit 0 = alles steht. Exit 1 = mindestens ein Befund.
+# Ein DRITTER Zustand ändert den Exit-Code nicht: ein mit ℹ markierter Punkt,
+# den diese Umgebung nicht messen kann. Er steht in der Schlusszeile, damit
+# „unauffällig" nicht mit „vollständig geprüft" verwechselt wird.
 set -uo pipefail
 
 WARN_TAGE=21          # unter so vielen Tagen Restlaufzeit meckert der Zertifikatstest
 fehler=0
+ungeprueft=0
 ok()   { echo "  ✓ $*"; }
 warn() { echo "  ⚠ $*"; fehler=$((fehler+1)); }
+# Dritter Zustand, absichtlich getrennt von beiden (19.08.2026): Ein Punkt, den
+# diese Umgebung gar nicht messen KANN, ist weder sauber noch kaputt. Als ok()
+# wäre er eine Lüge, als warn() wäre er dauerhaft rot — und ein dauerhaft
+# roter Wert wird abgeschaltet statt gelesen. Er zählt deshalb einen eigenen Zähler
+# und taucht in der Schlusszeile auf, damit „unauffällig" nie „vollständig
+# geprüft" vortäuscht.
+offen() { echo "  ℹ $*"; ungeprueft=$((ungeprueft+1)); }
 
 # $1 = URL, $2 = Zieldatei, $3 = optionale curl-Zusatzflags (z.B. -L).
 # Kein `|| echo 000`: curl schreibt über -w bei einem Transportfehler SELBST schon
@@ -91,9 +102,25 @@ fi
 # --max-time gedeckelt, openssl war es nicht. Ein Host, der Pakete verschluckt
 # statt abzulehnen, ließ die Prüfung nach einem Merge minutenlang hängen —
 # ausgerechnet das Werkzeug, das den Ausfall melden soll, blieb dann stumm.
-ende=$(timeout 20 openssl s_client -servername gymdocu.de -connect gymdocu.de:443 </dev/null 2>/dev/null \
-       | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
-if [ -z "$ende" ]; then
+# EIN Verbindungsaufbau, daraus Aussteller UND Ablaufdatum — zwei s_client-Aufrufe
+# wären zwei Verbindungen und könnten unterschiedliche Antworten liefern.
+zert=$(timeout 20 openssl s_client -servername gymdocu.de -connect gymdocu.de:443 </dev/null 2>/dev/null \
+       | openssl x509 -noout -issuer -enddate 2>/dev/null)
+aussteller=$(printf '%s\n' "$zert" | sed -n 's/^issuer=//p')
+ende=$(printf '%s\n' "$zert" | sed -n 's/^notAfter=//p')
+
+# Befund 19.08.2026: Diese Umgebung leitet JEDE TLS-Verbindung ueber einen
+# Egress-Proxy, der neu signiert. Gemessen wurde deshalb nie das Zertifikat von
+# gymdocu.de, sondern das des Proxys — und der stellt immer 30-Tage-Zertifikate
+# aus. Die Zeile meldete seit jeher „gültig, noch 30 Tage", auch wenn das echte
+# Zertifikat morgen abliefe. Gegenprobe damals: letsencrypt.org und google.com
+# zeigten von hier aus denselben Aussteller mit denselben 30 Tagen.
+# Erkannt wird der Proxy am Aussteller; das echte Zertifikat kommt von acme.sh.
+# Auf dem SERVER greift dieselbe Messung richtig — der Wochenreport tut das
+# (ops/gymdocu-wochenreport.sh, Mo 06:00 UTC, Warnung unter 21 Tagen).
+if printf '%s' "$aussteller" | grep -qiE 'Egress Gateway|O *= *Anthropic'; then
+    offen "Zertifikat aus dieser Umgebung NICHT prüfbar — TLS wird vom Egress-Proxy neu signiert (Aussteller: ${aussteller}). Die Restlaufzeit wäre dessen eigene, nicht die von gymdocu.de. Serverseitig prüft das der Wochenreport (Mo 06:00 UTC, Warnung unter ${WARN_TAGE} Tagen)."
+elif [ -z "$ende" ]; then
     warn "Zertifikatslaufzeit nicht ermittelbar"
 elif ! ende_ts=$(date -d "$ende" +%s 2>/dev/null); then
     # Vorher ungeprüft: Bei unlesbarem Datum wurde die Subtraktion zu einem
@@ -101,12 +128,18 @@ elif ! ende_ts=$(date -d "$ende" +%s 2>/dev/null); then
     warn "Zertifikat: Ablaufdatum '$ende' nicht lesbar — Laufzeit NICHT geprüft"
 else
     tage=$(( (ende_ts - $(date +%s)) / 86400 ))
-    [ "$tage" -ge "$WARN_TAGE" ] && ok "Zertifikat gültig, noch $tage Tage" \
+    [ "$tage" -ge "$WARN_TAGE" ] && ok "Zertifikat gültig, noch $tage Tage (Aussteller: ${aussteller:-unbekannt})" \
                                  || warn "Zertifikat läuft in $tage Tagen ab ($ende) — Erneuerung prüfen"
 fi
 
 echo
-[ "$fehler" -eq 0 ] && echo "── Live-Betrieb unauffällig ──" || echo "── $fehler Befund(e) — nicht als erledigt melden ──"
+if [ "$fehler" -eq 0 ] && [ "$ungeprueft" -eq 0 ]; then
+    echo "── Live-Betrieb unauffällig ──"
+elif [ "$fehler" -eq 0 ]; then
+    echo "── Live-Betrieb unauffällig, aber $ungeprueft Punkt(e) NICHT geprüft (siehe ℹ) ──"
+else
+    echo "── $fehler Befund(e) — nicht als erledigt melden ──"
+fi
 # Nicht "exit $fehler": Der Kopf verspricht "Exit 1 = mindestens ein Befund",
 # der Zaehler haette bei zwei Befunden aber 2 geliefert. Ein Aufrufer, der auf
 # "-eq 1" prueft, haette genau die schlimmeren Laeufe uebersehen (Befund
