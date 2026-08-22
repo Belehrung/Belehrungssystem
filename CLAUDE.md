@@ -181,7 +181,22 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
   `settings.json` entfernt, statt eine Wirkung vorzutäuschen, die es nicht hat.
 - **Ein Hook, der nie ausgeführt wurde, ist eine Absichtserklärung.** Nach jeder
   Änderung an `.claude/settings.json` gegen echte Eingabe-JSON laufen lassen und
-  BEIDES prüfen: Exit-Code UND ob die Ausgabe gültiges JSON ist (`jq -e .`).
+  BEIDES prüfen: Exit-Code UND ob die Ausgabe gültiges JSON ist (`jq -e .`). Das
+  bleibt so, ist seit 22.08.2026 aber zusätzlich automatisiert:
+  `test/hooks-pruefen.sh` extrahiert beide Hook-Befehle per `jq` direkt aus der
+  echten `.claude/settings.json` (keine Kopie) und prüft sie mit denselben
+  Sperr-/Durchlassfällen, die vorher nur einmalig in einem Scratchpad-Prüfstand
+  liefen — ein Lauf, der mit dem Container verschwunden wäre. `.github/workflows/
+  ci.yml` führt es bei jedem Push/PR aus. Führt eine eigene Sollzahl mit und
+  bricht ab, wenn weniger Fälle liefen als erwartet ("leeres Ergebnis ist nicht
+  sauberes Ergebnis"), und behandelt eine gescheiterte `jq`-Extraktion (Datei
+  fehlt, Struktur geändert) als Fehler, nicht als stillen Durchlauf. **Deckt
+  NICHT ab:** ob die Claude-Code-CLI `.claude/settings.json` tatsächlich so lädt
+  und ausführt wie hier angenommen (siehe C2 — das wurde separat am
+  CLI-Quelltext und per Probe gemessen, nicht von diesem Skript). `tools/
+  live-check.sh` läuft in CI nur mit `bash -n` (Syntax), nicht wirklich — es
+  geht live gegen gymdocu.de, das gehört nicht auf einen Runner, der bei jedem
+  Push feuert.
 - **Ein Wächter, der nur den Sperrfall prüft, prüft nichts.** Die Durchlass-Fälle
   gehören zu jedem Lauf dazu.
 - **Ein Hook muss offen ausfallen.** Fehlt `jq`, ist die Prüfung wirkungslos —

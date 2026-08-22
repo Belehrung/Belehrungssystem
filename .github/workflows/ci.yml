@@ -1,0 +1,30 @@
+name: CI
+
+# Prueft nur die Werkzeuge, die sich selbst durchsetzen (.claude/settings.json,
+# tools/live-check.sh, test/hooks-pruefen.sh) — NICHT die Anwendung selbst,
+# die liegt im GymDocu-Repo. tools/live-check.sh wird hier bewusst NUR auf
+# Syntax geprueft, nicht ausgefuehrt: es geht live gegen gymdocu.de ins
+# offene Netz, und das waere bei jedem Push/PR ein Fremdzugriff obendrein
+# flatterhaft (DNS/TLS/Netzwerk-Flakes wuerden CI grundlos rot faerben).
+"on":
+  push:
+  pull_request:
+
+jobs:
+  hooks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Syntax-Check tools/live-check.sh
+        run: bash -n tools/live-check.sh
+
+      - name: Syntax-Check test/hooks-pruefen.sh
+        run: bash -n test/hooks-pruefen.sh
+
+      - name: .claude/settings.json ist gueltiges JSON
+        # Kaputtes JSON dort legt jede Claude-Code-Sitzung lahm, nicht nur CI.
+        run: jq -e . .claude/settings.json > /dev/null
+
+      - name: Hook-Waechter pruefen (pipe.sh, www.sh)
+        run: sh test/hooks-pruefen.sh
