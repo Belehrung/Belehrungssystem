@@ -45,9 +45,11 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
      Handbuch-Version. Die **Zertifikatslaufzeit NICHT** — jede TLS-Verbindung
      aus dieser Umgebung wird vom Egress-Proxy neu signiert, gemessen würde
      dessen Zertifikat statt des echten. Das Skript sagt das selbst (ℹ statt ✓)
-     und zählt den Punkt als ungeprüft, solange `ERWARTETER_ZERT_AUSSTELLER`
-     im Kopf der Datei ein unbestätigtes TODO ist. Wer die Laufzeit wissen
-     will, liest den Wochenreport (Telegram, Mo 06:00 UTC) — der misst auf dem
+     und zählt den Punkt als ungeprüft, solange kein Aussteller mit der
+     Organisation aus `ERWARTETE_ZERT_ORGANISATION` (Kopf der Datei) passt —
+     in dieser Umgebung bleibt das so, weil der Egress-Proxy neu signiert.
+     Wer die Laufzeit wissen will, liest den Wochenreport (Telegram, Mo
+     06:00 UTC) — der misst auf dem
      Server und warnt unter 21 Tagen. Seit 22.08.2026 prüft es zusätzlich den
      internen Health-Endpunkt — aber nur mit `GYMDOCU_HEALTH_TOKEN` gesetzt,
      sonst bleibt auch dieser Punkt ehrlich ℹ statt grün.

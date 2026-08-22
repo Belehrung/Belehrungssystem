@@ -24,14 +24,26 @@ set -uo pipefail
 WARN_TAGE=21          # unter so vielen Tagen Restlaufzeit meckert der Zertifikatstest
 
 # Sollwert fuer den ECHTEN Aussteller von gymdocu.de (nicht den des
-# Egress-Proxys dieser Umgebung) — muss zu dem passen, was acme.sh auf dem
-# Server tatsaechlich ausstellt. TODO(Betreiber): einmal den echten
-# Aussteller-String bestaetigen und hier eintragen; bis dahin bleibt Abschnitt 5
-# bewusst offen() statt zu raten (B2, 22.08.2026 — vorher stand hier eine
-# Positivliste, die den Proxy erkennen sollte: aendert der Betreiber dessen
+# Egress-Proxys dieser Umgebung). B2, 22.08.2026 — vorher stand hier eine
+# Positivliste, die den PROXY erkennen sollte: aendert der Betreiber dessen
 # Aussteller-Text, waere die Pruefung stillschweigend in den else-Zweig
-# gefallen und haette wieder das Proxy-Zertifikat als "gueltig" gemeldet).
-ERWARTETER_ZERT_AUSSTELLER=""
+# gefallen und haette wieder das Proxy-Zertifikat als "gueltig" gemeldet.
+#
+# Herkunft (22.08.2026, vom Betreiber nachgewiesen): /workspace/gymdocu-
+# hauptserver/ops/README.md, Abschnitt "acme.sh (TLS-Wildcard)" — der DNS-01-
+# Weg wurde am 21.08.2026 auf einem Wegwerf-Namen nachgewiesen, woertlich
+# "TXT-Eintrag ueber die IONOS-API angelegt, DNS-Verbreitung abgewartet, von
+# Let's Encrypt geprueft". Das Wildcard *.gymdocu.de kommt damit von Let's
+# Encrypt.
+#
+# Verglichen wird NUR die ORGANISATION im Aussteller-DN, nicht die ganze
+# Zeile: Let's Encrypt wechselt seine Zwischenzertifikate (R10, R11, E5, …) —
+# ein exakter DN-Vergleich fiele bei jedem Wechsel lautlos auf offen()
+# zurueck, ohne dass es jemand merkt. Die Organisation "Let's Encrypt"
+# aendert sich dabei nicht. Apostroph ist der normale ASCII-Apostroph
+# (U+0027), wie in jedem oeffentlichen Let's-Encrypt-Zertifikat — nicht ein
+# typografischer.
+ERWARTETE_ZERT_ORGANISATION="Let's Encrypt"
 
 fehler=0
 ungeprueft=0
@@ -139,13 +151,16 @@ ende=$(printf '%s\n' "$zert" | sed -n 's/^notAfter=//p')
 # was NICHT danach aussah, fiel in den else-Zweig und wurde als "gueltig"
 # gemessen. Aendert der Umgebungsbetreiber diesen Text, faellt die Erkennung
 # lautlos aus und die Zeile misst wieder das Proxy-Zertifikat als echtes.
-# Umgedreht: nur ein Aussteller, der EXAKT zum bestaetigten Sollwert
-# $ERWARTETER_ZERT_AUSSTELLER passt, wird gemessen. Alles andere — auch ein
-# unbestaetigter (leerer) Sollwert — bleibt offen() statt zu raten.
-if [ -z "$ERWARTETER_ZERT_AUSSTELLER" ]; then
-    offen "Zertifikat-Aussteller-Pruefung NICHT konfiguriert (ERWARTETER_ZERT_AUSSTELLER ist noch ein TODO, siehe Kopf der Datei) — Aussteller aus dieser Umgebung: ${aussteller:-unbekannt} (das kann ebenso gut der Egress-Proxy sein wie gymdocu.de selbst). Serverseitig prüft das der Wochenreport (Mo 06:00 UTC, Warnung unter ${WARN_TAGE} Tagen)."
-elif [ "$aussteller" != "$ERWARTETER_ZERT_AUSSTELLER" ]; then
-    offen "Zertifikat-Aussteller passt nicht zum bestätigten Sollwert (\"$ERWARTETER_ZERT_AUSSTELLER\") — vermutlich der Egress-Proxy, der jede TLS-Verbindung aus dieser Umgebung neu signiert (Aussteller hier: ${aussteller:-unbekannt}). Die Restlaufzeit wäre dann dessen eigene, nicht die von gymdocu.de. Serverseitig prüft das der Wochenreport (Mo 06:00 UTC, Warnung unter ${WARN_TAGE} Tagen)."
+# Umgedreht: nur ein Aussteller, dessen Organisation zum bestaetigten
+# Sollwert $ERWARTETE_ZERT_ORGANISATION passt, wird gemessen (grep -F, keine
+# Regex-Sonderzeichen-Sorgen wegen des Apostrophs). Alles andere — auch ein
+# unbestaetigter (leerer) Sollwert — bleibt offen() statt zu raten. Beide
+# openssl-Schreibweisen abgedeckt ("O = X" mit Leerzeichen um "=", wie es
+# diese openssl-Version bei -noout -issuer ausgibt, und "O=X" ohne).
+if [ -z "$ERWARTETE_ZERT_ORGANISATION" ]; then
+    offen "Zertifikat-Aussteller-Pruefung NICHT konfiguriert (ERWARTETE_ZERT_ORGANISATION ist noch ein TODO, siehe Kopf der Datei) — Aussteller aus dieser Umgebung: ${aussteller:-unbekannt} (das kann ebenso gut der Egress-Proxy sein wie gymdocu.de selbst). Serverseitig prüft das der Wochenreport (Mo 06:00 UTC, Warnung unter ${WARN_TAGE} Tagen)."
+elif ! printf '%s' "$aussteller" | grep -qF "O = ${ERWARTETE_ZERT_ORGANISATION}" && ! printf '%s' "$aussteller" | grep -qF "O=${ERWARTETE_ZERT_ORGANISATION}"; then
+    offen "Zertifikat-Aussteller passt nicht zum bestätigten Sollwert (Organisation „${ERWARTETE_ZERT_ORGANISATION}“) — vermutlich der Egress-Proxy, der jede TLS-Verbindung aus dieser Umgebung neu signiert (Aussteller hier: ${aussteller:-unbekannt}). Die Restlaufzeit wäre dann dessen eigene, nicht die von gymdocu.de. Serverseitig prüft das der Wochenreport (Mo 06:00 UTC, Warnung unter ${WARN_TAGE} Tagen)."
 elif [ -z "$ende" ]; then
     warn "Zertifikatslaufzeit nicht ermittelbar"
 elif ! ende_ts=$(date -d "$ende" +%s 2>/dev/null); then
