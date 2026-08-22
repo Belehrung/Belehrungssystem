@@ -44,10 +44,15 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
      Echtheitsprüfung, Abweisung auf der Studio-Subdomain, ausgelieferte
      Handbuch-Version. Die **Zertifikatslaufzeit NICHT** — jede TLS-Verbindung
      aus dieser Umgebung wird vom Egress-Proxy neu signiert, gemessen würde
-     dessen 30-Tage-Zertifikat statt des echten. Das Skript sagt das seit dem
-     19.08.2026 selbst (ℹ statt ✓) und zählt den Punkt als ungeprüft. Wer die
-     Laufzeit wissen will, liest den Wochenreport (Telegram, Mo 06:00 UTC) —
-     der misst auf dem Server und warnt unter 21 Tagen.
+     dessen Zertifikat statt des echten. Das Skript sagt das selbst (ℹ statt ✓)
+     und zählt den Punkt als ungeprüft, solange kein Aussteller mit der
+     Organisation aus `ERWARTETE_ZERT_ORGANISATION` (Kopf der Datei) passt —
+     in dieser Umgebung bleibt das so, weil der Egress-Proxy neu signiert.
+     Wer die Laufzeit wissen will, liest den Wochenreport (Telegram, Mo
+     06:00 UTC) — der misst auf dem
+     Server und warnt unter 21 Tagen. Seit 22.08.2026 prüft es zusätzlich den
+     internen Health-Endpunkt — aber nur mit `GYMDOCU_HEALTH_TOKEN` gesetzt,
+     sonst bleibt auch dieser Punkt ehrlich ℹ statt grün.
    - Das ZWEITE beantwortet er NICHT. Ein Betrieb kann laufen und trotzdem
      zwölf Commits alt sein; der live-check meldet dann völlig zu Recht
      grün. Deshalb den Deploy-Lauf ansehen (`actions_list` auf
@@ -168,10 +173,30 @@ In `.claude/settings.json` stehen zwei PreToolUse-Wächter: gegen den durch eine
 Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
 
 - **Hooks laufen unter `/bin/sh`, nicht unter `bash`.** Im tatsächlichen Umfeld
-  prüfen, nicht im bequemen.
+  prüfen, nicht im bequemen. Nachgemessen (22.08.2026, C2): `.claude/settings.json`
+  trug bei beiden Hooks zusätzlich `"shell": "bash"` — dieses Feld gehört nicht
+  zum Hook-Schema der Claude-Code-CLI und wird beim Ausführen ignoriert
+  (bestätigt sowohl im Quelltext der CLI als auch per Probe: `[[ 1 -eq 1 ]]`
+  scheiterte, `$BASH_VERSION` blieb leer). Das Feld wurde deshalb aus
+  `settings.json` entfernt, statt eine Wirkung vorzutäuschen, die es nicht hat.
 - **Ein Hook, der nie ausgeführt wurde, ist eine Absichtserklärung.** Nach jeder
   Änderung an `.claude/settings.json` gegen echte Eingabe-JSON laufen lassen und
-  BEIDES prüfen: Exit-Code UND ob die Ausgabe gültiges JSON ist (`jq -e .`).
+  BEIDES prüfen: Exit-Code UND ob die Ausgabe gültiges JSON ist (`jq -e .`). Das
+  bleibt so, ist seit 22.08.2026 aber zusätzlich automatisiert:
+  `test/hooks-pruefen.sh` extrahiert beide Hook-Befehle per `jq` direkt aus der
+  echten `.claude/settings.json` (keine Kopie) und prüft sie mit denselben
+  Sperr-/Durchlassfällen, die vorher nur einmalig in einem Scratchpad-Prüfstand
+  liefen — ein Lauf, der mit dem Container verschwunden wäre. `.github/workflows/
+  ci.yml` führt es bei jedem Push/PR aus. Führt eine eigene Sollzahl mit und
+  bricht ab, wenn weniger Fälle liefen als erwartet ("leeres Ergebnis ist nicht
+  sauberes Ergebnis"), und behandelt eine gescheiterte `jq`-Extraktion (Datei
+  fehlt, Struktur geändert) als Fehler, nicht als stillen Durchlauf. **Deckt
+  NICHT ab:** ob die Claude-Code-CLI `.claude/settings.json` tatsächlich so lädt
+  und ausführt wie hier angenommen (siehe C2 — das wurde separat am
+  CLI-Quelltext und per Probe gemessen, nicht von diesem Skript). `tools/
+  live-check.sh` läuft in CI nur mit `bash -n` (Syntax), nicht wirklich — es
+  geht live gegen gymdocu.de, das gehört nicht auf einen Runner, der bei jedem
+  Push feuert.
 - **Ein Wächter, der nur den Sperrfall prüft, prüft nichts.** Die Durchlass-Fälle
   gehören zu jedem Lauf dazu.
 - **Ein Hook muss offen ausfallen.** Fehlt `jq`, ist die Prüfung wirkungslos —
@@ -183,6 +208,13 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
 - **Was eine Datei verspricht, muss das Werkzeug erzwingen, nicht die Prosa.**
   Der `kundschafter` war als „ändert nichts" beschrieben und hatte `Bash` in
   der Werkzeugliste — die Werkzeugliste ist die Zusicherung, also flog `Bash` raus.
+- **Bekannte Grenze:** Der Pipe-Wächter matcht auf die Zeichenkette `test/run.sh`
+  im Befehl, nicht auf einen Dateipfad, und gilt für die ganze Sitzung — er hat
+  am 22.08.2026 nachweislich einen Befehl blockiert, der auf `/workspace/gymdocu`
+  zielte. Eine Sitzung, deren Projektverzeichnis `/workspace/gymdocu` ist, hätte
+  aber gar keinen Wächter, weil dort kein `.claude/settings.json` liegt. Keine
+  zweite Kopie dorthin legen — sie würde driften. Wer dort ohne diese Sitzung
+  Testläufe pipet, ist ungeschützt.
 
 ## Abhängigkeiten anheben
 
