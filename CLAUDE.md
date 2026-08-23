@@ -16,6 +16,23 @@ Vorgabe des Betreibers (10.08.2026): Der Haupt-Agent baut selbst nichts.
 - Lesen, Diagnose, Recherche und Git-Verwaltung darf der Haupt-Agent weiterhin
   selbst erledigen; nur das Bauen ist delegiert.
 
+## Modellwahl beim Delegieren
+
+Vorgabe des Betreibers (23.08.2026): **Claude Fable 5 ist reserviert.** Nur für
+
+- komplexe Refactorings der GESAMTEN Systemarchitektur, oder
+- vollautomatische CI/CD- und Testing-Pipelines.
+
+Alles andere geht an den Standard-Executer. „Reserviert" heißt: Der Regelfall
+ist der Standard, nicht die Ausnahme. Ein Auftrag über mehrere Dateien ist noch
+kein Architektur-Refactoring, und ein einzelner CI-Job ist noch keine Pipeline —
+wer die Regel so auslegt, hat sie aufgehoben. Im Zweifel Standard-Executer.
+
+Ein Modellwechsel ist ohnehin nie die Erklärung für ein besseres Ergebnis,
+solange sich am selben Tag auch die Aufträge geändert haben. Wer beides
+zugleich ändert, kann hinterher nicht sagen, woran es lag — und darf es dann
+auch nicht behaupten.
+
 ## Prüf-Ritual des Haupt-Agenten
 
 Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
