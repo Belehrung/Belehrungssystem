@@ -49,12 +49,27 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
 4. **Volle Testsuite** (test/run.sh). WÄHREND des Laufs keine parallelen
    Skripte gegen dieselbe DB: der Studio-Zähl-Wächter schlägt sonst
    falsch an, und eine Pipe (`| tail`) verschluckt seinen Fehler-Exit.
-5. Erst dann Commit und Push. PR-Nummern erst nennen, wenn GitHub sie
-   bestätigt hat.
+5. Erst dann Commit und Push.
 6. **Die CI ist die letzte Instanz, nicht der eigene Prüfstand.** Fertig
-   ist, was GitHub Actions grün nennt. Der Merge-Link geht deshalb ERST
-   nach grüner CI an den Betreiber — die lokale Suite hat schon grün
+   ist, was GitHub Actions grün nennt — die lokale Suite hat schon grün
    gemeldet, während die CI rot war.
+6a. **Der Link geht ERST raus, wenn RESTLOS alles fertig ist — Kontrolle
+   eingeschlossen** (Betreiber-Vorgabe 24.08.2026). Also: Diff gelesen,
+   volle Suite grün, **unabhängige Review durch UND ihre Befunde
+   nachgezogen**, CI grün. Vorher wird der PR gar nicht erwähnt — kein
+   „Entwurf, wartet noch auf …", keine Nummer, keine URL.
+   Grund: Ein Link liest sich als „fertig", egal was danebensteht. Am
+   24.08.2026 lieferte der Haupt-Agent zwei Entwurfs-Links mit dem Zusatz
+   „wartet noch auf die Prüfung" — der Betreiber mergte einen davon
+   folgerichtig sofort, während die Vier-Augen-Prüfung noch lief. Die
+   Einschränkung im Fließtext hebt den Link nicht auf.
+   **Pushen ja, melden nein.** Der Branch wird trotzdem sofort gepusht (ein
+   Push merged nichts und liefert nichts aus, er sichert nur — am 24.08.2026
+   ging ein fertiger, ungepushter Bau bei einer Container-Rücksetzung
+   verloren). Nur die MELDUNG an den Betreiber wartet.
+   Zwischenstände ohne Link sind weiterhin erwünscht: „#56 gebaut, Suite
+   grün, Prüfung läuft" ist eine Auskunft, „…, hier ist der PR" ist eine
+   Freigabe.
 7. **Nach dem Merge zweierlei prüfen — steht der Betrieb, und ist er
    aktuell?**
    - `bash tools/live-check.sh` beantwortet das ERSTE: Landingpage,
