@@ -94,6 +94,18 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
      `git pull --ff-only origin master` auf dem Server — und für alles, was
      unter `/usr/local/bin/` liegt, zusätzlich ein `install`. Ohne das läuft
      die alte Fassung weiter.
+   - **Eine Änderung an `ops/deploy.sh` wirkt erst beim ÜBERNÄCHSTEN Deploy.**
+     SSH startet das Skript, und dieses laufende Skript holt erst danach den
+     neuen Stand: ausgeführt hat die ALTE Fassung, die neue liegt hinterher
+     nur auf der Platte. Gemessen am 26.08.2026 (PR #218): das Log zeigte
+     `Updating 38cb20c..1885ea0` und trotzdem die alte Zeile
+     `✓ Health-Check OK (Versuch 1)` statt des neuen `ops/health-gate.sh`,
+     dazu `ℹ Schritt 2 … NICHT GEPRÜFT`, obwohl `ops/deploy.sh:108` das nötige
+     Flag setzt. Was als eigener Unterprozess startet (`node ops/boot-smoke.js`),
+     war dagegen schon neu — daher die widersprüchlich wirkende Mischung.
+     Folge für die Meldung: ein Gate, das mit seinem eigenen Deploy
+     ausgeliefert wurde, ist AUSGELIEFERT, nicht BEWIESEN. Das zeigt sich erst
+     am nächsten Merge, und bis dahin wird es nicht als „geprüft" gemeldet.
    - In beiden Fällen gilt: Diese Prüfungen sagen „der Betrieb läuft und ist
      aktuell", NICHT „die Änderung wirkt richtig". Was in der Datenbank
      steht, bleibt unsichtbar und soll es bleiben.
