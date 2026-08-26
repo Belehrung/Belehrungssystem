@@ -144,7 +144,10 @@ ende=$(printf '%s\n' "$zert" | sed -n 's/^notAfter=//p')
 # Zertifikat morgen abliefe. Gegenprobe damals: letsencrypt.org und google.com
 # zeigten von hier aus denselben Aussteller mit denselben 30 Tagen.
 # Auf dem SERVER greift dieselbe Messung richtig — der Wochenreport tut das
-# (ops/gymdocu-wochenreport.sh, Mo 06:00 UTC, Warnung unter 21 Tagen).
+# (ops/gymdocu-wochenreport.sh, Mo 06:00 UTC). Dessen Warnschwelle steht hier
+# BEWUSST als Verweis statt als Zahl (Review-Befund 25.08.2026): sie ist dort
+# ein eigenes Literal, unabhaengig von WARN_TAGE hier. Wer WARN_TAGE aendert,
+# haette sonst eine Server-Warnung versprochen, die so nicht kommt.
 #
 # B2, 22.08.2026: Frueher stand hier eine POSITIVLISTE, die den Proxy an
 # seinem Aussteller-Text erkannte ("Egress Gateway|O *= *Anthropic") — alles,
@@ -158,9 +161,9 @@ ende=$(printf '%s\n' "$zert" | sed -n 's/^notAfter=//p')
 # openssl-Schreibweisen abgedeckt ("O = X" mit Leerzeichen um "=", wie es
 # diese openssl-Version bei -noout -issuer ausgibt, und "O=X" ohne).
 if [ -z "$ERWARTETE_ZERT_ORGANISATION" ]; then
-    offen "Zertifikat-Aussteller-Pruefung NICHT konfiguriert (ERWARTETE_ZERT_ORGANISATION ist noch ein TODO, siehe Kopf der Datei) — Aussteller aus dieser Umgebung: ${aussteller:-unbekannt} (das kann ebenso gut der Egress-Proxy sein wie gymdocu.de selbst). Serverseitig prüft das der Wochenreport (Mo 06:00 UTC, Warnung unter ${WARN_TAGE} Tagen)."
+    offen "Zertifikat-Aussteller-Pruefung NICHT konfiguriert (ERWARTETE_ZERT_ORGANISATION ist noch ein TODO, siehe Kopf der Datei) — Aussteller aus dieser Umgebung: ${aussteller:-unbekannt} (das kann ebenso gut der Egress-Proxy sein wie gymdocu.de selbst). Serverseitig prüft das der Wochenreport (Mo 06:00 UTC; Schwelle s. ops/gymdocu-wochenreport.sh)."
 elif ! printf '%s' "$aussteller" | grep -qF "O = ${ERWARTETE_ZERT_ORGANISATION}" && ! printf '%s' "$aussteller" | grep -qF "O=${ERWARTETE_ZERT_ORGANISATION}"; then
-    offen "Zertifikat-Aussteller passt nicht zum bestätigten Sollwert (Organisation „${ERWARTETE_ZERT_ORGANISATION}“) — vermutlich der Egress-Proxy, der jede TLS-Verbindung aus dieser Umgebung neu signiert (Aussteller hier: ${aussteller:-unbekannt}). Die Restlaufzeit wäre dann dessen eigene, nicht die von gymdocu.de. Serverseitig prüft das der Wochenreport (Mo 06:00 UTC, Warnung unter ${WARN_TAGE} Tagen)."
+    offen "Zertifikat-Aussteller passt nicht zum bestätigten Sollwert (Organisation „${ERWARTETE_ZERT_ORGANISATION}“) — vermutlich der Egress-Proxy, der jede TLS-Verbindung aus dieser Umgebung neu signiert (Aussteller hier: ${aussteller:-unbekannt}). Die Restlaufzeit wäre dann dessen eigene, nicht die von gymdocu.de. Serverseitig prüft das der Wochenreport (Mo 06:00 UTC; Schwelle s. ops/gymdocu-wochenreport.sh)."
 elif [ -z "$ende" ]; then
     warn "Zertifikatslaufzeit nicht ermittelbar"
 elif ! ende_ts=$(date -d "$ende" +%s 2>/dev/null); then
@@ -232,8 +235,15 @@ if [ "$fehler" -eq 0 ] && [ "$ungeprueft" -eq 0 ]; then
     echo "── Live-Betrieb unauffällig ──"
 elif [ "$fehler" -eq 0 ]; then
     echo "── Live-Betrieb unauffällig, aber $ungeprueft Punkt(e) NICHT geprüft (siehe ℹ) ──"
-else
+elif [ "$ungeprueft" -eq 0 ]; then
     echo "── $fehler Befund(e) — nicht als erledigt melden ──"
+else
+    # Review-Befund 25.08.2026: Sobald es einen Befund gab, fiel die Zahl der
+    # UNGEPRUEFTEN Punkte hier heraus. Ein Lauf mit einem HTTP-Fehler plus
+    # nicht messbarem Zertifikat endete mit "1 Befund(e)" und keinem Hinweis,
+    # dass ein zweiter Punkt nie gemessen wurde — also genau im gemischten
+    # Fall die Verwechslung, gegen die der dritte Zustand eingefuehrt wurde.
+    echo "── $fehler Befund(e), zusätzlich $ungeprueft Punkt(e) NICHT geprüft (siehe ℹ) — nicht als erledigt melden ──"
 fi
 # Nicht "exit $fehler": Der Kopf verspricht "Exit 1 = mindestens ein Befund",
 # der Zaehler haette bei zwei Befunden aber 2 geliefert. Ein Aufrufer, der auf

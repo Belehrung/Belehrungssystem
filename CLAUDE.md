@@ -49,12 +49,27 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
 4. **Volle Testsuite** (test/run.sh). WÄHREND des Laufs keine parallelen
    Skripte gegen dieselbe DB: der Studio-Zähl-Wächter schlägt sonst
    falsch an, und eine Pipe (`| tail`) verschluckt seinen Fehler-Exit.
-5. Erst dann Commit und Push. PR-Nummern erst nennen, wenn GitHub sie
-   bestätigt hat.
+5. Erst dann Commit und Push.
 6. **Die CI ist die letzte Instanz, nicht der eigene Prüfstand.** Fertig
-   ist, was GitHub Actions grün nennt. Der Merge-Link geht deshalb ERST
-   nach grüner CI an den Betreiber — die lokale Suite hat schon grün
+   ist, was GitHub Actions grün nennt — die lokale Suite hat schon grün
    gemeldet, während die CI rot war.
+6a. **Der Link geht ERST raus, wenn RESTLOS alles fertig ist — Kontrolle
+   eingeschlossen** (Betreiber-Vorgabe 24.08.2026). Also: Diff gelesen,
+   volle Suite grün, **unabhängige Review durch UND ihre Befunde
+   nachgezogen**, CI grün. Vorher wird der PR gar nicht erwähnt — kein
+   „Entwurf, wartet noch auf …", keine Nummer, keine URL.
+   Grund: Ein Link liest sich als „fertig", egal was danebensteht. Am
+   24.08.2026 lieferte der Haupt-Agent zwei Entwurfs-Links mit dem Zusatz
+   „wartet noch auf die Prüfung" — der Betreiber mergte einen davon
+   folgerichtig sofort, während die Vier-Augen-Prüfung noch lief. Die
+   Einschränkung im Fließtext hebt den Link nicht auf.
+   **Pushen ja, melden nein.** Der Branch wird trotzdem sofort gepusht (ein
+   Push merged nichts und liefert nichts aus, er sichert nur — am 24.08.2026
+   ging ein fertiger, ungepushter Bau bei einer Container-Rücksetzung
+   verloren). Nur die MELDUNG an den Betreiber wartet.
+   Zwischenstände ohne Link sind weiterhin erwünscht: „#56 gebaut, Suite
+   grün, Prüfung läuft" ist eine Auskunft, „…, hier ist der PR" ist eine
+   Freigabe.
 7. **Nach dem Merge zweierlei prüfen — steht der Betrieb, und ist er
    aktuell?**
    - `bash tools/live-check.sh` beantwortet das ERSTE: Landingpage,
@@ -79,6 +94,18 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
      `git pull --ff-only origin master` auf dem Server — und für alles, was
      unter `/usr/local/bin/` liegt, zusätzlich ein `install`. Ohne das läuft
      die alte Fassung weiter.
+   - **Eine Änderung an `ops/deploy.sh` wirkt erst beim ÜBERNÄCHSTEN Deploy.**
+     SSH startet das Skript, und dieses laufende Skript holt erst danach den
+     neuen Stand: ausgeführt hat die ALTE Fassung, die neue liegt hinterher
+     nur auf der Platte. Gemessen am 26.08.2026 (PR #218): das Log zeigte
+     `Updating 38cb20c..1885ea0` und trotzdem die alte Zeile
+     `✓ Health-Check OK (Versuch 1)` statt des neuen `ops/health-gate.sh`,
+     dazu `ℹ Schritt 2 … NICHT GEPRÜFT`, obwohl `ops/deploy.sh:108` das nötige
+     Flag setzt. Was als eigener Unterprozess startet (`node ops/boot-smoke.js`),
+     war dagegen schon neu — daher die widersprüchlich wirkende Mischung.
+     Folge für die Meldung: ein Gate, das mit seinem eigenen Deploy
+     ausgeliefert wurde, ist AUSGELIEFERT, nicht BEWIESEN. Das zeigt sich erst
+     am nächsten Merge, und bis dahin wird es nicht als „geprüft" gemeldet.
    - In beiden Fällen gilt: Diese Prüfungen sagen „der Betrieb läuft und ist
      aktuell", NICHT „die Änderung wirkt richtig". Was in der Datenbank
      steht, bleibt unsichtbar und soll es bleiben.
@@ -164,6 +191,13 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   Suite läuft auf dem Live-Server als Deploy-Gate — ein Test, der dort `pm2`,
   `nginx` oder `/var/www` anfasst, ist eine Waffe. Stubben; der Stub ist dann
   zugleich der Beweis, dass das Richtige aufgerufen wurde.
+  Es gibt ZWEI Auslieferungswege, und sie verhalten sich gegensätzlich —
+  wer nur einen ansieht, zieht den falschen Schluss (26.08.2026):
+  `gymdocu-deploy` (`/usr/local/bin/`, von Hand) fährt `test/run.sh` auf dem
+  Server als PFLICHT-Gate (`ops/gymdocu-deploy:156`, Notausgang nur
+  `GYMDOCU_SKIP_TESTS=1`); GitHub Actions → `ops/deploy.sh` fährt sie dort
+  bewusst NICHT (Begründung im Kopf von `.github/workflows/deploy.yml`).
+  Maßgeblich ist der strengere Weg: die Regel gilt.
 - **Tests dürfen nicht an Prosa scheitern.** Statische Prüfungen über Quelltext
   entfernen zuerst Kommentarzeilen — sonst schlägt der Wächter am erklärenden
   Kommentar an und wird abgeschaltet statt gelesen. Dazu eine Positivkontrolle,
