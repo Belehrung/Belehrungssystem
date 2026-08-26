@@ -179,6 +179,13 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   Suite läuft auf dem Live-Server als Deploy-Gate — ein Test, der dort `pm2`,
   `nginx` oder `/var/www` anfasst, ist eine Waffe. Stubben; der Stub ist dann
   zugleich der Beweis, dass das Richtige aufgerufen wurde.
+  Es gibt ZWEI Auslieferungswege, und sie verhalten sich gegensätzlich —
+  wer nur einen ansieht, zieht den falschen Schluss (26.08.2026):
+  `gymdocu-deploy` (`/usr/local/bin/`, von Hand) fährt `test/run.sh` auf dem
+  Server als PFLICHT-Gate (`ops/gymdocu-deploy:156`, Notausgang nur
+  `GYMDOCU_SKIP_TESTS=1`); GitHub Actions → `ops/deploy.sh` fährt sie dort
+  bewusst NICHT (Begründung im Kopf von `.github/workflows/deploy.yml`).
+  Maßgeblich ist der strengere Weg: die Regel gilt.
 - **Tests dürfen nicht an Prosa scheitern.** Statische Prüfungen über Quelltext
   entfernen zuerst Kommentarzeilen — sonst schlägt der Wächter am erklärenden
   Kommentar an und wird abgeschaltet statt gelesen. Dazu eine Positivkontrolle,
