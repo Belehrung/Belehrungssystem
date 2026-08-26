@@ -187,6 +187,16 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   Arbeitscontainer läuft als root, der CI-Runner nicht. Wo Rechte eine Rolle
   spielen, zusätzlich unprivilegiert laufen lassen
   (`sudo -u nobody env HOME=/tmp node …`).
+- **Ein Arbeitsbaum gehört nach `/workspace`, NICHT unter den Scratchpad-Pfad.**
+  Nachgemessen am 26.08.2026: `/tmp/claude-0` und jede Ebene darunter sind
+  `drwx------ root root` — `postgres` kann dort nicht einmal hineinwechseln
+  (`sudo -u postgres test -r …` verweigert; unter `/workspace` erlaubt). Die
+  Suite startet aber Unterprozesse als dieser Nutzer (`test_feature_s20_migrate_
+  functional.js`). Ein Arbeitsbaum im Scratchpad lässt diesen Test scheitern —
+  und zwar mit `MODULE_NOT_FOUND`, was in die völlig falsche Richtung zeigt:
+  Man sucht den Fehler in der eigenen Änderung, dabei liegt er im Pfad. Bei
+  einem unerklärlichen Fehlschlag in einem Test, der `sudo -u` benutzt, zuerst
+  `namei -l` auf den Arbeitspfad ansetzen; `git worktree move` behebt es.
 - **Tests fassen weder echtes Dateisystem noch echte Prozesse an.** Dieselbe
   Suite läuft auf dem Live-Server als Deploy-Gate — ein Test, der dort `pm2`,
   `nginx` oder `/var/www` anfasst, ist eine Waffe. Stubben; der Stub ist dann
