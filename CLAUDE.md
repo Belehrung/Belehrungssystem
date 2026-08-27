@@ -175,6 +175,22 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
 - **Eine grüne Suite beweist nur, was geprüft wurde.** Wo ein Format sich
   ändern kann, gehört ein wörtlich eingetragener Altwert in den Test; frisch
   erzeugte Testdaten haben immer das neue Format.
+- **Eine Zusicherung, die ihren Sollwert aus dem bezieht, was sie bewachen
+  soll, ist keine.** Sie kann nicht falsch werden. Zwei Erscheinungsformen,
+  beide am 27.08.2026 an EINEM Tag dreimal aufgetreten:
+  *Dieselbe Konstante auf beiden Seiten* — der Test rechnete gegen
+  `MASSPROBE_LAENGE_MM`, also blieb er grün, als die Konstante von 100 auf 50
+  zurückgesetzt wurde; genau der Befund, dessen Behebung er absichern sollte.
+  Ebenso beim Pool-Zeitlimit: 50 ms, 250 ms und 15000 ms blieben alle grün.
+  *Der Vorzustand erzwingt das erwartete Ergebnis ohnehin* — alle Fehlerfälle
+  eines Werkzeugs liefen gegen eine leere Datenbank, in der die Vergabe sowieso
+  scheitert. Die Zusicherung „liefert null" traf zu, ob der geprüfte Riegel
+  existierte oder nicht. Geprüft wurde, dass eine leere Datenbank leer ist.
+  Der Gegenbeweis ist billig und gehört zu jeder neuen Zusicherung: den
+  bewachten Wert versuchsweise zurückdrehen bzw. den Defekt entfernen — wird
+  der Test dabei nicht rot, bewacht er nichts. Der wörtliche Altwert im Test
+  und eine Positivkontrolle (derselbe Aufruf OHNE den Defekt muss das
+  Gegenteil bewirken) lösen beide Formen.
 - **Ein Agent, der abbricht, ist wertvoller als einer, der immer liefert.**
   Fehlt eine Vorbedingung, ist der Abbruch mit Rückfrage das richtige Ergebnis.
 - **Sollwerte statt geratener Schwellen.** Wer eine Prüfanweisung an den
