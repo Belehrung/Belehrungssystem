@@ -204,15 +204,28 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   spielen, zusätzlich unprivilegiert laufen lassen
   (`sudo -u nobody env HOME=/tmp node …`).
 - **Ein Arbeitsbaum gehört nach `/workspace`, NICHT unter den Scratchpad-Pfad.**
-  Nachgemessen am 26.08.2026: `/tmp/claude-0` und jede Ebene darunter sind
-  `drwx------ root root` — `postgres` kann dort nicht einmal hineinwechseln
-  (`sudo -u postgres test -r …` verweigert; unter `/workspace` erlaubt). Die
-  Suite startet aber Unterprozesse als dieser Nutzer (`test_feature_s20_migrate_
-  functional.js`). Ein Arbeitsbaum im Scratchpad lässt diesen Test scheitern —
-  und zwar mit `MODULE_NOT_FOUND`, was in die völlig falsche Richtung zeigt:
-  Man sucht den Fehler in der eigenen Änderung, dabei liegt er im Pfad. Bei
-  einem unerklärlichen Fehlschlag in einem Test, der `sudo -u` benutzt, zuerst
-  `namei -l` auf den Arbeitspfad ansetzen; `git worktree move` behebt es.
+  Maßgeblich ist aber nicht der ORT, sondern eine Eigenschaft: jede Ebene des
+  Pfades muss für den Zielnutzer DURCHQUERBAR sein (`o+x`). `/tmp/claude-0` und
+  alles darunter ist `drwx------ root root` und erfüllt das nicht. `/workspace`
+  erfüllt es heute — garantiert ist es dort nicht, ein `mkdir` unter strenger
+  `umask` erzeugt auch dort `drwx------`.
+  Die Suite startet Unterprozesse als fremde Nutzer (`postgres` in
+  `test_feature_s20_migrate_functional.js` im GymDocu-Repo, `nobody` beim
+  unprivilegierten Gegenlauf oben). Klemmt eine Ebene, scheitern sie mit
+  `MODULE_NOT_FOUND` — einem Fehler, der auf die eigene Änderung zeigt statt
+  auf den Pfad.
+  **Geprüft wird mit dem AUSFÜHR-Bit, nie mit dem Lese-Bit:**
+
+      sudo -u postgres test -x /workspace/gymdocu && echo ok || echo "klemmt"
+      namei -l /workspace/gymdocu     # zeigt, WELCHE Ebene klemmt
+
+  Nachgemessen am 27.08.2026, beide Richtungen: `drwxr--r--` besteht `test -r`,
+  node scheitert trotzdem; `drwx--x--x` fällt bei `test -r` durch, node lädt.
+  `test -r` beantwortet also die falsche Frage — und zwar in beide Richtungen
+  falsch.
+  Behebung: `git worktree move`, aber nur bei einem VERKNÜPFTEN Arbeitsbaum —
+  auf einem Haupt-Arbeitsbaum bricht es mit `fatal: '.' is a main working tree`
+  ab. Dann neu klonen oder `chmod o+x` auf die klemmende Ebene.
 - **Tests fassen weder echtes Dateisystem noch echte Prozesse an.** Dieselbe
   Suite läuft auf dem Live-Server als Deploy-Gate — ein Test, der dort `pm2`,
   `nginx` oder `/var/www` anfasst, ist eine Waffe. Stubben; der Stub ist dann
