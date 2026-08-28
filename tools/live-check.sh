@@ -178,17 +178,36 @@ fi
 
 # 6. Health-Endpunkt (intern, token-geschützt) — Betreiberfreigabe 22.08.2026.
 # /intern/health ist mit dem Header X-Bezirk-Token geschützt (routes/health-
-# intern.js im gymdocu-Repo) und antwortet ohne ihn mit HTTP 403 — von hier aus
-# also nur mit einem Token prüfbar. Das Token gehört in eine Umgebungsvariable,
-# NIE in diese Datei (auch nicht als Platzhalter, der wie einer aussieht).
+# intern.js im gymdocu-Repo). Das Token gehört in eine Umgebungsvariable, NIE
+# in diese Datei (auch nicht als Platzhalter, der wie einer aussieht).
 #
-# Fehlt das Token, bleibt der Punkt bewusst ℹ/ungeprüft statt grün zu
-# behaupten — genau der Fehler vom 22.08.2026: der Deploy druckte "⚠
-# Health-Check erreichbar, meldet aber NICHT ok — Teilausfall" und lief
-# trotzdem als success durch; der live-check fragte den Endpunkt gar nicht
-# erst ab und meldete "Live-Betrieb unauffällig" über diesem bekannten Gelb.
+# ABER: Ein Token allein genügt von AUSSEN nicht, und die frühere Meldung
+# ("kein GYMDOCU_HEALTH_TOKEN gesetzt") nannte damit den falschen Grund.
+# Nachgemessen am 28.08.2026 gegen https://gymdocu.de:
+#     /intern/health         -> 404
+#     /intern/bezirk-status  -> 404
+#     /intern/wartung        -> 404
+# Ein FALSCHES Token gäbe 403 (routes/bezirk-export.js), ein fehlendes
+# ebenfalls. 404 auf dem ganzen Zweig heißt: die Anfrage erreicht die
+# Anwendung gar nicht erst. /intern ist die Schnittstelle zum Hauptserver und
+# von außen nicht erreichbar — so soll es sein.
+#
+# Gemessen WIRD der Endpunkt trotzdem, nur woanders: ops/health-gate.sh:151
+# fragt bei JEDEM Deploy nach dem pm2-Reload
+# http://127.0.0.1:${PORT}/intern/health ab und lässt den Lauf scheitern,
+# wenn nicht "ok":true zurückkommt.
+#
+# Der Punkt bleibt hier deshalb ℹ/ungeprüft statt grün zu behaupten — der
+# Fehler vom 22.08.2026: der Deploy druckte "⚠ Health-Check erreichbar,
+# meldet aber NICHT ok — Teilausfall" und lief trotzdem als success durch;
+# der live-check fragte den Endpunkt gar nicht erst ab und meldete
+# "Live-Betrieb unauffällig" über diesem bekannten Gelb.
+#
+# Die Abfrage bleibt für den Fall stehen, dass dieses Skript einmal DORT
+# läuft, wo der Endpunkt erreichbar ist (auf dem Server, oder durch einen
+# Tunnel). Dann trägt sie ein echtes Ergebnis bei.
 if [ -z "${GYMDOCU_HEALTH_TOKEN:-}" ]; then
-    offen "Health-Endpunkt NICHT geprüft (kein GYMDOCU_HEALTH_TOKEN gesetzt)"
+    offen "Health-Endpunkt NICHT von hier prüfbar — /intern erreicht die Anwendung von außen nicht (404 auf dem ganzen Zweig, gemessen 28.08.2026; ein falsches Token gäbe 403). Serverseitig prüft ihn ops/health-gate.sh bei jedem Deploy gegen 127.0.0.1. Ein GYMDOCU_HEALTH_TOKEN ändert daran nichts."
 else
     # --max-time wie bei jedem anderen curl-Aufruf hier (Vorfall 11.08.2026,
     # siehe Kommentar bei code() oben).
@@ -196,10 +215,19 @@ else
         -H "X-Bezirk-Token: ${GYMDOCU_HEALTH_TOKEN}" \
         https://gymdocu.de/intern/health 2>/dev/null)
     health_code="${health_code:-000}"
-    if [ "$health_code" != 200 ]; then
-        # Ein Endpunkt, der antworten müsste und es nicht tut, ist ein
-        # Befund, kein Messproblem — deshalb warn(), nicht offen().
-        warn "Health-Endpunkt antwortet HTTP $health_code (erwartet 200) — Endpunkt nicht erreichbar oder Token falsch"
+    if [ "$health_code" = 404 ]; then
+        # 404 heißt NICHT "kaputt", sondern "von hier nicht erreichbar": der
+        # /intern-Zweig wird von außen nicht an die Anwendung durchgereicht
+        # (siehe Kommentar oben, gemessen 28.08.2026). Das als Befund zu
+        # zählen, machte aus einer Eigenschaft der Umgebung einen Fehlalarm —
+        # und ein Wächter, der falsch anschlägt, wird abgeschaltet statt
+        # gelesen. Deshalb offen(), nicht warn().
+        offen "Health-Endpunkt von hier nicht erreichbar (HTTP 404 — /intern wird von außen nicht durchgereicht). Serverseitig prüft ihn ops/health-gate.sh bei jedem Deploy."
+    elif [ "$health_code" != 200 ]; then
+        # Alles ANDERE als 404 ist ein echter Befund: 403 heißt, die Anfrage
+        # kommt an und das Token stimmt nicht; 5xx heißt, der Endpunkt
+        # antwortet falsch.
+        warn "Health-Endpunkt antwortet HTTP $health_code (erwartet 200) — bei 403 stimmt das Token nicht, sonst antwortet der Endpunkt fehlerhaft"
     elif ! health_json=$(cat "$TMP/health.json" 2>/dev/null) || ! printf '%s' "$health_json" | jq -e . >/dev/null 2>&1; then
         warn "Health-Endpunkt: Antwort ist kein gültiges JSON (HTTP $health_code)"
     else
