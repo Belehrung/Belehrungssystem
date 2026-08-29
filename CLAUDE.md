@@ -90,6 +90,29 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
      grün. Deshalb den Deploy-Lauf ansehen (`actions_list` auf
      `deploy.yml`, Ergebnis `success`?), bevor eine Änderung als
      ausgeliefert gemeldet wird. Serverseitig wacht `gymdocu-deploy-drift.js`.
+   - **Ein Deploy lässt sich jederzeit von Hand anstoßen.** `deploy.yml` hat
+     `workflow_dispatch: {}`; der Schritt „master darf seit dem geprüften
+     CI-Lauf nicht weitergezogen sein" trägt `if: github.event_name ==
+     'workflow_run'` und wird dabei bewusst übersprungen. Gebraucht am
+     29.08.2026: nach drei an `?? lageplan-uploads/` gescheiterten Läufen war
+     der Server drei Merges zurück; ein `git pull --ff-only` auf dem Server
+     räumte den Riegel, lieferte aber nichts aus — pm2 lief weiter mit dem
+     alten Code und Migration 0042 war nicht eingespielt. Erst der von Hand
+     angestoßene Lauf 191 hat wirklich ausgeliefert.
+   - **Ein `git pull` auf dem Server ist KEIN Deploy.** Er erledigt nur, was
+     Schritt 2/8 täte. Es fehlen npm, Syntax-Check, Ladeprobe, **pm2 reload**,
+     Health-Gate und Handbuch. Gefährlich ist dabei der Zwischenzustand: neuer
+     Code auf der Platte, alter Prozess im Speicher, Migration offen — beim
+     nächsten ungeplanten Neustart zieht der neue Code ungeprüft hoch.
+     Migrationen laufen NICHT in einem eigenen Deploy-Schritt, sondern beim
+     App-Start (`server.js`, `runMigrations()` vor `app.listen`); die Ladeprobe
+     in 5/8 fährt bewusst nur `db.init()`, nicht `runMigrations()`. Der
+     Health-Check in 7/8 ist deshalb der einzige Beleg, dass eine Migration
+     durchgegangen ist.
+   - **`if [ "$BEFORE" = "$AFTER" ]` in `ops/deploy.sh` ändert NUR die
+     Logzeile.** Die Schritte 3/8 bis 8/8 laufen auch dann. „Bereits aktuell —
+     nichts Neues" heißt also nicht, dass nichts passiert ist; es wurde
+     trotzdem neu geladen und geprüft.
    - **Hauptserver hat KEINEN automatischen Deploy.** Dort braucht es
      `git pull --ff-only origin master` auf dem Server — und für alles, was
      unter `/usr/local/bin/` liegt, zusätzlich ein `install`. Ohne das läuft
@@ -226,6 +249,15 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   Behebung: `git worktree move`, aber nur bei einem VERKNÜPFTEN Arbeitsbaum —
   auf einem Haupt-Arbeitsbaum bricht es mit `fatal: '.' is a main working tree`
   ab. Dann neu klonen oder `chmod o+x` auf die klemmende Ebene.
+- **Der Container kann jederzeit neu starten** (in der Nacht zum 29.08.2026
+  zweimal). `/workspace` überlebt, laufende Subagenten NICHT, und beiseite-
+  gelegte Kopien unter `/tmp` womöglich auch nicht. Folgen: früh committen und
+  pushen statt am Ende; und nach einem Neustart jeden fortgesetzten Agenten
+  ZUERST fragen, ob eine Gegenprobe halb zurückgenommen ist — ein
+  Sabotage-Rest, der unbemerkt mitcommittet wird, ist teurer als der ganze
+  Auftrag. Ein Agent lässt sich per SendMessage aus seinem Transkript
+  fortsetzen; ist das Transkript weg, bekommt ein NEUER Agent den vollen
+  Kontext, statt dass improvisiert wird.
 - **Tests fassen weder echtes Dateisystem noch echte Prozesse an.** Dieselbe
   Suite läuft auf dem Live-Server als Deploy-Gate — ein Test, der dort `pm2`,
   `nginx` oder `/var/www` anfasst, ist eine Waffe. Stubben; der Stub ist dann
