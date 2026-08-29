@@ -90,6 +90,29 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
      grün. Deshalb den Deploy-Lauf ansehen (`actions_list` auf
      `deploy.yml`, Ergebnis `success`?), bevor eine Änderung als
      ausgeliefert gemeldet wird. Serverseitig wacht `gymdocu-deploy-drift.js`.
+   - **Ein Deploy lässt sich jederzeit von Hand anstoßen.** `deploy.yml` hat
+     `workflow_dispatch: {}`; der Schritt „master darf seit dem geprüften
+     CI-Lauf nicht weitergezogen sein" trägt `if: github.event_name ==
+     'workflow_run'` und wird dabei bewusst übersprungen. Gebraucht am
+     29.08.2026: nach drei an `?? lageplan-uploads/` gescheiterten Läufen war
+     der Server drei Merges zurück; ein `git pull --ff-only` auf dem Server
+     räumte den Riegel, lieferte aber nichts aus — pm2 lief weiter mit dem
+     alten Code und Migration 0042 war nicht eingespielt. Erst der von Hand
+     angestoßene Lauf 191 hat wirklich ausgeliefert.
+   - **Ein `git pull` auf dem Server ist KEIN Deploy.** Er erledigt nur, was
+     Schritt 2/8 täte. Es fehlen npm, Syntax-Check, Ladeprobe, **pm2 reload**,
+     Health-Gate und Handbuch. Gefährlich ist dabei der Zwischenzustand: neuer
+     Code auf der Platte, alter Prozess im Speicher, Migration offen — beim
+     nächsten ungeplanten Neustart zieht der neue Code ungeprüft hoch.
+     Migrationen laufen NICHT in einem eigenen Deploy-Schritt, sondern beim
+     App-Start (`server.js`, `runMigrations()` vor `app.listen`); die Ladeprobe
+     in 5/8 fährt bewusst nur `db.init()`, nicht `runMigrations()`. Der
+     Health-Check in 7/8 ist deshalb der einzige Beleg, dass eine Migration
+     durchgegangen ist.
+   - **`if [ "$BEFORE" = "$AFTER" ]` in `ops/deploy.sh` ändert NUR die
+     Logzeile.** Die Schritte 3/8 bis 8/8 laufen auch dann. „Bereits aktuell —
+     nichts Neues" heißt also nicht, dass nichts passiert ist; es wurde
+     trotzdem neu geladen und geprüft.
    - **Hauptserver hat KEINEN automatischen Deploy.** Dort braucht es
      `git pull --ff-only origin master` auf dem Server — und für alles, was
      unter `/usr/local/bin/` liegt, zusätzlich ein `install`. Ohne das läuft
@@ -196,6 +219,22 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
 - **Sollwerte statt geratener Schwellen.** Wer eine Prüfanweisung an den
   Betreiber gibt, nennt den erwarteten Wert oder den Vergleich gegen eine
   Quelle — keine aus dem Bauch gegriffene Grenze.
+- **Eine Zusicherung kann aus dem falschen Grund grün sein.** Nicht nur
+  „prüft sie überhaupt etwas?", sondern: **kann der gesuchte Wert AUCH aus
+  einer anderen Quelle stammen als der geprüften?** Am 29.08.2026 zweimal
+  am selben Tag: ein Gerätename stand im PDF ohnehin in der Gerätetabelle
+  (`geraete.typ` hat DEFAULT `'seilkontrolle'`) — die Zusicherung auf den
+  Sichtkontroll-Anhang wäre auch grün geblieben, wenn dieser Anhang
+  vollständig tot gewesen wäre. Gegenmittel: den gesuchten Wert
+  unverwechselbar machen (anderer Name als in jeder anderen Tabelle) und
+  zusätzlich messen, dass die Zusicherung ROT wird, wenn man genau den
+  geprüften Weg lahmlegt.
+- **Eine Testattrappe, die am echten Schreibweg vorbeischreibt, prüft nicht
+  die Wirklichkeit.** Hand-INSERTs in Testdateien bilden ab, was der
+  Schreiber IRGENDWANN tat — sie ziehen nicht mit, wenn er eine Spalte
+  dazubekommt, und fallen dann still aus den Lesestellen heraus. Wo möglich
+  über den echten Weg schreiben; wo eine Attrappe nötig bleibt, ein Wächter,
+  der ihre Spaltenliste gegen die Wirklichkeit hält.
 
 ## Prüfstand-Regeln
 
@@ -226,6 +265,15 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   Behebung: `git worktree move`, aber nur bei einem VERKNÜPFTEN Arbeitsbaum —
   auf einem Haupt-Arbeitsbaum bricht es mit `fatal: '.' is a main working tree`
   ab. Dann neu klonen oder `chmod o+x` auf die klemmende Ebene.
+- **Der Container kann jederzeit neu starten** (in der Nacht zum 29.08.2026
+  zweimal). `/workspace` überlebt, laufende Subagenten NICHT, und beiseite-
+  gelegte Kopien unter `/tmp` womöglich auch nicht. Folgen: früh committen und
+  pushen statt am Ende; und nach einem Neustart jeden fortgesetzten Agenten
+  ZUERST fragen, ob eine Gegenprobe halb zurückgenommen ist — ein
+  Sabotage-Rest, der unbemerkt mitcommittet wird, ist teurer als der ganze
+  Auftrag. Ein Agent lässt sich per SendMessage aus seinem Transkript
+  fortsetzen; ist das Transkript weg, bekommt ein NEUER Agent den vollen
+  Kontext, statt dass improvisiert wird.
 - **Tests fassen weder echtes Dateisystem noch echte Prozesse an.** Dieselbe
   Suite läuft auf dem Live-Server als Deploy-Gate — ein Test, der dort `pm2`,
   `nginx` oder `/var/www` anfasst, ist eine Waffe. Stubben; der Stub ist dann
@@ -241,6 +289,23 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   entfernen zuerst Kommentarzeilen — sonst schlägt der Wächter am erklärenden
   Kommentar an und wird abgeschaltet statt gelesen. Dazu eine Positivkontrolle,
   dass nach dem Abzug überhaupt noch etwas übrig ist.
+- **Eine Diagnose darf niemals Abdeckung kosten.** Ein Block, der bei einem
+  Fehlschlag Zusatzinformation ausgibt, gehört in `try/catch`. Ungeschützt
+  reißt schon eine fehlgeschlagene Abfrage darin den ganzen Lauf mit — aus
+  „ein FAIL, Rest grün" wird „unbekannt", und der eigentliche Befund ist weg.
+- **Zusicherung und Diagnose beschreiben denselben Wert, nicht zwei.** Erst
+  in eine Variable auswerten, dann prüfen UND ausgeben. Zwei getrennte
+  Aufrufe sind zwei Messungen; bei einem flatternden Befund beschreibt die
+  Diagnose dann womöglich einen anderen Durchlauf als den roten.
+- **Eine Zuweisung aus einer gescheiterten Kommandosubstitution IST
+  zugewiesen** — `set -u` greift nicht, die Variable ist nur leer. Unter
+  `set -uo pipefail` OHNE `-e` gilt deshalb: jedes `VAR=$(mktemp -d …)`
+  bekommt seine eigene Erfolgsprüfung. Gemessen am 29.08.2026: ohne sie
+  hätte `test/run.sh` seine Fehlerlogs nach `/<name>.log` geschrieben, also
+  ins Wurzelverzeichnis — und dieselbe Suite läuft auf dem Live-Server als
+  Deploy-Gate. Ein Verzeichnis, das nur der Fehlerfall braucht, wird im
+  Erfolgsfall wieder abgeräumt; `rmdir` (nicht `rm -rf`) verweigert sich bei
+  gefülltem Verzeichnis und kann deshalb nie Beweise mitreißen.
 
 ## Dieselbe Aussage an zwei Orten
 
@@ -338,6 +403,15 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
   Formulierung — und wenn nichts geht, wird die Lücke benannt.
 - **Umlaute in `grep`:** `.` matcht ein Byte, ein Umlaut belegt in UTF-8 zwei.
   `gef.hrdungsbeurteilung` findet nichts. Ohne Umlaut suchen oder `-P`.
+- **GitHub geht NUR über die MCP-Werkzeuge.** Ein direkter API-Aufruf per
+  `curl` gegen `api.github.com` scheitert am Egress-Proxy („GitHub access is
+  not enabled for this session"), auch mit gesetztem `GH_TOKEN` —
+  nachgemessen am 29.08.2026. `mcp__github__actions_list` ignoriert dabei
+  `per_page` und liefert regelmäßig dreißig vollständige Läufe samt
+  Commit-Botschaften; sparsam abfragen und `workflow_runs_filter` benutzen.
+  Achtung bei diesem Filter: `event: workflow_run` blendet einen von Hand
+  angestoßenen Lauf (`workflow_dispatch`) aus — wer danach filtert und
+  nichts findet, hat nicht bewiesen, dass kein Deploy lief.
 
 ## Werkzeuge
 
