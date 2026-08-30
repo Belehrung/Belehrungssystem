@@ -49,6 +49,12 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
 4. **Volle Testsuite** (test/run.sh). WÄHREND des Laufs keine parallelen
    Skripte gegen dieselbe DB: der Studio-Zähl-Wächter schlägt sonst
    falsch an, und eine Pipe (`| tail`) verschluckt seinen Fehler-Exit.
+   Danach das Dateizahl-Ritual: die im Log gelaufenen Dateien gegen die in
+   `test/run.sh` registrierten halten und `diff` EXIT 0 verlangen — sonst
+   meldet ein Lauf grün, der die Hälfte nie angefasst hat. **Zum Normalisieren
+   `sed 's/^[[:space:]]*//'` nehmen, NIE `tr -d '[:space:]'`:** letzteres
+   frisst auch die Zeilenumbrüche, aus 232 Zeilen wird eine, und der Vergleich
+   meldet „registriert: 1" (gemessen 30.08.2026).
 5. Erst dann Commit und Push.
 6. **Die CI ist die letzte Instanz, nicht der eigene Prüfstand.** Fertig
    ist, was GitHub Actions grün nennt — die lokale Suite hat schon grün
@@ -214,6 +220,20 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   der Test dabei nicht rot, bewacht er nichts. Der wörtliche Altwert im Test
   und eine Positivkontrolle (derselbe Aufruf OHNE den Defekt muss das
   Gegenteil bewirken) lösen beide Formen.
+  **Dritte Erscheinungsform, gemessen am 30.08.2026: das geprüfte Element ist
+  strukturell geschützt.** Vier CSS-Zusicherungen sollten belegen, dass ein
+  `button` nicht mehr auf volle Formularbreite läuft — sie blieben mit UND
+  ohne die Reparatur bei exakt denselben 213px bzw. 180px. Grund: die Knöpfe
+  standen in einem `<form>`, das seinerseits Flex-Item mit
+  `flex-basis:content` war; bei dessen intrinsischer Breitenberechnung
+  ignoriert der Browser die Prozentbreite des Kindes. Dasselbe gilt für
+  `display:inline-block` (shrink-to-fit). Die Zusicherung war also nicht
+  falsch, sie war unempfindlich — und hätte den Befund, den sie bewachen
+  sollte, nie wieder gefunden. Der Ausweg ist nicht eine andere Schwelle,
+  sondern ein anderer Beleg: ein Element ohne diesen Schutz (hier: ein Knopf
+  in einer `<td>`, 66px gut ↔ 162px defekt, und ein DIREKTES Flex-Item,
+  71px ↔ 862px). Verallgemeinert: bei jeder Messung fragen, ob der gemessene
+  Wert überhaupt von der geprüften Eigenschaft abhängen KANN.
 - **Ein Agent, der abbricht, ist wertvoller als einer, der immer liefert.**
   Fehlt eine Vorbedingung, ist der Abbruch mit Rückfrage das richtige Ergebnis.
 - **Sollwerte statt geratener Schwellen.** Wer eine Prüfanweisung an den
@@ -235,6 +255,30 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   dazubekommt, und fallen dann still aus den Lesestellen heraus. Wo möglich
   über den echten Weg schreiben; wo eine Attrappe nötig bleibt, ein Wächter,
   der ihre Spaltenliste gegen die Wirklichkeit hält.
+- **„Stelle X macht es auch so" ist keine Messung.** Am 30.08.2026 stand in
+  einem Auftrag von mir: „Rückfall auf die lokale IP wie /admin/qr". Die
+  Vorlage funktionierte nicht — der Server lauscht auf `127.0.0.1`
+  (`server.js:1331`), der Port stand fest verdrahtet auf `:3100` gegen
+  `PORT=3200` aus der `.env`, und die Subdomain-Auflösung liefert für
+  `10.20.30.40:3100` null, also 404. Toter Code, den mein Auftrag in eine
+  zweite Datei kopiert hätte. Wer eine bestehende Stelle als Vorbild nennt,
+  hat sie damit nicht geprüft; sie ist eine Fundstelle, kein Beleg.
+- **Ein Verweis kann in eine Sackgasse zeigen.** Derselbe Tag: mein Auftrag
+  ließ einen Hinweis „siehe Einstellungen" bauen — `basis_url` wird in der
+  ganzen Anwendung nirgends geschrieben (`setConfig(…,'basis_url',…)` nur in
+  Tests, `routes/admin/einstellungen.js` enthält die Zeichenkette null mal).
+  Vor jedem „siehe X" nachsehen, ob X das kann, was der Satz verspricht.
+- **Eine Gegenprobe darf ihren eigenen Zielwert nicht im Bezeichner tragen.**
+  Ein Wächter suchte nach dem Muster `[Hh]ost`; die Gegenprobe hieß
+  `MeinTestHost` und erfüllte das Muster durch ihren eigenen Namen — grün aus
+  dem falschen Grund. Mit `meinRechner` wiederholt: der Wächter blieb GRÜN
+  (EXIT=0), der Befund war echt. Testdaten so benennen, dass sie mit dem
+  gesuchten Muster nichts gemein haben.
+- **Ein vollständig kaputter Ausdruck fällt laut aus, ein halb kaputter
+  still.** Wiederholt am 30.08.2026: eine Regex, die gar nichts mehr matcht,
+  reißt den Lauf mit einer Ausnahme ab und wird sofort bemerkt; eine, die
+  noch die Hälfte trifft, liefert weiter grün. Die gefährlichere Änderung ist
+  deshalb die kleine.
 
 ## Prüfstand-Regeln
 
