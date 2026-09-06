@@ -18,20 +18,41 @@ Vorgabe des Betreibers (10.08.2026): Der Haupt-Agent baut selbst nichts.
 
 ## Modellwahl beim Delegieren
 
-Vorgabe des Betreibers (23.08.2026): **Claude Fable 5 ist reserviert.** Nur für
+**Vorgabe des Betreibers (06.09.2026): Im Zweifel AUCH Fable 5.1 als Agenten
+nehmen.** Das kehrt die frühere Regel um und ersetzt sie.
 
-- komplexe Refactorings der GESAMTEN Systemarchitektur, oder
-- vollautomatische CI/CD- und Testing-Pipelines.
+Die frühere Vorgabe (23.08.2026) lautete: Fable ist reserviert für Refactorings
+der GESAMTEN Systemarchitektur oder vollautomatische CI/CD-Pipelines, sonst
+Standard, „im Zweifel Standard-Executer". Sie galt bis zum 06.09.2026 und ist
+NICHT mehr anzuwenden. Zwei Gründe, beide gemessen:
 
-Alles andere geht an den Standard-Executer. „Reserviert" heißt: Der Regelfall
-ist der Standard, nicht die Ausnahme. Ein Auftrag über mehrere Dateien ist noch
-kein Architektur-Refactoring, und ein einzelner CI-Job ist noch keine Pipeline —
-wer die Regel so auslegt, hat sie aufgehoben. Im Zweifel Standard-Executer.
+- Sie wurde über **Fable 5** geschrieben. Fable 5.1 erschien am 01.09.2026 und
+  liegt beim agentischen Programmieren messbar woanders (Terminal-Bench 4.0:
+  55,8 % gegen 42,0 % für Fable 5).
+- Ein A/B-Lauf am 06.09.2026 über EINEN echten Auftrag (#103, Vorwarnung beim
+  QR-Nummernraum): derselbe Auftrag wörtlich, zwei getrennte Arbeitsbäume auf
+  demselben Stand, blinde Bewertung durch dieselbe Prüfung. Ergebnis „A
+  deutlich besser", A war Fable 5.1. Ausschlaggebend war kein Umfang, sondern
+  ein **gemessenes falsches Grün** beim Standard-Entwurf: er las nur den
+  Hochwasserstand der Datenbank, während die Vergabe zusätzlich das
+  Nummernbuch heranzieht — im zurückgespielten Backup meldete er „0 %
+  verbraucht", während zehn Nummern übrig waren.
+
+**Was diese Messung NICHT hergibt, und was deshalb nicht behauptet werden
+darf:** Es ist eine Stichprobe von EINS. Ein Teil des Vorsprungs folgt aus einer
+Strukturentscheidung (eigenständiges Skript mit austauschbaren Abhängigkeiten
+statt inline gerufenem Modul), nicht aus mehr Sorgfalt. Und der Fable-Entwurf
+hatte einen eigenen blockierenden Fehler — er hätte den Wochenreport dauerhaft
+gelb gefärbt, also genau die Krankheit erzeugt, aus der er zwölf Zeilen weiter
+oben seine eigene Schwelle herleitet. „Fable ist besser" ist damit NICHT belegt;
+belegt ist nur, dass die alte Reservierung auf einer überholten
+Tatsachengrundlage stand.
 
 Ein Modellwechsel ist ohnehin nie die Erklärung für ein besseres Ergebnis,
 solange sich am selben Tag auch die Aufträge geändert haben. Wer beides
 zugleich ändert, kann hinterher nicht sagen, woran es lag — und darf es dann
-auch nicht behaupten.
+auch nicht behaupten. Der A/B-Lauf oben hielt den Auftrag deshalb wörtlich
+gleich; anders wäre er wertlos gewesen.
 
 ## Prüf-Ritual des Haupt-Agenten
 
