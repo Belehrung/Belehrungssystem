@@ -18,13 +18,24 @@ Vorgabe des Betreibers (10.08.2026): Der Haupt-Agent baut selbst nichts.
 
 ## Modellwahl beim Delegieren
 
-**Vorgabe des Betreibers (06.09.2026): Im Zweifel AUCH Fable 5.1 als Agenten
-nehmen.** Das kehrt die frühere Regel um und ersetzt sie.
+**Vorgabe des Betreibers (06.09.2026, nachmittags — sie ersetzt alles Frühere):
+Fable 5.1 NUR bei schwierigen Sachen. Sonst die normalen Executer-Agenten.**
 
-Die frühere Vorgabe (23.08.2026) lautete: Fable ist reserviert für Refactorings
-der GESAMTEN Systemarchitektur oder vollautomatische CI/CD-Pipelines, sonst
-Standard, „im Zweifel Standard-Executer". Sie galt bis zum 06.09.2026 und ist
-NICHT mehr anzuwenden. Zwei Gründe, beide gemessen:
+Der Regelfall ist damit wieder der Standard-Executer; Fable ist die begründete
+Ausnahme. „Schwierig" heisst NICHT „umfangreich": ein Auftrag über acht Dateien
+mit immer demselben Handgriff ist nicht schwierig, ein Auftrag über eine Datei,
+in der eine falsche Annahme still ein grünes Ergebnis erzeugen kann, ist es.
+Brauchbare Merkmale sind: mehrere Quellen, die einander widersprechen können;
+Schwellen oder Zahlen, die hergeleitet statt gesetzt werden müssen; ein
+Ergebnis, das falsch grün aussehen kann; Architektur, die über den Auftrag
+hinaus wirkt. Die Einordnung trifft der Haupt-Agent VOR dem Auftrag und schreibt
+sie in einem Satz dazu — sonst wird jeder Auftrag im Nachhinein schwierig.
+
+Zur Vorgeschichte, weil sie erklärt, warum die Regel weder die eine noch die
+andere frühere Fassung ist: Am Vormittag desselben Tages galt kurzzeitig „im
+Zweifel AUCH Fable" — das war zu weit. Davor (23.08.2026) galt „reserviert für
+Refactorings der GESAMTEN Systemarchitektur oder vollautomatische
+CI/CD-Pipelines" — das war zu eng, und zwar aus zwei gemessenen Gründen:
 
 - Sie wurde über **Fable 5** geschrieben. Fable 5.1 erschien am 01.09.2026 und
   liegt beim agentischen Programmieren messbar woanders (Terminal-Bench 4.0:
@@ -45,8 +56,10 @@ statt inline gerufenem Modul), nicht aus mehr Sorgfalt. Und der Fable-Entwurf
 hatte einen eigenen blockierenden Fehler — er hätte den Wochenreport dauerhaft
 gelb gefärbt, also genau die Krankheit erzeugt, aus der er zwölf Zeilen weiter
 oben seine eigene Schwelle herleitet. „Fable ist besser" ist damit NICHT belegt;
-belegt ist nur, dass die alte Reservierung auf einer überholten
-Tatsachengrundlage stand.
+belegt ist nur, dass die enge Reservierung vom 23.08. auf einer überholten
+Tatsachengrundlage stand. Genau deshalb steht hier jetzt „nur bei schwierigen
+Sachen" und nicht „im Zweifel auch": eine Stichprobe von eins trägt eine
+Ausnahme, keine Umkehr.
 
 Ein Modellwechsel ist ohnehin nie die Erklärung für ein besseres Ergebnis,
 solange sich am selben Tag auch die Aufträge geändert haben. Wer beides
