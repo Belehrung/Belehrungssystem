@@ -441,13 +441,37 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
 - **Was eine Datei verspricht, muss das Werkzeug erzwingen, nicht die Prosa.**
   Der `kundschafter` war als „ändert nichts" beschrieben und hatte `Bash` in
   der Werkzeugliste — die Werkzeugliste ist die Zusicherung, also flog `Bash` raus.
-- **Bekannte Grenze:** Der Pipe-Wächter matcht auf die Zeichenkette `test/run.sh`
-  im Befehl, nicht auf einen Dateipfad, und gilt für die ganze Sitzung — er hat
-  am 22.08.2026 nachweislich einen Befehl blockiert, der auf `/workspace/gymdocu`
-  zielte. Eine Sitzung, deren Projektverzeichnis `/workspace/gymdocu` ist, hätte
-  aber gar keinen Wächter, weil dort kein `.claude/settings.json` liegt. Keine
-  zweite Kopie dorthin legen — sie würde driften. Wer dort ohne diese Sitzung
-  Testläufe pipet, ist ungeschützt.
+- **Bekannte Grenze — er greift WEITER, als hier lange stand.** Nachgemessen am
+  08.09.2026 gegen den echten Befehl aus `.claude/settings.json`: Er erfasst
+  nicht nur `test/run.sh`, sondern auch `node test_…` (im Quelltext:
+  `case "$c" in *test/run.sh*|*'node test_'*`). Gemessen wurden BEIDE
+  Richtungen — drei Sperrfälle (`node test_x.js | tail -5`,
+  `bash test/run.sh | tail -1`, verkettet) alle `deny`, vier Durchlassfälle
+  (Umleitung in eine Datei, `set -o pipefail;` davor, `cat test/run.sh | grep`,
+  `ls -la`) alle durch. Er sperrt also nicht pauschal.
+- **Er lehnt den GANZEN Befehl ab, nicht nur das gepipete Segment.** Bei
+  `cp sicherung.js ziel.js && node test_x.js | tail` läuft das `cp` NIE. Wer
+  eine Gegenprobe zurücknimmt, darf die Rücknahme deshalb nicht mit einem
+  Testlauf verketten — sonst steht der Defekt noch, während die Meldung
+  „zurückgenommen" lautet. Am 08.09.2026 genau so passiert; aufgefallen ist es
+  nur, weil die Rücknahme gegen eine UNABHÄNGIG angelegte Kopie geprüft wurde
+  (`diff`/`md5sum`), nicht gegen die Behauptung des Ausführenden. Nach jedem
+  blockierten verketteten Befehl gilt: prüfen, was davon schon lief.
+- **Er fällt auf Prosa herein — auch auf die eigene.** Er segmentiert an `&&`,
+  `||`, `;` und Zeilenumbruch und hält jedes Segment, das nach dem Trimmen mit
+  einem Ausführungs-Verb beginnt, für einen Lauf. Eine Commit-Botschaft, die
+  einen solchen Befehl nur ZITIERT, löst ihn deshalb aus: am 08.09.2026 hat er
+  genau den Commit blockiert, der diesen Absatz hier einträgt. Er fällt dabei
+  sicher aus (deny, nicht allow) — aber es ist die Krankheit, vor der die Regel
+  „Tests dürfen nicht an Prosa scheitern" ein paar Zeilen weiter oben warnt,
+  und sie führt zum Abschalten statt zum Lesen. Ausweg bis dahin: in Botschaften
+  und Dokumenten `node <testdatei>.js` schreiben statt eines echten Dateinamens.
+- Er gilt für die ganze Sitzung und matcht auf Zeichenketten, nicht auf
+  Dateipfade — er hat am 22.08.2026 einen Befehl blockiert, der auf
+  `/workspace/gymdocu` zielte. Eine Sitzung, deren Projektverzeichnis
+  `/workspace/gymdocu` ist, hätte aber gar keinen Wächter, weil dort kein
+  `.claude/settings.json` liegt. Keine zweite Kopie dorthin legen — sie würde
+  driften. Wer dort ohne diese Sitzung Testläufe pipet, ist ungeschützt.
 
 ## Abhängigkeiten anheben
 
