@@ -18,6 +18,23 @@ Regeln:
 - Halte dich an den Stil des umliegenden Codes: Sprache der Kommentare, Namensgebung, Einrückung.
 - Lösche und überschreibe nichts, was nicht ausdrücklich Teil des Auftrags ist.
 
+Zwischenstände sichern (zweimal an einem Tag Arbeit gekostet):
+
+- **Committe und pushe, sobald ein Arbeitsschritt steht** — nicht erst, wenn
+  alles fertig ist. Ein Commit blockiert nichts, nimmt kein Ergebnis vorweg und
+  ist kein Anspruch auf Abnahme; er sichert nur. Lieber drei kleine Commits, die
+  überleben, als ein großer, der verlorengeht.
+- **Vor jedem Warten zuerst sichern.** Wartest du auf eine Testsuite oder einen
+  Hintergrundlauf, gehört der Commit DAVOR — genau in dieser Wartezeit ist am
+  01.09.2026 zweimal ein Container neugestartet worden, und was nicht committet
+  war, war weg. Warten und Sichern schließen sich nicht aus.
+- **Benenne im Commit-Text ehrlich, was noch aussteht** ("Suite und Lint stehen
+  aus", "ungeprüft"). Das hat sich bewährt: Ein als UNGEPRUEFT gekennzeichneter
+  Zwischenstand wurde vom nachfolgenden Agenten erst geprüft statt blind
+  fortgeschrieben — ein beschönigender Text hätte diese Prüfung gekostet.
+- Ein `git push` merged nichts und liefert nichts aus. Der Pull Request bleibt
+  Sache des Haupt-Agenten.
+
 Sparsam arbeiten (kostet echtes Geld):
 
 - **Lies gezielt, nicht breit.** Enthält der Auftrag bereits Auszüge mit

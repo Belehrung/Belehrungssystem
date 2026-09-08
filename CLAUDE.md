@@ -18,20 +18,54 @@ Vorgabe des Betreibers (10.08.2026): Der Haupt-Agent baut selbst nichts.
 
 ## Modellwahl beim Delegieren
 
-Vorgabe des Betreibers (23.08.2026): **Claude Fable 5 ist reserviert.** Nur für
+**Vorgabe des Betreibers (06.09.2026, nachmittags — sie ersetzt alles Frühere):
+Fable 5.1 NUR bei schwierigen Sachen. Sonst die normalen Executer-Agenten.**
 
-- komplexe Refactorings der GESAMTEN Systemarchitektur, oder
-- vollautomatische CI/CD- und Testing-Pipelines.
+Der Regelfall ist damit wieder der Standard-Executer; Fable ist die begründete
+Ausnahme. „Schwierig" heisst NICHT „umfangreich": ein Auftrag über acht Dateien
+mit immer demselben Handgriff ist nicht schwierig, ein Auftrag über eine Datei,
+in der eine falsche Annahme still ein grünes Ergebnis erzeugen kann, ist es.
+Brauchbare Merkmale sind: mehrere Quellen, die einander widersprechen können;
+Schwellen oder Zahlen, die hergeleitet statt gesetzt werden müssen; ein
+Ergebnis, das falsch grün aussehen kann; Architektur, die über den Auftrag
+hinaus wirkt. Die Einordnung trifft der Haupt-Agent VOR dem Auftrag und schreibt
+sie in einem Satz dazu — sonst wird jeder Auftrag im Nachhinein schwierig.
 
-Alles andere geht an den Standard-Executer. „Reserviert" heißt: Der Regelfall
-ist der Standard, nicht die Ausnahme. Ein Auftrag über mehrere Dateien ist noch
-kein Architektur-Refactoring, und ein einzelner CI-Job ist noch keine Pipeline —
-wer die Regel so auslegt, hat sie aufgehoben. Im Zweifel Standard-Executer.
+Zur Vorgeschichte, weil sie erklärt, warum die Regel weder die eine noch die
+andere frühere Fassung ist: Am Vormittag desselben Tages galt kurzzeitig „im
+Zweifel AUCH Fable" — das war zu weit. Davor (23.08.2026) galt „reserviert für
+Refactorings der GESAMTEN Systemarchitektur oder vollautomatische
+CI/CD-Pipelines" — das war zu eng, und zwar aus zwei gemessenen Gründen:
+
+- Sie wurde über **Fable 5** geschrieben. Fable 5.1 erschien am 01.09.2026 und
+  liegt beim agentischen Programmieren messbar woanders (Terminal-Bench 4.0:
+  55,8 % gegen 42,0 % für Fable 5).
+- Ein A/B-Lauf am 06.09.2026 über EINEN echten Auftrag (#103, Vorwarnung beim
+  QR-Nummernraum): derselbe Auftrag wörtlich, zwei getrennte Arbeitsbäume auf
+  demselben Stand, blinde Bewertung durch dieselbe Prüfung. Ergebnis „A
+  deutlich besser", A war Fable 5.1. Ausschlaggebend war kein Umfang, sondern
+  ein **gemessenes falsches Grün** beim Standard-Entwurf: er las nur den
+  Hochwasserstand der Datenbank, während die Vergabe zusätzlich das
+  Nummernbuch heranzieht — im zurückgespielten Backup meldete er „0 %
+  verbraucht", während zehn Nummern übrig waren.
+
+**Was diese Messung NICHT hergibt, und was deshalb nicht behauptet werden
+darf:** Es ist eine Stichprobe von EINS. Ein Teil des Vorsprungs folgt aus einer
+Strukturentscheidung (eigenständiges Skript mit austauschbaren Abhängigkeiten
+statt inline gerufenem Modul), nicht aus mehr Sorgfalt. Und der Fable-Entwurf
+hatte einen eigenen blockierenden Fehler — er hätte den Wochenreport dauerhaft
+gelb gefärbt, also genau die Krankheit erzeugt, aus der er zwölf Zeilen weiter
+oben seine eigene Schwelle herleitet. „Fable ist besser" ist damit NICHT belegt;
+belegt ist nur, dass die enge Reservierung vom 23.08. auf einer überholten
+Tatsachengrundlage stand. Genau deshalb steht hier jetzt „nur bei schwierigen
+Sachen" und nicht „im Zweifel auch": eine Stichprobe von eins trägt eine
+Ausnahme, keine Umkehr.
 
 Ein Modellwechsel ist ohnehin nie die Erklärung für ein besseres Ergebnis,
 solange sich am selben Tag auch die Aufträge geändert haben. Wer beides
 zugleich ändert, kann hinterher nicht sagen, woran es lag — und darf es dann
-auch nicht behaupten.
+auch nicht behaupten. Der A/B-Lauf oben hielt den Auftrag deshalb wörtlich
+gleich; anders wäre er wertlos gewesen.
 
 ## Prüf-Ritual des Haupt-Agenten
 
@@ -49,6 +83,12 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
 4. **Volle Testsuite** (test/run.sh). WÄHREND des Laufs keine parallelen
    Skripte gegen dieselbe DB: der Studio-Zähl-Wächter schlägt sonst
    falsch an, und eine Pipe (`| tail`) verschluckt seinen Fehler-Exit.
+   Danach das Dateizahl-Ritual: die im Log gelaufenen Dateien gegen die in
+   `test/run.sh` registrierten halten und `diff` EXIT 0 verlangen — sonst
+   meldet ein Lauf grün, der die Hälfte nie angefasst hat. **Zum Normalisieren
+   `sed 's/^[[:space:]]*//'` nehmen, NIE `tr -d '[:space:]'`:** letzteres
+   frisst auch die Zeilenumbrüche, aus 232 Zeilen wird eine, und der Vergleich
+   meldet „registriert: 1" (gemessen 30.08.2026).
 5. Erst dann Commit und Push.
 6. **Die CI ist die letzte Instanz, nicht der eigene Prüfstand.** Fertig
    ist, was GitHub Actions grün nennt — die lokale Suite hat schon grün
@@ -214,6 +254,20 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   der Test dabei nicht rot, bewacht er nichts. Der wörtliche Altwert im Test
   und eine Positivkontrolle (derselbe Aufruf OHNE den Defekt muss das
   Gegenteil bewirken) lösen beide Formen.
+  **Dritte Erscheinungsform, gemessen am 30.08.2026: das geprüfte Element ist
+  strukturell geschützt.** Vier CSS-Zusicherungen sollten belegen, dass ein
+  `button` nicht mehr auf volle Formularbreite läuft — sie blieben mit UND
+  ohne die Reparatur bei exakt denselben 213px bzw. 180px. Grund: die Knöpfe
+  standen in einem `<form>`, das seinerseits Flex-Item mit
+  `flex-basis:content` war; bei dessen intrinsischer Breitenberechnung
+  ignoriert der Browser die Prozentbreite des Kindes. Dasselbe gilt für
+  `display:inline-block` (shrink-to-fit). Die Zusicherung war also nicht
+  falsch, sie war unempfindlich — und hätte den Befund, den sie bewachen
+  sollte, nie wieder gefunden. Der Ausweg ist nicht eine andere Schwelle,
+  sondern ein anderer Beleg: ein Element ohne diesen Schutz (hier: ein Knopf
+  in einer `<td>`, 66px gut ↔ 162px defekt, und ein DIREKTES Flex-Item,
+  71px ↔ 862px). Verallgemeinert: bei jeder Messung fragen, ob der gemessene
+  Wert überhaupt von der geprüften Eigenschaft abhängen KANN.
 - **Ein Agent, der abbricht, ist wertvoller als einer, der immer liefert.**
   Fehlt eine Vorbedingung, ist der Abbruch mit Rückfrage das richtige Ergebnis.
 - **Sollwerte statt geratener Schwellen.** Wer eine Prüfanweisung an den
@@ -235,6 +289,30 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   dazubekommt, und fallen dann still aus den Lesestellen heraus. Wo möglich
   über den echten Weg schreiben; wo eine Attrappe nötig bleibt, ein Wächter,
   der ihre Spaltenliste gegen die Wirklichkeit hält.
+- **„Stelle X macht es auch so" ist keine Messung.** Am 30.08.2026 stand in
+  einem Auftrag von mir: „Rückfall auf die lokale IP wie /admin/qr". Die
+  Vorlage funktionierte nicht — der Server lauscht auf `127.0.0.1`
+  (`server.js:1331`), der Port stand fest verdrahtet auf `:3100` gegen
+  `PORT=3200` aus der `.env`, und die Subdomain-Auflösung liefert für
+  `10.20.30.40:3100` null, also 404. Toter Code, den mein Auftrag in eine
+  zweite Datei kopiert hätte. Wer eine bestehende Stelle als Vorbild nennt,
+  hat sie damit nicht geprüft; sie ist eine Fundstelle, kein Beleg.
+- **Ein Verweis kann in eine Sackgasse zeigen.** Derselbe Tag: mein Auftrag
+  ließ einen Hinweis „siehe Einstellungen" bauen — `basis_url` wird in der
+  ganzen Anwendung nirgends geschrieben (`setConfig(…,'basis_url',…)` nur in
+  Tests, `routes/admin/einstellungen.js` enthält die Zeichenkette null mal).
+  Vor jedem „siehe X" nachsehen, ob X das kann, was der Satz verspricht.
+- **Eine Gegenprobe darf ihren eigenen Zielwert nicht im Bezeichner tragen.**
+  Ein Wächter suchte nach dem Muster `[Hh]ost`; die Gegenprobe hieß
+  `MeinTestHost` und erfüllte das Muster durch ihren eigenen Namen — grün aus
+  dem falschen Grund. Mit `meinRechner` wiederholt: der Wächter blieb GRÜN
+  (EXIT=0), der Befund war echt. Testdaten so benennen, dass sie mit dem
+  gesuchten Muster nichts gemein haben.
+- **Ein vollständig kaputter Ausdruck fällt laut aus, ein halb kaputter
+  still.** Wiederholt am 30.08.2026: eine Regex, die gar nichts mehr matcht,
+  reißt den Lauf mit einer Ausnahme ab und wird sofort bemerkt; eine, die
+  noch die Hälfte trifft, liefert weiter grün. Die gefährlichere Änderung ist
+  deshalb die kleine.
 
 ## Prüfstand-Regeln
 
@@ -363,13 +441,37 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
 - **Was eine Datei verspricht, muss das Werkzeug erzwingen, nicht die Prosa.**
   Der `kundschafter` war als „ändert nichts" beschrieben und hatte `Bash` in
   der Werkzeugliste — die Werkzeugliste ist die Zusicherung, also flog `Bash` raus.
-- **Bekannte Grenze:** Der Pipe-Wächter matcht auf die Zeichenkette `test/run.sh`
-  im Befehl, nicht auf einen Dateipfad, und gilt für die ganze Sitzung — er hat
-  am 22.08.2026 nachweislich einen Befehl blockiert, der auf `/workspace/gymdocu`
-  zielte. Eine Sitzung, deren Projektverzeichnis `/workspace/gymdocu` ist, hätte
-  aber gar keinen Wächter, weil dort kein `.claude/settings.json` liegt. Keine
-  zweite Kopie dorthin legen — sie würde driften. Wer dort ohne diese Sitzung
-  Testläufe pipet, ist ungeschützt.
+- **Bekannte Grenze — er greift WEITER, als hier lange stand.** Nachgemessen am
+  08.09.2026 gegen den echten Befehl aus `.claude/settings.json`: Er erfasst
+  nicht nur `test/run.sh`, sondern auch `node test_…` (im Quelltext:
+  `case "$c" in *test/run.sh*|*'node test_'*`). Gemessen wurden BEIDE
+  Richtungen — drei Sperrfälle (`node test_x.js | tail -5`,
+  `bash test/run.sh | tail -1`, verkettet) alle `deny`, vier Durchlassfälle
+  (Umleitung in eine Datei, `set -o pipefail;` davor, `cat test/run.sh | grep`,
+  `ls -la`) alle durch. Er sperrt also nicht pauschal.
+- **Er lehnt den GANZEN Befehl ab, nicht nur das gepipete Segment.** Bei
+  `cp sicherung.js ziel.js && node test_x.js | tail` läuft das `cp` NIE. Wer
+  eine Gegenprobe zurücknimmt, darf die Rücknahme deshalb nicht mit einem
+  Testlauf verketten — sonst steht der Defekt noch, während die Meldung
+  „zurückgenommen" lautet. Am 08.09.2026 genau so passiert; aufgefallen ist es
+  nur, weil die Rücknahme gegen eine UNABHÄNGIG angelegte Kopie geprüft wurde
+  (`diff`/`md5sum`), nicht gegen die Behauptung des Ausführenden. Nach jedem
+  blockierten verketteten Befehl gilt: prüfen, was davon schon lief.
+- **Er fällt auf Prosa herein — auch auf die eigene.** Er segmentiert an `&&`,
+  `||`, `;` und Zeilenumbruch und hält jedes Segment, das nach dem Trimmen mit
+  einem Ausführungs-Verb beginnt, für einen Lauf. Eine Commit-Botschaft, die
+  einen solchen Befehl nur ZITIERT, löst ihn deshalb aus: am 08.09.2026 hat er
+  genau den Commit blockiert, der diesen Absatz hier einträgt. Er fällt dabei
+  sicher aus (deny, nicht allow) — aber es ist die Krankheit, vor der die Regel
+  „Tests dürfen nicht an Prosa scheitern" ein paar Zeilen weiter oben warnt,
+  und sie führt zum Abschalten statt zum Lesen. Ausweg bis dahin: in Botschaften
+  und Dokumenten `node <testdatei>.js` schreiben statt eines echten Dateinamens.
+- Er gilt für die ganze Sitzung und matcht auf Zeichenketten, nicht auf
+  Dateipfade — er hat am 22.08.2026 einen Befehl blockiert, der auf
+  `/workspace/gymdocu` zielte. Eine Sitzung, deren Projektverzeichnis
+  `/workspace/gymdocu` ist, hätte aber gar keinen Wächter, weil dort kein
+  `.claude/settings.json` liegt. Keine zweite Kopie dorthin legen — sie würde
+  driften. Wer dort ohne diese Sitzung Testläufe pipet, ist ungeschützt.
 
 ## Abhängigkeiten anheben
 
