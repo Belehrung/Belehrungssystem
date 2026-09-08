@@ -18,21 +18,33 @@ Vorgabe des Betreibers (10.08.2026): Der Haupt-Agent baut selbst nichts.
 
 ## Modellwahl beim Delegieren
 
-**Vorgabe des Betreibers (06.09.2026, nachmittags — sie ersetzt alles Frühere):
-Fable 5.1 NUR bei schwierigen Sachen. Sonst die normalen Executer-Agenten.**
+**Vorgabe des Betreibers (08.09.2026 — sie ersetzt alles Frühere): Fable 5.1
+NUR bei SEHR komplexen Aufgaben. Ausnahme davon nur dort, wo ein messbarer
+Vorteil BELEGT ist — und belegt ist bisher keiner (siehe unten).**
 
-Der Regelfall ist damit wieder der Standard-Executer; Fable ist die begründete
-Ausnahme. „Schwierig" heisst NICHT „umfangreich": ein Auftrag über acht Dateien
-mit immer demselben Handgriff ist nicht schwierig, ein Auftrag über eine Datei,
-in der eine falsche Annahme still ein grünes Ergebnis erzeugen kann, ist es.
-Brauchbare Merkmale sind: mehrere Quellen, die einander widersprechen können;
-Schwellen oder Zahlen, die hergeleitet statt gesetzt werden müssen; ein
-Ergebnis, das falsch grün aussehen kann; Architektur, die über den Auftrag
-hinaus wirkt. Die Einordnung trifft der Haupt-Agent VOR dem Auftrag und schreibt
-sie in einem Satz dazu — sonst wird jeder Auftrag im Nachhinein schwierig.
+Der Regelfall ist damit der Standard-Executer; Fable ist die eng begründete
+Ausnahme. „Sehr komplex" heisst NICHT „umfangreich": ein Auftrag über acht
+Dateien mit immer demselben Handgriff ist es nicht, ein Auftrag über eine
+einzige Datei, in der eine falsche Annahme still ein grünes Ergebnis erzeugen
+kann, kann es sein. Brauchbare Merkmale sind: mehrere Quellen, die einander
+widersprechen können; Schwellen oder Zahlen, die hergeleitet statt gesetzt
+werden müssen; ein Ergebnis, das falsch grün aussehen kann; Architektur, die
+über den Auftrag hinaus wirkt. Die Einordnung trifft der Haupt-Agent VOR dem
+Auftrag und schreibt sie in einem Satz dazu — sonst wird jeder Auftrag im
+Nachhinein sehr komplex.
+
+**Was „messbarer Vorteil" heisst — und warum bisher keiner vorliegt.** Gemeint
+ist eine Messung am eigenen Bestand, nicht ein Herstellerwert und nicht ein
+Eindruck. Die einzige, die es gibt, ist der A/B-Lauf zu #103 weiter unten: eine
+Stichprobe von EINS, deren Vorsprung zum Teil aus einer Strukturentscheidung
+folgt und deren Sieger einen eigenen blockierenden Fehler hatte. Das trägt eine
+Ausnahme im Einzelfall, KEINEN belegten Vorteil. Wer sich auf diesen Halbsatz
+beruft, nennt die Messung, auf die er sich stützt — sonst gilt der Regelfall.
 
 Zur Vorgeschichte, weil sie erklärt, warum die Regel weder die eine noch die
-andere frühere Fassung ist: Am Vormittag desselben Tages galt kurzzeitig „im
+andere frühere Fassung ist: Am 06.09.2026 nachmittags galt „nur bei schwierigen
+Sachen"; die Fassung vom 08.09. zieht dieselbe Linie enger und verlangt für
+jede Ausweitung einen Beleg. Am Vormittag des 06.09. galt kurzzeitig „im
 Zweifel AUCH Fable" — das war zu weit. Davor (23.08.2026) galt „reserviert für
 Refactorings der GESAMTEN Systemarchitektur oder vollautomatische
 CI/CD-Pipelines" — das war zu eng, und zwar aus zwei gemessenen Gründen:
@@ -57,8 +69,8 @@ hatte einen eigenen blockierenden Fehler — er hätte den Wochenreport dauerhaf
 gelb gefärbt, also genau die Krankheit erzeugt, aus der er zwölf Zeilen weiter
 oben seine eigene Schwelle herleitet. „Fable ist besser" ist damit NICHT belegt;
 belegt ist nur, dass die enge Reservierung vom 23.08. auf einer überholten
-Tatsachengrundlage stand. Genau deshalb steht hier jetzt „nur bei schwierigen
-Sachen" und nicht „im Zweifel auch": eine Stichprobe von eins trägt eine
+Tatsachengrundlage stand. Genau deshalb steht oben „nur bei sehr komplexen
+Aufgaben" und nicht „im Zweifel auch": eine Stichprobe von eins trägt eine
 Ausnahme, keine Umkehr.
 
 Ein Modellwechsel ist ohnehin nie die Erklärung für ein besseres Ergebnis,
