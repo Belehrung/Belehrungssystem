@@ -48,7 +48,12 @@ const { pruefeGeheimnisse } = require('./geheimnis-riegel');
 
 const ENDPUNKT = 'https://api.openai.com/v1/chat/completions';
 const VORGABE_MODELL = 'gpt-5';
-const VORGABE_MAX_RUNDEN = 25;
+// 25 reichten in Messlauf 1 (09.09.2026) NICHT: das Modell rief je Antwort
+// genau EINEN Werkzeugaufruf auf (gemessen: 25 Antworten, 25 Aufrufe) und lief
+// mitten in der Arbeit ins Limit. Der Abbruch war richtig -- ein Lauf, der
+// abbricht, hat NICHTS geliefert, nicht "keine Befunde" -- aber die Grenze war
+// zu eng gesetzt. Zusammen mit dem Buendel-Hinweis im Auftragstext unten.
+const VORGABE_MAX_RUNDEN = 40;
 const MAX_ANTWORT_TOKEN = 24000;
 const MAX_SUCHE_ZEILEN = 80;
 const MAX_LIES_ZEILEN = 400;
@@ -62,7 +67,7 @@ const BRIEF_KERN = "Du bist unabhängiger Code-Gegenleser für ein Node.js/Postg
 
 // Genau dieser eine Absatz (Auftrag Teil B), der den Sinn dieses Werkzeugs
 // gegenueber tools/zweitmeinung.js ausmacht: es DARF nachsehen.
-const WERKZEUG_ABSATZ = "DU HAST WERKZEUGE. Behaupte nichts, was du nachsehen kannst, und schreibe\nNIEMALS \"aus dem Diff nicht ersichtlich\" oder \"falls künftig\" — sieh\nstattdessen nach. Prüfe insbesondere: werden die neuen Spalten in der\nSELECT-Abfrage der betroffenen Seiten überhaupt ausgewählt? Wie werden die\nWerte beim Schreiben normalisiert? Gibt es weitere Schreibwege ausserhalb\ndes Diffs? Bevor du einen Befund meldest, sieh dir die tragende Stelle im\nOriginal an und zitiere sie mit Datei und Zeilennummer. Ein Befund ohne\nnachgesehene Fundstelle ist keiner.";
+const WERKZEUG_ABSATZ = "DU HAST WERKZEUGE. Behaupte nichts, was du nachsehen kannst, und schreibe\nNIEMALS \"aus dem Diff nicht ersichtlich\" oder \"falls künftig\" — sieh\nstattdessen nach. Prüfe insbesondere: werden die neuen Spalten in der\nSELECT-Abfrage der betroffenen Seiten überhaupt ausgewählt? Wie werden die\nWerte beim Schreiben normalisiert? Gibt es weitere Schreibwege ausserhalb\ndes Diffs? Bevor du einen Befund meldest, sieh dir die tragende Stelle im\nOriginal an und zitiere sie mit Datei und Zeilennummer. Ein Befund ohne\nnachgesehene Fundstelle ist keiner.\n\nDu darfst und sollst MEHRERE Werkzeugaufrufe in EINER Antwort buendeln, wenn sie\nvoneinander unabhaengig sind — das spart Runden, und die Rundenzahl ist begrenzt.";
 
 const AUFTRAGSTEXT = BRIEF_KERN + '\n' + WERKZEUG_ABSATZ;
 
