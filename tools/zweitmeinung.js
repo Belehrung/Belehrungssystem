@@ -25,7 +25,8 @@
 // WAS RAUSGEHT: ausschliesslich die zwei Dateien, die der Aufrufer nennt. Das
 // Werkzeug sammelt NICHTS selbst aus dem Repo ein — sonst ginge irgendwann etwas
 // mit, das nicht mitgehen soll. Vor dem Senden läuft ein Riegel gegen
-// Geheimnisse (siehe GEHEIMNIS_MUSTER); er bricht ab, statt zu warnen.
+// Geheimnisse (siehe tools/geheimnis-riegel.js, GEHEIMNIS_MUSTER); er bricht
+// ab, statt zu warnen.
 //
 // DER SCHLÜSSEL GEHÖRT NICHT INS REPO. Er kommt aus der Umgebungsvariablen
 // OPENAI_API_KEY oder aus der Datei, die OPENAI_KEY_DATEI nennt. Fehlt beides,
@@ -61,21 +62,15 @@
 
 const fs = require('node:fs');
 const https = require('node:https');
+const { pruefeGeheimnisse, selbsttestRiegel } = require('./geheimnis-riegel');
 
 const ENDPUNKT = 'https://api.openai.com/v1/chat/completions';
 const VORGABE_MODELL = 'gpt-5';
 const MAX_ANTWORT_TOKEN = 24000;
 
-// Riegel gegen Geheimnisse. Bewusst eng gehalten: jedes Muster steht für eine
-// Form, die tatsächlich vorkommt, nicht für "sieht irgendwie geheim aus". Ein
-// Muster, das ständig falsch anschlägt, wird abgeschaltet statt gelesen.
-const GEHEIMNIS_MUSTER = [
-    { name: 'OpenAI-Schlüssel', regex: /\bsk-[A-Za-z0-9_-]{20,}/ },
-    { name: 'GitHub-Token', regex: /\bgh[pousr]_[A-Za-z0-9]{20,}/ },
-    { name: 'Telegram-Bot-Token', regex: /\b\d{8,12}:[A-Za-z0-9_-]{30,}/ },
-    { name: 'privater Schlüssel (PEM)', regex: /-----BEGIN (?:RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----/ },
-    { name: 'Verbindungszeichenfolge mit Passwort', regex: /\b(?:postgres|postgresql|mysql|mongodb):\/\/[^\s:/@]+:[^\s@]+@/ },
-];
+// Riegel gegen Geheimnisse: siehe tools/geheimnis-riegel.js (herausgezogen
+// am 09.09.2026, weil tools/gegenleser-repo.js dieselbe Pruefung braucht —
+// nicht kopieren, sondern gemeinsam benutzen).
 
 const BRIEF = `Du bist unabhängiger Gegenleser für ein deutsches Arbeitsschutz-Dokumentationssystem
 für Fitnessstudios. Unten stehen ZWEI Blöcke: erst der amtliche Wortlaut der einschlägigen
@@ -129,61 +124,6 @@ function schluesselHolen() {
     return wert;
 }
 
-// Gibt die Liste der Treffer zurueck, nicht nur ja/nein: der Aufrufer soll sehen,
-// WAS angeschlagen hat, sonst sucht er blind.
-function geheimnisseFinden(text) {
-    return GEHEIMNIS_MUSTER.filter((m) => m.regex.test(text)).map((m) => m.name);
-}
-
-// Der Riegel taugt nur, wenn er nachweislich anschlagen KANN. Dieser Selbsttest
-// prueft beide Richtungen je Muster und ist damit die Positivkontrolle, ohne die
-// "keine Geheimnisse gefunden" nur "nicht gesucht" hiesse.
-function selbsttest() {
-    const faelle = [
-        // Die Praefixe absichtlich zusammengesetzt statt als Literal: sonst steht
-        // im Quelltext eine Zeichenkette, die ein Geheimnis-Scanner (auch der von
-        // GitHub beim Push) fuer einen echten Schluessel halten kann.
-        ['OpenAI-Schlüssel', 'harmlos ' + 'sk' + '-proj-' + 'A'.repeat(40) + ' harmlos'],
-        ['GitHub-Token', 'gh' + 'p_' + 'B'.repeat(36)],
-        ['Telegram-Bot-Token', '123456789:' + 'C'.repeat(35)],
-        ['privater Schlüssel (PEM)', '-----BEGIN PRIVATE KEY-----'],
-        ['Verbindungszeichenfolge mit Passwort', 'postgresql://nutzer:geheim@host:5432/db'],
-    ];
-    // Absichtlich harmlos: ein Diff-Ausschnitt, wie er wirklich vorkommt, samt
-    // Zeichenketten, die nach Geheimnis AUSSEHEN, aber keins sind.
-    const harmlos = [
-        '+    fristNorm: "§ 12 Abs. 2 Satz 4 MPBetreibV",',
-        '-    const SALT_ROUNDS = 12;',
-        '+    // Vorbild: sk-Nummern der DGUV, etwa sk-204-010',
-        '+    const url = "postgresql://localhost:5432/gymdocu_test";',
-        '+    process.env.GYMDOCU_TG_BOT_TOKEN = "";',
-    ].join('\n');
-
-    let fehler = 0;
-    for (const [name, text] of faelle) {
-        const treffer = geheimnisseFinden(text);
-        const ok = treffer.includes(name);
-        console.log(`${ok ? '  ✓' : '  ✗ FEHLT'} ROT: ${name}${ok ? '' : ` (gefunden: ${treffer.join(', ') || 'nichts'})`}`);
-        if (!ok) fehler++;
-    }
-    const harmlosTreffer = geheimnisseFinden(harmlos);
-    const harmlosOk = harmlosTreffer.length === 0;
-    console.log(`${harmlosOk ? '  ✓' : '  ✗ FEHLALARM'} GRUEN: ein echter Diff-Ausschnitt schlaegt nicht an`
-        + `${harmlosOk ? '' : ` (angeschlagen: ${harmlosTreffer.join(', ')})`}`);
-    if (!harmlosOk) fehler++;
-
-    // Sollzahl von Hand eingetragen: faellt ein Muster ersatzlos aus der Liste,
-    // liefe der Selbsttest sonst mit weniger Faellen weiter durch und meldete gruen.
-    const ERWARTETE_FAELLE = 6;
-    const gelaufen = faelle.length + 1;
-    if (gelaufen !== ERWARTETE_FAELLE) {
-        console.log(`  ✗ FEHLT: ${gelaufen} Faelle gelaufen, erwartet ${ERWARTETE_FAELLE} — Muster entfernt?`);
-        fehler++;
-    }
-    console.log(fehler ? `\n${fehler} Fehler` : '\nSelbsttest sauber');
-    return fehler ? 1 : 0;
-}
-
 function anfragen(schluessel, modell, inhalt) {
     const koerper = JSON.stringify({
         model: modell,
@@ -218,7 +158,7 @@ function anfragen(schluessel, modell, inhalt) {
 
 async function main() {
     const argumente = process.argv.slice(2);
-    if (argumente[0] === '--selbsttest') return selbsttest();
+    if (argumente[0] === '--selbsttest') return selbsttestRiegel();
     if (argumente.length < 2) {
         console.error('Aufruf: node tools/zweitmeinung.js <diff.txt> <gesetze.txt> [modell]');
         console.error('        node tools/zweitmeinung.js --selbsttest');
@@ -230,10 +170,10 @@ async function main() {
     const diff = fs.readFileSync(diffPfad, 'utf8');
     const gesetze = fs.readFileSync(gesetzePfad, 'utf8');
 
-    const treffer = geheimnisseFinden(diff + '\n' + gesetze);
-    if (treffer.length) {
+    const pruefung = pruefeGeheimnisse(diff + '\n' + gesetze);
+    if (!pruefung.sauber) {
         console.error('ABBRUCH: Der Text enthaelt etwas, das wie ein Geheimnis aussieht — '
-            + treffer.join(', ') + '.');
+            + pruefung.treffer.map((t) => t.name).join(', ') + '.');
         console.error('Es wurde NICHTS gesendet. Entferne die Stelle oder schneide den Diff enger.');
         return 3;
     }
