@@ -5,7 +5,9 @@
 // OpenAI-Modell und gibt dessen Prüfbericht aus. Zweite Gegenlesung neben den
 // Claude-Agenten, mit anderer Modellfamilie und damit anderen blinden Flecken.
 //
-// WOZU, und wozu NICHT (gemessen am 09.09.2026, vier Läufe):
+// WOZU, und wozu NICHT (gemessen am 09.09.2026, sechs Läufe — vier über
+// Rechtstexte, zwei über Code; die Bilanz unten ist die der Rechtstext-Läufe,
+// die der Code-Läufe steht weiter unten bei der Modellwahl):
 // Am selben Lexikon-Diff fand die Claude-Gegenlesung eine falsche Rechtsaussage
 // und übersah eine zweite; GPT-5 fand beide. Auf dem nachgearbeiteten Stand fand
 // GPT-5 eine dritte, die drei Durchgänge vorher übersehen hatten. Im vierten Lauf
@@ -34,9 +36,28 @@
 //   node tools/zweitmeinung.js <diff.txt> <gesetze.txt> [modell]
 //   node tools/zweitmeinung.js --selbsttest      (prüft den Geheimnis-Riegel)
 //
-// Vorgabemodell ist gpt-5. Für Code-Diffs wäre gpt-5-codex die passendere
-// Variante — die ist aber laut obiger Messung nicht der Grund, warum dieses
-// Werkzeug existiert.
+// Vorgabemodell ist gpt-5. DIE CODEX-VARIANTEN SIND HIER KEIN AUSWEG, und das
+// ist keine Annahme mehr, sondern am 09.09.2026 zweimal gemessen:
+//
+//   (1) Sie laufen an ENDPUNKT gar nicht. gpt-5-codex antwortet HTTP 404
+//       ("has been deprecated"); die lebenden Varianten (gpt-5.1-codex,
+//       gpt-5.2-codex, gpt-5.3-codex) antworten HTTP 404 mit "This model is
+//       not supported in the v1/chat/completions endpoint. Use the
+//       v1/responses endpoint instead." Wer sie benutzen will, braucht einen
+//       anderen Endpunkt, nicht nur einen anderen Modellnamen.
+//
+//   (2) Sie helfen auch dann nicht — das ist der eigentliche Punkt. Derselbe
+//       Code-Diff (Zweig frist-herkunft, 790 Zeilen), derselbe Auftragstext
+//       wörtlich, einmal an gpt-5 und einmal über /v1/responses an
+//       gpt-5.3-codex: zusammen NULL blockierende und sechs "sollte behoben
+//       werden" — und alle sechs fielen beim Nachmessen am Bestand. Sie hatten
+//       die Form "aus dem Diff nicht ersichtlich, ob …" und "falls künftig …".
+//
+// Der Grund ist strukturell und nicht durch ein anderes Modell zu beheben: bei
+// Rechtstexten liegt die Antwort IM mitgegebenen Wortlaut, bei Code liegt sie
+// in Dateien, die der Diff nicht zeigt — und dieses Werkzeug kann nicht
+// nachsehen. Es kann nichts holen und nichts laufen lassen; das steht oben
+// schon, hier ist die Messung dazu.
 
 const fs = require('node:fs');
 const https = require('node:https');
