@@ -401,19 +401,31 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   GymDocu-Repo scheitert schon am allerersten Aufruf mit `createdb: error:
   connection to server on socket … failed: Connection refused`. Das sieht wie
   ein echter Testfehler aus und ist ein reines Umgebungsproblem — wer es dafür
-  hält, sucht den Fehler in seiner eigenen Änderung. Seit 09.09.2026 fährt
+  hält, sucht den Fehler in seiner eigenen Änderung. Seit 09.09.2026 startet
   `.claude/hooks/session-start.sh` (registriert unter `hooks.SessionStart` in
-  `.claude/settings.json`) beim Sitzungsstart jeden Cluster hoch, der `down`
-  ist; `test/session-start-hook-pruefen.sh` prüft ihn in CI gegen Attrappen.
-  **Zwei Grenzen, die der Hook NICHT deckt — dort bleibt es Handarbeit:**
-  Er wirkt erst für Sitzungen, die ihn im ausgecheckten Stand schon haben,
-  also erst nach dem Merge auf den Standard-Branch, nicht aus einem offenen
-  PR heraus. Und er hängt an DIESEM Repo als Projektverzeichnis: eine Sitzung,
-  deren Projektverzeichnis `/workspace/gymdocu` ist, bekommt ihn nicht — dort
-  liegt keine `.claude/settings.json`, und eine zweite Kopie dorthin zu legen
-  verbietet „Dieselbe Aussage an zwei Orten". In beiden Fällen vor `test/run.sh`
-  selbst nachsehen: `pg_lsclusters`, bei `down` dann `pg_ctlcluster 16 main
-  start` (oder `service postgresql start`).
+  `.claude/settings.json`) beim Sitzungsstart jeden Cluster, dessen Status mit
+  `down` BEGINNT — auch `down,recovery` oder `down,binaries_missing`, die
+  `pg_lsclusters` selbst zusammensetzt (dessen Quelltext, Zeile 75-81; es
+  vergleicht diese Spalte aus demselben Grund per Präfix). Ein Vergleich auf
+  Gleichheit übergeht sie still: am 09.09.2026 gemessen, der Hook tat bei
+  `down,recovery` gar nichts und meldete auch nichts.
+  `test/session-start-hook-pruefen.sh` prüft ihn in CI gegen Attrappen.
+  **Was der Hook NICHT deckt — dort bleibt es Handarbeit:** (1) Er wirkt erst
+  für Sitzungen, die ihn im ausgecheckten Stand schon haben, also erst nach dem
+  Merge auf den Standard-Branch, nicht aus einem offenen PR heraus. (2) Er
+  hängt an DIESEM Repo als Projektverzeichnis; eine Sitzung, deren
+  Projektverzeichnis `/workspace/gymdocu` ist, bekommt ihn nicht — dort liegt
+  keine `.claude/settings.json`, und eine zweite Kopie dorthin zu legen
+  verbietet „Dieselbe Aussage an zwei Orten". (3) Er läuft nur bei
+  `CLAUDE_CODE_REMOTE=true`, auf einem persönlichen Rechner also gar nicht.
+  **Ungemessen ist, ob die CLI den SessionStart-Eintrag tatsächlich lädt und
+  ausführt.** Geprüft sind nur die Registrierung in der JSON und das Verhalten
+  des Skripts selbst — dieselbe Lücke, die weiter unten schon für die
+  PreToolUse-Wächter steht (C2). Ein Cluster, der trotzdem `down` ist, ist
+  deshalb zuerst ein Verdacht gegen diese Annahme, nicht gegen das Skript.
+  In allen Fällen gilt: vor `test/run.sh` selbst nachsehen — `pg_lsclusters`,
+  bei `down` dann `pg_ctlcluster 16 main start` (oder `service postgresql
+  start`).
 
 ## Dieselbe Aussage an zwei Orten
 
