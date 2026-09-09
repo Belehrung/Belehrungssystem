@@ -1,29 +1,16 @@
 #!/bin/sh
 # .claude/hooks/session-start.sh — startet beim Sitzungsstart jeden
-# PostgreSQL-Cluster, der "down" ist.
+# PostgreSQL-Cluster, der "down" ist (auch mit angehaengtem Zusatzstatus wie
+# "down,recovery" oder "down,binaries_missing"). Faellt offen aus: exit 0 in
+# jedem Fall, auch bei jedem Fehler (deshalb kein "set -e") — ein
+# SessionStart-Hook, der rot wird, stoert den Sitzungsstart. Laeuft nur bei
+# CLAUDE_CODE_REMOTE=true.
 #
-# Anlass (09.09.2026): In einer frischen Sitzung ist der PostgreSQL-16-Cluster
-# im Arbeitscontainer nicht gestartet (pg_lsclusters meldet "down"). Die
-# Testsuite des GymDocu-Repos (liegt nicht in diesem Repo) scheitert dadurch
-# beim allerersten Aufruf mit "connection refused" — das sieht wie ein echter
-# Testfehler aus, ist aber ein reines Umgebungsproblem.
-#
-# Der Cluster ist ein CONTAINER-weiter Dienst: einmal je Sitzung gestartet,
-# gilt er fuer alle Arbeitsbaeume und alle Subagenten derselben Sitzung.
-# Deshalb steht dieser Hook im Steuer-Repo, dessen .claude/settings.json laut
-# CLAUDE.md "fuer die ganze Sitzung" gilt — auch wenn die Testsuite selbst
-# in einem anderen Repo liegt.
-#
-# Nur im Arbeitscontainer aktiv (CLAUDE_CODE_REMOTE=true): auf einem
-# persoenlichen Rechner waere das ungefragte Hochfahren eines Systemdienstes
-# ein Eingriff, der dort gar nicht gebraucht wird — das Problem tritt nur im
-# Arbeitscontainer auf.
-#
-# Hausregel "Ein Hook muss offen ausfallen": dieses Skript beendet sich in
-# JEDEM Fall mit exit 0, auch bei jedem Fehler — ein SessionStart-Hook, der
-# rot wird, stoert den Sitzungsstart. Deshalb bewusst kein "set -e".
+# Anlass und Grenzen: CLAUDE.md, Abschnitt Pruefstand-Regeln.
 
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
+    # Auf einem persoenlichen Rechner waere das ungefragte Hochfahren eines
+    # Systemdienstes ein Eingriff, der dort gar nicht gebraucht wird.
     exit 0
 fi
 
@@ -31,18 +18,28 @@ if ! command -v pg_lsclusters >/dev/null 2>&1 || ! command -v pg_ctlcluster >/de
     exit 0
 fi
 
-ausgabe=$(pg_lsclusters --no-header 2>/dev/null) || exit 0
+if ! ausgabe=$(pg_lsclusters --no-header 2>/dev/null); then
+    echo "pg_lsclusters ist gescheitert — von Hand nachsehen: pg_lsclusters (oder: service postgresql status)."
+    exit 0
+fi
 
 # Spalten von "pg_lsclusters --no-header": 1=Version 2=Cluster 3=Port
-# 4=Status(online|down) 5=Besitzer 6=Datenverzeichnis 7=Log. Nicht auf
-# "16 main" festverdrahten — ueber die Zeilen laufen, jeder Cluster zaehlt.
-printf '%s\n' "$ausgabe" | while IFS= read -r zeile; do
-    [ -n "$zeile" ] || continue
-    version=$(printf '%s' "$zeile" | awk '{print $1}')
-    cluster=$(printf '%s' "$zeile" | awk '{print $2}')
-    status=$(printf '%s' "$zeile" | awk '{print $4}')
+# 4=Status 5=Besitzer 6=Datenverzeichnis 7=Log. Nicht auf "16 main"
+# festverdrahten — ueber die Zeilen laufen, jeder Cluster zaehlt. Status ist
+# zusammengesetzt (pg_lsclusters selbst haengt ",recovery"/",binaries_missing"/
+# ... an "down" an) — deshalb Praefix-Vergleich per case, nicht Gleichheit.
+# Feld-Splitting per read statt dreier awk-Aufrufe je Zeile: gleiches
+# Verhalten (Standard-IFS trennt an Weissraum wie awk), weniger Unterprozesse,
+# und die command-v-Pruefung oben verlangt awk gar nicht erst — auf einem
+# Abbild ohne awk waere der Hook bisher still leergelaufen. port/rest werden
+# nicht gebraucht, muessen aber als eigene Variablen dastehen, damit status
+# das vierte Feld trifft.
+printf '%s\n' "$ausgabe" | while read -r version cluster port status rest; do
     [ -n "$version" ] && [ -n "$cluster" ] || continue
-    [ "$status" = "down" ] || continue
+    case "$status" in
+        down|down,*) ;;
+        *) continue ;;
+    esac
 
     if pg_ctlcluster "$version" "$cluster" start >/dev/null 2>&1; then
         echo "PostgreSQL-Cluster $version/$cluster gestartet (war down)."
