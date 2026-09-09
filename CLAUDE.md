@@ -418,11 +418,17 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   keine `.claude/settings.json`, und eine zweite Kopie dorthin zu legen
   verbietet „Dieselbe Aussage an zwei Orten". (3) Er läuft nur bei
   `CLAUDE_CODE_REMOTE=true`, auf einem persönlichen Rechner also gar nicht.
-  **Ungemessen ist, ob die CLI den SessionStart-Eintrag tatsächlich lädt und
-  ausführt.** Geprüft sind nur die Registrierung in der JSON und das Verhalten
-  des Skripts selbst — dieselbe Lücke, die weiter unten schon für die
-  PreToolUse-Wächter steht (C2). Ein Cluster, der trotzdem `down` ist, ist
-  deshalb zuerst ein Verdacht gegen diese Annahme, nicht gegen das Skript.
+  **Dass die CLI den SessionStart-Eintrag wirklich lädt und ausführt, ist seit
+  09.09.2026 gemessen** — unfreiwillig: Der Container startete um 11:17 UTC neu,
+  die Sitzung wurde fortgesetzt, und die CLI meldete von sich aus
+  `SessionStart:resume hook success: PostgreSQL-Cluster 16/main gestartet (war
+  down).` Unabhängig bestätigt durch die Startzeit des Postmaster-Prozesses
+  (11:17:14 UTC, also die Fortsetzung — nicht der Handstart eine Stunde davor).
+  Damit ist hier geschlossen, was für die PreToolUse-Wächter weiter unten offen
+  bleibt (C2). **Gemessen ist dabei die Quelle `resume`, nicht `startup`**;
+  beide hängen an derselben Registrierung, gesehen wurde bisher nur die eine.
+  Ein Cluster, der trotzdem `down` ist, ist deshalb zuerst ein Verdacht gegen
+  die Verdrahtung, nicht gegen das Skript.
   In allen Fällen gilt: vor `test/run.sh` selbst nachsehen — `pg_lsclusters`,
   bei `down` dann `pg_ctlcluster 16 main start` (oder `service postgresql
   start`).
