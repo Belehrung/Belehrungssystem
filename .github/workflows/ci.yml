@@ -28,3 +28,12 @@ jobs:
 
       - name: Hook-Waechter pruefen (pipe.sh, www.sh)
         run: sh test/hooks-pruefen.sh
+
+      - name: Syntax-Check .claude/hooks/session-start.sh
+        run: sh -n .claude/hooks/session-start.sh
+
+      - name: Syntax-Check test/session-start-hook-pruefen.sh
+        run: sh -n test/session-start-hook-pruefen.sh
+
+      - name: SessionStart-Hook pruefen (PostgreSQL-Cluster)
+        run: sh test/session-start-hook-pruefen.sh
