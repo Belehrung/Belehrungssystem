@@ -396,6 +396,24 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   Deploy-Gate. Ein Verzeichnis, das nur der Fehlerfall braucht, wird im
   Erfolgsfall wieder abgeräumt; `rmdir` (nicht `rm -rf`) verweigert sich bei
   gefülltem Verzeichnis und kann deshalb nie Beweise mitreißen.
+- **Der PostgreSQL-Cluster ist in einer frischen Sitzung GESTOPPT.**
+  `pg_lsclusters` meldet dann `16 main 5432 down`, und `test/run.sh` im
+  GymDocu-Repo scheitert schon am allerersten Aufruf mit `createdb: error:
+  connection to server on socket … failed: Connection refused`. Das sieht wie
+  ein echter Testfehler aus und ist ein reines Umgebungsproblem — wer es dafür
+  hält, sucht den Fehler in seiner eigenen Änderung. Seit 09.09.2026 fährt
+  `.claude/hooks/session-start.sh` (registriert unter `hooks.SessionStart` in
+  `.claude/settings.json`) beim Sitzungsstart jeden Cluster hoch, der `down`
+  ist; `test/session-start-hook-pruefen.sh` prüft ihn in CI gegen Attrappen.
+  **Zwei Grenzen, die der Hook NICHT deckt — dort bleibt es Handarbeit:**
+  Er wirkt erst für Sitzungen, die ihn im ausgecheckten Stand schon haben,
+  also erst nach dem Merge auf den Standard-Branch, nicht aus einem offenen
+  PR heraus. Und er hängt an DIESEM Repo als Projektverzeichnis: eine Sitzung,
+  deren Projektverzeichnis `/workspace/gymdocu` ist, bekommt ihn nicht — dort
+  liegt keine `.claude/settings.json`, und eine zweite Kopie dorthin zu legen
+  verbietet „Dieselbe Aussage an zwei Orten". In beiden Fällen vor `test/run.sh`
+  selbst nachsehen: `pg_lsclusters`, bei `down` dann `pg_ctlcluster 16 main
+  start` (oder `service postgresql start`).
 
 ## Dieselbe Aussage an zwei Orten
 
