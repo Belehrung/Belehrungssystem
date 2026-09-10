@@ -92,6 +92,10 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
 3. **Vier Augen bei nicht-trivialen Diffs** (mehr als eine Datei echter
    Logik): unabhängige Review über den Diff (/code-review) — der
    Entwerfer ist für die Fehler seines eigenen Entwurfs blind.
+   **Bei folgenschweren Änderungen kommt Astra als zweite, unabhängige
+   Kontrollinstanz DANEBEN** (eigener Abschnitt unten; sie ersetzt diese
+   Review nicht). Gemessen am 10.09.2026: beide Spuren fanden Befunde, die
+   die jeweils andere nicht hatte.
 4. **Volle Testsuite** (test/run.sh). WÄHREND des Laufs keine parallelen
    Skripte gegen dieselbe DB: der Studio-Zähl-Wächter schlägt sonst
    falsch an, und eine Pipe (`| tail`) verschluckt seinen Fehler-Exit.
@@ -184,6 +188,137 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
    - In beiden Fällen gilt: Diese Prüfungen sagen „der Betrieb läuft und ist
      aktuell", NICHT „die Änderung wirkt richtig". Was in der Datenbank
      steht, bleibt unsichtbar und soll es bleiben.
+
+## Astra als unabhängige Kontrollinstanz
+
+Betreiber-Vorgabe 10.09.2026. Sie ERWEITERT Schritt 3 des Prüf-Rituals, sie
+ersetzt ihn nicht: die Claude-Review bleibt, Astra kommt daneben.
+
+**Die Rollen sind getrennt, und die Trennung ist der ganze Wert.** Claude
+baut — über den Executer, wie gehabt. Astra baut NICHTS. Nicht „zu 90 %
+Claude", sondern beim Bauen 100 zu 0: Astra hat in dieser Umgebung keine
+Werkzeuge, und wer mitgebaut hat, prüft seinen eigenen Entwurf. Eine
+Kontrollinstanz, die zehn Prozent selbst geschrieben hat, ist keine mehr.
+
+Ablauf: **Claude baut → Astra prüft → Claude korrigiert → Astra bestätigt.**
+
+**„Astra bestätigt" heißt: seine Befunde sind nachgezogen. Es heißt NIE
+„mergefähig".** Das Tor bleiben die CI und das Prüf-Ritual. Der Grund ist
+gemessen: am 10.09.2026 kam der Wert nicht aus den Befunden, sondern daraus,
+dass jeder einzelne SELBST nachgemessen wurde, bevor er ein Auftrag wurde —
+und einer wurde bewusst NICHT umgesetzt (die harten Löschrouten), weil er
+den Beitrag gesprengt hätte. Diese Entscheidung braucht die Vorgeschichte
+des Repos; sie kann nicht ausgelagert werden. Sobald am Ende eine Freigabe
+steht, verlagert sich die Verantwortung dorthin und der eigene Prüfgang
+wird zur Formsache.
+
+**Rundenbegrenzung:** eine volle Prüfung, eine Bestätigungsrunde. Weitere nur
+bei einem NEUEN blockierenden Befund, nicht für Geschmacksfragen.
+
+### Wann
+
+Nach Umkehrbarkeit, nicht nach Umfang. Eine Kontrastkorrektur über zwölf
+Dateien braucht es nicht; eine unwiderrufliche Vergabe über zwei Repos
+braucht es, auch wenn sie klein aussieht.
+
+- **VOR der Umsetzung den Plan prüfen lassen**, wenn die Änderung
+  folgenschwer oder über zwei Repos verteilt ist. Das ist der Punkt mit dem
+  größten Hebel: die beiden teuersten Fehler des 10.09.2026 standen im
+  AUFTRAG, nicht im Code — eine zu grobe Vorgabe (#126, der Executer musste
+  widersprechen) und eine Lücke, die eine ganze Umgehung offenließ (#144,
+  `.catch()` am Transaktionsaufruf). Ein Plan ist ein paar Kilobyte; eine
+  Bau-Runde ist es nicht.
+- **NACH der Umsetzung den Code prüfen lassen** — immer bei Änderungen an
+  Wächtern und Zusicherungen. Dort war die Ausbeute am höchsten, und dort
+  tarnt sich ein Fehler als grüner Lauf.
+
+### Was Astra bekommt
+
+Volles Material, keine Diffs allein — gemessen macht das den Unterschied
+(s. Zahlen unten). Praktisch heißt „volles Material" der betroffene
+Teilbaum, nicht das Repo: 502 getrackte Dateien sind 11,96 MB ≈ 3,2 Mio.
+Token, das Eingabelimit liegt bei 922.000. Ein brauchbares Bündel waren am
+10.09.2026 acht Dateien mit 192k Token für 2,03 $.
+
+Dazu gehören:
+- der Diff,
+- die Dateien, die zum Verständnis nötig sind (auch unveränderte —
+  Geschwisterwächter, aufgerufene Kernmodule, das Schema),
+- **die Testausgaben, einschließlich der Gegenproben-Zahlen.** Am
+  10.09.2026 hat Astra die Suite-Ausgabe NIE gesehen und rein am Quelltext
+  geurteilt. Gerade an „welche Zusicherungen fielen im ROT-Lauf, welche
+  nicht" erkennt man grün aus dem falschen Grund.
+
+Die Datengrenze bleibt: nur Diffs, selbst geholte Gesetzestexte und
+Dateien, die `git ls-files` auflistet. Keine Zugangsdaten, keine
+Kundendaten, keine Datenbankinhalte.
+
+### Prüfreihenfolge
+
+Nicht die allgemeine Liste, sondern die für DIESES System:
+
+1. **Mandantentrennung und Rechte** — jede Abfrage trägt `studio_id`. Der
+   eine Fehler, der wirklich katastrophal wäre.
+2. **Prüfungen, die nicht rot werden können.** Steht bewusst so weit oben:
+   das ist unsere teuerste Klasse, nicht fehlende Abdeckung, sondern eine
+   FALSCHE Zusicherung von Abdeckung. Am 10.09.2026 drei Fälle in einer
+   einzigen kleinen Änderung, dazu der Telegram-Fund; im August das falsche
+   Grün beim QR-Nummernraum.
+3. **Logikfehler.**
+4. **Datenintegrität** — besonders alles Unwiderrufliche (Nummernbuch,
+   harte Löschungen, append-only).
+5. **Architektur**, soweit sie über den Auftrag hinaus wirkt.
+6. **Fehlende Fälle und Randbedingungen.**
+7. **Performance.**
+
+### Worauf sich das stützt — und was es nicht hergibt
+
+Drei Läufe über EINEN Diff (#144) am 10.09.2026, Prompt wörtlich gleich:
+
+| Lauf | Material | Befunde | nur dort | Dauer | Kosten |
+|---|---|---|---|---|---|
+| Astra, nur Diff | Diff + 2 Testdateien | 4 | 2 | 37 s | 0,21 $ |
+| Claude, Arbeitsbaum | frei gewählt | 8 | 6 | ~12 min | 177k Token |
+| Astra, volle Dateien | 8 Dateien | 4 | 3 | 58 s | 2,03 $ |
+
+Alle zwölf Befunde wurden selbst am Quelltext nachgeprüft, alle trafen zu.
+**Mehr Material ließ Astra nicht MEHR finden, sondern ANDERES** — und jede
+der drei Spuren hatte etwas, das keine andere hatte. Das ist der Beleg für
+„beide", nicht für „das bessere".
+
+Der Fund, der die Entscheidung trägt: Astra sah, dass ein neuer
+Verhaltenstest ECHTE Telegram-Alarme auslöst (der melde-Wrapper reichte an
+das echte `melde()` weiter, und dieselbe Suite läuft auf dem Live-Server als
+Deploy-Gate). Der Executer hatte das als VORZUG in den Kommentar
+geschrieben, die Claude-Prüfung sortierte dieselbe Zeile in ihre
+„geprüft und in Ordnung"-Liste. **Beide sahen die Tatsache und zogen den
+falschen Schluss** — nicht aus Unaufmerksamkeit, sondern weil beide
+dieselbe Frage nicht stellten: was bedeutet das auf dem Live-Server?
+
+**Was das NICHT hergibt:** ein Diff, drei Läufe, ein Tag. Das ist ein
+Anfang, keine Statistik. Und die Spuren hatten ungleiche Freiheit — Claude
+durfte wählen, was es liest, Astra bekam ein zusammengestelltes Bündel.
+Wer sich auf diesen Abschnitt beruft, um mehr zu behaupten, nennt die
+Messung, auf die er sich stützt.
+
+**Nicht als Rechtsquelle.** Wissensstand 30.04.2026; für #32 und #117 wird
+der Wortlaut weiterhin selbst geholt.
+
+### Aufrufmuster
+
+Schlüssel NIE in die Kommandozeile (Prozessliste, s. #99), sondern über eine
+curl-Konfigdatei, die danach gelöscht wird:
+
+    cfg=/tmp/claude-0/.curlcfg-oai; umask 077
+    printf 'header = "Authorization: Bearer %s"\n' "$(tr -d '\r\n' < /tmp/claude-0/.oai-key)" > "$cfg"
+    curl -sS -K "$cfg" -H "Content-Type: application/json" -d @anfrage.json \
+         https://api.openai.com/v1/responses -o antwort.json
+    rm -f "$cfg"
+
+Endpunkt `/v1/responses`, Feld `input` (nicht `messages`), dazu
+`max_output_tokens`. Der Betreiber hat am 10.09.2026 ausdrücklich auf eine
+Rotation des Schlüssels VERZICHTET, obwohl er im Sitzungsprotokoll steht;
+Missbrauch zeigte sich an der OpenAI-Abrechnung.
 
 ## Kosten
 
