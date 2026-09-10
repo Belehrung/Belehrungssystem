@@ -30,7 +30,7 @@
 //
 // AUFRUF:
 //   node tools/gegenleser-repo.js <diff.txt> [--wurzel=/pfad/zum/repo]
-//                                 [--modell=gpt-5] [--max-runden=25]
+//                                 [--modell=gpt-5.6-sol] [--max-runden=25]
 //                                 [--protokoll=/pfad.jsonl]
 //   node tools/gegenleser-repo.js --selbsttest   (prueft die Riegel, OHNE Netz)
 //
@@ -47,7 +47,21 @@ const { execFileSync } = require('node:child_process');
 const { pruefeGeheimnisse } = require('./geheimnis-riegel');
 
 const ENDPUNKT = 'https://api.openai.com/v1/chat/completions';
-const VORGABE_MODELL = 'gpt-5';
+// Modellstufe fuer LANGE agentische Sitzungen mit vielen Werkzeugaufrufen
+// und aufeinanderfolgenden Vorgaben -- genau das tut dieses Werkzeug.
+// Gemessen 10.09.2026 gegen unser Konto (GET /v1/models): gpt-5 stammte vom
+// 05.08.2025; verfuegbar sind seither u. a. gpt-5.6-sol, gpt-5.6-terra,
+// gpt-5.6-luna, gpt-6-astra. Alle drei geprueften (sol/terra, gpt-6-astra)
+// antworten weiterhin ueber denselben /v1/chat/completions-Endpunkt
+// (Ein-Wort-Anfrage, alle drei lieferten "bereit") -- die Schnittstelle
+// aendert sich also nicht, nur die Stufe. Laut Hersteller- und
+// unabhaengigen Benchmarks (Stand 10.09.2026) ist Sol die Stufe fuer
+// "complex coding and long sessions, advanced agents"; die Befolgungstreue
+// bricht erst ueber SEHR langem Kontext mit vielen aufeinanderfolgenden
+// Vorgaben ein, unter ~100K aktivem Kontext ist die Leistung stark.
+// --modell= bleibt der Schalter, um ohne Codeaenderung zu vergleichen
+// (z. B. --modell=gpt-6-astra).
+const VORGABE_MODELL = 'gpt-5.6-sol';
 // 25 reichten in Messlauf 1 (09.09.2026) NICHT: das Modell rief je Antwort
 // genau EINEN Werkzeugaufruf auf (gemessen: 25 Antworten, 25 Aufrufe) und lief
 // mitten in der Arbeit ins Limit. Der Abbruch war richtig -- ein Lauf, der
@@ -58,6 +72,28 @@ const MAX_ANTWORT_TOKEN = 24000;
 const MAX_SUCHE_ZEILEN = 80;
 const MAX_LIES_ZEILEN = 400;
 const MAX_AUSGABE_BYTES = 600 * 1024;
+
+// Preise pro 1 Mio. Token (USD), Stand 10.09.2026 -- das ist ein STAND, kein
+// Naturgesetz, und er VERALTET: bei jeder neuen Modellstufe hier nachtragen,
+// nicht raten. Ein Modell, das hier fehlt, MUSS als "unbekannt" gemeldet
+// werden -- niemals stillschweigend als 0,00 (siehe CLAUDE.md, "eine
+// gescheiterte Messung meldet sich als unveraendert").
+const PREISTABELLE = {
+    'gpt-5.6-sol': { rein: 5.00, raus: 30.00 },
+    'gpt-5.6-terra': { rein: 2.50, raus: 15.00 },
+    'gpt-5.6-luna': { rein: 1.00, raus: 6.00 },
+    'gpt-6-astra': { rein: 12.50, raus: 75.00 },
+};
+
+// Liefert null (= ausdruecklich "unbekannt"), wenn das Modell nicht in der
+// Preistabelle steht -- der Aufrufer muss das von einer echten Zahl
+// unterscheiden koennen, sonst verschwindet ein neues Modell in einer
+// stillen Null.
+function kostenSchaetzen(modell, promptToken, completionToken) {
+    const preis = PREISTABELLE[modell];
+    if (!preis) return null;
+    return (promptToken / 1e6) * preis.rein + (completionToken / 1e6) * preis.raus;
+}
 
 // Wörtlich aus /tmp/claude-0/codereview.py uebernommen (Auftrag Teil B) — der
 // dortige Sechs-Punkte-Auftrag ist erprobt (siehe tools/zweitmeinung.js-Kopf).
@@ -309,11 +345,15 @@ function werkzeugLies(pfad, von, bis) {
     };
 }
 
-function anfragen(schluessel, modell, messages) {
+// mitWerkzeugen=false ist der harte Riegel der letzten zwei Runden (Auftrag
+// Teil 2c): OHNE "tools" im Request KANN das Modell keine Funktion mehr
+// aufrufen, nur noch Text liefern. Vorgabe true, damit ein Aufrufer, der den
+// Parameter vergisst, nicht versehentlich den Riegel auf JEDE Runde legt.
+function anfragen(schluessel, modell, messages, mitWerkzeugen = true) {
     const koerper = JSON.stringify({
         model: modell,
         messages,
-        tools: WERKZEUGE,
+        ...(mitWerkzeugen ? { tools: WERKZEUGE } : {}),
         max_completion_tokens: MAX_ANTWORT_TOKEN,
     });
     return new Promise((erfuellen, ablehnen) => {
@@ -354,7 +394,7 @@ function protokollSchreiben(eintrag) {
 
 function konsoleUsage() {
     console.error('Aufruf: node tools/gegenleser-repo.js <diff.txt> [--wurzel=/pfad/zum/repo]');
-    console.error('        [--modell=gpt-5] [--max-runden=25] [--protokoll=/pfad.jsonl]');
+    console.error('        [--modell=gpt-5.6-sol] [--max-runden=25] [--protokoll=/pfad.jsonl]');
     console.error('        node tools/gegenleser-repo.js --selbsttest');
 }
 
@@ -378,6 +418,31 @@ function argumenteLesen(argv) {
         optionen.protokollPfad = path.join(os.tmpdir(), `gegenleser-repo-${Date.now()}-${process.pid}.jsonl`);
     }
     return optionen;
+}
+
+// Rundenbudget sichtbar machen (Auftrag Teil 2, "der Kern des Auftrags"):
+// bisher erfuhr das Modell NIE, wie viele Runden bleiben, und las weiter,
+// bis das Limit hart zuschlug -- Anlass waren zwei Laeufe in Folge ohne
+// Bericht, der zweite nach 2,78 Mio. Eingabe-Token fuer nichts (siehe
+// Auftrag). Drei Stufen: (a) jede Runde einen schlichten Stand, (b) ab 70%
+// verbrauchter Runden ein deutlicher Hinweis, jetzt zusammenzufassen,
+// (c) in den letzten zwei Runden die harte Aufforderung, JETZT den Bericht
+// zu liefern -- diese Stufe faellt zeitgleich mit mitWerkzeugen=false in
+// anfragen() zusammen, das ist der eigentliche Riegel, diese Nachricht ist
+// nur seine Ankuendigung ans Modell.
+function rundenHinweisBauen(runde, maxRunden, istLetzteZweiRunden, ist70Prozent) {
+    const verbleibend = maxRunden - runde;
+    let text = `[Rundenstand: Runde ${runde} von ${maxRunden} -- danach noch ${verbleibend} moeglich.]`;
+    if (istLetzteZweiRunden) {
+        text += ' LETZTE RUNDE(N): Ab jetzt bekommst du KEINE Werkzeuge mehr angeboten. '
+            + 'Liefere JETZT deinen Bericht als Text -- mit dem, was du bisher geprueft hast, '
+            + 'und nenne ausdruecklich, was du deshalb NICHT mehr pruefen konntest.';
+    } else if (ist70Prozent) {
+        text += ' Du hast ueber 70% der Runden verbraucht. Fasse jetzt zusammen, was du bisher '
+            + 'hast, statt weiter zu lesen -- die verbleibenden Runden reichen nur noch fuer das '
+            + 'Noetigste.';
+    }
+    return text;
 }
 
 async function main(argvUeberschreibung) {
@@ -453,6 +518,10 @@ async function main(argvUeberschreibung) {
         }
         console.log(`Suchen: ${sucheAnzahl}  Lesungen: ${liesAnzahl}  Ablehnungen: ${ablehnungenAnzahl}`);
         console.log(`Runden: ${runde}  Token rein: ${promptTokenSumme}  Token raus: ${completionTokenSumme}`);
+        const kosten = kostenSchaetzen(optionen.modell, promptTokenSumme, completionTokenSumme);
+        console.log(kosten === null
+            ? `Kosten unbekannt (Modell "${optionen.modell}" nicht in der Preistabelle)`
+            : `Kosten geschaetzt: $${kosten.toFixed(4)}`);
         console.log(`Protokoll: ${protokollPfadAktuell}`);
     };
 
@@ -465,9 +534,20 @@ async function main(argvUeberschreibung) {
             return 4;
         }
 
+        // Stufe (a)+(b)+(c): das Rundenbudget wird SICHTBAR, statt dass das
+        // Modell blind weiterliest, bis das Limit hart zuschlaegt. Die
+        // letzten zwei Runden sind der Riegel: KEINE tools mehr im Request
+        // (siehe mitWerkzeugen in anfragen()), das Modell KANN dann nur noch
+        // Text liefern.
+        const istLetzteZweiRunden = (optionen.maxRunden - runde) <= 1;
+        const ist70Prozent = runde >= Math.ceil(optionen.maxRunden * 0.7);
+        const rundenHinweis = rundenHinweisBauen(runde, optionen.maxRunden, istLetzteZweiRunden, ist70Prozent);
+        messages.push({ role: 'user', content: rundenHinweis });
+        protokollSchreiben({ typ: 'rundenhinweis', runde, istLetzteZweiRunden, ist70Prozent, text: rundenHinweis });
+
         let antwort;
         try {
-            antwort = await anfragen(schluessel, optionen.modell, messages);
+            antwort = await anfragen(schluessel, optionen.modell, messages, !istLetzteZweiRunden);
         } catch (e) {
             console.error(`FEHLER bei der Anfrage: ${e.message}`);
             zusammenfassungAusgeben();
@@ -487,6 +567,13 @@ async function main(argvUeberschreibung) {
                 return 5;
             }
             console.log(nachricht.content);
+            // WICHTIG (Auftrag Teil 2): ein unter Rundendruck erzeugter
+            // Bericht ist NICHT dasselbe wie ein regulaerer und muss als
+            // solcher erkennbar sein -- sonst waere er schlimmer als der
+            // ehrliche Abbruch von heute.
+            console.log(istLetzteZweiRunden
+                ? `\n[BERICHT UNTER RUNDENDRUCK -- erzwungen in Runde ${runde} von ${optionen.maxRunden}, Werkzeuge waren bereits abgeschaltet. NICHT als vollstaendige Pruefung werten.]`
+                : '\n[Bericht regulaer erstellt, Rundenlimit nicht erreicht.]');
             zusammenfassungAusgeben();
             return 0;
         }
@@ -538,8 +625,54 @@ async function main(argvUeberschreibung) {
 // gegen ihn und raeumt ihn in einem finally wieder ab. Fasst NICHTS ausserhalb
 // von os.tmpdir() an.
 
+// Baustoff fuer die gestubbten OpenAI-Antworten im Selbsttest (Runden- und
+// Kostenpruefungen unten) -- KEIN Netz, nur Datenstrukturen, die genau wie
+// eine echte /v1/chat/completions-Antwort geformt sind.
+function nachrichtWerkzeugaufrufBauen(id, funktionName, argumente) {
+    return {
+        role: 'assistant',
+        content: null,
+        tool_calls: [{ id, type: 'function', function: { name: funktionName, arguments: JSON.stringify(argumente) } }],
+    };
+}
+function nachrichtTextBauen(text) {
+    return { role: 'assistant', content: text, tool_calls: null };
+}
+function antwortKoerperBauen(nachricht, promptToken, completionToken) {
+    return { choices: [{ message: nachricht }], usage: { prompt_tokens: promptToken, completion_tokens: completionToken } };
+}
+
+// Stub fuer https.request: KEIN Netz, keine echten Sockets. Beantwortet der
+// Reihe nach aus "warteschlange" und zeichnet JEDEN tatsaechlich gebauten
+// Anfragekoerper in "aufgezeichnet" auf (inkl. ob "tools" mitgeschickt
+// wurde) -- die Rundenriegel-Pruefung unten prueft an DIESER Aufzeichnung,
+// nicht an einer Behauptung im Text.
+function httpsStubBauen(warteschlange, aufgezeichnet) {
+    return function (_url, _optionen, callback) {
+        const antwortHandler = {};
+        const fakeAntwort = {
+            statusCode: 200,
+            on(ereignis, fn) { antwortHandler[ereignis] = fn; return this; },
+        };
+        return {
+            on() { return this; },
+            end(koerperJson) {
+                aufgezeichnet.push(JSON.parse(koerperJson));
+                const eintrag = warteschlange.shift();
+                if (!eintrag) throw new Error('Selbsttest-Stub: keine weitere Antwort in der Warteschlange');
+                process.nextTick(() => {
+                    callback(fakeAntwort);
+                    antwortHandler.data(Buffer.from(JSON.stringify(eintrag)));
+                    antwortHandler.end();
+                });
+            },
+            destroy() {},
+        };
+    };
+}
+
 async function selbsttest() {
-    const ERWARTETE_FAELLE = 8;
+    const ERWARTETE_FAELLE = 20;
     let gelaufen = 0;
     let fehler = 0;
     const pruefen = (bezeichnung, bedingung) => {
@@ -623,6 +756,179 @@ async function selbsttest() {
                 if (alteDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteDatei;
             }
             pruefen('GRENZFALL 8 (--max-runden=0 bricht sofort mit Exit 4 ab, ohne Schluessel und ohne Netz)', code === 4);
+        }
+
+        // ===== LAUF A: Rundenriegel und Rundenhinweis ueber 10 Runden =====
+        // --max-runden=10 -> 70%-Schwelle ist Runde 7 (ceil(0.7*10)=7), die
+        // letzten zwei Runden sind 9 und 10. Runden 1-8 rufen ein Werkzeug
+        // auf (mit tools im Request), Runde 9 versucht es trotz fehlender
+        // tools nochmal (der Code verarbeitet das dennoch -- der Riegel
+        // sitzt am REQUEST, nicht an der Antwort), Runde 10 liefert Text.
+        {
+            const alterKey = process.env.OPENAI_API_KEY;
+            const alteDatei = process.env.OPENAI_KEY_DATEI;
+            process.env.OPENAI_API_KEY = 'selbsttest-dummy-schluessel-ohne-netz';
+            delete process.env.OPENAI_KEY_DATEI;
+            const echtesHttpsRequest = https.request;
+            const echtesLog = console.log;
+
+            const aufgezeichnetA = [];
+            const ausgabeZeilenA = [];
+            const warteschlangeA = [];
+            for (let r = 1; r <= 9; r++) {
+                warteschlangeA.push(antwortKoerperBauen(
+                    nachrichtWerkzeugaufrufBauen(`call-${r}`, 'suche', { muster: 'Zeile' }),
+                    100, 50,
+                ));
+            }
+            warteschlangeA.push(antwortKoerperBauen(nachrichtTextBauen('TESTBERICHT-ENDE'), 100, 50));
+
+            https.request = httpsStubBauen(warteschlangeA, aufgezeichnetA);
+            console.log = (msg) => ausgabeZeilenA.push(String(msg));
+
+            let codeA;
+            try {
+                codeA = await main([
+                    path.join(klon, 'harmlos.txt'),
+                    `--wurzel=${klon}`,
+                    '--modell=gpt-5.6-terra',
+                    '--max-runden=10',
+                    `--protokoll=${path.join(klon, 'selbsttest-protokoll-a.jsonl')}`,
+                ]);
+            } finally {
+                console.log = echtesLog;
+                https.request = echtesHttpsRequest;
+                if (alterKey !== undefined) process.env.OPENAI_API_KEY = alterKey; else delete process.env.OPENAI_API_KEY;
+                if (alteDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteDatei;
+            }
+
+            pruefen('LAUF A ABGESCHLOSSEN 9 (voller 10-Runden-Lauf mit Werkzeugaufrufen endet regulaer mit Exit 0)', codeA === 0);
+
+            const werkzeugeVorhandenRunden1bis8 = aufgezeichnetA.slice(0, 8)
+                .every((k) => Array.isArray(k.tools) && k.tools.length === WERKZEUGE.length);
+            pruefen('RUNDENRIEGEL 10 (Runden 1-8 schicken "tools" tatsaechlich mit -- Positivkontrolle)', werkzeugeVorhandenRunden1bis8);
+
+            const keineWerkzeugeLetzteZwei = !!aufgezeichnetA[8] && !!aufgezeichnetA[9]
+                && aufgezeichnetA[8].tools === undefined && aufgezeichnetA[9].tools === undefined;
+            pruefen('RUNDENRIEGEL 11 (Runden 9+10 -- die letzten zwei -- schicken KEIN "tools" mit, geprueft an der tatsaechlich gebauten Anfrage)', keineWerkzeugeLetzteZwei);
+
+            const letzteNachricht = (koerper) => koerper && koerper.messages[koerper.messages.length - 1].content;
+            const hinweisRunde3 = letzteNachricht(aufgezeichnetA[2]);
+            pruefen(`RUNDENHINWEIS 12 (Runde 3 von 10 zeigt den schlichten Stand: "${hinweisRunde3}")`,
+                hinweisRunde3 === '[Rundenstand: Runde 3 von 10 -- danach noch 7 moeglich.]');
+
+            const hinweisRunde7 = letzteNachricht(aufgezeichnetA[6]);
+            pruefen(`RUNDENHINWEIS 13 (Runde 7 von 10, ab 70% verbraucht, zeigt den deutlichen Hinweis: "${hinweisRunde7}")`,
+                typeof hinweisRunde7 === 'string'
+                && hinweisRunde7.startsWith('[Rundenstand: Runde 7 von 10 -- danach noch 3 moeglich.]')
+                && hinweisRunde7.includes('70%'));
+
+            const hinweisRunde9 = letzteNachricht(aufgezeichnetA[8]);
+            pruefen(`RUNDENHINWEIS 14 (Runde 9 von 10, letzte zwei, zeigt die harte Aufforderung: "${hinweisRunde9}")`,
+                typeof hinweisRunde9 === 'string'
+                && hinweisRunde9.startsWith('[Rundenstand: Runde 9 von 10 -- danach noch 1 moeglich.]')
+                && hinweisRunde9.includes('LETZTE RUNDE'));
+
+            pruefen('BERICHTSKENNZEICHNUNG 15 (Bericht aus Runde 10 ist als "UNTER RUNDENDRUCK" markiert, nicht als regulaer)',
+                ausgabeZeilenA.some((z) => z.includes('TESTBERICHT-ENDE'))
+                && ausgabeZeilenA.some((z) => z.includes('BERICHT UNTER RUNDENDRUCK'))
+                && !ausgabeZeilenA.some((z) => z.includes('Bericht regulaer erstellt')));
+
+            pruefen('KOSTENZEILE 16 (voller Lauf mit bekanntem Modell druckt eine numerische Kostenzeile)',
+                ausgabeZeilenA.some((z) => /^Kosten geschaetzt: \$\d/.test(z)));
+        }
+
+        // ===== LAUF B: Bericht WEIT vor dem Limit ist "regulaer" =====
+        // Gegenprobe zu Fall 15: derselbe Kennzeichnungscode, aber Runde 1
+        // von 10 liegt nicht in den letzten zwei Runden -- der Bericht muss
+        // als regulaer markiert sein, NICHT als unter Rundendruck.
+        {
+            const alterKey = process.env.OPENAI_API_KEY;
+            const alteDatei = process.env.OPENAI_KEY_DATEI;
+            process.env.OPENAI_API_KEY = 'selbsttest-dummy-schluessel-ohne-netz';
+            delete process.env.OPENAI_KEY_DATEI;
+            const echtesHttpsRequest = https.request;
+            const echtesLog = console.log;
+
+            const aufgezeichnetB = [];
+            const ausgabeZeilenB = [];
+            const warteschlangeB = [antwortKoerperBauen(nachrichtTextBauen('TESTBERICHT-SOFORT'), 100, 50)];
+
+            https.request = httpsStubBauen(warteschlangeB, aufgezeichnetB);
+            console.log = (msg) => ausgabeZeilenB.push(String(msg));
+
+            let codeB;
+            try {
+                codeB = await main([
+                    path.join(klon, 'harmlos.txt'),
+                    `--wurzel=${klon}`,
+                    '--modell=gpt-5.6-terra',
+                    '--max-runden=10',
+                    `--protokoll=${path.join(klon, 'selbsttest-protokoll-b.jsonl')}`,
+                ]);
+            } finally {
+                console.log = echtesLog;
+                https.request = echtesHttpsRequest;
+                if (alterKey !== undefined) process.env.OPENAI_API_KEY = alterKey; else delete process.env.OPENAI_API_KEY;
+                if (alteDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteDatei;
+            }
+
+            pruefen('BERICHTSKENNZEICHNUNG 17 (Bericht aus Runde 1 von 10 -- weit vor dem Limit -- ist als regulaer markiert, NICHT als unter Rundendruck)',
+                codeB === 0
+                && ausgabeZeilenB.some((z) => z.includes('Bericht regulaer erstellt'))
+                && !ausgabeZeilenB.some((z) => z.includes('RUNDENDRUCK')));
+        }
+
+        // ===== KOSTENZEILE: reine Funktionspruefung, wörtlicher Erwartungswert =====
+        {
+            const kostenTerra = kostenSchaetzen('gpt-5.6-terra', 2_000_000, 500_000);
+            // Woertlicher Erwartungswert, NICHT aus PREISTABELLE zurueckgerechnet:
+            // 2 Mio Token rein * 2,50 $/Mio = 5,00 $; 0,5 Mio Token raus *
+            // 15,00 $/Mio = 7,50 $; Summe 12,50 $.
+            pruefen(`KOSTENFALL 18 (2 Mio rein / 0,5 Mio raus bei gpt-5.6-terra ergibt ${kostenTerra}, woertlicher Erwartungswert 12.5)`,
+                kostenTerra === 12.5);
+        }
+        {
+            const kostenUnbekannt = kostenSchaetzen('modell-unbekannt-xyz-imaginaer', 1000, 1000);
+            pruefen('KOSTENFALL 19 (Modell ohne Preiseintrag liefert null aus kostenSchaetzen(), nicht 0)', kostenUnbekannt === null);
+        }
+
+        // ===== LAUF C: unbekanntes Modell im vollen Lauf =====
+        {
+            const alterKey = process.env.OPENAI_API_KEY;
+            const alteDatei = process.env.OPENAI_KEY_DATEI;
+            process.env.OPENAI_API_KEY = 'selbsttest-dummy-schluessel-ohne-netz';
+            delete process.env.OPENAI_KEY_DATEI;
+            const echtesHttpsRequest = https.request;
+            const echtesLog = console.log;
+
+            const aufgezeichnetC = [];
+            const ausgabeZeilenC = [];
+            const warteschlangeC = [antwortKoerperBauen(nachrichtTextBauen('TESTBERICHT-UNBEKANNTES-MODELL'), 100, 50)];
+
+            https.request = httpsStubBauen(warteschlangeC, aufgezeichnetC);
+            console.log = (msg) => ausgabeZeilenC.push(String(msg));
+
+            let codeC;
+            try {
+                codeC = await main([
+                    path.join(klon, 'harmlos.txt'),
+                    `--wurzel=${klon}`,
+                    '--modell=modell-unbekannt-xyz-imaginaer',
+                    '--max-runden=10',
+                    `--protokoll=${path.join(klon, 'selbsttest-protokoll-c.jsonl')}`,
+                ]);
+            } finally {
+                console.log = echtesLog;
+                https.request = echtesHttpsRequest;
+                if (alterKey !== undefined) process.env.OPENAI_API_KEY = alterKey; else delete process.env.OPENAI_API_KEY;
+                if (alteDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteDatei;
+            }
+
+            pruefen('KOSTENZEILE 20 (voller Lauf mit unbekanntem Modell druckt "Kosten unbekannt", NIE 0,00 oder $0.00)',
+                codeC === 0
+                && ausgabeZeilenC.some((z) => z.includes('Kosten unbekannt (Modell "modell-unbekannt-xyz-imaginaer" nicht in der Preistabelle)'))
+                && !ausgabeZeilenC.some((z) => /Kosten geschaetzt/.test(z)));
         }
     } catch (e) {
         console.log(`  ✗ FEHLT: unerwarteter Fehler im Selbsttest: ${e.message}`);
