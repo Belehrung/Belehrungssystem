@@ -320,6 +320,35 @@ Endpunkt `/v1/responses`, Feld `input` (nicht `messages`), dazu
 Rotation des Schlüssels VERZICHTET, obwohl er im Sitzungsprotokoll steht;
 Missbrauch zeigte sich an der OpenAI-Abrechnung.
 
+### Context Notes — was daran stimmt und was nicht
+
+Der Betreiber nannte am 10.09.2026 ein Feature „Context Notes", das Notizen
+über das ganze Kontextfenster hält statt stur zusammenzufassen, und
+empfahl, Astra zusätzlich Datenbankschema und API-Dokumentation als
+dauerhaften Kontext mitzugeben.
+
+**Der Schalter existiert unter diesem Namen NICHT — gemessen, nicht
+vermutet.** `context_notes` beantwortet die API mit „Unknown parameter";
+`context_management` gibt es dagegen, es scheitert nur an der Form
+(„expected an array of objects"). Der Unterschied der beiden Fehlermeldungen
+IST die Positivkontrolle: die API unterscheidet zwischen „kenne ich nicht"
+und „kenne ich, falsch befüllt". Wer das Feature einschalten will, ermittelt
+also zuerst die richtige Struktur von `context_management` — die Empfehlung
+per Namen abzuschreiben, schaltet nichts ein und fällt nicht auf.
+
+**Für unseren Einsatz ist der Schalter ohnehin nebensächlich.** Eine
+Gegenlesung ist EIN Aufruf mit EINEM Kontext; über Fenstergrenzen hinweg
+wird da nichts gehalten. Er würde erst in der zweiten Runde zählen
+(„Astra bestätigt"), und auch dort ist der billigere Weg, das Material
+einfach erneut mitzuschicken — bei 192k Token gegen 922k Limit ist Platz.
+
+**Die andere Hälfte des Tipps gilt und ist gratis:** Schema und
+Schnittstellenbeschreibung gehören ins Bündel. Das steht oben unter „Was
+Astra bekommt" schon als „auch unveränderte Dateien", ist aber die Stelle,
+an der es am ehesten vergessen wird — ohne `core/db.js` und die Migration
+kann niemand beurteilen, ob eine Abfrage `studio_id` trägt, und das ist
+Punkt 1 der Prüfreihenfolge.
+
 ## Kosten
 
 Delegation hat Fixkosten (Auftrag formulieren, Einlesen, Bericht, Prüfung) —
