@@ -396,6 +396,42 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   Deploy-Gate. Ein Verzeichnis, das nur der Fehlerfall braucht, wird im
   Erfolgsfall wieder abgeräumt; `rmdir` (nicht `rm -rf`) verweigert sich bei
   gefülltem Verzeichnis und kann deshalb nie Beweise mitreißen.
+- **Der PostgreSQL-Cluster ist in einer frischen Sitzung GESTOPPT.**
+  `pg_lsclusters` meldet dann `16 main 5432 down`, und `test/run.sh` im
+  GymDocu-Repo scheitert schon am allerersten Aufruf mit `createdb: error:
+  connection to server on socket … failed: Connection refused`. Das sieht wie
+  ein echter Testfehler aus und ist ein reines Umgebungsproblem — wer es dafür
+  hält, sucht den Fehler in seiner eigenen Änderung. Seit 09.09.2026 startet
+  `.claude/hooks/session-start.sh` (registriert unter `hooks.SessionStart` in
+  `.claude/settings.json`) beim Sitzungsstart jeden Cluster, dessen Status mit
+  `down` BEGINNT — auch `down,recovery` oder `down,binaries_missing`, die
+  `pg_lsclusters` selbst zusammensetzt (dessen Quelltext, Zeile 75-81; es
+  vergleicht diese Spalte aus demselben Grund per Präfix). Ein Vergleich auf
+  Gleichheit übergeht sie still: am 09.09.2026 gemessen, der Hook tat bei
+  `down,recovery` gar nichts und meldete auch nichts.
+  `test/session-start-hook-pruefen.sh` prüft ihn in CI gegen Attrappen.
+  **Was der Hook NICHT deckt — dort bleibt es Handarbeit:** (1) Er wirkt erst
+  für Sitzungen, die ihn im ausgecheckten Stand schon haben, also erst nach dem
+  Merge auf den Standard-Branch, nicht aus einem offenen PR heraus. (2) Er
+  hängt an DIESEM Repo als Projektverzeichnis; eine Sitzung, deren
+  Projektverzeichnis `/workspace/gymdocu` ist, bekommt ihn nicht — dort liegt
+  keine `.claude/settings.json`, und eine zweite Kopie dorthin zu legen
+  verbietet „Dieselbe Aussage an zwei Orten". (3) Er läuft nur bei
+  `CLAUDE_CODE_REMOTE=true`, auf einem persönlichen Rechner also gar nicht.
+  **Dass die CLI den SessionStart-Eintrag wirklich lädt und ausführt, ist seit
+  09.09.2026 gemessen** — unfreiwillig: Der Container startete um 11:17 UTC neu,
+  die Sitzung wurde fortgesetzt, und die CLI meldete von sich aus
+  `SessionStart:resume hook success: PostgreSQL-Cluster 16/main gestartet (war
+  down).` Unabhängig bestätigt durch die Startzeit des Postmaster-Prozesses
+  (11:17:14 UTC, also die Fortsetzung — nicht der Handstart eine Stunde davor).
+  Damit ist hier geschlossen, was für die PreToolUse-Wächter weiter unten offen
+  bleibt (C2). **Gemessen ist dabei die Quelle `resume`, nicht `startup`**;
+  beide hängen an derselben Registrierung, gesehen wurde bisher nur die eine.
+  Ein Cluster, der trotzdem `down` ist, ist deshalb zuerst ein Verdacht gegen
+  die Verdrahtung, nicht gegen das Skript.
+  In allen Fällen gilt: vor `test/run.sh` selbst nachsehen — `pg_lsclusters`,
+  bei `down` dann `pg_ctlcluster 16 main start` (oder `service postgresql
+  start`).
 
 ## Dieselbe Aussage an zwei Orten
 
