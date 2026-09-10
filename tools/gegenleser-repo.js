@@ -30,7 +30,7 @@
 //
 // AUFRUF:
 //   node tools/gegenleser-repo.js <diff.txt> [--wurzel=/pfad/zum/repo]
-//                                 [--modell=gpt-5.6-sol] [--max-runden=25]
+//                                 [--modell=gpt-5.5] [--max-runden=25]
 //                                 [--protokoll=/pfad.jsonl]
 //   node tools/gegenleser-repo.js --selbsttest   (prueft die Riegel, OHNE Netz)
 //
@@ -47,21 +47,40 @@ const { execFileSync } = require('node:child_process');
 const { pruefeGeheimnisse } = require('./geheimnis-riegel');
 
 const ENDPUNKT = 'https://api.openai.com/v1/chat/completions';
-// Modellstufe fuer LANGE agentische Sitzungen mit vielen Werkzeugaufrufen
-// und aufeinanderfolgenden Vorgaben -- genau das tut dieses Werkzeug.
 // Gemessen 10.09.2026 gegen unser Konto (GET /v1/models): gpt-5 stammte vom
-// 05.08.2025; verfuegbar sind seither u. a. gpt-5.6-sol, gpt-5.6-terra,
-// gpt-5.6-luna, gpt-6-astra. Alle drei geprueften (sol/terra, gpt-6-astra)
-// antworten weiterhin ueber denselben /v1/chat/completions-Endpunkt
-// (Ein-Wort-Anfrage, alle drei lieferten "bereit") -- die Schnittstelle
-// aendert sich also nicht, nur die Stufe. Laut Hersteller- und
-// unabhaengigen Benchmarks (Stand 10.09.2026) ist Sol die Stufe fuer
-// "complex coding and long sessions, advanced agents"; die Befolgungstreue
-// bricht erst ueber SEHR langem Kontext mit vielen aufeinanderfolgenden
-// Vorgaben ein, unter ~100K aktivem Kontext ist die Leistung stark.
-// --modell= bleibt der Schalter, um ohne Codeaenderung zu vergleichen
-// (z. B. --modell=gpt-6-astra).
-const VORGABE_MODELL = 'gpt-5.6-sol';
+// 05.08.2025 und war damit mehrere Stufen alt; verfuegbar sind seither u. a.
+// gpt-5.5, gpt-5.6-sol/terra/luna und gpt-6-astra.
+//
+// WARUM NICHT SOL ODER ASTRA, obwohl das die staerkeren Stufen sind: sie
+// koennen ueber DIESEN Endpunkt keine Werkzeuge. Gemessen am selben Tag,
+// woertliche Antwort der API auf einen Aufruf mit "tools":
+//   "Function tools with reasoning_effort are not supported for gpt-5.6-sol
+//    in /v1/chat/completions. To use function tools, use /v1/responses or
+//    set reasoning_effort to 'none'."
+// Der Fehler kommt auch OHNE eigenes reasoning_effort im Request (dieses
+// Werkzeug setzt es nirgends) -- die Stufe bringt einen Standardwert mit,
+// der sich mit Function Tools hier nicht vertraegt. reasoning_effort:'none'
+// waere zwar messbar moeglich (geprueft: tool_calls kommen dann), nimmt aber
+// genau das Nachdenken weg, wegen dem man die Stufe ueberhaupt nimmt.
+//
+// LEHRE, damit der Fehler nicht wiederkommt: eine Ein-Wort-Anfrage OHNE
+// Werkzeuge beweist NICHT, dass ein Modell auf dem echten Weg funktioniert.
+// Genau so ist diese Datei kurzzeitig auf gpt-5.6-sol gestellt worden, und
+// der erste echte Lauf starb sofort mit HTTP 400. Wer die Stufe wechselt,
+// prueft mit "tools" im Request, nicht mit "sag bereit".
+//
+// gpt-5.5 kann Werkzeuge ueber /v1/chat/completions (gemessen: tool_calls
+// kommen) und ist die Stufe mit der einzigen belegten CODE-REVIEW-Zahl, die
+// vorliegt: 79,2 % erwartete Befunde gefunden gegen 58,3 % Basis, Praezision
+// 27,9 % -> 40,6 % (Stand 10.09.2026). Die Praezision heisst zugleich: mehr
+// als die Haelfte der Meldungen sind Fehlalarme, jeder Befund gehoert
+// nachgemessen.
+//
+// Um Sol/Astra nutzbar zu machen, muesste dieses Werkzeug auf /v1/responses
+// umgebaut werden (anderes Antwortformat: output[] mit function_call statt
+// choices[].message.tool_calls; gemessen, dass es dort geht). Eigener
+// Auftrag. --modell= bleibt der Schalter zum Vergleichen.
+const VORGABE_MODELL = 'gpt-5.5';
 // 25 reichten in Messlauf 1 (09.09.2026) NICHT: das Modell rief je Antwort
 // genau EINEN Werkzeugaufruf auf (gemessen: 25 Antworten, 25 Aufrufe) und lief
 // mitten in der Arbeit ins Limit. Der Abbruch war richtig -- ein Lauf, der
@@ -79,6 +98,7 @@ const MAX_AUSGABE_BYTES = 600 * 1024;
 // werden -- niemals stillschweigend als 0,00 (siehe CLAUDE.md, "eine
 // gescheiterte Messung meldet sich als unveraendert").
 const PREISTABELLE = {
+    'gpt-5.5': { rein: 5.00, raus: 30.00 },
     'gpt-5.6-sol': { rein: 5.00, raus: 30.00 },
     'gpt-5.6-terra': { rein: 2.50, raus: 15.00 },
     'gpt-5.6-luna': { rein: 1.00, raus: 6.00 },
@@ -394,7 +414,7 @@ function protokollSchreiben(eintrag) {
 
 function konsoleUsage() {
     console.error('Aufruf: node tools/gegenleser-repo.js <diff.txt> [--wurzel=/pfad/zum/repo]');
-    console.error('        [--modell=gpt-5.6-sol] [--max-runden=25] [--protokoll=/pfad.jsonl]');
+    console.error('        [--modell=gpt-5.5] [--max-runden=25] [--protokoll=/pfad.jsonl]');
     console.error('        node tools/gegenleser-repo.js --selbsttest');
 }
 
