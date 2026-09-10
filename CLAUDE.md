@@ -484,6 +484,34 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   dem falschen Grund. Mit `meinRechner` wiederholt: der Wächter blieb GRÜN
   (EXIT=0), der Befund war echt. Testdaten so benennen, dass sie mit dem
   gesuchten Muster nichts gemein haben.
+- **Eine Behebung kann Wächter BLIND machen, die vorher gesehen haben.**
+  Nicht nur „kostet sie Abdeckung" — sie kann eine bestehende Zusicherung
+  in eine verwandeln, die nicht mehr fallen KANN. Dreimal gemessen am
+  10.09.2026, in drei verschiedenen Verkleidungen:
+  *Derselbe Statuscode aus einem neuen Grund.* Der Bestellbezug-Riegel
+  antwortet 400. `(d)` und `(d2)` in `test_feature_qr_block.js` bewachen die
+  Spannen- und die Nummernraumprüfung — also den Schutz gegen unwiderruflich
+  falsch vergebene Nummern — und prüften nur „Status 400, nichts
+  geschrieben". Nimmt man den bewachten Schutz heraus, liefert seither DER
+  RIEGEL das 400: beide Abschnitte bleiben grün, während der Schutz weg ist.
+  Gemessen ohne Nummernraum-Riegel: die Zustellung wird STILL ANGENOMMEN
+  (200, `ok:true`, Zeile geschrieben).
+  *Der Wächter bewacht alles außer sich selbst.* Der neue
+  `ops/gymdocu-qr-block-abgleich.js` hatte 32 Zusicherungen über seine
+  Vergleichslogik und KEINE über `main()`, den Alarm-Entscheid oder
+  `process.exitCode`. Fünf Defekte — `main()` durch nichts ersetzen, den
+  Alarmfilter auf „nie ernst" drehen, `telegram()` sofort zurückkehren
+  lassen, den Leser leere Listen liefern lassen, die beiden Leseoperationen
+  vertauschen — ließen alle 32 grün.
+  *Ein Name, der mehr verspricht als die Zusicherung hält.* Ein Testfall hieß
+  „alle drei Spalten geprüft" und unterschied eine. Der Code war richtig, die
+  Zusicherung log über sich selbst — die unangenehmere Sorte, weil ein
+  Prüfender sie liest und abhakt.
+  Die Gegenfrage gehört deshalb in jede Behebung: **welche bestehende
+  Zusicherung könnte mein neuer Rückgabewert, Statuscode oder Fehlerweg ab
+  jetzt erfüllen, ohne dass das Bewachte noch da ist?** Wer einen bereits
+  verwendeten Statuscode für einen neuen Zweck einführt, hat diese Frage
+  IMMER zu beantworten.
 - **Ein vollständig kaputter Ausdruck fällt laut aus, ein halb kaputter
   still.** Wiederholt am 30.08.2026: eine Regex, die gar nichts mehr matcht,
   reißt den Lauf mit einer Ausnahme ab und wird sofort bemerkt; eine, die
