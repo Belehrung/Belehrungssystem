@@ -250,8 +250,14 @@ braucht es, auch wenn sie klein aussieht.
 Volles Material, keine Diffs allein — gemessen macht das den Unterschied
 (s. Zahlen unten). Praktisch heißt „volles Material" der betroffene
 Teilbaum, nicht das Repo: 502 getrackte Dateien sind 11,96 MB ≈ 3,2 Mio.
-Token, das Eingabelimit liegt bei 922.000. Ein brauchbares Bündel waren am
-10.09.2026 acht Dateien mit 192k Token für 2,03 $.
+Token. **Das Eingabelimit liegt bei rund 400.000, NICHT bei 922.000** — die
+frühere Zahl hier war falsch und hätte zu einem Bündel verleitet, das
+scheitert. Gemessen am 11.09.2026 gegen den echten Endpunkt: ~412.500 Token
+werden mit „Your input exceeds the context window" ABGELEHNT, 145.000 gehen
+durch (Positivkontrolle: die Methode lehnt nicht einfach alles ab). Die
+Grenze ist bewusst nicht genauer eingegrenzt — für unseren Zweck genügt
+„deutlich unter 400k bleiben". Ein brauchbares Bündel waren am 10.09.2026
+acht Dateien mit 192k Token für 2,03 $.
 
 Dazu gehören:
 - der Diff,
@@ -314,8 +320,12 @@ durfte wählen, was es liest, Astra bekam ein zusammengestelltes Bündel.
 Wer sich auf diesen Abschnitt beruft, um mehr zu behaupten, nennt die
 Messung, auf die er sich stützt.
 
-**Nicht als Rechtsquelle.** Wissensstand 30.04.2026; für #32 und #117 wird
-der Wortlaut weiterhin selbst geholt.
+**Nicht als Rechtsquelle.** Für #32 und #117 wird der Wortlaut weiterhin
+SELBST geholt. Der Vorbehalt „Wissensstand 30.04.2026" ist dabei seit dem
+11.09.2026 überholt, aber die Regel bleibt: das Modell kann per `web_search`
+den aktuellen Stand holen (gemessen, s. unten) — nur ändert das nichts
+daran, dass eine Rechtsaussage bei uns am Wortlaut der Quelle hängt und
+nicht an einer Zusammenfassung.
 
 ### Aufrufmuster
 
@@ -374,6 +384,48 @@ letzte Instanz, Datengrenze). Drei Punkte daraus sind neu und übernommen:
   Docker) und die allgemeine Sicherheits-Checkliste. Beides ist generische
   Beratung; unsere Prüfreihenfolge oben ist schärfer, weil sie aus
   Messungen an DIESEM System kommt.
+
+### Was die Schnittstelle wirklich kann (gemessen 11.09.2026)
+
+Alles hier ist am echten Endpunkt gemessen, nicht aus einer Doku
+abgeschrieben. Die Gegenprobe steht dabei: ein frei erfundener Parameter
+wird mit „Unknown parameter" abgelehnt — ein „OK" sagt also wirklich etwas.
+
+- **`tools: [{"type":"web_search"}]` existiert UND WIRKT.** Nicht nur
+  akzeptiert: im Ergebnis stehen `web_search_call`-Einträge, die Antwort
+  nennt Quellen und trifft den tagesaktuellen Stand. Damit kann der Prüfer
+  bekannte Schwachstellen zu den Versionen in `package.json` nachschlagen,
+  statt aus dem Gedächtnis zu raten. Die Regel „nicht als Rechtsquelle"
+  bleibt davon unberührt.
+- **`reasoning: {"effort": "high"}` ist das Maximum für dieses Modell.**
+  `xhigh` wird ausdrücklich abgelehnt („Supported values are: 'minimal',
+  'low', 'medium', and 'high'"). Wer mehr Tiefe will, bekommt sie nicht
+  über diesen Schalter.
+- **`context_management` nimmt `[{"type":"compaction","compact_threshold":N}]`.**
+  Das ist die Struktur, an der der Versuch vom 10.09.2026 scheiterte
+  („expected an array of objects"). Für eine EINZELNE Gegenlesung bleibt
+  sie trotzdem nebensächlich — ein Aufruf, ein Kontext.
+- **`prompt_cache_key` wird akzeptiert.** Laut Recherche kostet
+  wiederholte Eingabe damit ein Zehntel. Das ist der Hebel für die ZWEITE
+  Runde („Astra bestätigt"), in der dasselbe Material noch einmal
+  mitgeht. Der Rabatt selbst ist NICHT von uns nachgemessen — nur dass
+  der Schalter angenommen wird.
+
+**Zwei Betriebsfallen, beide am selben Tag hineingelaufen:**
+
+1. **`status` GEHÖRT IN JEDEN AUFRUF GEPRÜFT.** Eine Antwort kam mit NULL
+   Zeichen zurück — nicht „nichts gefunden", sondern `status: "incomplete"`
+   mit `incomplete_details.reason = "max_output_tokens"`: 6528 von 7289
+   Ausgabe-Token gingen ins Nachdenken und in 23 Suchaufrufe, für die
+   Antwort blieb nichts. Wer nur den Text ausliest, meldet „keine Befunde"
+   und meint „niemand hat geprüft" — unsere teuerste Klasse. Bei
+   eingeschalteter Websuche muss `max_output_tokens` deutlich höher
+   (30.000 statt 8.000 reichte).
+2. **Der Egress-Proxy bricht lange Läufe ab**, `curl` meldet Exit 56
+   („Failure when receiving data from the peer"). Am 11.09.2026 zweimal
+   passiert, beide Male lief der ZWEITE Versuch durch. Eine
+   Wiederholschleife gehört deshalb ins Aufrufmuster; ein einzelner
+   Fehlschlag ist keine Antwort.
 
 ### Context Notes — was daran stimmt und was nicht
 
