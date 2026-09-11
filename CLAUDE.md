@@ -825,6 +825,15 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
   Achtung bei diesem Filter: `event: workflow_run` blendet einen von Hand
   angestoßenen Lauf (`workflow_dispatch`) aus — wer danach filtert und
   nichts findet, hat nicht bewiesen, dass kein Deploy lief.
+- **CI-Stand eines PR: `get_check_runs` lesen, NICHT `get_status`.** Zwei
+  verschiedene Quellen. Unsere CI läuft als GitHub-Actions-Jobs, also als
+  CHECK-RUNS; `pull_request_read` mit `method: get_status` liefert dagegen
+  nur Commit-Statuses und meldete am 11.09.2026 für zwei frische PRs
+  `{"state":"pending","total_count":0,"statuses":[]}` — während
+  `get_check_runs` zur selben Zeit VIER Jobs zeigte, drei davon bereits
+  `success`. Wer `get_status` liest, schließt aus „total_count 0"
+  fälschlich „die CI hat noch nicht angefangen" und wartet endlos.
+  Dieselbe Klasse wie „ein Wächter, der die falsche Quelle liest".
 
 ## Werkzeuge
 
