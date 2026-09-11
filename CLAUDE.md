@@ -333,6 +333,48 @@ Endpunkt `/v1/responses`, Feld `input` (nicht `messages`), dazu
 Rotation des Schlüssels VERZICHTET, obwohl er im Sitzungsprotokoll steht;
 Missbrauch zeigte sich an der OpenAI-Abrechnung.
 
+### Drei Zusätze am Prompt (Betreiber-Entscheidung 11.09.2026)
+
+Der Betreiber hat Astra selbst gefragt, was es für uns tun kann. Das
+meiste der Antwort beschrieb, was wir schon tun (unabhängige Prüfung vor
+dem Merge, Astra sieht unsere eigene Review nicht, zwei Runden, CI als
+letzte Instanz, Datengrenze). Drei Punkte daraus sind neu und übernommen:
+
+1. **Die Prüfanweisung verlangt einen Fund ODER eine Rechenschaft.** Nicht
+   „ist der Code gut?", sondern: *finde mindestens einen Fehler, den der
+   Ausführende übersehen hat — findest du keinen, nenne die Prüfungen, die
+   du durchgeführt hast.* Das ist unsere Regel „Positivkontrolle ist
+   Pflicht", auf die Review angewandt: ein „nichts gefunden" ohne
+   Rechenschaft ist ein „nicht gesucht".
+2. **Strukturierte Ausgabe** je Befund: Schweregrad, Datei, Zeile, Problem,
+   Vorschlag. Nicht, weil es das eigene Nachmessen erspart — das bleibt —,
+   sondern weil Befunde damit ZÄHLBAR werden. Unsere Beweislage ist bisher
+   ein Diff und drei Läufe; erst zählbare Ausgaben machen daraus über die
+   Zeit eine Messung statt einer Anekdote.
+3. **Fester Vorspann mit den Unverhandelbaren** statt nur des Materials:
+   jede Abfrage trägt `studio_id`; dieselbe Suite ist auf dem Live-Server
+   Deploy-Gate; Tests fassen weder echtes Dateisystem noch echte Prozesse
+   noch echte Dienste an. Dazu die Testausgaben — die hat Astra am
+   10.09.2026 nie gesehen, dabei erkennt man erst daran, ob etwas aus dem
+   falschen Grund grün ist.
+
+**Ausdrücklich NICHT übernommen**, obwohl vorgeschlagen:
+
+- **Werkzeuge und Repo-Zugriff für den Prüfer** (`read_file`, `run_tests`,
+  `get_ci_status`, `create_review_comment`). Das löst genau die Eigenschaft
+  auf, die ihn wertvoll macht: er baut nicht, er fasst nichts an, er hat
+  keinen Anteil. `create_review_comment` wäre zusätzlich ein Schreibweg in
+  unseren Ablauf, den niemand gemessen hat. Die Messung vom 10.09. spricht
+  auch dagegen: mehr Material ließ ihn ANDERES finden, nicht mehr.
+- **„Erst danach wird gemerged."** Astra bestätigt, er gibt nie frei. Sobald
+  am Ende eine Freigabe steht, verlagert sich die Verantwortung dorthin und
+  der eigene Prüfgang wird zur Formsache. Das Tor bleiben die CI und das
+  Prüf-Ritual.
+- Die vorgeschlagene Werkzeug- und MCP-Liste (Kubernetes, Sentry, Jira,
+  Docker) und die allgemeine Sicherheits-Checkliste. Beides ist generische
+  Beratung; unsere Prüfreihenfolge oben ist schärfer, weil sie aus
+  Messungen an DIESEM System kommt.
+
 ### Context Notes — was daran stimmt und was nicht
 
 Der Betreiber nannte am 10.09.2026 ein Feature „Context Notes", das Notizen
