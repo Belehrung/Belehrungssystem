@@ -217,6 +217,19 @@ bei einem NEUEN blockierenden Befund, nicht für Geschmacksfragen.
 
 ### Wann
 
+**Betreiber-Vorgabe 11.09.2026: Astra wird ÖFTER eingesetzt — die Regel
+unten ist ab jetzt der Regelfall, nicht die Ausnahme.** Anlass war kein
+neuer Beleg, sondern eine Unterlassung: an diesem Tag gingen zwei Beiträge
+durch, die BEIDE unter „immer bei Wächtern und Zusicherungen" fallen (die
+Netzsperre der Testsuite, die Laufsperre am Deploy-Gate), und bei keinem
+von beiden wurde Astra gerufen. Die Regel war also nicht zu eng, sie wurde
+nicht angewandt.
+
+Was sich damit NICHT ändert: die Beweislage. Sie ist weiterhin ein Diff,
+drei Läufe, ein Tag (Zahlen unten). „Öfter" heißt deshalb NICHT „bei
+allem" — eine Kontrastkorrektur oder eine Tippfehlerzeile braucht es
+weiterhin nicht. Und „Astra bestätigt" heißt weiter NIE „mergefähig".
+
 Nach Umkehrbarkeit, nicht nach Umfang. Eine Kontrastkorrektur über zwölf
 Dateien braucht es nicht; eine unwiderrufliche Vergabe über zwei Repos
 braucht es, auch wenn sie klein aussieht.
