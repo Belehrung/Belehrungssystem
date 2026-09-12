@@ -368,6 +368,21 @@ Endpunkt `/v1/responses`, Feld `input` (nicht `messages`), dazu
 Rotation des Schlüssels VERZICHTET, obwohl er im Sitzungsprotokoll steht;
 Missbrauch zeigte sich an der OpenAI-Abrechnung.
 
+**ZIELKONFIGURATION einer Gegenlesung (Betreiber-Vorgabe 12.09.2026
+„nutze Astra optimaler"; am Stück gemessen, s. Abschnitt unten):**
+
+    "stream": true,          // Egress-Proxy bricht lange Läufe sonst ab
+    "store": false,          // unser Quelltext bleibt nicht auf fremden Servern
+    "instructions": "…",     // die Unverhandelbaren, getrennt vom Material
+    "reasoning": {"effort":"high"},
+    "max_tool_calls": N,     // nur mit web_search; deckelt die Suchschleife
+    "metadata": {…},         // Lauf wiederfindbar machen
+    "max_output_tokens": 45000,
+    "text": {"format": {"type":"json_schema","strict":true, …}}
+
+Dazu weiterhin die **Wiederholschleife** (ein Fehlschlag ist keine Antwort)
+und die **Statusprüfung bei JEDEM Aufruf**.
+
 ### Drei Zusätze am Prompt (Betreiber-Entscheidung 11.09.2026)
 
 Der Betreiber hat Astra selbst gefragt, was es für uns tun kann. Das
@@ -451,6 +466,81 @@ wird mit „Unknown parameter" abgelehnt — ein „OK" sagt also wirklich etwas
    passiert, beide Male lief der ZWEITE Versuch durch. Eine
    Wiederholschleife gehört deshalb ins Aufrufmuster; ein einzelner
    Fehlschlag ist keine Antwort.
+
+### Nachgemessen 12.09.2026 — und was sich dadurch an der Arbeitsweise ändert
+
+Anlass: Betreiber-Frage „nutzen wir Astra schon optimal?" — Antwort war
+NEIN, mit drei benannten Lücken (unten). Zehn Parameter am echten Endpunkt
+geprüft, Gegenprobe bestanden (`erfundenes_feld_xyz` → HTTP 400 „Unknown
+parameter"), ein „wird angenommen" sagt hier also etwas.
+
+**Angenommen und für uns brauchbar:**
+
+- **`text.format` mit `json_schema` und `strict: true` ERZWINGT die
+  Ausgabeform.** Gemessen: die Antwort kam als gültiges JSON genau nach
+  vorgegebenem Schema zurück (Felder Schweregrad/Datei/Zeile/Problem/
+  Vorschlag). Das schliesst die Lücke aus dem 11.09. („strukturierte
+  Ausgabe, damit Befunde ZÄHLBAR werden") — bis dahin war die Form eine
+  Bitte im Prompt, jetzt ist sie eine Zusicherung der Schnittstelle.
+- **`store: false`** — die Anfrage wird nicht aufbewahrt. Wir schicken
+  Quelltext; das gehört dazu.
+- **`max_tool_calls`** — deckelt die Suchschleife, die am 11.09.2026 die
+  ganze Ausgabe aufgefressen hat (6528 von 7289 Token ins Nachdenken und
+  23 Suchaufrufe, für die Antwort blieb nichts).
+- **`metadata`**, **`instructions`** (eigener Vorspann, getrennt vom
+  Material), **`reasoning.summary`**, **`background: true`** (Antwort
+  `status: "queued"`).
+- **`service_tier: "flex"`** wurde NICHT abgelehnt, sondern mit HTTP 429
+  („too many requests") beantwortet — der Parameter ist gültig, war nur
+  gerade nicht bedienbar. Ein 429 ist KEINE Ablehnung des Parameters;
+  wer das verwechselt, streicht eine Möglichkeit, die es gibt.
+
+**Ein erzwungener Zielkonflikt, gemessen statt vermutet:**
+
+`store: false` und `previous_response_id` SCHLIESSEN EINANDER AUS. Eine
+mit `store:false` erzeugte Antwort ist danach nicht mehr referenzierbar:
+„Previous response with id '…' not found." Damit steht die zweite Runde
+(„Astra bestätigt") vor der Wahl — entweder das Material bleibt auf dem
+fremden Server liegen, oder es geht noch einmal mit.
+
+**ENTSCHEIDUNG: `store: false` gewinnt.** Das Material erneut mitzuschicken
+kostet Geld, die Aufbewahrung kostet die Datengrenze. Bei 200k Token
+gegen ein Limit von rund 400k ist Platz genug; die CLAUDE.md sagt an
+anderer Stelle ohnehin, der billigere Weg sei, es einfach erneut
+mitzuschicken. Der Halbsatz zu `prompt_cache_key` oben bleibt als
+Kostenhebel gültig, ist aber weiterhin von uns NICHT nachgemessen.
+
+**DREI ÄNDERUNGEN AN DER ARBEITSWEISE** (nicht an der Schnittstelle —
+das waren die eigentlichen Lücken, alle drei gegen unsere eigenen Regeln):
+
+1. **Der PLAN geht raus, nicht nur der Diff.** Steht seit dem 10.09. als
+   „Punkt mit dem größten Hebel" in dieser Datei und wurde trotzdem nie
+   gemacht. Gemessen am 12.09.2026 am eigenen Auftrag: er deckte zwei von
+   DREI gleichartigen Shell-Aufrufen ab; der dritte fiel erst beim
+   Gegenlesen auf, nach zwei Bau-Runden. Ein Plan ist ein paar Kilobyte.
+2. **Ins Bündel gehören die GESCHWISTERSTELLEN, nicht nur die geänderten
+   Dateien.** Gemessen am selben Tag: Astra fand eine von zwei Stellen
+   derselben Regelverletzung — die zweite lag in einer Datei, die nicht
+   im Bündel war. Es KONNTE sie nicht finden. Die Bündelwahl entscheidet
+   also über den Befund, und wer nur die geänderten Dateien mitgibt,
+   bekommt einen Teil und hält ihn für das Ganze.
+3. **Jeder Lauf wird zählbar festgehalten:** Datum, Zweck, Material
+   (Dateien/Token), Befunde, davon nach EIGENER Nachmessung getragen,
+   Kosten. Ohne das bleibt die Beweislage für immer, was sie seit dem
+   10.09. ist — ein Diff, drei Läufe, ein Tag. Mit `json_schema` ist der
+   Zählteil jetzt Maschinenarbeit statt Fleißarbeit.
+
+**Was sich NICHT ändert:** Astra bekommt keine Werkzeuge und keinen
+Repo-Zugriff (Begründung unverändert: wer mitbaut, prüft seinen eigenen
+Entwurf), und „Astra bestätigt" ist keine Freigabe. Tor bleiben die CI
+und das Prüf-Ritual.
+
+**Ehrlich dazu:** die zweite Runde („Astra bestätigt") lief am 12.09.2026
+faktisch nicht. Der Befund wurde selbst nachgemessen, seine Einstufung
+korrigiert — und damit war die Sache erledigt. Das war im Einzelfall
+richtig, heißt aber, dass die Schleife aus dem Abschnitt oben real nicht
+stattfindet. Entweder sie wird gefahren, oder hier steht, dass wir sie
+nicht fahren. Nicht beides.
 
 ### Context Notes — was daran stimmt und was nicht
 
