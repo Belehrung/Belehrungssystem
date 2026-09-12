@@ -230,6 +230,31 @@ drei Läufe, ein Tag (Zahlen unten). „Öfter" heißt deshalb NICHT „bei
 allem" — eine Kontrastkorrektur oder eine Tippfehlerzeile braucht es
 weiterhin nicht. Und „Astra bestätigt" heißt weiter NIE „mergefähig".
 
+**Nachgeschärft am 12.09.2026 (Betreiber-Vorgabe, nachdem die Frage nach
+einem DRITTEN Prüfer verneint wurde: lieber den vorhandenen öfter).**
+Die Fassung vom 11.09. sagte „Regelfall" und überließ die Auslösung
+trotzdem der Einschätzung im Moment — genau daran ist sie am selben Tag
+gescheitert. Deshalb jetzt ein Auslöser, der ohne Tagesform funktioniert:
+
+> **Astra läuft bei JEDEM Beitrag, der Produktivcode, einen Wächter, eine
+> Zusicherung oder die Testsuite selbst anfasst — also bei allem außer
+> reinen Text-, Doku- und Kosmetikänderungen.** Wer ihn auslässt, schreibt
+> in einem Satz dazu, WARUM der Beitrag in diese Restkategorie fällt.
+
+Die Umkehrung der Beweislast ist der ganze Punkt: vorher musste man
+begründen, warum man ihn RUFT, jetzt, warum nicht. Die Begründung fürs
+Auslassen gehört in denselben Zwischenstand, in dem die Suite-Zahlen
+stehen — sonst merkt es wieder niemand.
+
+Was das NICHT heißt: dass Astra mehr findet. Gemessen am 12.09.2026 an
+#167 (61 Dateien, neuer Wächter): neun Befunde aus zwei Spuren, sieben
+trugen nach eigener Nachmessung, drei nicht — darunter ein
+Behebungsvorschlag, der seinen eigenen Befund nicht geschlossen hätte.
+Den teuersten Fund des Tages (einen REGRESS des eigenen Zweigs) fand
+KEINE der beiden Prüfspuren, sondern eine stumpfe Messung mit
+objektivem Ergebnis. Das Nadelöhr bleibt das eigene Nachmessen jedes
+Befunds, nicht das Finden.
+
 Nach Umkehrbarkeit, nicht nach Umfang. Eine Kontrastkorrektur über zwölf
 Dateien braucht es nicht; eine unwiderrufliche Vergabe über zwei Repos
 braucht es, auch wenn sie klein aussieht.
