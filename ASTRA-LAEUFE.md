@@ -36,6 +36,7 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 13.09.2026 | Bestaetigungsrunde: Waechter Zeitzonenfalle, fuenf Behebungen | Diff 331 Zeilen, Suchen 9, Lesungen 17, Token rein 185595, Token raus 7654, Runden 6 | 3 | 3 | 0 | 2,89 $ |
 | 13.09.2026 | Zweite Bestaetigungsrunde: Waechter Zeitzonenfalle, Runde-2-Behebungen | Diff 418 Zeilen, Suchen 9, Lesungen 18, Token rein 226531, Token raus 7283, Runden 6 | 6 | 5 | 1 (Schwereeinstufung: mkdtemp-Fixtur als „blockierend", gegen 64 gleichartige Testdateien und den Zweck der Regel gemessen) | 3,38 $ |
 | 13.09.2026 | Dritte Bestaetigungsrunde: Waechter Zeitzonenfalle, Runde-3-Behebungen | Diff 442 Zeilen, Suchen 8, Lesungen 13, Token rein 223229, Token raus 5762, Runden 6 | 4 | 4 | 0 | 3,22 $ |
+| 13.09.2026 | Vierte Bestaetigungsrunde: Waechter Zeitzonenfalle (als „letzte" angesetzt, war es nicht) | Diff 608 Zeilen, Suchen 49, Lesungen 9, Token rein 876854, Token raus 10903, Runden 13 | 2 | 2 | 0 | 11,78 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -455,3 +456,64 @@ das ist die eigentliche Erkenntnis: Es gibt keine Zusicherung darüber, WELCHE
 Dateien der echte Scan tatsächlich gelesen hat. Alles, was es gibt, sind
 Zahlen — und jede dieser Zahlen lässt sich aus derselben Quelle erzeugen wie
 ihr Sollwert. Vier der neun Befunde sind nur Ausprägungen davon.
+
+## Der Regress: jede Behebung erzeugt die nächste Blindstelle (13.09.2026, fünfte Runde)
+
+Ich hatte diese Runde als LETZTE angesetzt und mich vorher auf eine
+Abbruchregel festgelegt: nur noch blockierende Befunde werden gebaut. Sie kam
+mit zwei blockierenden zurück, 11,78 $ — der teuerste Lauf des Tages, weil die
+Prüfung 49 Suchen und 13 Runden brauchte.
+
+**Beide sind derselbe Fehler wie in Runde 4, nur eine Ebene tiefer — und die
+Ebene hat MEINE eigene Behebung eingezogen.**
+
+Runde 4 hatte gezeigt: der Wächter sichert eine ZAHL zu, wo er eine MENGE
+zusichern muss. Die Behebung ersetzte den Zähler durch `gelesenePfade`, die
+Liste der tatsächlich gelesenen Pfade, und verglich sie elementweise gegen die
+gescannten Dateien. Das sah nach dem Ende der Klasse aus.
+
+Gemessen, mit einer ECHTEN Falle in `verify-daily.js` als gemeinsamer
+Gegenprobe (Positivkontrolle zuerst: unmutiert meldet der Wächter sie,
+**EXIT 1, drei Kreuze**):
+
+    // in scanneDateien(), eine Zeile:
+    fs.readFileSync(basisVerzeichnis ? path.join(basisVerzeichnis, dateipfade[0]) : rel, 'utf8')
+    -> EXIT 0, 86 PASS / 0 FAIL
+
+    // an alleGescanntenDateien(), eine Zeile:
+    ergebnis.push(...wurzelJsDateien(scanFehler, wurzelEintraege).slice(0, 7));
+    -> EXIT 0, 86 PASS / 0 FAIL
+
+Im ersten Fall wird bei jedem Durchlauf DIESELBE erste Datei gelesen, während
+`gelesenePfade.push(rel)` weiterhin alle 186 verschiedenen Namen protokolliert.
+Der Mengenvergleich, den ich gerade als Lösung eingebaut hatte, bestätigt
+zufrieden eine Menge, die aus den ANGEFORDERTEN Namen stammt — nicht aus dem,
+was gelesen wurde. Im zweiten Fall wird die Wurzelliste auf sieben Einträge
+gekürzt; die literale Mindestzahl für Wurzeldateien steht auf genau 7, und der
+Leser bekommt die schon verkürzte Liste und bestätigt korrekt, dass er *diese*
+gelesen hat.
+
+**Das Muster, und es ist allgemeiner als dieser Wächter:** Jeder Nachweis, den
+ein Prüfling über die eigene Arbeit führt, stammt aus seinem EIGENEN
+Datenfluss. Man kann ihn beliebig verfeinern — Zahl, dann Menge, dann Menge
+mit Reihenfolge — und verschiebt die Lücke nur eine Ebene tiefer, statt sie zu
+schliessen. Der Regress endet erst an einer Referenz von AUSSEN.
+
+Für diesen Wächter heisst das konkret: die erwartete Dateimenge kommt aus
+`git ls-files` (der Scanner benutzt es nicht), und P6 ruft mit MEHREREN
+verschiedenen Dateien in EINEM Aufruf, damit ein falsch gelesener Inhalt eine
+falsche Fundzuordnung erzeugt statt nur eine falsche Zahl. Drei getrennte
+Ein-Datei-Aufrufe ersetzen das nicht — bei einer einelementigen Liste ist
+`rel` immer `dateipfade[0]`, die Mutation ist dort unsichtbar.
+
+**Was das über die Abbruchregel sagt:** Sie war richtig formuliert und hat
+funktioniert — „nur noch blockierend" hat die drei Anmerkungen dieser Runde
+korrekt aussortiert. Falsch war die Ankündigung „letzte Runde". Man kann
+festlegen, WAS man noch baut; man kann nicht vorher festlegen, dass nichts
+Blockierendes mehr kommt.
+
+**Kosten bis hier, damit es jemand gegen den Nutzen halten kann:** fünf
+Bau-Runden, fünf Gegenlesungen (3,72 + 2,89 + 3,38 + 3,22 + 11,78 = 24,99 $)
+plus eine Claude-Review, für EINE neue Testdatei. Der Gegenwert ist ein
+Wächter, der neun gemessene Wege, still zu erblinden, nicht mehr hat — und ein
+Geschwisterwächter im selben Repo, der die meisten davon weiterhin hat.
