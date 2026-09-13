@@ -25,8 +25,13 @@
 // OPENAI_API_KEY oder der Datei, die OPENAI_KEY_DATEI nennt. Fehlt beides:
 // Exit 2. Der Geheimnis-Riegel (tools/geheimnis-riegel.js, gemeinsam mit
 // zweitmeinung.js benutzt, nicht kopiert) laeuft auf JEDES Funktionsergebnis,
-// bevor es in die naechste Anfrage geht — schlaegt er an, wird SOFORT
-// abgebrochen (Exit 3), ohne dass die Anfrage gesendet wird.
+// bevor es in die naechste Anfrage geht. Seit 13.09.2026 wird eine
+// Trefferzeile dabei GESCHWAERZT (die ganze Zeile durch einen Marker
+// ersetzt, bei PEM der ganze Block) und der Lauf geht weiter; der Bericht
+// nennt am Ende jede geschwaerzte Stelle. SOFORT abgebrochen (Exit 3, ohne
+// dass die Anfrage gesendet wird) wird nur noch, wenn bei lies() der Deckel
+// reisst (mehr als 20 Zeilen, oder ab 8 Zeilen Ausschnitt mehr als 25 %) —
+// oder wenn der EINGEGEBENE Diff ein Geheimnis enthaelt, siehe main().
 //
 // AUFRUF:
 //   node tools/gegenleser-repo.js <diff.txt> --brief=<auftrag.txt>
@@ -50,7 +55,7 @@ const https = require('node:https');
 const path = require('node:path');
 const os = require('node:os');
 const { execFileSync } = require('node:child_process');
-const { pruefeGeheimnisse } = require('./geheimnis-riegel');
+const { pruefeGeheimnisse, entferneGeheimnisse, zeileEntferntMarker } = require('./geheimnis-riegel');
 
 const ENDPUNKT = 'https://api.openai.com/v1/responses';
 // Bis 10.09.2026 stand hier /v1/chat/completions mit gpt-5.5 als Vorgabe --
@@ -326,6 +331,7 @@ function werkzeugSuche(muster, dateimuster) {
     const dateiRe = dateimuster ? glob2regex(dateimuster) : null;
 
     const treffer = [];
+    const geschwaerzt = [];
     let gesamtTreffer = 0;
     for (const relPfad of versionierteDateien) {
         if (dateiRe && !dateiRe.test(relPfad)) continue;
@@ -344,8 +350,29 @@ function werkzeugSuche(muster, dateimuster) {
             if (treffer.length >= MAX_SUCHE_ZEILEN) continue;
             // Riegel PRO gefundener Zeile: nur was tatsaechlich zurueckgeht, wird
             // geprueft — Zeilen jenseits des Deckels werden nie gesendet.
+            // Seit 13.09.2026 wird die Zeile GESCHWAERZT statt der Lauf
+            // abgebrochen (Anlass im Kopf von tools/geheimnis-riegel.js). Der
+            // Marker bleibt an ihrer Stelle, sie wird NICHT still weggelassen:
+            // das Modell soll sehen, dass es dort einen Treffer gab, den es
+            // nicht bekommt. Die ganze Zeile, nie nur der Trefferbereich.
+            // KEIN Deckel wie bei lies() (Entscheidung 13.09.2026): jede
+            // Trefferzeile wird einzeln und vollstaendig ersetzt, es geht
+            // nichts hinaus, und MAX_SUCHE_ZEILEN begrenzt die Ausgabe
+            // ohnehin. Achtzig Marker sind nutzlos, aber nicht gefaehrlich —
+            // ein Abbruch waere schlechter als eine nutzlose Antwort.
+            // BENANNTE GRENZE, nicht gebaut: der Riegel prueft nur die
+            // Trefferzeile. Ein Suchmuster, das die Base64-Zeilen eines
+            // PEM-Koerpers trifft (etwa "MII"), liefert Schluesselmaterial
+            // ohne BEGIN-Zeile — das trifft kein Muster. Vorbestehend;
+            // .pem/.key sind ueber istHartGesperrt() ohnehin gesperrt, es
+            // betraefe nur versehentlich in .js eingebettete Schluessel.
             const geheim = pruefeGeheimnisse(zeilen[i]);
-            if (!geheim.sauber) throw new GeheimnisAbbruch(geheim.treffer, `${relPfad}:${i + 1}`);
+            if (!geheim.sauber) {
+                const name = geheim.treffer.map((t) => t.name).join(', ');
+                geschwaerzt.push({ pfad: relPfad, zeile: i + 1, name });
+                treffer.push(`${relPfad}:${i + 1}:${zeileEntferntMarker(name)}`);
+                continue;
+            }
             treffer.push(`${relPfad}:${i + 1}:${zeilen[i]}`);
         }
     }
@@ -353,7 +380,7 @@ function werkzeugSuche(muster, dateimuster) {
     if (gesamtTreffer > MAX_SUCHE_ZEILEN) {
         text += `\n\n[GEKUERZT: ${gesamtTreffer} Treffer insgesamt, nur die ersten ${MAX_SUCHE_ZEILEN} gezeigt]`;
     }
-    return { text, abgelehnt: false };
+    return { text, abgelehnt: false, geschwaerzt };
 }
 
 // Dispatcht auf die beiden Werkzeuge; eine unbekannte Funktion (Modell-
@@ -394,10 +421,22 @@ function werkzeugLies(pfad, von, bis) {
     if (ende - gvon + 1 > MAX_LIES_ZEILEN) { ende = gvon + MAX_LIES_ZEILEN - 1; hinweise.push(`auf ${MAX_LIES_ZEILEN} Zeilen gekuerzt`); }
 
     const ausschnittZeilen = zeilen.slice(gvon - 1, ende);
-    const geheim = pruefeGeheimnisse(ausschnittZeilen.join('\n'));
-    if (!geheim.sauber) throw new GeheimnisAbbruch(geheim.treffer, pruefung.relativ);
+    // Schwaerzen statt abbrechen (13.09.2026, Anlass im Kopf von
+    // tools/geheimnis-riegel.js): Trefferzeilen werden durch den Marker
+    // ersetzt, ein PEM-Block als Ganzes, der Lauf geht weiter. Nur wenn der
+    // Deckel reisst (zu viele Zeilen oder zu grosser Anteil), bleibt es beim
+    // bisherigen Abbruch — dann ist der Ausschnitt fuer eine Pruefung ohnehin
+    // wertlos und die Datei mutmasslich eine Geheimnisdatei.
+    const bereinigt = entferneGeheimnisse(ausschnittZeilen.join('\n'));
+    if (bereinigt.zuViel) {
+        const namen = [...new Set(bereinigt.entfernt.map((e) => e.name))].map((name) => ({ name }));
+        throw new GeheimnisAbbruch(namen, `${pruefung.relativ} (${bereinigt.entfernt.length} von ${ausschnittZeilen.length} Zeilen)`);
+    }
+    // Zeilennummern auf die Datei umgerechnet, damit der Bericht am Ende die
+    // blinde Stelle so nennt, wie man sie in der Datei wiederfindet.
+    const geschwaerzt = bereinigt.entfernt.map((e) => ({ pfad: pruefung.relativ, zeile: gvon + e.zeile - 1, name: e.name }));
 
-    const formatiert = ausschnittZeilen.map((z, i) => `${gvon + i}:${z}`).join('\n');
+    const formatiert = bereinigt.text.split('\n').map((z, i) => `${gvon + i}:${z}`).join('\n');
     const kopf = hinweise.length ? `[${hinweise.join('; ')}]\n` : '';
     return {
         text: `${kopf}${pruefung.relativ} (Zeilen ${gvon}-${ende} von ${gesamt}):\n${formatiert}`,
@@ -405,6 +444,7 @@ function werkzeugLies(pfad, von, bis) {
         relativ: pruefung.relativ,
         von: gvon,
         bis: ende,
+        geschwaerzt,
     };
 }
 
@@ -598,6 +638,11 @@ async function main(argvUeberschreibung) {
     fs.writeFileSync(protokollPfadAktuell, ''); // frisch je Lauf, kein Vermischen mit einem alten Protokoll
 
     const diffInhalt = fs.readFileSync(optionen.diffPfad, 'utf8');
+    // BEWUSST weiterhin ein ABBRUCH, nicht Schwaerzen wie bei suche()/lies():
+    // den Diff liefert der Auftraggeber. Steht darin ein Geheimnis, ist das
+    // SEIN Fehler, und er muss ihn sehen, statt ihn stillschweigend
+    // geschwaerzt zu bekommen. Bei Dateien, die das Modell selbst auswaehlt,
+    // ist es anders — dort ist der Fehlalarm der Normalfall (13.09.2026).
     const diffPruefung = pruefeGeheimnisse(diffInhalt);
     if (!diffPruefung.sauber) {
         console.error('ABBRUCH: Der Diff enthaelt etwas, das wie ein Geheimnis aussieht — '
@@ -621,6 +666,7 @@ async function main(argvUeberschreibung) {
     let promptTokenSumme = 0;
     let completionTokenSumme = 0;
     const gelesenePfade = [];
+    const geschwaerzteStellen = [];
 
     const zusammenfassungAusgeben = () => {
         console.log('\n---');
@@ -629,6 +675,15 @@ async function main(argvUeberschreibung) {
             console.log('  (keine)');
         } else {
             for (const g of gelesenePfade) console.log(`  ${g.pfad}:${g.von}-${g.bis}`);
+        }
+        // Wo geschwaerzt wurde, war die Pruefung blind. Eine verschwiegene
+        // Luecke ist schlimmer als eine benannte — der Leser muss wissen,
+        // welche Zeilen der Pruefer NICHT gesehen hat.
+        console.log('GESCHWAERZTE STELLEN (Geheimnis-Riegel; dort war die Pruefung blind):');
+        if (geschwaerzteStellen.length === 0) {
+            console.log('  (keine)');
+        } else {
+            for (const st of geschwaerzteStellen) console.log(`  ${st.pfad}:${st.zeile} (${st.name})`);
         }
         console.log(`Suchen: ${sucheAnzahl}  Lesungen: ${liesAnzahl}  Ablehnungen: ${ablehnungenAnzahl}`);
         console.log(`Runden: ${runde}  Token rein: ${promptTokenSumme}  Token raus: ${completionTokenSumme}`);
@@ -716,6 +771,10 @@ async function main(argvUeberschreibung) {
                     else if (aufruf.name === 'lies') liesAnzahl++;
                     ergebnis = werkzeugAufrufen(aufruf.name, werkzeugArgumente);
                     if (ergebnis.relativ) gelesenePfade.push({ pfad: ergebnis.relativ, von: ergebnis.von, bis: ergebnis.bis });
+                    if (ergebnis.geschwaerzt && ergebnis.geschwaerzt.length) {
+                        geschwaerzteStellen.push(...ergebnis.geschwaerzt);
+                        protokollSchreiben({ typ: 'geheimnis_geschwaerzt', runde, werkzeug: aufruf.name, stellen: ergebnis.geschwaerzt });
+                    }
                 }
             } catch (e) {
                 if (e instanceof GeheimnisAbbruch) {
@@ -796,7 +855,7 @@ function httpsStubBauen(warteschlange, aufgezeichnet) {
 }
 
 async function selbsttest() {
-    const ERWARTETE_FAELLE = 21;
+    const ERWARTETE_FAELLE = 35;
     let gelaufen = 0;
     let fehler = 0;
     const pruefen = (bezeichnung, bedingung) => {
@@ -824,7 +883,48 @@ async function selbsttest() {
         const geheimZeile = 'const schluessel = "' + 'sk' + '-proj-' + 'D'.repeat(40) + '";\n';
         fs.writeFileSync(path.join(klon, 'geheim.js'), geheimZeile);
 
-        execFileSync('git', ['add', 'harmlos.txt', '.env.beispiel', 'zeiger_auf_etc', 'geheim.js'], { cwd: klon });
+        // ===== Fixtures fuer "schwaerzen statt abbrechen" (13.09.2026) =====
+        // Alle Geheimnis-Attrappen zusammengesetzt, kein Literal (s. o.). Jede
+        // Datei hat 5 harmlose Zeilen vor und nach dem Treffer, damit EINE
+        // Trefferzeile (1 von 11) unter dem 25-%-Deckel bleibt; "ankerSuche"
+        // ist das Suchwort fuer den suche()-Fall und kommt im Geheimnis selbst
+        // nicht vor. Gemessen wird unten an FRAGMENTEN der Werte (20 Zeichen),
+        // nicht nur am ganzen Wert: eine Teil-Schwaerzung fiele sonst durch.
+        const fuellzeilen = (von, bis) => Array.from({ length: bis - von + 1 }, (_, k) => `// Zeile ${von + k}`);
+        const mitGeheimnisInZeile6 = (geheimZeile) => [...fuellzeilen(1, 5), geheimZeile, ...fuellzeilen(7, 11)].join('\n') + '\n';
+        const openaiWert = 'sk' + '-proj-' + 'E'.repeat(40);
+        const githubWert = 'gh' + 'p_' + 'F'.repeat(36);
+        const telegramWert = '987654321:' + 'G'.repeat(35);
+        const pemMaterial = ['MIIE' + 'H'.repeat(60), 'AAAA' + 'I'.repeat(60), 'BBBB' + 'J'.repeat(60)];
+        // Woertlich die Zeile aus core/db.js:71 im GymDocu-Repo, die am
+        // 13.09.2026 den Fehlalarm ausgeloest hat — ein Platzhalter, kein
+        // Geheimnis.
+        const platzhalterZeile = '        "  DATABASE_URL=postgresql://gymdocu:PASSWORT@127.0.0.1:5432/gymdocu\\n" +';
+        const fragmente = ['E'.repeat(20), 'F'.repeat(20), 'G'.repeat(20), 'H'.repeat(20), 'I'.repeat(20), 'J'.repeat(20), 'gymdocu:PASSWORT@'];
+        const vorkommen = (text, fragment) => text.split(fragment).length - 1;
+        const fragmentVorkommen = (text) => fragmente.reduce((summe, f) => summe + vorkommen(text, f), 0);
+        fs.writeFileSync(path.join(klon, 'schwaerzen-openai.js'), mitGeheimnisInZeile6(`const ankerSuche = "${openaiWert}";`));
+        fs.writeFileSync(path.join(klon, 'schwaerzen-github.js'), mitGeheimnisInZeile6(`const ankerSuche = "${githubWert}";`));
+        fs.writeFileSync(path.join(klon, 'schwaerzen-telegram.js'), mitGeheimnisInZeile6(`const ankerSuche = "${telegramWert}";`));
+        fs.writeFileSync(path.join(klon, 'schwaerzen-platzhalter.js'), mitGeheimnisInZeile6(platzhalterZeile));
+        // PEM: Block in Zeilen 11-15, Material in 12-14, 25 Zeilen gesamt.
+        fs.writeFileSync(path.join(klon, 'schwaerzen-pem.txt'),
+            [...fuellzeilen(1, 10), '-----BEGIN PRIVATE KEY-----', ...pemMaterial, '-----END PRIVATE KEY-----', ...fuellzeilen(16, 25)].join('\n') + '\n');
+        // 30 Geheimniszeilen unter 10 harmlosen: reisst den Zeilen-Deckel.
+        fs.writeFileSync(path.join(klon, 'schwaerzen-viele.js'),
+            [...fuellzeilen(1, 10), ...Array.from({ length: 30 }, (_, k) => `token${k} = "` + 'gh' + 'p_' + 'N'.repeat(36) + '";')].join('\n') + '\n');
+        // 3 Geheimniszeilen unter 8: reisst den Anteils-Deckel (37,5 %), nicht
+        // den absoluten — Gegenstueck zu schwaerzen-viele.js.
+        fs.writeFileSync(path.join(klon, 'schwaerzen-anteil.js'),
+            [...fuellzeilen(1, 8)].map((z, k) => ([1, 4, 7].includes(k) ? `t${k} = "` + 'gh' + 'p_' + 'U'.repeat(36) + '";' : z)).join('\n') + '\n');
+        // Eingegebener Diff mit Geheimnis — NICHT committet, der Diff kommt
+        // ohnehin vom Auftraggeber und nicht aus der Erlaubnisliste.
+        const diffMitGeheimnisPfad = path.join(klon, 'diff-mit-geheimnis.txt');
+        fs.writeFileSync(diffMitGeheimnisPfad, `+const token = "${telegramWert}";\n`);
+
+        execFileSync('git', ['add', 'harmlos.txt', '.env.beispiel', 'zeiger_auf_etc', 'geheim.js',
+            'schwaerzen-openai.js', 'schwaerzen-github.js', 'schwaerzen-telegram.js', 'schwaerzen-platzhalter.js',
+            'schwaerzen-pem.txt', 'schwaerzen-viele.js', 'schwaerzen-anteil.js'], { cwd: klon });
         execFileSync('git', ['commit', '-q', '-m', 'Testdaten'], { cwd: klon });
 
         // Brief-Fixture fuer die main()-Aufrufe unten (Defekt 2, 12.09.2026):
@@ -864,17 +964,238 @@ async function selbsttest() {
             pruefen('DURCHLASSFALL 6 (harmlos.txt ist erlaubt und lesbar)', r.ok === true && inhaltOk);
         }
         {
-            let ausgeloest = false;
-            let muster = '-';
+            // Bis 13.09.2026 brach dieser Fall ab ("ein Treffer"). Nach dem
+            // Umbau riss er kurz den Anteils-Deckel (1 von 1 = 100 %) — genau
+            // der Fehlalarm bei engen Fenstern, den die Nacharbeit beseitigt:
+            // unter MIN_ZEILEN_FUER_ANTEIL zaehlt nur der absolute Deckel. Ein
+            // Ausschnitt, der ganz aus einem Marker besteht, ist harmlos.
+            let r;
+            let abbruch = null;
             try {
-                werkzeugLies('geheim.js', 1, 5);
+                r = werkzeugLies('geheim.js', 1, 1);
             } catch (e) {
-                if (e instanceof GeheimnisAbbruch) {
-                    ausgeloest = true;
-                    muster = e.treffer.map((t) => t.name).join(', ');
-                }
+                abbruch = e;
             }
-            pruefen(`RIEGELFALL 7 (Geheimnis in geheim.js loest ab, erkannt: ${muster}; keine Netzanfrage im Selbsttest-Codepfad)`, ausgeloest);
+            const anzahl = r ? vorkommen(r.text, 'D'.repeat(20)) : -1;
+            pruefen(`RIEGELFALL 7 (geheim.js besteht NUR aus einer Geheimniszeile: 1 von 1 ist KEIN Abbruch mehr, Funktionsergebnis ist genau der Marker, Fragment kommt ${anzahl}x vor${abbruch ? ` — ABER: ${abbruch.message}` : ''})`,
+                !abbruch && anzahl === 0
+                && r.text === `geheim.js (Zeilen 1-1 von 1):\n1:${zeileEntferntMarker('OpenAI-Schlüssel')}`
+                && r.geschwaerzt.length === 1 && r.geschwaerzt[0].zeile === 1);
+        }
+
+        // ===== SCHWAERZEN STATT ABBRECHEN (13.09.2026), Faelle 22-35 =====
+        // Gemessen wird an dem, was WIRKLICH RAUSGEHT: am .text des
+        // Funktionsergebnisses (22-30) und in LAUF D an den tatsaechlich
+        // gebauten Anfragekoerpern (32-34) — nicht am Rueckgabewert von
+        // entferneGeheimnisse() allein.
+        const liesFallPruefen = (nr, datei, fragment, name) => {
+            let r;
+            let abbruch = null;
+            try {
+                r = werkzeugLies(datei, 1, 11);
+            } catch (e) {
+                abbruch = e;
+            }
+            const anzahl = r ? vorkommen(r.text, fragment) : -1;
+            pruefen(`SCHWAERZEN ${nr} (${name} in ${datei}: Zeile 6 durch Marker ersetzt, Fragment kommt im Funktionsergebnis ${anzahl}x vor, Zeilen 5 und 7 bleiben, kein Abbruch${abbruch ? ` — ABER: ${abbruch.message}` : ''})`,
+                !abbruch && anzahl === 0
+                && r.text.includes(`\n6:${zeileEntferntMarker(name)}\n`)
+                && r.text.includes('\n5:// Zeile 5\n') && r.text.includes('\n7:// Zeile 7\n')
+                && r.geschwaerzt.length === 1 && r.geschwaerzt[0].zeile === 6 && r.geschwaerzt[0].pfad === datei);
+        };
+        liesFallPruefen(22, 'schwaerzen-openai.js', 'E'.repeat(20), 'OpenAI-Schlüssel');
+        liesFallPruefen(23, 'schwaerzen-github.js', 'F'.repeat(20), 'GitHub-Token');
+        liesFallPruefen(24, 'schwaerzen-telegram.js', 'G'.repeat(20), 'Telegram-Bot-Token');
+        {
+            let r;
+            let abbruch = null;
+            try {
+                r = werkzeugLies('schwaerzen-pem.txt', 1, 25);
+            } catch (e) {
+                abbruch = e;
+            }
+            const anzahl = r ? fragmentVorkommen(r.text) : -1;
+            const marker = zeileEntferntMarker('privater Schlüssel (PEM)');
+            pruefen(`SCHWAERZEN 25 (PEM-Block ueber 5 Zeilen: ALLE Zeilen 11-15 durch Marker ersetzt, Material aus 12-14 kommt ${anzahl}x vor, Zeilen 10 und 16 bleiben, kein Abbruch${abbruch ? ` — ABER: ${abbruch.message}` : ''})`,
+                !abbruch && anzahl === 0
+                && !r.text.includes('BEGIN PRIVATE') && !r.text.includes('END PRIVATE')
+                && [11, 12, 13, 14, 15].every((z) => r.text.includes(`\n${z}:${marker}\n`))
+                && r.text.includes('\n10:// Zeile 10\n') && r.text.includes('\n16:// Zeile 16\n')
+                && r.geschwaerzt.map((g) => g.zeile).join(',') === '11,12,13,14,15');
+        }
+        {
+            // Der echte Fall vom 13.09.2026: Platzhalter, kein Geheimnis —
+            // die Zeile geht trotzdem weg (keine Platzhalter-Erkennung), aber
+            // der Lauf bricht NICHT ab.
+            let r;
+            let abbruch = null;
+            try {
+                r = werkzeugLies('schwaerzen-platzhalter.js', 1, 11);
+            } catch (e) {
+                abbruch = e;
+            }
+            const anzahl = r ? vorkommen(r.text, 'gymdocu:PASSWORT@') : -1;
+            pruefen(`SCHWAERZEN 26 (Platzhalter-Verbindungszeichenfolge aus core/db.js:71: Zeile 6 weg, Platzhalter kommt ${anzahl}x vor, KEIN Abbruch — der Lauf geht weiter${abbruch ? ` — ABER: ${abbruch.message}` : ''})`,
+                !abbruch && anzahl === 0
+                && r.text.includes(`\n6:${zeileEntferntMarker('Verbindungszeichenfolge mit Passwort')}\n`)
+                && r.geschwaerzt.length === 1);
+        }
+        {
+            let ausgeloest = false;
+            let ort = '-';
+            let ergebnisText = null;
+            try {
+                ergebnisText = werkzeugLies('schwaerzen-viele.js', 1, 40).text;
+            } catch (e) {
+                if (e instanceof GeheimnisAbbruch) { ausgeloest = true; ort = e.ort; }
+            }
+            pruefen(`DECKEL 27 (30 Geheimniszeilen unter 40 reissen den Deckel: GeheimnisAbbruch statt Schwaerzen, Ort: ${ort}; kein Funktionsergebnis)`,
+                ausgeloest && ort === 'schwaerzen-viele.js (30 von 40 Zeilen)' && ergebnisText === null);
+        }
+        {
+            let ausgeloest = false;
+            let ort = '-';
+            let ergebnisText = null;
+            try {
+                ergebnisText = werkzeugLies('schwaerzen-anteil.js', 1, 8).text;
+            } catch (e) {
+                if (e instanceof GeheimnisAbbruch) { ausgeloest = true; ort = e.ort; }
+            }
+            pruefen(`DECKEL 35 (3 Geheimniszeilen unter 8 = 37,5 % reissen den Anteils-Deckel ab der Mindestzahl: GeheimnisAbbruch, Ort: ${ort}; kein Funktionsergebnis)`,
+                ausgeloest && ort === 'schwaerzen-anteil.js (3 von 8 Zeilen)' && ergebnisText === null);
+        }
+        {
+            // Positivkontrolle: ohne sie waere "nichts durchgelassen" auch
+            // dann erfuellt, wenn lies() einfach alles schwaerzt. Woertlicher
+            // Sollwert, nicht aus dem Fixture zurueckgerechnet.
+            const r = werkzeugLies('harmlos.txt', 1, 3);
+            pruefen('POSITIVKONTROLLE 28 (lies auf harmlos.txt liefert den Ausschnitt BYTEGLEICH zum woertlichen Sollwert, nichts geschwaerzt)',
+                r.text === 'harmlos.txt (Zeilen 1-3 von 3):\n1:Zeile A\n2:Zeile B\n3:Zeile C'
+                && Array.isArray(r.geschwaerzt) && r.geschwaerzt.length === 0);
+        }
+        {
+            // suche(): eigener Codepfad (pruefeGeheimnisse + Marker je Zeile,
+            // kein Deckel). Das Suchwort steht NICHT im Geheimnis.
+            const r = werkzeugSuche('ankerSuche', 'schwaerzen-*.js');
+            const anzahl = fragmentVorkommen(r.text);
+            const zeilen = r.text.split('\n');
+            pruefen(`SCHWAERZEN 29 (suche "ankerSuche" trifft 3 Geheimniszeilen: jede durch Marker ersetzt, Fragmente kommen ${anzahl}x vor, 3 Stellen gemeldet)`,
+                anzahl === 0 && zeilen.length === 3
+                && zeilen.includes(`schwaerzen-openai.js:6:${zeileEntferntMarker('OpenAI-Schlüssel')}`)
+                && zeilen.includes(`schwaerzen-github.js:6:${zeileEntferntMarker('GitHub-Token')}`)
+                && zeilen.includes(`schwaerzen-telegram.js:6:${zeileEntferntMarker('Telegram-Bot-Token')}`)
+                && r.geschwaerzt.length === 3 && r.geschwaerzt.every((g) => g.zeile === 6));
+        }
+        {
+            const r = werkzeugSuche('Zeile B', 'harmlos.txt');
+            pruefen('POSITIVKONTROLLE 30 (suche "Zeile B" in harmlos.txt liefert die Zeile woertlich und unveraendert, nichts geschwaerzt)',
+                r.text === 'harmlos.txt:2:Zeile B' && r.geschwaerzt.length === 0);
+        }
+
+        // ===== FALL 31: eingegebener Diff mit Geheimnis bricht WEITERHIN ab =====
+        // Verhalten unveraendert (Begruendung in main()). Der https-Stub hat
+        // eine LEERE Warteschlange: jede Anfrage wuerde im Stub eine Ausnahme
+        // werfen — die Aufzeichnung muss leer bleiben.
+        {
+            const alterKey = process.env.OPENAI_API_KEY;
+            const alteDatei = process.env.OPENAI_KEY_DATEI;
+            process.env.OPENAI_API_KEY = 'selbsttest-dummy-schluessel-ohne-netz';
+            delete process.env.OPENAI_KEY_DATEI;
+            const echtesHttpsRequest = https.request;
+            const echtesError = console.error;
+            const aufgezeichnetDiff = [];
+            const fehlerZeilenDiff = [];
+            https.request = httpsStubBauen([], aufgezeichnetDiff);
+            console.error = (msg) => fehlerZeilenDiff.push(String(msg));
+            let codeDiff;
+            try {
+                codeDiff = await main([
+                    diffMitGeheimnisPfad,
+                    `--brief=${briefFixturePfad}`,
+                    `--wurzel=${klon}`,
+                    '--max-runden=10',
+                    `--protokoll=${path.join(klon, 'selbsttest-protokoll-diff.jsonl')}`,
+                ]);
+            } finally {
+                console.error = echtesError;
+                https.request = echtesHttpsRequest;
+                if (alterKey !== undefined) process.env.OPENAI_API_KEY = alterKey; else delete process.env.OPENAI_API_KEY;
+                if (alteDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteDatei;
+            }
+            pruefen(`DIFF-RIEGEL 31 (eingegebener Diff mit Geheimnis bricht weiterhin mit Exit 3 ab, ${aufgezeichnetDiff.length} Anfragen gebaut, Meldung nennt das Muster)`,
+                codeDiff === 3 && aufgezeichnetDiff.length === 0
+                && fehlerZeilenDiff.some((z) => z.includes('Der Diff enthaelt etwas, das wie ein Geheimnis aussieht') && z.includes('Telegram-Bot-Token')));
+        }
+
+        // ===== LAUF D: schwaerzen Ende-zu-Ende, gemessen am Anfragekoerper =====
+        // Runden 1-3 lesen je eine Geheimnisdatei, Runde 4 sucht, Runde 5
+        // liefert Text. Geprueft wird an aufgezeichnetD — den Koerpern, die
+        // der https-Stub tatsaechlich bekommen hat — nicht an einer
+        // Behauptung im Text.
+        {
+            const alterKey = process.env.OPENAI_API_KEY;
+            const alteDatei = process.env.OPENAI_KEY_DATEI;
+            process.env.OPENAI_API_KEY = 'selbsttest-dummy-schluessel-ohne-netz';
+            delete process.env.OPENAI_KEY_DATEI;
+            const echtesHttpsRequest = https.request;
+            const echtesLog = console.log;
+
+            const aufgezeichnetD = [];
+            const ausgabeZeilenD = [];
+            const warteschlangeD = [
+                antwortKoerperBauen(elementFunktionsaufrufBauen('call-d1', 'lies', { pfad: 'schwaerzen-openai.js', von: 1, bis: 11 }), 100, 50),
+                antwortKoerperBauen(elementFunktionsaufrufBauen('call-d2', 'lies', { pfad: 'schwaerzen-pem.txt', von: 1, bis: 25 }), 100, 50),
+                antwortKoerperBauen(elementFunktionsaufrufBauen('call-d3', 'lies', { pfad: 'schwaerzen-platzhalter.js', von: 1, bis: 11 }), 100, 50),
+                antwortKoerperBauen(elementFunktionsaufrufBauen('call-d4', 'suche', { muster: 'ankerSuche' }), 100, 50),
+                antwortKoerperBauen(elementTextBauen('TESTBERICHT-SCHWAERZEN'), 100, 50),
+            ];
+
+            https.request = httpsStubBauen(warteschlangeD, aufgezeichnetD);
+            console.log = (msg) => ausgabeZeilenD.push(String(msg));
+
+            let codeD;
+            try {
+                codeD = await main([
+                    path.join(klon, 'harmlos.txt'),
+                    `--brief=${briefFixturePfad}`,
+                    `--wurzel=${klon}`,
+                    '--modell=gpt-5.6-terra',
+                    '--max-runden=10',
+                    `--protokoll=${path.join(klon, 'selbsttest-protokoll-d.jsonl')}`,
+                ]);
+            } finally {
+                console.log = echtesLog;
+                https.request = echtesHttpsRequest;
+                if (alterKey !== undefined) process.env.OPENAI_API_KEY = alterKey; else delete process.env.OPENAI_API_KEY;
+                if (alteDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteDatei;
+            }
+
+            pruefen(`LAUF D ABGESCHLOSSEN 32 (drei Lesungen mit Geheimnis plus eine Suche enden regulaer mit Exit ${codeD}, Bericht kam an)`,
+                codeD === 0 && aufgezeichnetD.length === 5
+                && ausgabeZeilenD.some((z) => z.includes('TESTBERICHT-SCHWAERZEN'))
+                && ausgabeZeilenD.some((z) => z.includes('Bericht regulaer erstellt')));
+
+            // Der Koerper der 5. Anfrage traegt die volle Historie, also ALLE
+            // vier Funktionsergebnisse. Erwartete Marker: 1 (openai) + 5 (PEM)
+            // + 1 (Platzhalter) + 3 (Suche) = 10.
+            const alleKoerper = JSON.stringify(aufgezeichnetD);
+            const funktionsausgaben = aufgezeichnetD.length === 5
+                ? aufgezeichnetD[4].input.filter((e) => e.type === 'function_call_output').map((e) => e.output).join('\n')
+                : '';
+            const fragmenteRaus = fragmentVorkommen(alleKoerper);
+            const markerRaus = vorkommen(funktionsausgaben, '[ZEILE ENTFERNT — Geheimnis-Riegel: ');
+            pruefen(`ANFRAGEKOERPER 33 (in allen 5 tatsaechlich gebauten Anfragekoerpern kommen die Geheimnis-Fragmente ${fragmenteRaus}x vor, die 4 Funktionsergebnisse tragen ${markerRaus} Marker, erwartet 0 und 10)`,
+                fragmenteRaus === 0 && markerRaus === 10 && !alleKoerper.includes('BEGIN PRIVATE'));
+
+            const geschwaerztBlock = ausgabeZeilenD.join('\n');
+            pruefen('BERICHT 34 (Zusammenfassung nennt unter "GESCHWAERZTE STELLEN" alle 10 blinden Zeilen mit Datei, Zeile und Muster)',
+                geschwaerztBlock.includes('GESCHWAERZTE STELLEN')
+                && geschwaerztBlock.includes('  schwaerzen-openai.js:6 (OpenAI-Schlüssel)')
+                && [11, 12, 13, 14, 15].every((z) => geschwaerztBlock.includes(`  schwaerzen-pem.txt:${z} (privater Schlüssel (PEM))`))
+                && geschwaerztBlock.includes('  schwaerzen-platzhalter.js:6 (Verbindungszeichenfolge mit Passwort)')
+                && geschwaerztBlock.includes('  schwaerzen-github.js:6 (GitHub-Token)')
+                && geschwaerztBlock.includes('  schwaerzen-telegram.js:6 (Telegram-Bot-Token)')
+                && !geschwaerztBlock.includes('GESCHWAERZTE STELLEN (Geheimnis-Riegel; dort war die Pruefung blind):\n  (keine)'));
         }
         {
             const alterKey = process.env.OPENAI_API_KEY;
