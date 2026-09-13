@@ -26,9 +26,9 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 13.09.2026 | Gegenlesung `allSettled`-Abdeckung | Diff 111 Zeilen + Repo-Lesezugriff (19 Suchen, 24 Lesungen), 562k Token über 9 Runden | 2 | 2 | 0 | 7,47 $ |
 | 13.09.2026 | Gegenlesung Selbstprotokollierung des Gegenlesers | **abgebrochen** (Geheimnis-Riegel bei einer Werkzeug-Lesung (tools/geheimnis-riegel.js (116 von 300 Zeilen))): Diff 600 Zeilen, Suchen 1, Lesungen 4, Token rein 12886, Token raus 225, Runden 1 | — | — | — | 0,18 $ |
 | 13.09.2026 | Gegenlesung Selbstprotokollierung des Gegenlesers, Wiederholung ohne die Musterdatei | Diff 600 Zeilen, Suchen 8, Lesungen 14, Token rein 190835, Token raus 9742, Runden 5 | 6 | offen (Nacharbeit mit Gegenproben laeuft) | offen | 3,12 $ |
-| 13.09.2026 | Gegenlesung (e3)-Zustandsbeweis und neun Kardinalitaetspruefungen | Diff 143 Zeilen, Suchen 14, Lesungen 29, Token rein 592748, Token raus 8581, Runden 8 | 3 | offen (Nacharbeit mit Gegenproben laeuft; Prozesstod bei frueher Ablehnung bereits selbst gemessen) | offen | 8,05 $ |
+| 13.09.2026 | Gegenlesung (e3)-Zustandsbeweis und neun Kardinalitaetspruefungen | Diff 143 Zeilen, Suchen 14, Lesungen 29, Token rein 592748, Token raus 8581, Runden 8 | 3 | 3 | 0 | 8,05 $ |
 | 13.09.2026 | Gegenlesung CI-Fehlerlogs als Artefakt und Verrottungswaechter | **abgebrochen** (Geheimnis-Riegel auf dem Eingabediff): Diff 127 Zeilen, Suchen 0, Lesungen 0, Token rein 0, Token raus 0, Runden 0 | — | — | — | 0,00 $ |
-| 13.09.2026 | Gegenlesung CI-Fehlerlogs als Artefakt, Wiederholung mit geschwaerzter Kennung | Diff 127 Zeilen, Suchen 8, Lesungen 15, Token rein 221528, Token raus 9633, Runden 6 | 2 | offen (Nacharbeit laeuft; die Waechter-Umgehung habe ich selbst nachgebaut und gemessen) | offen | 3,49 $ |
+| 13.09.2026 | Gegenlesung CI-Fehlerlogs als Artefakt, Wiederholung mit geschwaerzter Kennung | Diff 127 Zeilen, Suchen 8, Lesungen 15, Token rein 221528, Token raus 9633, Runden 6 | 2 | 2 | 0 | 3,49 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -158,3 +158,29 @@ Die ersten beiden sind einer: **eine abgelehnte Lesung sollte eine abgelehnte
 Lesung sein, kein Abbruch des ganzen Laufs.** Das Werkzeug kann das schon —
 `suche()` schwärzt und läuft weiter —, nur der Deckel bei `lies()` kippt in
 einen Gesamtabbruch. Steht als eigener Punkt aus.
+
+## Was die beiden Laeufe vom 13.09.2026 nachmittags leisteten
+
+Fuenf von fuenf Befunden haben nach eigener Nachmessung getragen — die
+bisher beste Quote, und sie sagt WENIGER, als sie aussieht: alle fuenf
+betrafen Beitraege, die ich selbst kurz zuvor entworfen hatte. Ein Pruefer
+findet im frischen Entwurf leichter etwas als im gewachsenen Bestand.
+
+**Zwei Befunde waren Angriffe auf die eigene Behebung**, und das ist die
+Klasse, um derentwillen das Verfahren existiert:
+
+- Der CI-Waechter, den ich zum Schutz der Testsuite erweitert hatte, machte
+  die Testsuite ABSCHALTBAR. `npm test` auf einen erlaubten Schrittnamen
+  umbenennen, `if: failure()` dazu — und die gesamte Isolations-Suite laeuft
+  bei gruenem Job nie, waehrend beide Waechter EXIT 0 melden. Selbst
+  nachgebaut und gemessen: vorher gruen, nach der Behebung rot.
+- Die Selbstprotokollierung, die „jeder Lauf wird festgehalten" erzwingen
+  sollte, verlor einen bezahlten Lauf genau dann, wenn eine SPAETERE Runde
+  an einem Netzfehler stirbt — in dieser Umgebung der haeufigste Fehlerweg.
+
+**Eine Einschraenkung, die in keiner Zahl steht:** Beim (e3)-Sperrnachweis
+fiel bei der entscheidenden Mutation auch die SCHWAECHERE Zusicherung. Der
+Gewinn war dort nicht mehr Empfindlichkeit, sondern GENAUIGKEIT — die
+Meldung sagt jetzt „in 3 s wurde niemand von As Backend blockiert" statt
+„B war zufaellig schon fertig". Wer diese Zeile als „Astra findet, was
+sonst durchrutscht" liest, liest sie falsch.
