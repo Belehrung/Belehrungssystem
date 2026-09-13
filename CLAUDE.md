@@ -776,6 +776,25 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   dem falschen Grund. Mit `meinRechner` wiederholt: der Wächter blieb GRÜN
   (EXIT=0), der Befund war echt. Testdaten so benennen, dass sie mit dem
   gesuchten Muster nichts gemein haben.
+- **Ein Mutationsskript mit fest verdrahtetem Pfad mutiert den falschen
+  Baum — lautlos.** Gemessen am 13.09.2026: ein Skript trug den Pfad
+  `/home/user/gymdocu/...` fest im Quelltext, wurde aber aus einem ZWEITEN
+  Arbeitsbaum heraus aufgerufen. Es veränderte den erstgenannten Baum, der
+  auf einem ganz anderen Zweig stand; gemessen wurde im zweiten. Die
+  Sabotage blieb danach im ersten Baum liegen.
+  ZWEI Schutzmechanismen haben dabei NICHT gegriffen, und nur einer war
+  Absicht:
+  *Der Marker-Scan fand nichts* — weil das Skript gar keinen
+  `GEGENPROBE-DEFEKT`-Marker schrieb, sondern nur eine unauffällige Zeile.
+  **Der Scan ist nur so gut wie die Marker; ein Skript, das keinen setzt,
+  hebelt ihn aus.** Jede Mutation schreibt den Marker MIT, auch die
+  vermeintlich offensichtliche.
+  *Gerettet hat `git add <datei>` statt `git add -A`.* Deshalb steht die
+  Zeile in keinem Commit. Das war Gewohnheit, keine Prüfung — verlassen
+  kann man sich darauf nicht.
+  Regeln daraus: Mutationsskripte nehmen den Zielpfad als ARGUMENT, nicht
+  fest verdrahtet; und `git status` über ALLE Arbeitsbäume gehört zum
+  Abschluss einer Gegenprobe, nicht nur über den, in dem man gerade misst.
 - **Eine Behebung kann Wächter BLIND machen, die vorher gesehen haben.**
   Nicht nur „kostet sie Abdeckung" — sie kann eine bestehende Zusicherung
   in eine verwandeln, die nicht mehr fallen KANN. Dreimal gemessen am
