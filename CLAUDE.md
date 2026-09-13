@@ -92,6 +92,10 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
 3. **Vier Augen bei nicht-trivialen Diffs** (mehr als eine Datei echter
    Logik): unabhängige Review über den Diff (/code-review) — der
    Entwerfer ist für die Fehler seines eigenen Entwurfs blind.
+   **Bei folgenschweren Änderungen kommt Astra als zweite, unabhängige
+   Kontrollinstanz DANEBEN** (eigener Abschnitt unten; sie ersetzt diese
+   Review nicht). Gemessen am 10.09.2026: beide Spuren fanden Befunde, die
+   die jeweils andere nicht hatte.
 4. **Volle Testsuite** (test/run.sh). WÄHREND des Laufs keine parallelen
    Skripte gegen dieselbe DB: der Studio-Zähl-Wächter schlägt sonst
    falsch an, und eine Pipe (`| tail`) verschluckt seinen Fehler-Exit.
@@ -184,6 +188,388 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
    - In beiden Fällen gilt: Diese Prüfungen sagen „der Betrieb läuft und ist
      aktuell", NICHT „die Änderung wirkt richtig". Was in der Datenbank
      steht, bleibt unsichtbar und soll es bleiben.
+
+## Astra als unabhängige Kontrollinstanz
+
+Betreiber-Vorgabe 10.09.2026. Sie ERWEITERT Schritt 3 des Prüf-Rituals, sie
+ersetzt ihn nicht: die Claude-Review bleibt, Astra kommt daneben.
+
+**Die Rollen sind getrennt, und die Trennung ist der ganze Wert.** Claude
+baut — über den Executer, wie gehabt. Astra baut NICHTS. Nicht „zu 90 %
+Claude", sondern beim Bauen 100 zu 0: Astra hat in dieser Umgebung keine
+Werkzeuge, und wer mitgebaut hat, prüft seinen eigenen Entwurf. Eine
+Kontrollinstanz, die zehn Prozent selbst geschrieben hat, ist keine mehr.
+
+Ablauf: **Claude baut → Astra prüft → Claude korrigiert → Astra bestätigt.**
+
+**„Astra bestätigt" heißt: seine Befunde sind nachgezogen. Es heißt NIE
+„mergefähig".** Das Tor bleiben die CI und das Prüf-Ritual. Der Grund ist
+gemessen: am 10.09.2026 kam der Wert nicht aus den Befunden, sondern daraus,
+dass jeder einzelne SELBST nachgemessen wurde, bevor er ein Auftrag wurde —
+und einer wurde bewusst NICHT umgesetzt (die harten Löschrouten), weil er
+den Beitrag gesprengt hätte. Diese Entscheidung braucht die Vorgeschichte
+des Repos; sie kann nicht ausgelagert werden. Sobald am Ende eine Freigabe
+steht, verlagert sich die Verantwortung dorthin und der eigene Prüfgang
+wird zur Formsache.
+
+**Rundenbegrenzung:** eine volle Prüfung, eine Bestätigungsrunde. Weitere nur
+bei einem NEUEN blockierenden Befund, nicht für Geschmacksfragen.
+
+### Wann
+
+**Betreiber-Vorgabe 11.09.2026: Astra wird ÖFTER eingesetzt — die Regel
+unten ist ab jetzt der Regelfall, nicht die Ausnahme.** Anlass war kein
+neuer Beleg, sondern eine Unterlassung: an diesem Tag gingen zwei Beiträge
+durch, die BEIDE unter „immer bei Wächtern und Zusicherungen" fallen (die
+Netzsperre der Testsuite, die Laufsperre am Deploy-Gate), und bei keinem
+von beiden wurde Astra gerufen. Die Regel war also nicht zu eng, sie wurde
+nicht angewandt.
+
+Was sich damit NICHT ändert: die Beweislage. Sie ist weiterhin ein Diff,
+drei Läufe, ein Tag (Zahlen unten). „Öfter" heißt deshalb NICHT „bei
+allem" — eine Kontrastkorrektur oder eine Tippfehlerzeile braucht es
+weiterhin nicht. Und „Astra bestätigt" heißt weiter NIE „mergefähig".
+
+**Nachgeschärft am 12.09.2026 (Betreiber-Vorgabe, nachdem die Frage nach
+einem DRITTEN Prüfer verneint wurde: lieber den vorhandenen öfter).**
+Die Fassung vom 11.09. sagte „Regelfall" und überließ die Auslösung
+trotzdem der Einschätzung im Moment — genau daran ist sie am selben Tag
+gescheitert. Deshalb jetzt ein Auslöser, der ohne Tagesform funktioniert:
+
+> **Astra läuft bei JEDEM Beitrag, der Produktivcode, einen Wächter, eine
+> Zusicherung oder die Testsuite selbst anfasst — also bei allem außer
+> reinen Text-, Doku- und Kosmetikänderungen.** Wer ihn auslässt, schreibt
+> in einem Satz dazu, WARUM der Beitrag in diese Restkategorie fällt.
+
+Die Umkehrung der Beweislast ist der ganze Punkt: vorher musste man
+begründen, warum man ihn RUFT, jetzt, warum nicht. Die Begründung fürs
+Auslassen gehört in denselben Zwischenstand, in dem die Suite-Zahlen
+stehen — sonst merkt es wieder niemand.
+
+Was das NICHT heißt: dass Astra mehr findet. Gemessen am 12.09.2026 an
+#167 (61 Dateien, neuer Wächter): neun Befunde aus zwei Spuren, sieben
+trugen nach eigener Nachmessung, drei nicht — darunter ein
+Behebungsvorschlag, der seinen eigenen Befund nicht geschlossen hätte.
+Den teuersten Fund des Tages (einen REGRESS des eigenen Zweigs) fand
+KEINE der beiden Prüfspuren, sondern eine stumpfe Messung mit
+objektivem Ergebnis. Das Nadelöhr bleibt das eigene Nachmessen jedes
+Befunds, nicht das Finden.
+
+Nach Umkehrbarkeit, nicht nach Umfang. Eine Kontrastkorrektur über zwölf
+Dateien braucht es nicht; eine unwiderrufliche Vergabe über zwei Repos
+braucht es, auch wenn sie klein aussieht.
+
+- **VOR der Umsetzung den Plan prüfen lassen**, wenn die Änderung
+  folgenschwer oder über zwei Repos verteilt ist. Das ist der Punkt mit dem
+  größten Hebel: die beiden teuersten Fehler des 10.09.2026 standen im
+  AUFTRAG, nicht im Code — eine zu grobe Vorgabe (#126, der Executer musste
+  widersprechen) und eine Lücke, die eine ganze Umgehung offenließ (#144,
+  `.catch()` am Transaktionsaufruf). Ein Plan ist ein paar Kilobyte; eine
+  Bau-Runde ist es nicht.
+- **NACH der Umsetzung den Code prüfen lassen** — immer bei Änderungen an
+  Wächtern und Zusicherungen. Dort war die Ausbeute am höchsten, und dort
+  tarnt sich ein Fehler als grüner Lauf.
+
+### Was Astra bekommt
+
+Volles Material, keine Diffs allein — gemessen macht das den Unterschied
+(s. Zahlen unten). Praktisch heißt „volles Material" der betroffene
+Teilbaum, nicht das Repo: 502 getrackte Dateien sind 11,96 MB ≈ 3,2 Mio.
+Token. **Das Eingabelimit liegt bei rund 400.000, NICHT bei 922.000** — die
+frühere Zahl hier war falsch und hätte zu einem Bündel verleitet, das
+scheitert. Gemessen am 11.09.2026 gegen den echten Endpunkt: ~412.500 Token
+werden mit „Your input exceeds the context window" ABGELEHNT, 145.000 gehen
+durch (Positivkontrolle: die Methode lehnt nicht einfach alles ab). Die
+Grenze ist bewusst nicht genauer eingegrenzt — für unseren Zweck genügt
+„deutlich unter 400k bleiben". Ein brauchbares Bündel waren am 10.09.2026
+acht Dateien mit 192k Token für 2,03 $.
+
+Dazu gehören:
+- der Diff,
+- die Dateien, die zum Verständnis nötig sind (auch unveränderte —
+  Geschwisterwächter, aufgerufene Kernmodule, das Schema),
+- **die Testausgaben, einschließlich der Gegenproben-Zahlen.** Am
+  10.09.2026 hat Astra die Suite-Ausgabe NIE gesehen und rein am Quelltext
+  geurteilt. Gerade an „welche Zusicherungen fielen im ROT-Lauf, welche
+  nicht" erkennt man grün aus dem falschen Grund.
+
+Die Datengrenze bleibt: nur Diffs, selbst geholte Gesetzestexte und
+Dateien, die `git ls-files` auflistet. Keine Zugangsdaten, keine
+Kundendaten, keine Datenbankinhalte.
+
+### Prüfreihenfolge
+
+Nicht die allgemeine Liste, sondern die für DIESES System:
+
+1. **Mandantentrennung und Rechte** — jede Abfrage trägt `studio_id`. Der
+   eine Fehler, der wirklich katastrophal wäre.
+2. **Prüfungen, die nicht rot werden können.** Steht bewusst so weit oben:
+   das ist unsere teuerste Klasse, nicht fehlende Abdeckung, sondern eine
+   FALSCHE Zusicherung von Abdeckung. Am 10.09.2026 drei Fälle in einer
+   einzigen kleinen Änderung, dazu der Telegram-Fund; im August das falsche
+   Grün beim QR-Nummernraum.
+3. **Logikfehler.**
+4. **Datenintegrität** — besonders alles Unwiderrufliche (Nummernbuch,
+   harte Löschungen, append-only).
+5. **Architektur**, soweit sie über den Auftrag hinaus wirkt.
+6. **Fehlende Fälle und Randbedingungen.**
+7. **Performance.**
+
+### Worauf sich das stützt — und was es nicht hergibt
+
+Drei Läufe über EINEN Diff (#144) am 10.09.2026, Prompt wörtlich gleich:
+
+| Lauf | Material | Befunde | nur dort | Dauer | Kosten |
+|---|---|---|---|---|---|
+| Astra, nur Diff | Diff + 2 Testdateien | 4 | 2 | 37 s | 0,21 $ |
+| Claude, Arbeitsbaum | frei gewählt | 8 | 6 | ~12 min | 177k Token |
+| Astra, volle Dateien | 8 Dateien | 4 | 3 | 58 s | 2,03 $ |
+
+Alle zwölf Befunde wurden selbst am Quelltext nachgeprüft, alle trafen zu.
+**Mehr Material ließ Astra nicht MEHR finden, sondern ANDERES** — und jede
+der drei Spuren hatte etwas, das keine andere hatte. Das ist der Beleg für
+„beide", nicht für „das bessere".
+
+Der Fund, der die Entscheidung trägt: Astra sah, dass ein neuer
+Verhaltenstest ECHTE Telegram-Alarme auslöst (der melde-Wrapper reichte an
+das echte `melde()` weiter, und dieselbe Suite läuft auf dem Live-Server als
+Deploy-Gate). Der Executer hatte das als VORZUG in den Kommentar
+geschrieben, die Claude-Prüfung sortierte dieselbe Zeile in ihre
+„geprüft und in Ordnung"-Liste. **Beide sahen die Tatsache und zogen den
+falschen Schluss** — nicht aus Unaufmerksamkeit, sondern weil beide
+dieselbe Frage nicht stellten: was bedeutet das auf dem Live-Server?
+
+**Was das NICHT hergibt:** ein Diff, drei Läufe, ein Tag. Das ist ein
+Anfang, keine Statistik. Und die Spuren hatten ungleiche Freiheit — Claude
+durfte wählen, was es liest, Astra bekam ein zusammengestelltes Bündel.
+Wer sich auf diesen Abschnitt beruft, um mehr zu behaupten, nennt die
+Messung, auf die er sich stützt.
+
+**Nicht als Rechtsquelle.** Für #32 und #117 wird der Wortlaut weiterhin
+SELBST geholt. Der Vorbehalt „Wissensstand 30.04.2026" ist dabei seit dem
+11.09.2026 überholt, aber die Regel bleibt: das Modell kann per `web_search`
+den aktuellen Stand holen (gemessen, s. unten) — nur ändert das nichts
+daran, dass eine Rechtsaussage bei uns am Wortlaut der Quelle hängt und
+nicht an einer Zusammenfassung.
+
+### Aufrufmuster
+
+Schlüssel NIE in die Kommandozeile (Prozessliste, s. #99), sondern über eine
+curl-Konfigdatei, die danach gelöscht wird:
+
+    cfg=/tmp/claude-0/.curlcfg-oai; umask 077
+    printf 'header = "Authorization: Bearer %s"\n' "$(tr -d '\r\n' < /tmp/claude-0/.oai-key)" > "$cfg"
+    curl -sS -K "$cfg" -H "Content-Type: application/json" -d @anfrage.json \
+         https://api.openai.com/v1/responses -o antwort.json
+    rm -f "$cfg"
+
+Endpunkt `/v1/responses`, Feld `input` (nicht `messages`), dazu
+`max_output_tokens`. Der Betreiber hat am 10.09.2026 ausdrücklich auf eine
+Rotation des Schlüssels VERZICHTET, obwohl er im Sitzungsprotokoll steht;
+Missbrauch zeigte sich an der OpenAI-Abrechnung.
+
+**ZIELKONFIGURATION einer Gegenlesung (Betreiber-Vorgabe 12.09.2026
+„nutze Astra optimaler"; am Stück gemessen, s. Abschnitt unten):**
+
+    "stream": true,          // Egress-Proxy bricht lange Läufe sonst ab
+    "store": false,          // unser Quelltext bleibt nicht auf fremden Servern
+    "instructions": "…",     // die Unverhandelbaren, getrennt vom Material
+    "reasoning": {"effort":"high"},
+    "max_tool_calls": N,     // nur mit web_search; deckelt die Suchschleife
+    "metadata": {…},         // Lauf wiederfindbar machen
+    "max_output_tokens": 45000,
+    "text": {"format": {"type":"json_schema","strict":true, …}}
+
+Dazu weiterhin die **Wiederholschleife** (ein Fehlschlag ist keine Antwort)
+und die **Statusprüfung bei JEDEM Aufruf**.
+
+### Drei Zusätze am Prompt (Betreiber-Entscheidung 11.09.2026)
+
+Der Betreiber hat Astra selbst gefragt, was es für uns tun kann. Das
+meiste der Antwort beschrieb, was wir schon tun (unabhängige Prüfung vor
+dem Merge, Astra sieht unsere eigene Review nicht, zwei Runden, CI als
+letzte Instanz, Datengrenze). Drei Punkte daraus sind neu und übernommen:
+
+1. **Die Prüfanweisung verlangt einen Fund ODER eine Rechenschaft.** Nicht
+   „ist der Code gut?", sondern: *finde mindestens einen Fehler, den der
+   Ausführende übersehen hat — findest du keinen, nenne die Prüfungen, die
+   du durchgeführt hast.* Das ist unsere Regel „Positivkontrolle ist
+   Pflicht", auf die Review angewandt: ein „nichts gefunden" ohne
+   Rechenschaft ist ein „nicht gesucht".
+2. **Strukturierte Ausgabe** je Befund: Schweregrad, Datei, Zeile, Problem,
+   Vorschlag. Nicht, weil es das eigene Nachmessen erspart — das bleibt —,
+   sondern weil Befunde damit ZÄHLBAR werden. Unsere Beweislage ist bisher
+   ein Diff und drei Läufe; erst zählbare Ausgaben machen daraus über die
+   Zeit eine Messung statt einer Anekdote.
+3. **Fester Vorspann mit den Unverhandelbaren** statt nur des Materials:
+   jede Abfrage trägt `studio_id`; dieselbe Suite ist auf dem Live-Server
+   Deploy-Gate; Tests fassen weder echtes Dateisystem noch echte Prozesse
+   noch echte Dienste an. Dazu die Testausgaben — die hat Astra am
+   10.09.2026 nie gesehen, dabei erkennt man erst daran, ob etwas aus dem
+   falschen Grund grün ist.
+
+**Ausdrücklich NICHT übernommen**, obwohl vorgeschlagen:
+
+- **Werkzeuge und Repo-Zugriff für den Prüfer** (`read_file`, `run_tests`,
+  `get_ci_status`, `create_review_comment`). Das löst genau die Eigenschaft
+  auf, die ihn wertvoll macht: er baut nicht, er fasst nichts an, er hat
+  keinen Anteil. `create_review_comment` wäre zusätzlich ein Schreibweg in
+  unseren Ablauf, den niemand gemessen hat. Die Messung vom 10.09. spricht
+  auch dagegen: mehr Material ließ ihn ANDERES finden, nicht mehr.
+- **„Erst danach wird gemerged."** Astra bestätigt, er gibt nie frei. Sobald
+  am Ende eine Freigabe steht, verlagert sich die Verantwortung dorthin und
+  der eigene Prüfgang wird zur Formsache. Das Tor bleiben die CI und das
+  Prüf-Ritual.
+- Die vorgeschlagene Werkzeug- und MCP-Liste (Kubernetes, Sentry, Jira,
+  Docker) und die allgemeine Sicherheits-Checkliste. Beides ist generische
+  Beratung; unsere Prüfreihenfolge oben ist schärfer, weil sie aus
+  Messungen an DIESEM System kommt.
+
+### Was die Schnittstelle wirklich kann (gemessen 11.09.2026)
+
+Alles hier ist am echten Endpunkt gemessen, nicht aus einer Doku
+abgeschrieben. Die Gegenprobe steht dabei: ein frei erfundener Parameter
+wird mit „Unknown parameter" abgelehnt — ein „OK" sagt also wirklich etwas.
+
+- **`tools: [{"type":"web_search"}]` existiert UND WIRKT.** Nicht nur
+  akzeptiert: im Ergebnis stehen `web_search_call`-Einträge, die Antwort
+  nennt Quellen und trifft den tagesaktuellen Stand. Damit kann der Prüfer
+  bekannte Schwachstellen zu den Versionen in `package.json` nachschlagen,
+  statt aus dem Gedächtnis zu raten. Die Regel „nicht als Rechtsquelle"
+  bleibt davon unberührt.
+- **`reasoning: {"effort": "high"}` ist das Maximum für dieses Modell.**
+  `xhigh` wird ausdrücklich abgelehnt („Supported values are: 'minimal',
+  'low', 'medium', and 'high'"). Wer mehr Tiefe will, bekommt sie nicht
+  über diesen Schalter.
+- **`context_management` nimmt `[{"type":"compaction","compact_threshold":N}]`.**
+  Das ist die Struktur, an der der Versuch vom 10.09.2026 scheiterte
+  („expected an array of objects"). Für eine EINZELNE Gegenlesung bleibt
+  sie trotzdem nebensächlich — ein Aufruf, ein Kontext.
+- **`prompt_cache_key` wird akzeptiert.** Laut Recherche kostet
+  wiederholte Eingabe damit ein Zehntel. Das ist der Hebel für die ZWEITE
+  Runde („Astra bestätigt"), in der dasselbe Material noch einmal
+  mitgeht. Der Rabatt selbst ist NICHT von uns nachgemessen — nur dass
+  der Schalter angenommen wird.
+
+**Zwei Betriebsfallen, beide am selben Tag hineingelaufen:**
+
+1. **`status` GEHÖRT IN JEDEN AUFRUF GEPRÜFT.** Eine Antwort kam mit NULL
+   Zeichen zurück — nicht „nichts gefunden", sondern `status: "incomplete"`
+   mit `incomplete_details.reason = "max_output_tokens"`: 6528 von 7289
+   Ausgabe-Token gingen ins Nachdenken und in 23 Suchaufrufe, für die
+   Antwort blieb nichts. Wer nur den Text ausliest, meldet „keine Befunde"
+   und meint „niemand hat geprüft" — unsere teuerste Klasse. Bei
+   eingeschalteter Websuche muss `max_output_tokens` deutlich höher
+   (30.000 statt 8.000 reichte).
+2. **Der Egress-Proxy bricht lange Läufe ab**, `curl` meldet Exit 56
+   („Failure when receiving data from the peer"). Am 11.09.2026 zweimal
+   passiert, beide Male lief der ZWEITE Versuch durch. Eine
+   Wiederholschleife gehört deshalb ins Aufrufmuster; ein einzelner
+   Fehlschlag ist keine Antwort.
+
+### Nachgemessen 12.09.2026 — und was sich dadurch an der Arbeitsweise ändert
+
+Anlass: Betreiber-Frage „nutzen wir Astra schon optimal?" — Antwort war
+NEIN, mit drei benannten Lücken (unten). Zehn Parameter am echten Endpunkt
+geprüft, Gegenprobe bestanden (`erfundenes_feld_xyz` → HTTP 400 „Unknown
+parameter"), ein „wird angenommen" sagt hier also etwas.
+
+**Angenommen und für uns brauchbar:**
+
+- **`text.format` mit `json_schema` und `strict: true` ERZWINGT die
+  Ausgabeform.** Gemessen: die Antwort kam als gültiges JSON genau nach
+  vorgegebenem Schema zurück (Felder Schweregrad/Datei/Zeile/Problem/
+  Vorschlag). Das schliesst die Lücke aus dem 11.09. („strukturierte
+  Ausgabe, damit Befunde ZÄHLBAR werden") — bis dahin war die Form eine
+  Bitte im Prompt, jetzt ist sie eine Zusicherung der Schnittstelle.
+- **`store: false`** — die Anfrage wird nicht aufbewahrt. Wir schicken
+  Quelltext; das gehört dazu.
+- **`max_tool_calls`** — deckelt die Suchschleife, die am 11.09.2026 die
+  ganze Ausgabe aufgefressen hat (6528 von 7289 Token ins Nachdenken und
+  23 Suchaufrufe, für die Antwort blieb nichts).
+- **`metadata`**, **`instructions`** (eigener Vorspann, getrennt vom
+  Material), **`reasoning.summary`**, **`background: true`** (Antwort
+  `status: "queued"`).
+- **`service_tier: "flex"`** wurde NICHT abgelehnt, sondern mit HTTP 429
+  („too many requests") beantwortet — der Parameter ist gültig, war nur
+  gerade nicht bedienbar. Ein 429 ist KEINE Ablehnung des Parameters;
+  wer das verwechselt, streicht eine Möglichkeit, die es gibt.
+
+**Ein erzwungener Zielkonflikt, gemessen statt vermutet:**
+
+`store: false` und `previous_response_id` SCHLIESSEN EINANDER AUS. Eine
+mit `store:false` erzeugte Antwort ist danach nicht mehr referenzierbar:
+„Previous response with id '…' not found." Damit steht die zweite Runde
+(„Astra bestätigt") vor der Wahl — entweder das Material bleibt auf dem
+fremden Server liegen, oder es geht noch einmal mit.
+
+**ENTSCHEIDUNG: `store: false` gewinnt.** Das Material erneut mitzuschicken
+kostet Geld, die Aufbewahrung kostet die Datengrenze. Bei 200k Token
+gegen ein Limit von rund 400k ist Platz genug; die CLAUDE.md sagt an
+anderer Stelle ohnehin, der billigere Weg sei, es einfach erneut
+mitzuschicken. Der Halbsatz zu `prompt_cache_key` oben bleibt als
+Kostenhebel gültig, ist aber weiterhin von uns NICHT nachgemessen.
+
+**DREI ÄNDERUNGEN AN DER ARBEITSWEISE** (nicht an der Schnittstelle —
+das waren die eigentlichen Lücken, alle drei gegen unsere eigenen Regeln):
+
+1. **Der PLAN geht raus, nicht nur der Diff.** Steht seit dem 10.09. als
+   „Punkt mit dem größten Hebel" in dieser Datei und wurde trotzdem nie
+   gemacht. Gemessen am 12.09.2026 am eigenen Auftrag: er deckte zwei von
+   DREI gleichartigen Shell-Aufrufen ab; der dritte fiel erst beim
+   Gegenlesen auf, nach zwei Bau-Runden. Ein Plan ist ein paar Kilobyte.
+2. **Ins Bündel gehören die GESCHWISTERSTELLEN, nicht nur die geänderten
+   Dateien.** Gemessen am selben Tag: Astra fand eine von zwei Stellen
+   derselben Regelverletzung — die zweite lag in einer Datei, die nicht
+   im Bündel war. Es KONNTE sie nicht finden. Die Bündelwahl entscheidet
+   also über den Befund, und wer nur die geänderten Dateien mitgibt,
+   bekommt einen Teil und hält ihn für das Ganze.
+3. **Jeder Lauf wird zählbar festgehalten:** Datum, Zweck, Material
+   (Dateien/Token), Befunde, davon nach EIGENER Nachmessung getragen,
+   Kosten. Ohne das bleibt die Beweislage für immer, was sie seit dem
+   10.09. ist — ein Diff, drei Läufe, ein Tag. Mit `json_schema` ist der
+   Zählteil jetzt Maschinenarbeit statt Fleißarbeit.
+
+**Was sich NICHT ändert:** Astra bekommt keine Werkzeuge und keinen
+Repo-Zugriff (Begründung unverändert: wer mitbaut, prüft seinen eigenen
+Entwurf), und „Astra bestätigt" ist keine Freigabe. Tor bleiben die CI
+und das Prüf-Ritual.
+
+**Ehrlich dazu:** die zweite Runde („Astra bestätigt") lief am 12.09.2026
+faktisch nicht. Der Befund wurde selbst nachgemessen, seine Einstufung
+korrigiert — und damit war die Sache erledigt. Das war im Einzelfall
+richtig, heißt aber, dass die Schleife aus dem Abschnitt oben real nicht
+stattfindet. Entweder sie wird gefahren, oder hier steht, dass wir sie
+nicht fahren. Nicht beides.
+
+### Context Notes — was daran stimmt und was nicht
+
+Der Betreiber nannte am 10.09.2026 ein Feature „Context Notes", das Notizen
+über das ganze Kontextfenster hält statt stur zusammenzufassen, und
+empfahl, Astra zusätzlich Datenbankschema und API-Dokumentation als
+dauerhaften Kontext mitzugeben.
+
+**Der Schalter existiert unter diesem Namen NICHT — gemessen, nicht
+vermutet.** `context_notes` beantwortet die API mit „Unknown parameter";
+`context_management` gibt es dagegen, es scheitert nur an der Form
+(„expected an array of objects"). Der Unterschied der beiden Fehlermeldungen
+IST die Positivkontrolle: die API unterscheidet zwischen „kenne ich nicht"
+und „kenne ich, falsch befüllt". Wer das Feature einschalten will, ermittelt
+also zuerst die richtige Struktur von `context_management` — die Empfehlung
+per Namen abzuschreiben, schaltet nichts ein und fällt nicht auf.
+
+**Für unseren Einsatz ist der Schalter ohnehin nebensächlich.** Eine
+Gegenlesung ist EIN Aufruf mit EINEM Kontext; über Fenstergrenzen hinweg
+wird da nichts gehalten. Er würde erst in der zweiten Runde zählen
+(„Astra bestätigt"), und auch dort ist der billigere Weg, das Material
+einfach erneut mitzuschicken — bei 192k Token gegen 922k Limit ist Platz.
+
+**Die andere Hälfte des Tipps gilt und ist gratis:** Schema und
+Schnittstellenbeschreibung gehören ins Bündel. Das steht oben unter „Was
+Astra bekommt" schon als „auch unveränderte Dateien", ist aber die Stelle,
+an der es am ehesten vergessen wird — ohne `core/db.js` und die Migration
+kann niemand beurteilen, ob eine Abfrage `studio_id` trägt, und das ist
+Punkt 1 der Prüfreihenfolge.
 
 ## Kosten
 
@@ -320,6 +706,34 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   dem falschen Grund. Mit `meinRechner` wiederholt: der Wächter blieb GRÜN
   (EXIT=0), der Befund war echt. Testdaten so benennen, dass sie mit dem
   gesuchten Muster nichts gemein haben.
+- **Eine Behebung kann Wächter BLIND machen, die vorher gesehen haben.**
+  Nicht nur „kostet sie Abdeckung" — sie kann eine bestehende Zusicherung
+  in eine verwandeln, die nicht mehr fallen KANN. Dreimal gemessen am
+  10.09.2026, in drei verschiedenen Verkleidungen:
+  *Derselbe Statuscode aus einem neuen Grund.* Der Bestellbezug-Riegel
+  antwortet 400. `(d)` und `(d2)` in `test_feature_qr_block.js` bewachen die
+  Spannen- und die Nummernraumprüfung — also den Schutz gegen unwiderruflich
+  falsch vergebene Nummern — und prüften nur „Status 400, nichts
+  geschrieben". Nimmt man den bewachten Schutz heraus, liefert seither DER
+  RIEGEL das 400: beide Abschnitte bleiben grün, während der Schutz weg ist.
+  Gemessen ohne Nummernraum-Riegel: die Zustellung wird STILL ANGENOMMEN
+  (200, `ok:true`, Zeile geschrieben).
+  *Der Wächter bewacht alles außer sich selbst.* Der neue
+  `ops/gymdocu-qr-block-abgleich.js` hatte 32 Zusicherungen über seine
+  Vergleichslogik und KEINE über `main()`, den Alarm-Entscheid oder
+  `process.exitCode`. Fünf Defekte — `main()` durch nichts ersetzen, den
+  Alarmfilter auf „nie ernst" drehen, `telegram()` sofort zurückkehren
+  lassen, den Leser leere Listen liefern lassen, die beiden Leseoperationen
+  vertauschen — ließen alle 32 grün.
+  *Ein Name, der mehr verspricht als die Zusicherung hält.* Ein Testfall hieß
+  „alle drei Spalten geprüft" und unterschied eine. Der Code war richtig, die
+  Zusicherung log über sich selbst — die unangenehmere Sorte, weil ein
+  Prüfender sie liest und abhakt.
+  Die Gegenfrage gehört deshalb in jede Behebung: **welche bestehende
+  Zusicherung könnte mein neuer Rückgabewert, Statuscode oder Fehlerweg ab
+  jetzt erfüllen, ohne dass das Bewachte noch da ist?** Wer einen bereits
+  verwendeten Statuscode für einen neuen Zweck einführt, hat diese Frage
+  IMMER zu beantworten.
 - **Ein vollständig kaputter Ausdruck fällt laut aus, ein halb kaputter
   still.** Wiederholt am 30.08.2026: eine Regex, die gar nichts mehr matcht,
   reißt den Lauf mit einer Ausnahme ab und wird sofort bemerkt; eine, die
@@ -526,6 +940,15 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
   Achtung bei diesem Filter: `event: workflow_run` blendet einen von Hand
   angestoßenen Lauf (`workflow_dispatch`) aus — wer danach filtert und
   nichts findet, hat nicht bewiesen, dass kein Deploy lief.
+- **CI-Stand eines PR: `get_check_runs` lesen, NICHT `get_status`.** Zwei
+  verschiedene Quellen. Unsere CI läuft als GitHub-Actions-Jobs, also als
+  CHECK-RUNS; `pull_request_read` mit `method: get_status` liefert dagegen
+  nur Commit-Statuses und meldete am 11.09.2026 für zwei frische PRs
+  `{"state":"pending","total_count":0,"statuses":[]}` — während
+  `get_check_runs` zur selben Zeit VIER Jobs zeigte, drei davon bereits
+  `success`. Wer `get_status` liest, schließt aus „total_count 0"
+  fälschlich „die CI hat noch nicht angefangen" und wartet endlos.
+  Dieselbe Klasse wie „ein Wächter, der die falsche Quelle liest".
 
 ## Werkzeuge
 

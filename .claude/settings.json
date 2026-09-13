@@ -1,4 +1,11 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(git diff *)",
+      "Bash(node tools/gegenleser-repo.js *)",
+      "Bash(node tools/zweitmeinung.js *)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
