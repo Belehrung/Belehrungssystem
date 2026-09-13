@@ -1089,6 +1089,28 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
   deshalb hinterher LESEN und sehen, dass sie dort endet, wo sie enden soll.
   Ein Commit, den niemand zurückgelesen hat, ist ungeprüft; das gilt für die
   eigene Botschaft wie für fremden Code.
+  **NACHGESCHÄRFT am 13.09.2026, weil das Zurücklesen es ein DRITTES Mal
+  nicht verhindert hat — ausgerechnet beim Merge, der diese Regel
+  ausliefert.** Die Regel hat funktioniert, soweit sie reicht: gemerkt habe
+  ich es diesmal SOFORT statt zwei Merges später. Aber sie ERKENNT nur, sie
+  VERHINDERT nicht, und Erkennen nützt wenig, wenn Umschreiben ausscheidet.
+  Nach der Hausregel weiter oben („eine Regel, die zweimal hintereinander
+  nicht befolgt wurde, wird durchgesetzt oder geändert") bekommt sie deshalb
+  einen Teil, der mechanisch prüfbar ist:
+  **Jede mehrzeilige Botschaft, die durch einen Werkzeug-Parameter geht,
+  endet mit einer festen SCHLUSSZEILE, und nach dem Merge wird geprüft, dass
+  die Botschaft GENAU DORT endet.** Bei uns ist das die Zeile
+  `-- Ende der Botschaft --`. Sie kostet eine Zeile Historie und verwandelt
+  „lesen und hoffen, dass es auffällt" in einen Vergleich mit eindeutigem
+  Ergebnis: steht nach ihr noch etwas, ist Markup hineingeraten. Der Befund
+  ist derselbe, aber er wird nicht mehr übersehen, wenn die Botschaft lang
+  ist und man schon vier Stunden prüft.
+  **Die eigentliche Ursache ist damit NICHT behoben** und soll nicht als
+  behoben gelten: der Fehler entsteht beim SCHREIBEN des Parameterwerts,
+  nicht beim Lesen. Wer ihn wirklich abstellen will, hält Merge-Botschaften
+  KURZ (Titel plus wenige Zeilen) und legt den langen Text in den PR-Rumpf —
+  der ist bei allen drei Merges NICHT betroffen gewesen, obwohl er länger
+  war als die Botschaft.
 
 ## Werkzeuge
 
