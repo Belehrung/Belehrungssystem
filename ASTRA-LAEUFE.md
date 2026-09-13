@@ -32,6 +32,7 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 13.09.2026 | Gegenlesung Offline-C7 Navigationsrennen | Diff 91 Zeilen, Suchen 11, Lesungen 12, Token rein 217868, Token raus 13426, Runden 6 | 4 | 4 | 0 | 3,73 $ |
 | 13.09.2026 | Gegenleser: Deckel lehnt Lesung ab statt Lauf | Diff 229 Zeilen, Suchen 8, Lesungen 11, Token rein 213092, Token raus 7458, Runden 6 | 2 | 1 | 1 (Schwereeinstufung: angeblich neuer Ausgabekanal, gegen HEAD~1 als wortgleich bestehend gemessen) | 3,22 $ |
 | 13.09.2026 | Bestaetigungsrunde: Deckel gilt dem Ausschnitt | Diff 336 Zeilen, Suchen 5, Lesungen 9, Token rein 174972, Token raus 6859, Runden 5 | 3 | 3 | 0 | 2,70 $ |
+| 13.09.2026 | Waechter gegen Zeitzonenfalle (repo-weit, statisch) | Diff 490 Zeilen, Suchen 13, Lesungen 22, Token rein 246849, Token raus 8508, Runden 6 | 5 | 5 | 0 | 3,72 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -233,3 +234,44 @@ teuer genug, aber beides von der leiseren Sorte.
 Material ging vollstaendig erneut mit, und es war trotzdem die billigere der
 beiden Runden — weil der Auftrag eng war (zwei benannte Fragen statt einer
 offenen Pruefung) und der Pruefer weniger suchen musste.
+
+## Der Lauf, bei dem die eigenen Gegenproben nicht reichten (13.09.2026)
+
+Bis hierher lief es so: Gegenlesung findet etwas, ich messe nach, die Hälfte
+trägt. Dieser Lauf ist der erste, bei dem **alle fünf Befunde trugen** — und
+der einzige bisher, bei dem der Beitrag ohne ihn **fehlerhaft gemergt worden
+wäre**, obwohl drei eigene Gegenproben ihn für gut befunden hatten.
+
+Gegenstand war ein neuer statischer Wächter gegen die Zeitzonenfalle. Meine
+eigenen Messungen vorher: Wächter grün (22 Fälle), Gegenprobe im neu
+gedeckten Bereich rot mit genau zwei betroffenen Fällen, Gegenprobe mit der
+korrekten UTC-Form grün, volle Suite grün. Alles richtig — und alles am
+selben blinden Fleck vorbei.
+
+Was die Gegenlesung fand und ich danach SELBST gemessen habe:
+
+- **Ein fehlendes Verzeichnis meldet sich als sauber.** `workers/` komplett
+  weggenannt: `22 PASS / 0 FAIL`, EXIT 0, einschliesslich der Zeile „keine
+  Lesefehler beim Scan (0 von 185 Dateien)". Die Zusicherung erfasste nur
+  `readFileSync`, nicht `readdirSync`. Der Wächter gegen „eine gescheiterte
+  Messung meldet sich als unveraendert" hatte genau diesen Defekt selbst.
+- **Drei zugesicherte Schnittformen waren von nichts bewacht.** Die
+  Erkennungsregel auf `.slice(0,10)` verkürzt: alle 22 blieben gruen.
+  `.split('T')[0]`, `.substring`, `.substr` standen nur im Kommentar.
+- **Ein Leerzeichen umgeht alles.** `d .toISOString().slice(0, 10)` — gültiges
+  JavaScript, trägt die Falle exakt, `22 PASS / 0 FAIL`.
+- Setter-Liste wich still vom bestehenden Wächter ab (4 gegen 6 Einträge).
+- Die Sollzahl Null war aus der Freiliste abgeleitet statt gegen ein Literal
+  geprüft.
+
+**Was das für die Beweislage heisst.** Bisher stand hier sinngemäss, das
+Nadelöhr sei das eigene Nachmessen, nicht das Finden. Dieser Lauf zeigt die
+Gegenrichtung: meine drei Gegenproben waren methodisch einwandfrei und haben
+trotzdem nichts gefunden, weil sie **dieselbe Annahme teilten wie der
+Entwurf** — dass die Erkennungsregel die Formen trifft, die ihr Kommentar
+behauptet. Eine Gegenprobe prüft, ob eine Zusicherung fallen KANN; sie prüft
+nicht, ob sie das Richtige zusichert.
+
+**Was er NICHT hergibt:** ein Lauf. Und der Beitrag war ein frischer Entwurf
+— dort findet ein Prüfer leichter etwas als im gewachsenen Bestand, das steht
+weiter oben schon. Die Quote 5 von 5 ist keine Rate, sie ist ein Datenpunkt.
