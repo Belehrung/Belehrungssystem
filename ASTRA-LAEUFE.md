@@ -24,10 +24,16 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 13.09.2026 | Gegenlesung Archiv-Drossel, **abgebrochen** | Geheimnis-Riegel schlug nach 2 Runden an (Fehlalarm) | — | — | — | 0,32 $ |
 | 13.09.2026 | Gegenlesung Archiv-Drossel, Wiederholung ohne 13 gesperrte Dateien | Diff 115 Zeilen + Repo-Lesezugriff (130 Suchen, 26 Lesungen), 1.117k Token über 19 Runden | 3 | 2 | 1 (Prämissenfehler im Auftrag) | 15,39 $ |
 
-Die Zeilen vom 10./12.09. sind aus der CLAUDE.md übernommen, nicht neu
-gemessen; die Spalte „gefallen" ist dort teils nicht getrennt erfasst worden
-(#167: neun Befunde, sieben getragen — die Differenz ist dort als „drei nicht"
-beschrieben, was sich mit der Neun nicht sauber verrechnet). Das ist so
+**Diese Datei ist der einzige Ort für die Zahlen.** Die CLAUDE.md trug die
+Läufe vom 10.09. bis zum 13.09.2026 als eigene Tabelle — dieselbe Aussage an
+zwei Orten, angelegt am selben Tag wie dieses Protokoll. Sie ist dort durch
+einen Verweis ersetzt; was dort blieb, sind die SCHLÜSSE für die Regel, nicht
+die Daten. Wer hier etwas einträgt, trägt es deshalb nirgends sonst ein.
+
+Die Zeilen vom 10./12.09. stammen aus jener Tabelle, sind also nicht neu
+gemessen; die Spalte „gefallen" war dort teils nicht getrennt erfasst
+(#167: neun Befunde, sieben getragen — die Differenz stand als „drei nicht"
+da, was sich mit der Neun nicht sauber verrechnet). Das ist so
 stehengelassen statt geglättet.
 
 **Ein abgebrochener Lauf bekommt eine eigene Zeile mit Strichen, keine Null.**

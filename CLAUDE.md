@@ -317,15 +317,18 @@ Nicht die allgemeine Liste, sondern die für DIESES System:
 
 ### Worauf sich das stützt — und was es nicht hergibt
 
-Drei Läufe über EINEN Diff (#144) am 10.09.2026, Prompt wörtlich gleich:
+**Die Zahlen je Lauf stehen in `ASTRA-LAEUFE.md`, nicht hier.** Dieser
+Abschnitt trägt nur, was daraus für die REGEL folgt. Der Grund für die
+Trennung ist eine Hausregel aus dieser Datei: Bis zum 13.09.2026 stand die
+Lauftabelle an BEIDEN Orten — dieselbe Aussage an zwei Orten, angelegt am
+selben Tag, an dem das Protokoll entstand. Eine Liste, die bei jedem Lauf
+wächst, gehört in die Datei, die für sie da ist; hier stünde sie in einem
+Monat falsch da und niemand würde es merken.
 
-| Lauf | Material | Befunde | nur dort | Dauer | Kosten |
-|---|---|---|---|---|---|
-| Astra, nur Diff | Diff + 2 Testdateien | 4 | 2 | 37 s | 0,21 $ |
-| Claude, Arbeitsbaum | frei gewählt | 8 | 6 | ~12 min | 177k Token |
-| Astra, volle Dateien | 8 Dateien | 4 | 3 | 58 s | 2,03 $ |
-
-Alle zwölf Befunde wurden selbst am Quelltext nachgeprüft, alle trafen zu.
+Grundlage ist bis heute: drei Läufe über EINEN Diff (#144) am 10.09.2026,
+Prompt wörtlich gleich, zwei Spuren (Astra mit und ohne volles Material,
+dazu eine Claude-Review mit freier Dateiwahl). Alle zwölf Befunde wurden
+selbst am Quelltext nachgeprüft, alle trafen zu.
 **Mehr Material ließ Astra nicht MEHR finden, sondern ANDERES** — und jede
 der drei Spuren hatte etwas, das keine andere hatte. Das ist der Beleg für
 „beide", nicht für „das bessere".
@@ -551,11 +554,20 @@ das waren die eigentlichen Lücken, alle drei gegen unsere eigenen Regeln):
    im Bündel war. Es KONNTE sie nicht finden. Die Bündelwahl entscheidet
    also über den Befund, und wer nur die geänderten Dateien mitgibt,
    bekommt einen Teil und hält ihn für das Ganze.
-3. **Jeder Lauf wird zählbar festgehalten:** Datum, Zweck, Material
+3. **Jeder Lauf wird zählbar festgehalten — in `ASTRA-LAEUFE.md`**, nicht
+   hier und nicht im Sitzungsprotokoll: Datum, Zweck, Material
    (Dateien/Token), Befunde, davon nach EIGENER Nachmessung getragen,
    Kosten. Ohne das bleibt die Beweislage für immer, was sie seit dem
    10.09. ist — ein Diff, drei Läufe, ein Tag. Mit `json_schema` ist der
    Zählteil jetzt Maschinenarbeit statt Fleißarbeit.
+   Die Regel stand vom 12.09. bis zum 13.09.2026 da, OHNE dass die Datei
+   existierte — eine Anweisung ohne Ort, an dem sie erfüllt werden konnte.
+   Wer hier eine Regel einträgt, die einen Ablageort voraussetzt, legt ihn
+   im selben Zug an.
+   **Ein abgebrochener Lauf bekommt dort eine Zeile mit Strichen, keine
+   Null.** „Null Befunde" hiesse geprüft und sauber; bei einem Abbruch hat
+   niemand geprüft. Die Kosten werden trotzdem eingetragen, sie sind
+   angefallen.
 
 **Was sich NICHT ändert:** Astra bekommt keine Werkzeuge und keinen
 Repo-Zugriff (Begründung unverändert: wer mitbaut, prüft seinen eigenen
