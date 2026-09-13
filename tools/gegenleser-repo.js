@@ -619,9 +619,80 @@ function laufprotokollDatum() {
 // Ein rohes "|" zerschiesst die Tabelle spaltenweise, ein roher
 // Zeilenumbruch zeilenweise (die Markdown-Tabelle ist genau eine Zeile je
 // Lauf) -- beides wird deshalb vor dem Einsetzen in eine Zelle unschaedlich
-// gemacht.
+// gemacht. Punkt D (Nacharbeit 13.09.2026): "/\r?\n/" liess ein
+// ALLEINSTEHENDES "\r" (ohne folgendes "\n") stehen -- Markdown behandelt
+// das trotzdem als Zeilenende, das Ein-Zeile-pro-Lauf-Versprechen faellt.
+// "/\r\n|\r|\n/" trifft alle drei Faelle. Punkt C (dieselbe Nacharbeit):
+// eine geoeffnete HTML-Kommentarzeichenfolge wird zusaetzlich unschaedlich
+// gemacht -- ohne das koennte ein "--zweck" mit der Markenzeichenfolge eine
+// zweite, gefaelschte Marke in die Tabellenzeile selbst einschleusen (siehe
+// laufprotokollEinfuegen() unten, das JETZT alle Fundstellen zaehlt statt
+// nur die erste zu nehmen -- diese Zeile ist die zweite, unabhaengige
+// Verteidigungslinie an der Wurzel).
 function laufprotokollZelle(text) {
-    return String(text).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+    return String(text).replace(/\|/g, '\\|').replace(/<!--/g, '&lt;!--').replace(/\r\n|\r|\n/g, ' ');
+}
+
+// Sperr- und Wegwerfdateiname aus dem Zielpfad abgeleitet, damit mehrere
+// gleichzeitige Prozesse (Punkt B) sich gegenseitig sehen UND die
+// Wegwerfdatei fuer den atomaren Austausch im SELBEN Verzeichnis liegt
+// (sonst waere ein rename() kein Betriebssystem-atomarer Vorgang mehr,
+// sondern ueber Dateisystemgrenzen ein Kopieren+Loeschen).
+const LAUFPROTOKOLL_SPERRE_MAX_VERSUCHE = 50;
+const LAUFPROTOKOLL_SPERRE_PAUSE_MS = 100; // 50 * 100ms = 5s Wartezeit insgesamt
+const LAUFPROTOKOLL_SPERRE_VERALTET_MS = 60 * 1000;
+
+// Blockierende Pause OHNE await/Timer (die Funktion ist synchron und soll es
+// bleiben, siehe Auftrag) -- Atomics.wait auf einem eigens dafuer erzeugten,
+// nie geteilten Int32Array haelt den Thread genau PAUSE_MS an.
+function laufprotokollSperrePause(ms) {
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+// Erwirbt die Sperre ueber den GESAMTEN Lese-Aendere-Schreibe-Vorgang unten
+// (Punkt B): zwei gleichzeitige Prozesse duerfen nicht denselben Stand lesen
+// und sich beim Schreiben gegenseitig ueberschreiben. "wx" schlaegt fehl,
+// wenn die Sperrdatei schon existiert -- das ist der Test, kein Vergleich
+// von Inhalten. Eine Sperrdatei, die aelter als LAUFPROTOKOLL_SPERRE_VERALTET_MS
+// ist, gilt als Rest eines abgestuerzten Vorgaengerlaufs und wird entfernt,
+// statt das Protokoll fuer immer zu blockieren.
+function laufprotokollSperreErwerben(sperrPfad) {
+    for (let versuch = 0; versuch < LAUFPROTOKOLL_SPERRE_MAX_VERSUCHE; versuch++) {
+        try {
+            const fd = fs.openSync(sperrPfad, 'wx');
+            return { ok: true, fd, sperrPfad };
+        } catch (e) {
+            if (e.code !== 'EEXIST') {
+                return { ok: false, grund: `Sperre konnte nicht angelegt werden (${sperrPfad}): ${e.message}` };
+            }
+            try {
+                const stat = fs.statSync(sperrPfad);
+                if (Date.now() - stat.mtimeMs > LAUFPROTOKOLL_SPERRE_VERALTET_MS) {
+                    fs.rmSync(sperrPfad, { force: true });
+                    continue; // sofort neuer Versuch, keine Pause noetig
+                }
+            } catch (e2) {
+                // Sperrdatei ist zwischen dem EEXIST oben und diesem stat()
+                // verschwunden (Wettlauf mit dem Freigeben eines anderen
+                // Prozesses) -- der naechste Versuch greift dann durch.
+            }
+            laufprotokollSperrePause(LAUFPROTOKOLL_SPERRE_PAUSE_MS);
+        }
+    }
+    return {
+        ok: false,
+        grund: `Protokoll ist gesperrt (${sperrPfad} besteht weiterhin nach `
+            + `${(LAUFPROTOKOLL_SPERRE_MAX_VERSUCHE * LAUFPROTOKOLL_SPERRE_PAUSE_MS / 1000).toFixed(1)}s Wartezeit) -- Zeile wurde NICHT angehaengt.`,
+    };
+}
+
+// Gibt die Sperre wieder frei. Darf selbst NIE werfen (Auftrag) -- ein
+// Fehler beim Aufraeumen wuerde sonst den eigentlichen Schreibfehler
+// verdecken, den der Aufrufer gerade behandelt.
+function laufprotokollSperreFreigeben(sperre) {
+    if (!sperre || !sperre.ok) return;
+    try { fs.closeSync(sperre.fd); } catch (e) { /* schon geschlossen -- egal */ }
+    try { fs.rmSync(sperre.sperrPfad, { force: true }); } catch (e) { /* Aufraeumen darf nie selbst werfen */ }
 }
 
 // Fuegt EINE Tabellenzeile unmittelbar VOR der ERSTEN Zeile der Marke ein --
@@ -631,24 +702,72 @@ function laufprotokollZelle(text) {
 // main() entscheidet, was damit geschieht (laut melden, Exit-Code des Laufs
 // NICHT aendern -- siehe laufprotokollVersuchen()).
 function laufprotokollEinfuegen(pfad, zeileText) {
-    let inhalt;
+    const sperre = laufprotokollSperreErwerben(`${pfad}.lock`);
+    if (!sperre.ok) return sperre;
     try {
-        inhalt = fs.readFileSync(pfad, 'utf8');
-    } catch (e) {
-        return { ok: false, grund: `Protokolldatei nicht lesbar (${pfad}): ${e.message}` };
+        let inhalt;
+        try {
+            inhalt = fs.readFileSync(pfad, 'utf8');
+        } catch (e) {
+            return { ok: false, grund: `Protokolldatei nicht lesbar (${pfad}): ${e.message}` };
+        }
+        // Punkt C: ALLE Fundstellen zaehlen (nicht nur die erste per
+        // indexOf()) UND pruefen, dass die eine verbliebene Fundstelle am
+        // Zeilenanfang steht. Eine zweite, eingeschleuste Fundstelle (etwa
+        // ueber --zweck, siehe laufprotokollZelle() oben) waere sonst
+        // unbemerkt die neue Einfuegestelle geworden, und die Tabelle
+        // waere Lauf fuer Lauf aus ihrer Position gewandert.
+        const fundstellen = [];
+        for (let ab = 0; ; ) {
+            const treffer = inhalt.indexOf(LAUFPROTOKOLL_MARKE, ab);
+            if (treffer === -1) break;
+            fundstellen.push(treffer);
+            ab = treffer + LAUFPROTOKOLL_MARKE.length;
+        }
+        if (fundstellen.length === 0) {
+            return { ok: false, grund: `Marke "${LAUFPROTOKOLL_MARKE}" fehlt in ${pfad} -- Zeile wurde NICHT angehaengt.` };
+        }
+        if (fundstellen.length > 1) {
+            return {
+                ok: false,
+                grund: `Marke "${LAUFPROTOKOLL_MARKE}" kommt ${fundstellen.length}-mal vor in ${pfad} `
+                    + '-- mehrdeutig, es wird NICHTS geschrieben.',
+            };
+        }
+        const idx = fundstellen[0];
+        if (!(idx === 0 || inhalt[idx - 1] === '\n')) {
+            return {
+                ok: false,
+                grund: `Marke "${LAUFPROTOKOLL_MARKE}" steht nicht am Zeilenanfang in ${pfad} -- es wird NICHTS geschrieben.`,
+            };
+        }
+        const zeilenstart = inhalt.lastIndexOf('\n', idx - 1) + 1; // 0, wenn die Marke die allererste Zeile ist
+        const neu = `${inhalt.slice(0, zeilenstart)}${zeileText}\n${inhalt.slice(zeilenstart)}`;
+
+        // Punkt B: ATOMARER AUSTAUSCH -- erst in eine Wegwerfdatei im
+        // SELBEN Verzeichnis schreiben, dann per rename() ersetzen (auf
+        // demselben Dateisystem ist das atomar). Ein direktes
+        // writeFileSync(pfad, ...) schneidet die Zieldatei zuerst ab;
+        // scheitert das Schreiben danach (volle Platte), waere sie leer
+        // oder halb -- das darf nicht mehr vorkommen.
+        const tmpPfad = `${pfad}.tmp-${process.pid}`;
+        try {
+            fs.writeFileSync(tmpPfad, neu);
+            fs.renameSync(tmpPfad, pfad);
+        } catch (e) {
+            return { ok: false, grund: `Protokolldatei nicht schreibbar (${pfad}): ${e.message}` };
+        } finally {
+            // Aufraeumen darf selbst NIE werfen (Auftrag) -- sonst verdeckt
+            // ein Fehler beim Wegraeumen den eigentlichen Schreibfehler
+            // oben. Nach einem erfolgreichen rename() existiert die
+            // Wegwerfdatei ohnehin nicht mehr, { force: true } macht das
+            // harmlos.
+            try { fs.rmSync(tmpPfad, { force: true }); } catch (e) { /* egal */ }
+        }
+        return { ok: true };
+    } finally {
+        laufprotokollSperreFreigeben(sperre);
     }
-    const idx = inhalt.indexOf(LAUFPROTOKOLL_MARKE);
-    if (idx === -1) {
-        return { ok: false, grund: `Marke "${LAUFPROTOKOLL_MARKE}" fehlt in ${pfad} -- Zeile wurde NICHT angehaengt.` };
-    }
-    const zeilenstart = inhalt.lastIndexOf('\n', idx - 1) + 1; // 0, wenn die Marke die allererste Zeile ist
-    const neu = `${inhalt.slice(0, zeilenstart)}${zeileText}\n${inhalt.slice(zeilenstart)}`;
-    try {
-        fs.writeFileSync(pfad, neu);
-    } catch (e) {
-        return { ok: false, grund: `Protokolldatei nicht schreibbar (${pfad}): ${e.message}` };
-    }
-    return { ok: true };
 }
 
 // Baut die Tabellenzeile und versucht, sie einzutragen. Ein Fehlschlag wird
@@ -757,187 +876,238 @@ async function main(argvUeberschreibung) {
     let completionTokenSumme = 0;
     const gelesenePfade = [];
     const geschwaerzteStellen = [];
+    // Punkt A (Nacharbeit 13.09.2026, Gegenlesung): main() hatte einen Pfad,
+    // der bei einem geworfenen Fehler NACH Modellkontakt (anfragen() wirft
+    // in einer spaeteren Runde, nachdem eine fruehere schon Tokens
+    // verbraucht hat) KEINE Protokollzeile schrieb -- der throw landete
+    // direkt im main().catch(...) ganz unten, ohne dass
+    // protokollLaufEintragen() je lief. laufEingetragen und
+    // protokollLaufEintragen selbst muessen VOR dem try unten deklariert
+    // sein, damit auch dessen finally sie sehen kann (ein "let"/"const"
+    // innerhalb eines try-Blocks ist ausserhalb davon nicht sichtbar) --
+    // zugewiesen wird protokollLaufEintragen trotzdem gleich am Anfang des
+    // try, an derselben Stelle wie vorher.
+    let laufEingetragen = false;
+    let protokollLaufEintragen = null;
+    let diffInhalt;
 
-    const diffInhalt = fs.readFileSync(optionen.diffPfad, 'utf8');
+    try {
+        diffInhalt = fs.readFileSync(optionen.diffPfad, 'utf8');
 
-    // Zweck/Material/Kosten fuer das Lauf-Protokoll (TEIL D oben) -- als
-    // Closures, weil sie erst beim tatsaechlichen Eintragen (an mehreren
-    // Stellen unten) ausgewertet werden, dabei aber immer den AKTUELLEN
-    // Stand von runde/sucheAnzahl/... sehen muessen.
-    const protokollZweck = () => optionen.zweck || path.basename(optionen.briefPfad, path.extname(optionen.briefPfad));
-    const protokollMaterial = (abbruchGrund) => {
-        const kern = `Diff ${zeilenAus(diffInhalt).length} Zeilen, Suchen ${sucheAnzahl}, Lesungen ${liesAnzahl}, `
-            + `Token rein ${promptTokenSumme}, Token raus ${completionTokenSumme}, Runden ${runde}`;
-        return abbruchGrund ? `**abgebrochen** (${abbruchGrund}): ${kern}` : kern;
-    };
-    const protokollKostenText = () => {
-        const kosten = kostenSchaetzen(optionen.modell, promptTokenSumme, completionTokenSumme);
-        return kosten === null ? 'unbekannt' : kosten.toFixed(2).replace('.', ',') + ' $';
-    };
-    // EINE Stelle fuer alle Rueckgabepunkte unten ("das Werkzeug muss sich
-    // selbst eintragen, nicht die Prosa") -- abbruchGrund=null heisst
-    // regulaerer Abschluss (Exit 0).
-    const protokollLaufEintragen = (abbruchGrund) => laufprotokollVersuchen(protokollZweck(), protokollMaterial(abbruchGrund), protokollKostenText());
+        // Zweck/Material/Kosten fuer das Lauf-Protokoll (TEIL D oben) -- als
+        // Closures, weil sie erst beim tatsaechlichen Eintragen (an mehreren
+        // Stellen unten) ausgewertet werden, dabei aber immer den AKTUELLEN
+        // Stand von runde/sucheAnzahl/... sehen muessen.
+        const protokollZweck = () => optionen.zweck || path.basename(optionen.briefPfad, path.extname(optionen.briefPfad));
+        const protokollMaterial = (abbruchGrund) => {
+            const kern = `Diff ${zeilenAus(diffInhalt).length} Zeilen, Suchen ${sucheAnzahl}, Lesungen ${liesAnzahl}, `
+                + `Token rein ${promptTokenSumme}, Token raus ${completionTokenSumme}, Runden ${runde}`;
+            return abbruchGrund ? `**abgebrochen** (${abbruchGrund}): ${kern}` : kern;
+        };
+        const protokollKostenText = () => {
+            const kosten = kostenSchaetzen(optionen.modell, promptTokenSumme, completionTokenSumme);
+            return kosten === null ? 'unbekannt' : kosten.toFixed(2).replace('.', ',') + ' $';
+        };
+        // NUR fuer das Sicherheitsnetz im finally unten (Punkt A): dort ist die
+        // Tokenzahl eine UNTERGRENZE (eine gescheiterte Anfrage hat womoeglich
+        // schon verbraucht, ohne dass "usage" zurueckkam) -- die Kostenzelle
+        // bekommt deshalb das Praefix "mind. ". Ist die Tokenzahl 0, aber
+        // runde > 0, heisst das NICHT "nichts verbraucht", sondern "wir wissen
+        // es nicht" -- "0,00 $" waere hier eine falsche Zusicherung.
+        const protokollKostenTextUntergrenze = () => {
+            if (promptTokenSumme === 0 && completionTokenSumme === 0) return 'Kosten unbekannt';
+            const kosten = kostenSchaetzen(optionen.modell, promptTokenSumme, completionTokenSumme);
+            return kosten === null ? 'unbekannt' : 'mind. ' + kosten.toFixed(2).replace('.', ',') + ' $';
+        };
+        // EINE Stelle fuer alle Rueckgabepunkte unten ("das Werkzeug muss sich
+        // selbst eintragen, nicht die Prosa") -- abbruchGrund=null heisst
+        // regulaerer Abschluss (Exit 0). Gegen Doppeleintrag gesichert (Punkt A):
+        // das Sicherheitsnetz im finally unten darf eine bereits geschriebene
+        // Zeile nicht verdoppeln, wenn schon einer der regulaeren
+        // Rueckgabepunkte eingetragen hat -- ein zweiter Aufruf tut dann NICHTS
+        // und meldet das auch nicht.
+        protokollLaufEintragen = (abbruchGrund, istUntergrenze) => {
+            if (laufEingetragen) return true;
+            const kostenText = istUntergrenze ? protokollKostenTextUntergrenze() : protokollKostenText();
+            const ergebnis = laufprotokollVersuchen(protokollZweck(), protokollMaterial(abbruchGrund), kostenText);
+            laufEingetragen = true;
+            return ergebnis;
+        };
 
-    // BEWUSST weiterhin ein ABBRUCH, nicht Schwaerzen wie bei suche()/lies():
-    // den Diff liefert der Auftraggeber. Steht darin ein Geheimnis, ist das
-    // SEIN Fehler, und er muss ihn sehen, statt ihn stillschweigend
-    // geschwaerzt zu bekommen. Bei Dateien, die das Modell selbst auswaehlt,
-    // ist es anders — dort ist der Fehlalarm der Normalfall (13.09.2026).
-    const diffPruefung = pruefeGeheimnisse(diffInhalt);
-    if (!diffPruefung.sauber) {
-        console.error('ABBRUCH: Der Diff enthaelt etwas, das wie ein Geheimnis aussieht — '
-            + diffPruefung.treffer.map((t) => t.name).join(', ') + '.');
-        console.error('Es wurde NICHTS gesendet.');
-        protokollLaufEintragen('Geheimnis-Riegel auf dem Eingabediff');
-        return 3;
-    }
-
-    const auftragstext = auftragstextBauen(briefInhalt);
-    const verlauf = [{
-        role: 'user',
-        content: auftragstext + '\n\n########## DIFF ##########\n\n' + diffInhalt,
-    }];
-    protokollSchreiben({ typ: 'start', element: verlauf[0] });
-
-    const zusammenfassungAusgeben = () => {
-        console.log('\n---');
-        console.log('GELESENE DATEIEN:');
-        if (gelesenePfade.length === 0) {
-            console.log('  (keine)');
-        } else {
-            for (const g of gelesenePfade) console.log(`  ${g.pfad}:${g.von}-${g.bis}`);
-        }
-        // Wo geschwaerzt wurde, war die Pruefung blind. Eine verschwiegene
-        // Luecke ist schlimmer als eine benannte — der Leser muss wissen,
-        // welche Zeilen der Pruefer NICHT gesehen hat.
-        console.log('GESCHWAERZTE STELLEN (Geheimnis-Riegel; dort war die Pruefung blind):');
-        if (geschwaerzteStellen.length === 0) {
-            console.log('  (keine)');
-        } else {
-            for (const st of geschwaerzteStellen) console.log(`  ${st.pfad}:${st.zeile} (${st.name})`);
-        }
-        console.log(`Suchen: ${sucheAnzahl}  Lesungen: ${liesAnzahl}  Ablehnungen: ${ablehnungenAnzahl}`);
-        console.log(`Runden: ${runde}  Token rein: ${promptTokenSumme}  Token raus: ${completionTokenSumme}`);
-        const kosten = kostenSchaetzen(optionen.modell, promptTokenSumme, completionTokenSumme);
-        console.log(kosten === null
-            ? `Kosten unbekannt (Modell "${optionen.modell}" nicht in der Preistabelle)`
-            : `Kosten geschaetzt: $${kosten.toFixed(4)}`);
-        console.log(`Protokoll: ${protokollPfadAktuell}`);
-    };
-
-    while (true) {
-        runde++;
-        if (runde > optionen.maxRunden) {
-            console.error(`ABBRUCH: Rundenlimit (${optionen.maxRunden}) erreicht — der Bericht ist UNVOLLSTAENDIG.`);
-            runde--;
-            zusammenfassungAusgeben();
-            protokollLaufEintragen('Rundenlimit erreicht');
-            return 4;
+        // BEWUSST weiterhin ein ABBRUCH, nicht Schwaerzen wie bei suche()/lies():
+        // den Diff liefert der Auftraggeber. Steht darin ein Geheimnis, ist das
+        // SEIN Fehler, und er muss ihn sehen, statt ihn stillschweigend
+        // geschwaerzt zu bekommen. Bei Dateien, die das Modell selbst auswaehlt,
+        // ist es anders — dort ist der Fehlalarm der Normalfall (13.09.2026).
+        const diffPruefung = pruefeGeheimnisse(diffInhalt);
+        if (!diffPruefung.sauber) {
+            console.error('ABBRUCH: Der Diff enthaelt etwas, das wie ein Geheimnis aussieht — '
+                + diffPruefung.treffer.map((t) => t.name).join(', ') + '.');
+            console.error('Es wurde NICHTS gesendet.');
+            protokollLaufEintragen('Geheimnis-Riegel auf dem Eingabediff');
+            return 3;
         }
 
-        // Stufe (a)+(b)+(c): das Rundenbudget wird SICHTBAR, statt dass das
-        // Modell blind weiterliest, bis das Limit hart zuschlaegt. Die
-        // letzten zwei Runden sind der Riegel: KEINE tools mehr im Request
-        // (siehe mitWerkzeugen in anfragen()), das Modell KANN dann nur noch
-        // Text liefern.
-        const istLetzteZweiRunden = (optionen.maxRunden - runde) <= 1;
-        const ist70Prozent = runde >= Math.ceil(optionen.maxRunden * 0.7);
-        const rundenHinweis = rundenHinweisBauen(runde, optionen.maxRunden, istLetzteZweiRunden, ist70Prozent);
-        verlauf.push({ role: 'user', content: rundenHinweis });
-        protokollSchreiben({ typ: 'rundenhinweis', runde, istLetzteZweiRunden, ist70Prozent, text: rundenHinweis });
+        const auftragstext = auftragstextBauen(briefInhalt);
+        const verlauf = [{
+            role: 'user',
+            content: auftragstext + '\n\n########## DIFF ##########\n\n' + diffInhalt,
+        }];
+        protokollSchreiben({ typ: 'start', element: verlauf[0] });
 
-        let antwort;
-        try {
-            antwort = await anfragen(schluessel, optionen.modell, verlauf, !istLetzteZweiRunden);
-        } catch (e) {
-            console.error(`FEHLER bei der Anfrage: ${e.message}`);
-            zusammenfassungAusgeben();
-            throw e;
-        }
-        // Feldnamen gemessen am echten Konto 12.09.2026 (siehe Endpunkt-
-        // Kommentar oben): usage traegt input_tokens/output_tokens, nicht
-        // mehr prompt_tokens/completion_tokens.
-        const verbrauch = antwort.usage || {};
-        promptTokenSumme += verbrauch.input_tokens || 0;
-        completionTokenSumme += verbrauch.output_tokens || 0;
-        const ausgabeElemente = antwort.output || [];
-        protokollSchreiben({ typ: 'antwort', runde, ausgabe: ausgabeElemente, verbrauch });
-        // Alle zurueckgegebenen output[]-Elemente unveraendert an den Verlauf
-        // anhaengen (Nachrichten UND Funktionsaufrufe) -- /v1/responses ist
-        // zustandslos ohne previous_response_id, die naechste Anfrage muss
-        // die volle bisherige Historie erneut mitschicken.
-        verlauf.push(...ausgabeElemente);
-
-        const funktionsaufrufe = ausgabeElemente.filter((element) => element.type === 'function_call');
-
-        if (funktionsaufrufe.length === 0) {
-            const text = textAusAusgabe(ausgabeElemente);
-            if (!text || !text.trim()) {
-                console.error('ABBRUCH: Das Modell hat am Ende keinen Text geliefert — kein sauberes Ergebnis.');
-                zusammenfassungAusgeben();
-                protokollLaufEintragen('kein Text vom Modell am Ende');
-                return 5;
+        const zusammenfassungAusgeben = () => {
+            console.log('\n---');
+            console.log('GELESENE DATEIEN:');
+            if (gelesenePfade.length === 0) {
+                console.log('  (keine)');
+            } else {
+                for (const g of gelesenePfade) console.log(`  ${g.pfad}:${g.von}-${g.bis}`);
             }
-            console.log(text);
-            // WICHTIG (Auftrag Teil 2): ein unter Rundendruck erzeugter
-            // Bericht ist NICHT dasselbe wie ein regulaerer und muss als
-            // solcher erkennbar sein -- sonst waere er schlimmer als der
-            // ehrliche Abbruch von heute.
-            console.log(istLetzteZweiRunden
-                ? `\n[BERICHT UNTER RUNDENDRUCK -- erzwungen in Runde ${runde} von ${optionen.maxRunden}, Werkzeuge waren bereits abgeschaltet. NICHT als vollstaendige Pruefung werten.]`
-                : '\n[Bericht regulaer erstellt, Rundenlimit nicht erreicht.]');
-            zusammenfassungAusgeben();
-            protokollLaufEintragen(null);
-            return 0;
-        }
-
-        for (const aufruf of funktionsaufrufe) {
-            let ergebnis;
-            try {
-                let werkzeugArgumente;
-                try {
-                    werkzeugArgumente = JSON.parse(aufruf.arguments || '{}');
-                } catch (e) {
-                    ergebnis = { text: `abgelehnt: ungueltige Argumente (${e.message})`, abgelehnt: true };
-                }
-                if (!ergebnis) {
-                    if (aufruf.name === 'suche') sucheAnzahl++;
-                    else if (aufruf.name === 'lies') liesAnzahl++;
-                    ergebnis = werkzeugAufrufen(aufruf.name, werkzeugArgumente);
-                    if (ergebnis.relativ) gelesenePfade.push({ pfad: ergebnis.relativ, von: ergebnis.von, bis: ergebnis.bis });
-                    if (ergebnis.geschwaerzt && ergebnis.geschwaerzt.length) {
-                        geschwaerzteStellen.push(...ergebnis.geschwaerzt);
-                        protokollSchreiben({ typ: 'geheimnis_geschwaerzt', runde, werkzeug: aufruf.name, stellen: ergebnis.geschwaerzt });
-                    }
-                }
-            } catch (e) {
-                if (e instanceof GeheimnisAbbruch) {
-                    console.error('ABBRUCH: Geheimnis-Riegel hat angeschlagen — es wurde NICHTS weiter gesendet.');
-                    for (const t of e.treffer) console.error(`  Muster "${t.name}" in ${e.ort}`);
-                    protokollSchreiben({ typ: 'geheimnis_abbruch', ort: e.ort, muster: e.treffer.map((t) => t.name) });
-                    zusammenfassungAusgeben();
-                    protokollLaufEintragen(`Geheimnis-Riegel bei einer Werkzeug-Lesung (${e.ort})`);
-                    return 3;
-                }
-                throw e;
+            // Wo geschwaerzt wurde, war die Pruefung blind. Eine verschwiegene
+            // Luecke ist schlimmer als eine benannte — der Leser muss wissen,
+            // welche Zeilen der Pruefer NICHT gesehen hat.
+            console.log('GESCHWAERZTE STELLEN (Geheimnis-Riegel; dort war die Pruefung blind):');
+            if (geschwaerzteStellen.length === 0) {
+                console.log('  (keine)');
+            } else {
+                for (const st of geschwaerzteStellen) console.log(`  ${st.pfad}:${st.zeile} (${st.name})`);
             }
+            console.log(`Suchen: ${sucheAnzahl}  Lesungen: ${liesAnzahl}  Ablehnungen: ${ablehnungenAnzahl}`);
+            console.log(`Runden: ${runde}  Token rein: ${promptTokenSumme}  Token raus: ${completionTokenSumme}`);
+            const kosten = kostenSchaetzen(optionen.modell, promptTokenSumme, completionTokenSumme);
+            console.log(kosten === null
+                ? `Kosten unbekannt (Modell "${optionen.modell}" nicht in der Preistabelle)`
+                : `Kosten geschaetzt: $${kosten.toFixed(4)}`);
+            console.log(`Protokoll: ${protokollPfadAktuell}`);
+        };
 
-            if (ergebnis.abgelehnt) ablehnungenAnzahl++;
-
-            ausgabeBytes += Buffer.byteLength(ergebnis.text, 'utf8');
-            if (ausgabeBytes > MAX_AUSGABE_BYTES) {
-                console.error(`ABBRUCH: Gesamtausgabemenge ueber ${MAX_AUSGABE_BYTES} Bytes (${ausgabeBytes}) — der Bericht ist UNVOLLSTAENDIG.`);
+        while (true) {
+            runde++;
+            if (runde > optionen.maxRunden) {
+                console.error(`ABBRUCH: Rundenlimit (${optionen.maxRunden}) erreicht — der Bericht ist UNVOLLSTAENDIG.`);
+                runde--;
                 zusammenfassungAusgeben();
-                protokollLaufEintragen('Ausgabemenge ueber dem Limit');
+                protokollLaufEintragen('Rundenlimit erreicht');
                 return 4;
             }
 
-            // Das Werkzeugergebnis geht mit demselben call_id zurueck, NICHT
-            // mit der Item-id des Funktionsaufrufs (gemessen 12.09.2026,
-            // siehe Endpunkt-Kommentar oben).
-            protokollSchreiben({ typ: 'funktionsantwort', runde, werkzeug: aufruf.name, call_id: aufruf.call_id, text: ergebnis.text });
-            verlauf.push({ type: 'function_call_output', call_id: aufruf.call_id, output: ergebnis.text });
+            // Stufe (a)+(b)+(c): das Rundenbudget wird SICHTBAR, statt dass das
+            // Modell blind weiterliest, bis das Limit hart zuschlaegt. Die
+            // letzten zwei Runden sind der Riegel: KEINE tools mehr im Request
+            // (siehe mitWerkzeugen in anfragen()), das Modell KANN dann nur noch
+            // Text liefern.
+            const istLetzteZweiRunden = (optionen.maxRunden - runde) <= 1;
+            const ist70Prozent = runde >= Math.ceil(optionen.maxRunden * 0.7);
+            const rundenHinweis = rundenHinweisBauen(runde, optionen.maxRunden, istLetzteZweiRunden, ist70Prozent);
+            verlauf.push({ role: 'user', content: rundenHinweis });
+            protokollSchreiben({ typ: 'rundenhinweis', runde, istLetzteZweiRunden, ist70Prozent, text: rundenHinweis });
+
+            let antwort;
+            try {
+                antwort = await anfragen(schluessel, optionen.modell, verlauf, !istLetzteZweiRunden);
+            } catch (e) {
+                console.error(`FEHLER bei der Anfrage: ${e.message}`);
+                zusammenfassungAusgeben();
+                throw e;
+            }
+            // Feldnamen gemessen am echten Konto 12.09.2026 (siehe Endpunkt-
+            // Kommentar oben): usage traegt input_tokens/output_tokens, nicht
+            // mehr prompt_tokens/completion_tokens.
+            const verbrauch = antwort.usage || {};
+            promptTokenSumme += verbrauch.input_tokens || 0;
+            completionTokenSumme += verbrauch.output_tokens || 0;
+            const ausgabeElemente = antwort.output || [];
+            protokollSchreiben({ typ: 'antwort', runde, ausgabe: ausgabeElemente, verbrauch });
+            // Alle zurueckgegebenen output[]-Elemente unveraendert an den Verlauf
+            // anhaengen (Nachrichten UND Funktionsaufrufe) -- /v1/responses ist
+            // zustandslos ohne previous_response_id, die naechste Anfrage muss
+            // die volle bisherige Historie erneut mitschicken.
+            verlauf.push(...ausgabeElemente);
+
+            const funktionsaufrufe = ausgabeElemente.filter((element) => element.type === 'function_call');
+
+            if (funktionsaufrufe.length === 0) {
+                const text = textAusAusgabe(ausgabeElemente);
+                if (!text || !text.trim()) {
+                    console.error('ABBRUCH: Das Modell hat am Ende keinen Text geliefert — kein sauberes Ergebnis.');
+                    zusammenfassungAusgeben();
+                    protokollLaufEintragen('kein Text vom Modell am Ende');
+                    return 5;
+                }
+                console.log(text);
+                // WICHTIG (Auftrag Teil 2): ein unter Rundendruck erzeugter
+                // Bericht ist NICHT dasselbe wie ein regulaerer und muss als
+                // solcher erkennbar sein -- sonst waere er schlimmer als der
+                // ehrliche Abbruch von heute.
+                console.log(istLetzteZweiRunden
+                    ? `\n[BERICHT UNTER RUNDENDRUCK -- erzwungen in Runde ${runde} von ${optionen.maxRunden}, Werkzeuge waren bereits abgeschaltet. NICHT als vollstaendige Pruefung werten.]`
+                    : '\n[Bericht regulaer erstellt, Rundenlimit nicht erreicht.]');
+                zusammenfassungAusgeben();
+                protokollLaufEintragen(null);
+                return 0;
+            }
+
+            for (const aufruf of funktionsaufrufe) {
+                let ergebnis;
+                try {
+                    let werkzeugArgumente;
+                    try {
+                        werkzeugArgumente = JSON.parse(aufruf.arguments || '{}');
+                    } catch (e) {
+                        ergebnis = { text: `abgelehnt: ungueltige Argumente (${e.message})`, abgelehnt: true };
+                    }
+                    if (!ergebnis) {
+                        if (aufruf.name === 'suche') sucheAnzahl++;
+                        else if (aufruf.name === 'lies') liesAnzahl++;
+                        ergebnis = werkzeugAufrufen(aufruf.name, werkzeugArgumente);
+                        if (ergebnis.relativ) gelesenePfade.push({ pfad: ergebnis.relativ, von: ergebnis.von, bis: ergebnis.bis });
+                        if (ergebnis.geschwaerzt && ergebnis.geschwaerzt.length) {
+                            geschwaerzteStellen.push(...ergebnis.geschwaerzt);
+                            protokollSchreiben({ typ: 'geheimnis_geschwaerzt', runde, werkzeug: aufruf.name, stellen: ergebnis.geschwaerzt });
+                        }
+                    }
+                } catch (e) {
+                    if (e instanceof GeheimnisAbbruch) {
+                        console.error('ABBRUCH: Geheimnis-Riegel hat angeschlagen — es wurde NICHTS weiter gesendet.');
+                        for (const t of e.treffer) console.error(`  Muster "${t.name}" in ${e.ort}`);
+                        protokollSchreiben({ typ: 'geheimnis_abbruch', ort: e.ort, muster: e.treffer.map((t) => t.name) });
+                        zusammenfassungAusgeben();
+                        protokollLaufEintragen(`Geheimnis-Riegel bei einer Werkzeug-Lesung (${e.ort})`);
+                        return 3;
+                    }
+                    throw e;
+                }
+
+                if (ergebnis.abgelehnt) ablehnungenAnzahl++;
+
+                ausgabeBytes += Buffer.byteLength(ergebnis.text, 'utf8');
+                if (ausgabeBytes > MAX_AUSGABE_BYTES) {
+                    console.error(`ABBRUCH: Gesamtausgabemenge ueber ${MAX_AUSGABE_BYTES} Bytes (${ausgabeBytes}) — der Bericht ist UNVOLLSTAENDIG.`);
+                    zusammenfassungAusgeben();
+                    protokollLaufEintragen('Ausgabemenge ueber dem Limit');
+                    return 4;
+                }
+
+                // Das Werkzeugergebnis geht mit demselben call_id zurueck, NICHT
+                // mit der Item-id des Funktionsaufrufs (gemessen 12.09.2026,
+                // siehe Endpunkt-Kommentar oben).
+                protokollSchreiben({ typ: 'funktionsantwort', runde, werkzeug: aufruf.name, call_id: aufruf.call_id, text: ergebnis.text });
+                verlauf.push({ type: 'function_call_output', call_id: aufruf.call_id, output: ergebnis.text });
+            }
+        }
+    } finally {
+        // Sicherheitsnetz (Punkt A): greift NUR, wenn keiner der regulaeren
+        // Rueckgabepunkte oben schon eingetragen hat (laufEingetragen) UND
+        // mindestens ein Anfrageversuch stattfand (runde > 0 -- runde wird
+        // am Kopf der Schleife hochgezaehlt, BEVOR angefragt wird, ist also
+        // schon dann > 0, wenn genau dieser Versuch selbst wirft) ODER schon
+        // Token gezaehlt wurden. Das ist der ERREICHTE ZUSTAND "es gab
+        // Modellkontakt, also ist womoeglich Geld geflossen" -- NICHT der
+        // Exit-Code. Fehler VOR dem ersten Kontakt (Diff lesen,
+        // wurzelEinrichten) haben runde === 0 und promptTokenSumme === 0 und
+        // bekommen weiterhin KEINE Zeile, richtig so.
+        if (protokollLaufEintragen && !laufEingetragen && (runde > 0 || promptTokenSumme > 0)) {
+            protokollLaufEintragen('unerwarteter Fehler nach Modellkontakt (Exit 1)', true);
         }
     }
 }
@@ -992,7 +1162,7 @@ function httpsStubBauen(warteschlange, aufgezeichnet) {
 }
 
 async function selbsttest() {
-    const ERWARTETE_FAELLE = 47;
+    const ERWARTETE_FAELLE = 58;
     let gelaufen = 0;
     let fehler = 0;
     const pruefen = (bezeichnung, bedingung) => {
@@ -1580,7 +1750,12 @@ async function selbsttest() {
             '| Datum | Zweck | Material | Befunde | getragen | gefallen | Kosten |',
             '|---|---|---|---|---|---|---|',
             '| 01.01.2020 | Bestandszeile, darf nicht angefasst werden | 1 Datei | 1 | 1 | 0 | 0,10 $ |',
-            `${LAUFPROTOKOLL_MARKE} tools/gegenleser-repo.js traegt jede neue Zeile`,
+            // Punkt E (Nacharbeit 13.09.2026): WOERTLICHES Literal, NICHT
+            // die Konstante LAUFPROTOKOLL_MARKE -- sonst aendern sich
+            // Fixture, gesuchte Position UND erwarteter Fehlertext (FALL 3
+            // unten) gemeinsam mit der Konstante mit, und der Selbsttest
+            // bliebe gruen, waehrend echte Laeufe nichts mehr eintragen.
+            '<!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile',
             '     UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder',
             '     verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht',
             '     nicht still ab. Grund fuer die Marke: diese Datei hat ZWEI Tabellen, und',
@@ -1717,7 +1892,9 @@ async function selbsttest() {
                 code3 === 0 && inhaltNachher === protokollFixtureOhneMarke);
             pruefen(`LAUF-PROTOKOLL FALL 3 MELDUNG (40) (der Fehlschlag wird LAUT UND GENAU ZWEIMAL gemeldet, die zweite -- unverwechselbar gekennzeichnete -- Meldung ist die ALLERLETZTE Zeile der GESAMTEN Ausgabe)`,
                 chrono3.filter((z) => z.includes('konnte NICHT eingetragen werden')).length === 1
-                && chrono3.some((z) => z.includes(`Marke "${LAUFPROTOKOLL_MARKE}" fehlt`))
+                // Punkt E: woertliches Literal statt der Konstante -- s.
+                // Kommentar bei protokollFixtureInhalt oben.
+                && chrono3.some((z) => z.includes('Marke "<!-- NEUE-LAUFZEILE-HIER:" fehlt'))
                 && chrono3[chrono3.length - 1].startsWith('LETZTE ZEILE -- PROTOKOLLEINTRAG FEHLGESCHLAGEN'));
         }
 
@@ -1829,6 +2006,265 @@ async function selbsttest() {
                 code8 === 6 && inhaltNachher === protokollFixtureInhalt);
         }
 
+        // ===== NACHARBEIT 13.09.2026 (GEGENLESUNG VON TEIL D): PUNKTE A-F =====
+
+        // ----- PUNKT A: Sicherheitsnetz greift bei einem Fehler NACH
+        // Modellkontakt (main() wirft nach main().catch(...) mit Exit 1) --
+        // der bereits bezahlte Verbrauch aus Runde 1 darf dabei NICHT
+        // spurlos verschwinden. Runde 1 liefert einen Werkzeugaufruf (also
+        // gibt es ueberhaupt eine Runde 2), fuer Runde 2 ist die
+        // Warteschlange leer -- der https-Stub wirft dort SYNCHRON, die
+        // Promise von anfragen() lehnt ab, main() wirft weiter (siehe
+        // main(), "throw e" im catch um anfragen()). -----
+        {
+            const protokollPfadA = path.join(klon, 'protokoll-punkt-a.md');
+            fs.writeFileSync(protokollPfadA, protokollFixtureInhalt);
+
+            const alterKey = process.env.OPENAI_API_KEY;
+            const alteDatei = process.env.OPENAI_KEY_DATEI;
+            const alteProtokollUmgebungLokal = process.env.ASTRA_LAUFPROTOKOLL;
+            process.env.OPENAI_API_KEY = 'selbsttest-dummy-schluessel-ohne-netz';
+            delete process.env.OPENAI_KEY_DATEI;
+            process.env.ASTRA_LAUFPROTOKOLL = protokollPfadA;
+            const echtesHttpsRequest = https.request;
+            const echtesLog = console.log;
+            const echtesError = console.error;
+            const chronoA2 = [];
+            console.log = (m) => chronoA2.push(String(m));
+            console.error = (m) => chronoA2.push(String(m));
+            const aufgezeichnetA2 = [];
+            https.request = httpsStubBauen(
+                [antwortKoerperBauen(elementFunktionsaufrufBauen('call-punkt-a-1', 'suche', { muster: 'Zeile' }), 1000, 200)],
+                aufgezeichnetA2,
+            );
+            let geworfenerFehlerA2 = null;
+            try {
+                await main([
+                    path.join(klon, 'harmlos.txt'),
+                    `--brief=${briefFixturePfad}`,
+                    `--wurzel=${klon}`,
+                    '--modell=gpt-6-astra',
+                    '--max-runden=10',
+                    `--protokoll=${path.join(klon, 'selbsttest-protokoll-punkt-a.jsonl')}`,
+                ]);
+            } catch (e) {
+                geworfenerFehlerA2 = e;
+            } finally {
+                console.log = echtesLog;
+                console.error = echtesError;
+                https.request = echtesHttpsRequest;
+                if (alterKey !== undefined) process.env.OPENAI_API_KEY = alterKey; else delete process.env.OPENAI_API_KEY;
+                if (alteDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteDatei;
+                if (alteProtokollUmgebungLokal !== undefined) process.env.ASTRA_LAUFPROTOKOLL = alteProtokollUmgebungLokal;
+                else delete process.env.ASTRA_LAUFPROTOKOLL;
+            }
+
+            const inhaltNachherA2 = fs.readFileSync(protokollPfadA, 'utf8');
+            const zusatzZeilenA2 = inhaltNachherA2.split('\n').length - protokollFixtureInhalt.split('\n').length;
+            const neueZeileA2 = zeileUnmittelbarUeberMarke(inhaltNachherA2);
+            pruefen(`PUNKT A SICHERHEITSNETZ (48) (main() wirft nach Modellkontakt in Runde 2 -- geworfener Fehler: "${geworfenerFehlerA2 ? geworfenerFehlerA2.message : '(keiner geworfen!)'}" -- traegt trotzdem GENAU EINE Zeile ein, mit Abbruchgrund und "mind. " vor den Kosten: "${neueZeileA2}")`,
+                geworfenerFehlerA2 !== null
+                && zusatzZeilenA2 === 1
+                && typeof neueZeileA2 === 'string'
+                && neueZeileA2.includes('**abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1))')
+                && /\| mind\. \d+,\d\d \$ \|$/.test(neueZeileA2));
+        }
+
+        // ----- PUNKT B1: ATOMARER AUSTAUSCH -- ein gescheitertes Schreiben
+        // der Wegwerfdatei darf die Zieldatei NICHT anfassen. Simuliert
+        // durch einen fs.writeFileSync-Stub, der NUR beim Schreiben der
+        // Wegwerfdatei (".tmp-<pid>") wirft; die Zieldatei wird nur ueber
+        // fs.renameSync erreicht, das dieser Stub nicht anfasst. -----
+        {
+            const protokollPfadB1 = path.join(klon, 'protokoll-punkt-b1.md');
+            fs.writeFileSync(protokollPfadB1, protokollFixtureInhalt);
+            const vorherB1 = fs.readFileSync(protokollPfadB1, 'utf8');
+
+            const echtesWriteFileSync = fs.writeFileSync;
+            let tmpDateiGesehen = false;
+            fs.writeFileSync = function (pfad, ...rest) {
+                if (typeof pfad === 'string' && pfad.includes('.tmp-')) {
+                    tmpDateiGesehen = true;
+                    throw new Error('Simulierte volle Platte (Selbsttest)');
+                }
+                return echtesWriteFileSync.call(fs, pfad, ...rest);
+            };
+            let ergebnisB1;
+            try {
+                ergebnisB1 = laufprotokollEinfuegen(protokollPfadB1, '| Zeile, die NICHT ankommen darf (b1) |');
+            } finally {
+                fs.writeFileSync = echtesWriteFileSync;
+            }
+            const nachherB1 = fs.readFileSync(protokollPfadB1, 'utf8');
+            const tmpUebrigB1 = fs.existsSync(`${protokollPfadB1}.tmp-${process.pid}`);
+            pruefen(`PUNKT B1 ATOMAR (49) (ein gescheitertes Schreiben der Wegwerfdatei laesst die Zieldatei UNANGETASTET (byte-gleich), meldet {ok:false}, keine Wegwerfdatei bleibt liegen: ok=${ergebnisB1.ok}, Wegwerfdatei tatsaechlich angefasst=${tmpDateiGesehen}, Wegwerfdatei uebrig=${tmpUebrigB1})`,
+                ergebnisB1.ok === false && tmpDateiGesehen === true && tmpUebrigB1 === false && nachherB1 === vorherB1);
+        }
+
+        // ----- PUNKT B2: SPERRE ueber den gesamten Lese-Aendere-Schreibe-
+        // Vorgang -- eine VORHANDENE, FRISCHE Sperrdatei blockiert (liefert
+        // {ok:false}, OHNE die Zieldatei anzufassen); eine VERALTETE (>60s)
+        // wird geloescht, der Versuch laeuft durch. -----
+        {
+            const protokollPfadB2 = path.join(klon, 'protokoll-punkt-b2.md');
+            fs.writeFileSync(protokollPfadB2, protokollFixtureInhalt);
+            const vorherB2 = fs.readFileSync(protokollPfadB2, 'utf8');
+            const sperrPfadB2 = `${protokollPfadB2}.lock`;
+
+            fs.writeFileSync(sperrPfadB2, ''); // frische Sperrdatei
+            const startB2a = Date.now();
+            const ergebnisB2a = laufprotokollEinfuegen(protokollPfadB2, '| Zeile, die NICHT ankommen darf (b2a) |');
+            const dauerB2a = Date.now() - startB2a;
+            const nachherB2a = fs.readFileSync(protokollPfadB2, 'utf8');
+            fs.rmSync(sperrPfadB2, { force: true }); // fuer b2b aufraeumen
+
+            pruefen(`PUNKT B2A SPERRE FRISCH (50) (eine VORHANDENE, frische Sperrdatei blockiert: {ok:false}, Zieldatei UNANGETASTET, Meldung nennt "gesperrt", ${dauerB2a} ms gewartet)`,
+                ergebnisB2a.ok === false
+                && /gesperrt/i.test(ergebnisB2a.grund || '')
+                && nachherB2a === vorherB2);
+
+            fs.writeFileSync(sperrPfadB2, ''); // erneut anlegen, diesmal 61s "alt"
+            const alt = new Date(Date.now() - 61 * 1000);
+            fs.utimesSync(sperrPfadB2, alt, alt);
+            const ergebnisB2b = laufprotokollEinfuegen(protokollPfadB2, '| Zeile, die ankommen MUSS (b2b) |');
+            const nachherB2b = fs.readFileSync(protokollPfadB2, 'utf8');
+
+            pruefen(`PUNKT B2B SPERRE VERALTET (51) (eine 61s ALTE Sperrdatei wird geloescht, der Versuch laeuft durch: ok=${ergebnisB2b.ok}, Zeile angekommen=${nachherB2b.includes('Zeile, die ankommen MUSS (b2b)')}, Sperre danach freigegeben=${!fs.existsSync(sperrPfadB2)})`,
+                ergebnisB2b.ok === true
+                && nachherB2b.includes('Zeile, die ankommen MUSS (b2b)')
+                && !fs.existsSync(sperrPfadB2));
+        }
+
+        // ----- PUNKT C1: Datei mit ZWEI Marken -- nichts geschrieben,
+        // Meldung nennt die Zahl. -----
+        {
+            const zweiMarkenInhalt = `${protokollFixtureInhalt}\n<!-- NEUE-LAUFZEILE-HIER: zweites Vorkommen, absichtlich fuer den Test -->\n`;
+            const protokollPfadC1 = path.join(klon, 'protokoll-punkt-c1.md');
+            fs.writeFileSync(protokollPfadC1, zweiMarkenInhalt);
+            const ergebnisC1 = laufprotokollEinfuegen(protokollPfadC1, '| Zeile, die NICHT ankommen darf (c1) |');
+            const nachherC1 = fs.readFileSync(protokollPfadC1, 'utf8');
+            pruefen(`PUNKT C1 MEHRDEUTIG (52) (Datei mit ZWEI Marken: nichts geschrieben, Meldung nennt die Zahl 2, Datei unveraendert: "${ergebnisC1.grund}")`,
+                ergebnisC1.ok === false
+                && /2-mal/.test(ergebnisC1.grund || '')
+                && nachherC1 === zweiMarkenInhalt);
+        }
+
+        // ----- PUNKT C2: Marke mitten in einer Zeile -- nichts
+        // geschrieben. -----
+        {
+            const markeMittenInhalt = protokollFixtureInhalt.replace(LAUFPROTOKOLL_MARKE, `xxx${LAUFPROTOKOLL_MARKE}`);
+            const protokollPfadC2 = path.join(klon, 'protokoll-punkt-c2.md');
+            fs.writeFileSync(protokollPfadC2, markeMittenInhalt);
+            const ergebnisC2 = laufprotokollEinfuegen(protokollPfadC2, '| Zeile, die NICHT ankommen darf (c2) |');
+            const nachherC2 = fs.readFileSync(protokollPfadC2, 'utf8');
+            pruefen(`PUNKT C2 NICHT ZEILENANFANG (53) (Marke mitten in einer Zeile: nichts geschrieben, Datei unveraendert: "${ergebnisC2.grund}")`,
+                ergebnisC2.ok === false
+                && /Zeilenanfang/.test(ergebnisC2.grund || '')
+                && nachherC2 === markeMittenInhalt);
+        }
+
+        // ----- PUNKT C3: --zweck mit der Markenzeichenfolge -- die
+        // geschriebene Zeile enthaelt "&lt;!--" statt der rohen
+        // Zeichenfolge, UND ein ZWEITER Lauf danach fuegt immer noch an der
+        // richtigen (echten) Stelle ein -- das ist der eigentliche Beweis,
+        // dass die eingeschleuste Zeichenfolge NICHT als neue Marke
+        // durchgeht. -----
+        {
+            const protokollPfadC3 = path.join(klon, 'protokoll-punkt-c3.md');
+            fs.writeFileSync(protokollPfadC3, protokollFixtureInhalt);
+
+            const zweckMitMarke = `Boesartig ${LAUFPROTOKOLL_MARKE} Einschleusung`;
+            const { code: codeC3a } = await protokolliertenLaufAusfuehren(protokollPfadC3, [`--zweck=${zweckMitMarke}`]);
+            const nachErstemLaufC3 = fs.readFileSync(protokollPfadC3, 'utf8');
+            const geschriebeneZeileC3 = zeileUnmittelbarUeberMarke(nachErstemLaufC3);
+
+            const { code: codeC3b } = await protokolliertenLaufAusfuehren(protokollPfadC3, ['--zweck=Zweiter regulaerer Lauf']);
+            const nachZweitemLaufC3 = fs.readFileSync(protokollPfadC3, 'utf8');
+            const zeileZweiterLaufC3 = zeileUnmittelbarUeberMarke(nachZweitemLaufC3);
+            const zusatzZeilenC3 = nachZweitemLaufC3.split('\n').length - protokollFixtureInhalt.split('\n').length;
+
+            pruefen(`PUNKT C3 MARKE-EINSCHLEUSUNG UEBER --zweck (54) (die geschriebene Zeile enthaelt "&lt;!--" statt der rohen Zeichenfolge: "${geschriebeneZeileC3}")`,
+                codeC3a === 0
+                && typeof geschriebeneZeileC3 === 'string'
+                && geschriebeneZeileC3.includes('&lt;!-- NEUE-LAUFZEILE-HIER:')
+                && !geschriebeneZeileC3.includes('<!-- NEUE-LAUFZEILE-HIER:'));
+            pruefen(`PUNKT C3 ZWEITER LAUF FUEGT WEITERHIN RICHTIG EIN (55) (der eigentliche Beweis: ein ZWEITER Lauf danach findet die ECHTE Marke immer noch unverfaelscht und fuegt WIEDER genau eine Zeile darueber ein, macht insgesamt 2 zusaetzliche Zeilen: "${zeileZweiterLaufC3}")`,
+                codeC3b === 0
+                && zusatzZeilenC3 === 2
+                && typeof zeileZweiterLaufC3 === 'string'
+                && zeileZweiterLaufC3.includes('Zweiter regulaerer Lauf'));
+        }
+
+        // ----- PUNKT D: ein ALLEINSTEHENDES "\r" (kein "\r\n") in --zweck
+        // darf nicht stehenbleiben -- gemessen an der geschriebenen Zeile
+        // selbst, nicht an split('\n').length (das zaehlt ein rohes "\r"
+        // ohnehin nicht als Zeilenumbruch; Markdown-Renderer tun es aber
+        // sehr wohl). -----
+        {
+            const protokollPfadD = path.join(klon, 'protokoll-punkt-d.md');
+            fs.writeFileSync(protokollPfadD, protokollFixtureInhalt);
+            const { code: codeD2 } = await protokolliertenLaufAusfuehren(protokollPfadD, ['--zweck=Teil A\rTeil B']);
+            const nachherD = fs.readFileSync(protokollPfadD, 'utf8');
+            const geschriebeneZeileD = zeileUnmittelbarUeberMarke(nachherD);
+            pruefen(`PUNKT D ALLEINSTEHENDES CR (56) (ein alleinstehendes "\\r" in --zweck bleibt NICHT stehen -- die Zeile enthaelt "Teil A Teil B" als EINEN zusammenhaengenden Text ohne rohes CR: "${geschriebeneZeileD}")`,
+                codeD2 === 0
+                && typeof geschriebeneZeileD === 'string'
+                && geschriebeneZeileD.includes('Teil A Teil B')
+                && !geschriebeneZeileD.includes('\r'));
+        }
+
+        // ----- PUNKT E.2: die ECHTE ASTRA-LAEUFE.md (NUR gelesen, niemals
+        // geschrieben) enthaelt die AKTUELLE LAUFPROTOKOLL_MARKE-Konstante
+        // GENAU EINMAL und am Zeilenanfang -- das bindet die Konstante an
+        // die Wirklichkeit: der Vergleich laeuft gegen unabhaengige,
+        // externe Daten (die echte Datei), nicht gegen eine aus derselben
+        // Konstante gebaute Fixture. Verwendet den ganz am Kopf von
+        // selbsttest() gezogenen Schnappschuss -- KEIN zweiter Lesezugriff
+        // auf die echte Datei. -----
+        {
+            const inhaltEcht = echtesProtokollVorher;
+            let vorkommenGesamt = 0;
+            let amZeilenanfang = false;
+            if (typeof inhaltEcht === 'string') {
+                for (let ab = 0; ; ) {
+                    const treffer = inhaltEcht.indexOf(LAUFPROTOKOLL_MARKE, ab);
+                    if (treffer === -1) break;
+                    vorkommenGesamt++;
+                    if (treffer === 0 || inhaltEcht[treffer - 1] === '\n') amZeilenanfang = true;
+                    ab = treffer + LAUFPROTOKOLL_MARKE.length;
+                }
+            }
+            pruefen(`WIRKLICHKEIT: LAUFPROTOKOLL_MARKE in der echten ASTRA-LAEUFE.md (57) (NUR gelesen, niemals geschrieben; die aktuelle Konstante kommt darin GENAU EINMAL und am Zeilenanfang vor: ${vorkommenGesamt} Vorkommen)`,
+                typeof inhaltEcht === 'string' && vorkommenGesamt === 1 && amZeilenanfang);
+        }
+
+        // ----- PUNKT E.3: laufprotokollPfad() OHNE ASTRA_LAUFPROTOKOLL
+        // trifft die ECHTE Datei -- ueber module.exports/require(__filename)
+        // geholt (s. Exportkommentar am Dateiende), NICHT denselben
+        // path.join-Ausdruck nachgebaut: unabhaengige Belege (Verzeichnis
+        // enthaelt auch CLAUDE.md und .github) statt derselben Formel.
+        // Schreibt NICHTS. ACHTUNG: der Selbsttest biegt ASTRA_LAUFPROTOKOLL
+        // fuer seine gesamte Laufzeit global um (s. SICHERHEITSNETZ oben) --
+        // fuer DIESEN einen Fall wird die Variable deshalb voruebergehend
+        // entfernt und danach zuverlaessig wiederhergestellt. -----
+        {
+            const alteUmgebungStandardpfad = process.env.ASTRA_LAUFPROTOKOLL;
+            delete process.env.ASTRA_LAUFPROTOKOLL;
+            let ermittelterPfad;
+            try {
+                ermittelterPfad = require(__filename).laufprotokollPfad();
+            } finally {
+                if (alteUmgebungStandardpfad !== undefined) process.env.ASTRA_LAUFPROTOKOLL = alteUmgebungStandardpfad;
+                else delete process.env.ASTRA_LAUFPROTOKOLL;
+            }
+            const verzeichnisStandardpfad = path.dirname(ermittelterPfad);
+            pruefen(`STANDARDPFAD OHNE ASTRA_LAUFPROTOKOLL (58) (trifft die echte Datei -- unabhaengige Belege statt desselben path.join-Ausdrucks: existiert, Basisname ASTRA-LAEUFE.md, Verzeichnis enthaelt auch CLAUDE.md und .github: ${ermittelterPfad})`,
+                fs.existsSync(ermittelterPfad)
+                && path.basename(ermittelterPfad) === 'ASTRA-LAEUFE.md'
+                && fs.existsSync(path.join(verzeichnisStandardpfad, 'CLAUDE.md'))
+                && fs.existsSync(path.join(verzeichnisStandardpfad, '.github')));
+        }
+
         // ----- FALL 6: --selbsttest selbst schreibt KEINE Zeile in die
         // ECHTE ASTRA-LAEUFE.md -- gemessen ueber den gesamten bisherigen
         // Selbsttest-Lauf (LAUF A/B/C/D, DIFF-RIEGEL 31 und die Faelle 1-8
@@ -1837,8 +2273,19 @@ async function selbsttest() {
         {
             let echtesProtokollNachher = null;
             try { echtesProtokollNachher = fs.readFileSync(echteProtokollDatei, 'utf8'); } catch (e) { /* bleibt null */ }
-            pruefen('LAUF-PROTOKOLL FALL 6 (47) (die ECHTE ASTRA-LAEUFE.md ist durch den GESAMTEN --selbsttest-Lauf unveraendert geblieben, obwohl mehrere main()-Aufrufe darin Exit 0 und Exit 3 erreicht haben)',
-                echtesProtokollNachher === echtesProtokollVorher);
+            // Punkt F (Nacharbeit 13.09.2026): war schon der VORHER-
+            // Schnappschuss nicht lesbar (echtesProtokollVorher === null),
+            // ist "nachher === vorher" ein "null === null" -- GRUEN, obwohl
+            // die Schutzwirkung nie gemessen wurde ("leeres Ergebnis ist
+            // nicht sauberes Ergebnis"). Ein nicht messbarer Schutz ist kein
+            // bestandener Schutz -- dieser Fall wird dann ROT, statt sich
+            // zufaellig als bestanden auszugeben.
+            if (echtesProtokollVorher === null) {
+                pruefen('LAUF-PROTOKOLL FALL 6 (58) (Schnappschuss der echten Datei nicht lesbar -- die Schutzwirkung wurde NICHT gemessen)', false);
+            } else {
+                pruefen('LAUF-PROTOKOLL FALL 6 (58) (die ECHTE ASTRA-LAEUFE.md ist durch den GESAMTEN --selbsttest-Lauf unveraendert geblieben, obwohl mehrere main()-Aufrufe darin Exit 0 und Exit 3 erreicht haben)',
+                    echtesProtokollNachher === echtesProtokollVorher);
+            }
         }
     } catch (e) {
         console.log(`  ✗ FEHLT: unerwarteter Fehler im Selbsttest: ${e.message}`);
@@ -1856,6 +2303,18 @@ async function selbsttest() {
     console.log(fehler ? `\n${fehler} Fehler` : '\nSelbsttest sauber');
     return fehler ? 1 : 0;
 }
+
+// Punkt E.3 (Nacharbeit 13.09.2026): NUR fuer den Selbsttest -- der
+// Standardpfad-Fall unten braucht Zugriff auf laufprotokollPfad(), OHNE
+// denselben path.join()-Ausdruck einfach nachzubauen (das wuerde nur die
+// Funktion gegen sich selbst pruefen). require(__filename) fuehrt main()
+// dabei NICHT ein zweites Mal aus: Node cached ein Modul, das bereits als
+// Einstiegspunkt lief, unter seinem aufgeloesten Pfad -- ein erneutes
+// require() darunter liefert nur den gecachten module.exports zurueck, ohne
+// den Dateikopf (und damit main()) erneut auszufuehren. Exportiert wird
+// AUSSCHLIESSLICH, was der Selbsttest braucht -- keine Werkzeuge, kein
+// main() selbst.
+module.exports = { laufprotokollPfad, laufprotokollZelle, laufprotokollEinfuegen };
 
 main().then((code) => { process.exitCode = code; }).catch((fehler) => {
     console.error('FEHLER:', fehler.message);

@@ -1,0 +1,12 @@
+# Sperr- und Wegwerfdateien von tools/gegenleser-repo.js (TEIL D,
+# Lauf-Protokoll). Sie entstehen NEBEN der Zieldatei, weil der atomare
+# Austausch (schreiben + rename) nur innerhalb desselben Verzeichnisses
+# atomar ist, und verschwinden im Normalfall sofort wieder.
+#
+# Warum sie hierher gehoeren: Dieses Repo hatte bis zum 13.09.2026 gar
+# keine .gitignore. Eine nach einem Absturz liegengebliebene Sperrdatei
+# waere als untracked aufgetaucht und bei einem `git add -A` mitgewandert.
+# Sie heilt sich selbst (aelter als 60s gilt als Rest eines abgestuerzten
+# Vorgaengerlaufs und wird entfernt), sie muss also nicht sichtbar bleiben.
+ASTRA-LAEUFE.md.lock
+ASTRA-LAEUFE.md.tmp-*
