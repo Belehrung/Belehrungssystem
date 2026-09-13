@@ -21,12 +21,43 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 10.09.2026 | Gegenlesung #144, volle Dateien | 8 Dateien, 192k Token | 4 | 4 | 0 | 2,03 $ |
 | 12.09.2026 | Gegenlesung #167 (zwei Spuren zusammen) | 61 Dateien | 9 | 7 | 3 | n. e. |
 | 13.09.2026 | Gegenlesung Drossel-Rennen `/passwort-vergessen` | Diff 129 Zeilen + Repo-Lesezugriff (20 Suchen, 30 Lesungen), 704k Token über 12 Runden | 3 | 2 | 1 (Schwereeinstufung) | 9,38 $ |
+| 13.09.2026 | Gegenlesung Archiv-Drossel, **abgebrochen** | Geheimnis-Riegel schlug nach 2 Runden an (Fehlalarm) | — | — | — | 0,32 $ |
+| 13.09.2026 | Gegenlesung Archiv-Drossel, Wiederholung ohne 13 gesperrte Dateien | Diff 115 Zeilen + Repo-Lesezugriff (130 Suchen, 26 Lesungen), 1.117k Token über 19 Runden | 3 | 2 | 1 (Prämissenfehler im Auftrag) | 15,39 $ |
 
 Die Zeilen vom 10./12.09. sind aus der CLAUDE.md übernommen, nicht neu
 gemessen; die Spalte „gefallen" ist dort teils nicht getrennt erfasst worden
 (#167: neun Befunde, sieben getragen — die Differenz ist dort als „drei nicht"
 beschrieben, was sich mit der Neun nicht sauber verrechnet). Das ist so
 stehengelassen statt geglättet.
+
+**Ein abgebrochener Lauf bekommt eine eigene Zeile mit Strichen, keine Null.**
+„Null Befunde" hieße geprüft und sauber; hier hat niemand geprüft. Die Kosten
+stehen trotzdem da — sie sind angefallen.
+
+## Woher die Befunde kamen (Betreiberfrage 13.09.2026: ist Kontext der Hebel?)
+
+Zählbar gemacht, weil sich sonst nie entscheiden lässt, ob Repo-Lesezugriff
+wirklich trägt oder ob es sich nur so anfühlt. Erfasst wird, welcher Zugriff
+einen Befund überhaupt ERMÖGLICHT hat — nicht, was daneben noch gelesen wurde.
+
+| Befund | Erreichbar über | Wäre ohne diesen Zugriff auffindbar gewesen? |
+|---|---|---|
+| Test kann Konto- und IP-Riegel nicht unterscheiden | vollständiges Lesen der Testdatei | nein — der Diff zeigt nur den neuen Block, nicht die 600 Zeilen davor |
+| Prüfen-dann-Zählen in `routes/archiv.js` | Suche im Repo | nein — steht in keiner Zeile des Diffs, und niemand hätte die Datei ins Bündel gelegt |
+| Mailzahl unterscheidet Drossel nicht von Absturz | Diff allein | ja |
+| Beide Renn-Zusicherungen nicht unabhängig | Diff allein (Arithmetik) | ja |
+| Passwort-Reset-Reparatur fehlt im Baum | Lesen von `routes/auth.js` | nein — und es war ein Prämissenfehler im Auftrag, kein Codefehler |
+
+**Stand nach zwei Läufen: 3 von 5 Befunden hingen am Lesezugriff.** Das ist
+eine Tendenz, keine Messung — fünf Befunde an einem Tag. Wer sich darauf
+beruft, nennt diese Zahl mit.
+
+**Was der zweite Lauf zusätzlich zeigt, und es spricht gegen die Kosten:**
+15,39 $ für 115 Diff-Zeilen, bei 130 Suchen und 19 Runden. Der erste Lauf kam
+mit 12 Runden auf 9,38 $. Die Kosten wachsen mit der Freiheit, nicht mit dem
+Umfang des Beitrags — und beide Läufe lieferten je zwei tragende Befunde.
+Mehr Zugriff hat also nicht mehr gefunden, sondern anderes. Das deckt sich mit
+der Messung vom 10.09. und ist der Grund, warum „öfter" nicht „breiter" heißt.
 
 ## 13.09.2026 — Drossel-Rennen `/passwort-vergessen`
 
