@@ -33,6 +33,7 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 13.09.2026 | Gegenleser: Deckel lehnt Lesung ab statt Lauf | Diff 229 Zeilen, Suchen 8, Lesungen 11, Token rein 213092, Token raus 7458, Runden 6 | 2 | 1 | 1 (Schwereeinstufung: angeblich neuer Ausgabekanal, gegen HEAD~1 als wortgleich bestehend gemessen) | 3,22 $ |
 | 13.09.2026 | Bestaetigungsrunde: Deckel gilt dem Ausschnitt | Diff 336 Zeilen, Suchen 5, Lesungen 9, Token rein 174972, Token raus 6859, Runden 5 | 3 | 3 | 0 | 2,70 $ |
 | 13.09.2026 | Waechter gegen Zeitzonenfalle (repo-weit, statisch) | Diff 490 Zeilen, Suchen 13, Lesungen 22, Token rein 246849, Token raus 8508, Runden 6 | 5 | 5 | 0 | 3,72 $ |
+| 13.09.2026 | Bestaetigungsrunde: Waechter Zeitzonenfalle, fuenf Behebungen | Diff 331 Zeilen, Suchen 9, Lesungen 17, Token rein 185595, Token raus 7654, Runden 6 | 3 | 3 | 0 | 2,89 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -275,3 +276,38 @@ nicht, ob sie das Richtige zusichert.
 **Was er NICHT hergibt:** ein Lauf. Und der Beitrag war ein frischer Entwurf
 — dort findet ein Prüfer leichter etwas als im gewachsenen Bestand, das steht
 weiter oben schon. Die Quote 5 von 5 ist keine Rate, sie ist ein Datenpunkt.
+
+## Die zweite Runde, die sich ein zweites Mal gelohnt hat (13.09.2026)
+
+Zum Wächter gegen die Zeitzonenfalle: erste Runde fünf Befunde (alle
+getragen, einer blockierend), Bestätigungsrunde drei weitere (alle
+getragen). Das ist die erste Bestätigungsrunde, die NICHT nur bestätigt hat.
+
+Was sie fand, und was daran gemeinsam ist:
+
+- **Zwei Teile der C-Behebung waren von keiner Fixtur bewacht.** Die
+  `hatSetter`-Regex auf die alte Fassung zurückgedreht: `38 PASS / 0 FAIL`.
+  Grund: die `$d`-Fixtur hat keinen Setter und greift über den anderen
+  Zweig, alle Setter-Fixturen sind kompakt geschrieben.
+- **Ein Symlink fällt lautlos aus dem Scan.** 186 Dateien werden 185, und
+  „keine Verzeichnisfehler" bleibt grün. Ein `Dirent` für einen Symlink
+  erfüllt weder `isDirectory()` noch `isFile()`.
+- **Die Fixturen prüfen die Hilfsfunktion, nicht den Wächter.**
+  `const f = findeTreffer(roh)` durch `const f = []` ersetzt liesse alles
+  grün. Die Regel dazu steht wörtlich in der CLAUDE.md.
+
+**Das Muster über beide Runden:** Jeder einzelne Befund war „die Behebung
+ist da, aber nichts würde ihren Verlust bemerken". Nicht falscher Code —
+ungesicherter richtiger Code. Das ist genau die Klasse, für die eine
+Gegenprobe nicht reicht: sie zeigt, dass eine Zusicherung fallen KANN, nicht
+dass sie beim Rückbau der Behebung fällt.
+
+**Eigener Messfehler in derselben Runde, festgehalten weil er die Lehre
+verdoppelt:** Mein erster Mutationsversuch für Befund 1 griff nicht
+(`NICHT EINDEUTIG: 0`), das gemessene `EXIT=0` galt der UNVERÄNDERTEN Datei.
+Ohne Nachsehen wäre daraus ein „bewacht, alles gut" geworden — also die
+umgekehrte Fehlaussage zum Befund selbst. Die Regel dagegen steht seit heute
+Vormittag in der CLAUDE.md; ich bin am selben Tag hineingelaufen.
+
+**Kosten der Bestätigungsrunde: 2,89 $** gegen 3,72 $ der ersten. Wieder war
+die engere Frage die billigere.
