@@ -1146,12 +1146,12 @@ async function main(argvUeberschreibung) {
                     if (e instanceof GeheimnisAbbruch) {
                         // Eine ABGELEHNTE Lesung ist kein Abbruch des Laufs
                         // mehr (13.09.2026, Nacharbeit): der Deckel bleibt
-                        // scharf -- es wird weiterhin NICHTS aus der Datei
-                        // gesendet --, aber statt den GANZEN Lauf zu
-                        // beenden, geht das Modell mit einem gewoehnlichen
+                        // scharf -- es wird kein Inhalt des abgelehnten
+                        // AUSSCHNITTS gesendet --, aber statt den GANZEN Lauf
+                        // zu beenden, geht das Modell mit einem gewoehnlichen
                         // abgelehnten Funktionsergebnis weiter, so wie bei
-                        // jeder anderen Ablehnung auch. Der Text nennt die
-                        // Datei und die Musternamen, aber KEINE Zeile und
+                        // jeder anderen Ablehnung auch. Der Text nennt den
+                        // Ausschnitt und die Musternamen, aber KEINE Zeile und
                         // KEINEN Musterinhalt -- ein erneuter Versuch liefert
                         // erkennbar dasselbe Ergebnis fuer DIESELBE Anfrage,
                         // das Modell muss also nicht nachfragen -- ein
@@ -1263,7 +1263,7 @@ function httpsStubBauen(warteschlange, aufgezeichnet) {
 }
 
 async function selbsttest() {
-    const ERWARTETE_FAELLE = 69;
+    const ERWARTETE_FAELLE = 72;
     let gelaufen = 0;
     let fehler = 0;
     const pruefen = (bezeichnung, bedingung) => {
@@ -1345,6 +1345,15 @@ async function selbsttest() {
         // den absoluten — Gegenstueck zu schwaerzen-viele.js.
         fs.writeFileSync(path.join(klon, 'schwaerzen-anteil.js'),
             [...fuellzeilen(1, 8)].map((z, k) => ([1, 4, 7].includes(k) ? `t${k} = "` + 'gh' + 'p_' + 'U'.repeat(36) + '";' : z)).join('\n') + '\n');
+        // 500 Zeilen, davon 25 Geheimniszeilen ab Zeile 16 -- einzige Fixture
+        // ueber MAX_LIES_ZEILEN (400) hinaus. Deckt den ZWEITEN Kuerzungspfad
+        // in werkzeugLies() ab (Kuerzung AUF 400 Zeilen), nicht nur den ersten
+        // (Kuerzung bis Dateiende, s. "DECKEL VERSETZT UND GEKUERZT" unten):
+        // beide setzen "ende" auf demselben Weg um, aber nur der erste war
+        // bislang durch irgendeinen Fall abgedeckt.
+        const schwaerzenRiesigZeilen = fuellzeilen(1, 500);
+        for (let k = 15; k < 40; k++) schwaerzenRiesigZeilen[k] = `t${k} = "` + 'gh' + 'p_' + 'V'.repeat(36) + '";';
+        fs.writeFileSync(path.join(klon, 'schwaerzen-riesig.js'), schwaerzenRiesigZeilen.join('\n') + '\n');
         // Eingegebener Diff mit Geheimnis — NICHT committet, der Diff kommt
         // ohnehin vom Auftraggeber und nicht aus der Erlaubnisliste.
         const diffMitGeheimnisPfad = path.join(klon, 'diff-mit-geheimnis.txt');
@@ -1352,7 +1361,7 @@ async function selbsttest() {
 
         execFileSync('git', ['add', 'harmlos.txt', '.env.beispiel', 'zeiger_auf_etc', 'geheim.js',
             'schwaerzen-openai.js', 'schwaerzen-github.js', 'schwaerzen-telegram.js', 'schwaerzen-platzhalter.js',
-            'schwaerzen-pem.txt', 'schwaerzen-viele.js', 'schwaerzen-anteil.js'], { cwd: klon });
+            'schwaerzen-pem.txt', 'schwaerzen-viele.js', 'schwaerzen-anteil.js', 'schwaerzen-riesig.js'], { cwd: klon });
         execFileSync('git', ['commit', '-q', '-m', 'Testdaten'], { cwd: klon });
 
         // Brief-Fixture fuer die main()-Aufrufe unten (Defekt 2, 12.09.2026):
@@ -1502,6 +1511,62 @@ async function selbsttest() {
                 ausgeloest && ort === 'schwaerzen-anteil.js Zeilen 1-8 (von 8)' && ergebnisText === null
                 && abbruch.relativ === 'schwaerzen-anteil.js' && abbruch.von === 1 && abbruch.bis === 8
                 && abbruch.gesamt === 8 && abbruch.trefferZeilen === 3 && abbruch.ausschnittZeilen === 8);
+        }
+        {
+            // Nacharbeit (Gegenlesung des Gegenlesers, 13.09.2026): DECKEL 27
+            // und 35 lesen beide von Zeile 1, dort fallen bis/gbis/gesamt/
+            // ausschnittZeilen zufaellig auf dieselbe Zahl zusammen -- eine
+            // vertauschte Zuweisung (z. B. "bis: gbis" statt "bis: ende",
+            // oder "gesamt: ausschnittZeilen.length" statt der echten
+            // Dateilaenge) waere dort UNSICHTBAR. Dieser Fall liest ab
+            // Zeile 11 (nicht ab 1) UND ueber das Dateiende hinaus (999),
+            // damit von/bis/gesamt/ausschnittZeilen vier VERSCHIEDENE Werte
+            // sind. Sollwerte als woertliche Literale, nicht aus dem Code
+            // abgeleitet: schwaerzen-viele.js hat 40 Zeilen (10 Fuellzeilen,
+            // danach 30 Geheimniszeilen, s. Fixture-Anlage oben), 11-999
+            // trifft NUR die 30 Geheimniszeilen und wird auf das Dateiende
+            // gekuerzt.
+            let ausgeloest = false;
+            let ort = '-';
+            let abbruch = null;
+            let ergebnisText = null;
+            try {
+                ergebnisText = werkzeugLies('schwaerzen-viele.js', 11, 999).text;
+            } catch (e) {
+                if (e instanceof GeheimnisAbbruch) { ausgeloest = true; ort = e.ort; abbruch = e; }
+            }
+            pruefen(`DECKEL VERSETZT UND GEKUERZT (46,5) (Bereich 11-999 einer 40-Zeilen-Datei trennt von/bis/gesamt/ausschnittZeilen: von=${abbruch ? abbruch.von : '-'}, bis=${abbruch ? abbruch.bis : '-'}, gesamt=${abbruch ? abbruch.gesamt : '-'}, ausschnittZeilen=${abbruch ? abbruch.ausschnittZeilen : '-'}, trefferZeilen=${abbruch ? abbruch.trefferZeilen : '-'}, Ort: ${ort}; kein Funktionsergebnis)`,
+                ausgeloest && ergebnisText === null
+                && abbruch.relativ === 'schwaerzen-viele.js'
+                && abbruch.von === 11 && abbruch.bis === 40 && abbruch.gesamt === 40
+                && abbruch.ausschnittZeilen === 30 && abbruch.trefferZeilen === 30
+                && ort === 'schwaerzen-viele.js Zeilen 11-40 (von 40)');
+        }
+        {
+            // Zweiter, unabhaengiger Randfall (Nacharbeit 13.09.2026): deckt
+            // den ANDEREN Kuerzungspfad ab -- Kuerzung AUF MAX_LIES_ZEILEN
+            // (400), nicht bis Dateiende. schwaerzen-riesig.js hat 500
+            // Zeilen, 25 Geheimniszeilen ab Zeile 16 (s. Fixture-Anlage
+            // oben). Bereich 2-500 angefragt: die Datei ist lang genug, dass
+            // NICHT "bis Dateiende" greift, sondern der 400-Zeilen-Deckel --
+            // von=2, bis=401 (2+400-1), gesamt=500, ausschnittZeilen=400,
+            // trefferZeilen=25 sind fuenf VERSCHIEDENE Zahlen. Sollwerte
+            // woertlich, nicht aus dem Code abgeleitet.
+            let ausgeloest = false;
+            let ort = '-';
+            let abbruch = null;
+            let ergebnisText = null;
+            try {
+                ergebnisText = werkzeugLies('schwaerzen-riesig.js', 2, 500).text;
+            } catch (e) {
+                if (e instanceof GeheimnisAbbruch) { ausgeloest = true; ort = e.ort; abbruch = e; }
+            }
+            pruefen(`DECKEL AUF MAX_LIES_ZEILEN GEKUERZT (46,7) (Bereich 2-500 einer 500-Zeilen-Datei reisst NICHT die "bis Dateiende"-Kuerzung, sondern den 400-Zeilen-Deckel: von=${abbruch ? abbruch.von : '-'}, bis=${abbruch ? abbruch.bis : '-'}, gesamt=${abbruch ? abbruch.gesamt : '-'}, ausschnittZeilen=${abbruch ? abbruch.ausschnittZeilen : '-'}, trefferZeilen=${abbruch ? abbruch.trefferZeilen : '-'}, Ort: ${ort}; kein Funktionsergebnis)`,
+                ausgeloest && ergebnisText === null
+                && abbruch.relativ === 'schwaerzen-riesig.js'
+                && abbruch.von === 2 && abbruch.bis === 401 && abbruch.gesamt === 500
+                && abbruch.ausschnittZeilen === 400 && abbruch.trefferZeilen === 25
+                && ort === 'schwaerzen-riesig.js Zeilen 2-401 (von 500)');
         }
         {
             // Positivkontrolle: ohne sie waere "nichts durchgelassen" auch
@@ -1750,6 +1815,7 @@ async function selbsttest() {
 
             const aufgezeichnetGL = [];
             const ausgabeZeilenGL = [];
+            const fehlerZeilenGL = [];
             const warteschlangeGL = [
                 antwortKoerperBauen(elementFunktionsaufrufBauen('call-gl1', 'lies', { pfad: 'schwaerzen-viele.js', von: 1, bis: 10 }), 100, 50),
                 antwortKoerperBauen(elementFunktionsaufrufBauen('call-gl2', 'lies', { pfad: 'schwaerzen-viele.js', von: 1, bis: 40 }), 100, 50),
@@ -1757,7 +1823,12 @@ async function selbsttest() {
             ];
             https.request = httpsStubBauen(warteschlangeGL, aufgezeichnetGL);
             console.log = (msg) => ausgabeZeilenGL.push(String(msg));
-            console.error = () => {}; // eigene Ausgabe hier nicht gebraucht, LAUF E prueft sie bereits
+            // Nacharbeit (Gegenlesung des Gegenlesers, 13.09.2026): NICHT
+            // wegwerfen wie zuvor -- eine vorangegangene erfolgreiche Lesung
+            // koennte die Ablehnungsmeldung sonst unbemerkt unterdruecken,
+            // und Warnungen aus dem Laufprotokoll-Pfad wuerden spurlos
+            // verschwinden. Aufzeichnen wie in LAUF E, unten geprueft.
+            console.error = (msg) => fehlerZeilenGL.push(String(msg));
 
             const protokollPfadGL = path.join(klon, 'selbsttest-protokoll-gemischt.jsonl');
             let codeGL;
@@ -1810,6 +1881,13 @@ async function selbsttest() {
                 funktionsausgabeGL2.includes('schwaerzen-viele.js Zeilen 1-40 (von 40)')
                 && funktionsausgabeGL2.includes('Ein anderer oder kleinerer Ausschnitt derselben Datei kann dagegen durchgehen')
                 && vorkommen(funktionsausgabeGL2, 'N'.repeat(20)) === 0);
+
+            // Nacharbeit (Gegenlesung des Gegenlesers, 13.09.2026): stderr
+            // wurde hier zuvor weggeworfen -- die Konsolenmeldung im
+            // GEMISCHTEN Zustand (nach einer schon erfolgreichen Lesung
+            // derselben Datei) war dadurch ungeprueft.
+            pruefen('GEMISCHTER LAUF KONSOLE 64 ("LESUNG ABGELEHNT" kommt auch dann, wenn zuvor schon erfolgreich aus derselben Datei gelesen wurde)',
+                fehlerZeilenGL.some((z) => z.includes('LESUNG ABGELEHNT') && z.includes('schwaerzen-viele.js Zeilen 1-40 (von 40)') && z.includes('der Lauf geht weiter')));
         }
 
         {
