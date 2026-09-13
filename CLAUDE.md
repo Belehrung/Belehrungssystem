@@ -356,6 +356,24 @@ selbst am Quelltext nachgeprüft, alle trafen zu.
 der drei Spuren hatte etwas, das keine andere hatte. Das ist der Beleg für
 „beide", nicht für „das bessere".
 
+**NACHGEMESSEN am 13.09.2026, und diesmal ist es kein knappes Ergebnis:** zwei
+Spuren parallel über EINEN Diff (der Zeitzonenfallen-Wächter, vierte Runde) —
+**neun Befunde, alle neun nach eigener Nachmessung getragen, NULL
+Überschneidung.** Keine Spur fand auch nur einen Befund der anderen. Damit
+steht „beide statt eine" nicht mehr auf drei Läufen mit teilweiser
+Überlappung, sondern auf einer vollständigen Trennung.
+Die Trennung hat eine erkennbare Ursache, und sie ist für die Aufgabenteilung
+wichtiger als die Zahl: **die Claude-Spur durfte AUSFÜHREN, Astra nur LESEN.**
+Claudes Befunde lauten durchweg „diese Zeile zurückdrehen, der Lauf bleibt
+grün" — gemessene Mutationen. Astras Befunde lauten durchweg „es gibt einen
+Zustand, den keine Fixtur je herstellt" — durchdachter Kontrollfluss. Das sind
+zwei Suchverfahren, nicht zwei Meinungen über dieselbe Frage. Wer eine davon
+weglässt, verliert nicht Redundanz, sondern eine Klasse.
+Astra hat in diesem Lauf zusätzlich eine EIGENE frühere Einstufung
+zurückgenommen, unaufgefordert und mit Begründung („keinen zusätzlichen
+konkreten Angriffspfad nachgewiesen"). Ein Prüfer, der das kann, ist mehr wert
+als einer, der immer liefert.
+
 Der Fund, der die Entscheidung trägt: Astra sah, dass ein neuer
 Verhaltenstest ECHTE Telegram-Alarme auslöst (der melde-Wrapper reichte an
 das echte `melde()` weiter, und dieselbe Suite läuft auf dem Live-Server als
@@ -750,6 +768,89 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   auftritt. Gegenmittel: Fixtures, in denen jede Bedeutung eine ANDERE Zahl
   trägt (hier `11, 999` auf 40 Zeilen → von 11, bis 40, gesamt 40,
   Ausschnitt 30) — vier verschiedene Werte, und jede Verwechslung fällt auf.
+- **Eine Funktion auszulagern macht sie PRÜFBAR, nicht GEPRÜFT — und ein Test,
+  der sie ANDERS aufruft als die Produktion, prüft einen Zweig, den es in
+  Produktion nicht gibt.** Gemessen am 13.09.2026, und zwar an einer Behebung,
+  die genau diese Klasse schliessen sollte: der Lesepfad eines Wächters wurde
+  in `scanneDateien(dateipfade, basisVerzeichnis)` ausgelagert, damit ihn
+  endlich ein Test durchlaufen kann. Der neue Test rief sie OHNE Basispfad
+  (absolute Pfade), der echte Scan MIT. Folge, je einzeln gemessen:
+  `const f = basisVerzeichnis ? [] : findeTreffer(roh)` -> **EXIT 0, 49 PASS /
+  0 FAIL**, obwohl keine einzige Bestandsdatei mehr geprüft wurde; und
+  `scanneDateien([], ROOT)` statt der echten Dateiliste -> **ebenfalls EXIT 0**,
+  obwohl gar nichts mehr gelesen wurde. Die Untergrenze „mindestens 170 Dateien
+  gescannt" hielt beide Male, weil sie die AUFGELISTETEN Dateien zählt, nicht
+  die gelesenen. Zwei Gegenmittel, beide billig: der Test ruft die
+  ausgelagerte Funktion in der PRODUKTIONSFORM auf (dieselben Argumente,
+  dieselben Typen), und die Funktion gibt zurück, wie viel sie tatsächlich
+  getan hat (hier: Anzahl gelesener Dateien), damit eine Zusicherung das gegen
+  die erwartete Menge halten kann. Eine Mengenschwelle, die eine LISTE misst
+  statt der VERARBEITUNG, ist keine Absicherung der Verarbeitung.
+- **Eine Zusicherung über eine ZAHL ist keine Zusicherung über eine MENGE.**
+  Gemessen am 13.09.2026 gleich VIERFACH an einem einzigen Wächter, von zwei
+  unabhängigen Prüfspuren, jede Mutation selbst nachgemessen mit dem Ergebnis
+  `EXIT 0, 65 PASS / 0 FAIL`: die Liste der erfassten Verzeichnisse von sechs
+  auf vier gekürzt (der Wächter meldet stolz „gelesen entspricht der Anzahl
+  gescannter Dateien (182 von 182)", während `workers/` und `public/` lautlos
+  verschwunden sind); dieselbe fundfreie Datei 186-mal statt 186 verschiedene
+  gelesen; der Zähler durch die Länge der Übergabeliste ersetzt; der Zähler bei
+  Funden verdoppelt. Alle vier überleben, weil eine ANZAHL geprüft wurde und
+  beide Seiten des Vergleichs aus derselben Quelle stammen. Ein Scan, ein
+  Filter, ein Export, ein Import: geprüft gehört, WELCHE Elemente verarbeitet
+  wurden — die Menge gegen eine UNABHÄNGIG hingeschriebene Erwartung, nicht
+  gegen eine Zahl, die aus demselben Datenfluss fällt. Eine Untergrenze
+  („mindestens 170") ist dabei keine Absicherung, sondern nur ein Schutz gegen
+  den Totalausfall.
+- **Ein Selbstnachweis aus dem eigenen Datenfluss lässt sich beliebig
+  verfeinern, ohne je zu schliessen — der Regress endet erst an einer Referenz
+  von AUSSEN.** Das ist die Verallgemeinerung der beiden Regeln direkt darüber,
+  und sie ist an EINEM Wächter über drei Runden gemessen worden (13.09.2026):
+  Runde 3 gab ihm einen ZÄHLER der gelesenen Dateien — vier Mutationen
+  überlebten. Runde 4 ersetzte den Zähler durch die MENGE der gelesenen Pfade —
+  das sah nach dem Ende der Klasse aus. Runde 5 zeigte mit einer ECHTEN Falle
+  in einer Bestandsdatei (Positivkontrolle: unmutiert **EXIT 1, drei Kreuze**),
+  dass zwei weitere Ein-Zeilen-Mutationen weiterhin **EXIT 0, 86 PASS / 0 FAIL**
+  liefern: bei jedem Durchlauf dieselbe erste Datei lesen und trotzdem jeden
+  ANGEFORDERTEN Namen protokollieren; und die Dateiliste kürzen, bevor der
+  Leser sie bekommt — er bestätigt dann korrekt, dass er die verkürzte Liste
+  gelesen hat. Die Menge stammte eben nicht aus dem, was gelesen wurde, sondern
+  aus dem, was angefordert war.
+  Die Frage lautet deshalb nicht „ist der Nachweis fein genug?", sondern:
+  **woher kommt der Sollwert, und kann derselbe Defekt ihn mitverändern?**
+  Kommt er aus demselben Datenfluss, verschiebt jede Verfeinerung die Lücke nur
+  eine Ebene tiefer. Brauchbare Referenzen von aussen sind etwa `git ls-files`
+  (wenn der Prüfling das Dateisystem abläuft), eine unabhängig ermittelte
+  Grösse oder Prüfsumme des INHALTS (wenn er liest), oder ein Aufruf mit
+  MEHREREN unterscheidbaren Eingaben statt mehrerer Aufrufe mit je einer — bei
+  einer einelementigen Liste ist „das erste Element" nicht von „das richtige
+  Element" zu unterscheiden, und genau daran ist die Prüfung oben vorbeigelaufen.
+- **Eine Abbruchregel darf sagen, WAS man noch baut — nicht, dass nichts mehr
+  kommt.** Am 13.09.2026 habe ich eine Gegenlesung als „letzte Runde"
+  angekündigt und mich zugleich darauf festgelegt, nur noch Blockierendes zu
+  bauen. Der zweite Teil war richtig und hat gewirkt (drei Anmerkungen
+  derselben Runde wurden korrekt aussortiert und als datierte offene Punkte
+  festgehalten). Der erste war eine Vorhersage über ein Ergebnis, das noch
+  nicht vorlag — und sie war falsch, die Runde brachte zwei blockierende
+  Befunde. Wer eine Grenze zieht, zieht sie am eigenen Verhalten, nicht am
+  Befund des anderen.
+- **Ein Verdrahtungsfehler ist die Lücke, die eine Behebung hinterlässt.**
+  Am selben Tag: eine Behebung meldete Symlinks im Wurzelverzeichnis neu als
+  Fehler, und ich hatte das mit einem ECHTEN Symlink rot gemessen. Trotzdem
+  reichte `wurzelJsDateien([])` statt `wurzelJsDateien(scanFehler)` — eine
+  Zeile —, damit derselbe Symlink wieder unsichtbar wurde, bei `65 PASS /
+  0 FAIL`. Eine Gegenprobe von Hand belegt, dass die Behebung HEUTE wirkt;
+  sie ist keine bleibende Zusicherung dagegen, dass jemand die Fehlersammlung
+  abklemmt. Für jede neue Meldekette deshalb einmal den Sperrfall durch die
+  GANZE Kette schicken und am äußersten Aufrufer prüfen, nicht nur die
+  einzelne Funktion.
+- **Wer EINEN Eintrittspunkt absichert, hat nicht die Eintrittspunkte
+  abgesichert.** Am selben Tag, in derselben Datei: ein Symlink im Baum-Scan
+  wurde neu als Fehler gemeldet — der Wurzelverzeichnis-Scan lief aber an
+  dieser Prüfung vorbei. Gemessen mit einem Wurzel-Symlink auf eine Datei mit
+  echter Falle: **EXIT 0, 49 PASS / 0 FAIL, „0 von 186 Dateien"** — dieselbe
+  Dateizahl wie ohne ihn, die Falle vollständig unsichtbar. Vor jeder
+  Behebung an einer Sammel-, Scan- oder Filterstelle deshalb zählen, wie viele
+  Wege in sie hineinführen, und jeden einzeln messen.
 - **Ein Mutationsmuster, das mehr als einmal passt, mutiert lautlos die
   falsche Stelle — und das Grün sieht aus wie ein Befund GEGEN den Test.**
   Gemessen am 13.09.2026, eine Stunde nachdem dieselbe Mehrdeutigkeit im

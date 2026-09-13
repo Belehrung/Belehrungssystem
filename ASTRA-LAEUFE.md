@@ -32,6 +32,11 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 13.09.2026 | Gegenlesung Offline-C7 Navigationsrennen | Diff 91 Zeilen, Suchen 11, Lesungen 12, Token rein 217868, Token raus 13426, Runden 6 | 4 | 4 | 0 | 3,73 $ |
 | 13.09.2026 | Gegenleser: Deckel lehnt Lesung ab statt Lauf | Diff 229 Zeilen, Suchen 8, Lesungen 11, Token rein 213092, Token raus 7458, Runden 6 | 2 | 1 | 1 (Schwereeinstufung: angeblich neuer Ausgabekanal, gegen HEAD~1 als wortgleich bestehend gemessen) | 3,22 $ |
 | 13.09.2026 | Bestaetigungsrunde: Deckel gilt dem Ausschnitt | Diff 336 Zeilen, Suchen 5, Lesungen 9, Token rein 174972, Token raus 6859, Runden 5 | 3 | 3 | 0 | 2,70 $ |
+| 13.09.2026 | Waechter gegen Zeitzonenfalle (repo-weit, statisch) | Diff 490 Zeilen, Suchen 13, Lesungen 22, Token rein 246849, Token raus 8508, Runden 6 | 5 | 5 | 0 | 3,72 $ |
+| 13.09.2026 | Bestaetigungsrunde: Waechter Zeitzonenfalle, fuenf Behebungen | Diff 331 Zeilen, Suchen 9, Lesungen 17, Token rein 185595, Token raus 7654, Runden 6 | 3 | 3 | 0 | 2,89 $ |
+| 13.09.2026 | Zweite Bestaetigungsrunde: Waechter Zeitzonenfalle, Runde-2-Behebungen | Diff 418 Zeilen, Suchen 9, Lesungen 18, Token rein 226531, Token raus 7283, Runden 6 | 6 | 5 | 1 (Schwereeinstufung: mkdtemp-Fixtur als „blockierend", gegen 64 gleichartige Testdateien und den Zweck der Regel gemessen) | 3,38 $ |
+| 13.09.2026 | Dritte Bestaetigungsrunde: Waechter Zeitzonenfalle, Runde-3-Behebungen | Diff 442 Zeilen, Suchen 8, Lesungen 13, Token rein 223229, Token raus 5762, Runden 6 | 4 | 4 | 0 | 3,22 $ |
+| 13.09.2026 | Vierte Bestaetigungsrunde: Waechter Zeitzonenfalle (als „letzte" angesetzt, war es nicht) | Diff 608 Zeilen, Suchen 49, Lesungen 9, Token rein 876854, Token raus 10903, Runden 13 | 2 | 2 | 0 | 11,78 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -233,3 +238,282 @@ teuer genug, aber beides von der leiseren Sorte.
 Material ging vollstaendig erneut mit, und es war trotzdem die billigere der
 beiden Runden — weil der Auftrag eng war (zwei benannte Fragen statt einer
 offenen Pruefung) und der Pruefer weniger suchen musste.
+
+## Der Lauf, bei dem die eigenen Gegenproben nicht reichten (13.09.2026)
+
+Bis hierher lief es so: Gegenlesung findet etwas, ich messe nach, die Hälfte
+trägt. Dieser Lauf ist der erste, bei dem **alle fünf Befunde trugen** — und
+der einzige bisher, bei dem der Beitrag ohne ihn **fehlerhaft gemergt worden
+wäre**, obwohl drei eigene Gegenproben ihn für gut befunden hatten.
+
+Gegenstand war ein neuer statischer Wächter gegen die Zeitzonenfalle. Meine
+eigenen Messungen vorher: Wächter grün (22 Fälle), Gegenprobe im neu
+gedeckten Bereich rot mit genau zwei betroffenen Fällen, Gegenprobe mit der
+korrekten UTC-Form grün, volle Suite grün. Alles richtig — und alles am
+selben blinden Fleck vorbei.
+
+Was die Gegenlesung fand und ich danach SELBST gemessen habe:
+
+- **Ein fehlendes Verzeichnis meldet sich als sauber.** `workers/` komplett
+  weggenannt: `22 PASS / 0 FAIL`, EXIT 0, einschliesslich der Zeile „keine
+  Lesefehler beim Scan (0 von 185 Dateien)". Die Zusicherung erfasste nur
+  `readFileSync`, nicht `readdirSync`. Der Wächter gegen „eine gescheiterte
+  Messung meldet sich als unveraendert" hatte genau diesen Defekt selbst.
+- **Drei zugesicherte Schnittformen waren von nichts bewacht.** Die
+  Erkennungsregel auf `.slice(0,10)` verkürzt: alle 22 blieben gruen.
+  `.split('T')[0]`, `.substring`, `.substr` standen nur im Kommentar.
+- **Ein Leerzeichen umgeht alles.** `d .toISOString().slice(0, 10)` — gültiges
+  JavaScript, trägt die Falle exakt, `22 PASS / 0 FAIL`.
+- Setter-Liste wich still vom bestehenden Wächter ab (4 gegen 6 Einträge).
+- Die Sollzahl Null war aus der Freiliste abgeleitet statt gegen ein Literal
+  geprüft.
+
+**Was das für die Beweislage heisst.** Bisher stand hier sinngemäss, das
+Nadelöhr sei das eigene Nachmessen, nicht das Finden. Dieser Lauf zeigt die
+Gegenrichtung: meine drei Gegenproben waren methodisch einwandfrei und haben
+trotzdem nichts gefunden, weil sie **dieselbe Annahme teilten wie der
+Entwurf** — dass die Erkennungsregel die Formen trifft, die ihr Kommentar
+behauptet. Eine Gegenprobe prüft, ob eine Zusicherung fallen KANN; sie prüft
+nicht, ob sie das Richtige zusichert.
+
+**Was er NICHT hergibt:** ein Lauf. Und der Beitrag war ein frischer Entwurf
+— dort findet ein Prüfer leichter etwas als im gewachsenen Bestand, das steht
+weiter oben schon. Die Quote 5 von 5 ist keine Rate, sie ist ein Datenpunkt.
+
+## Die zweite Runde, die sich ein zweites Mal gelohnt hat (13.09.2026)
+
+Zum Wächter gegen die Zeitzonenfalle: erste Runde fünf Befunde (alle
+getragen, einer blockierend), Bestätigungsrunde drei weitere (alle
+getragen). Das ist die erste Bestätigungsrunde, die NICHT nur bestätigt hat.
+
+Was sie fand, und was daran gemeinsam ist:
+
+- **Zwei Teile der C-Behebung waren von keiner Fixtur bewacht.** Die
+  `hatSetter`-Regex auf die alte Fassung zurückgedreht: `38 PASS / 0 FAIL`.
+  Grund: die `$d`-Fixtur hat keinen Setter und greift über den anderen
+  Zweig, alle Setter-Fixturen sind kompakt geschrieben.
+- **Ein Symlink fällt lautlos aus dem Scan.** 186 Dateien werden 185, und
+  „keine Verzeichnisfehler" bleibt grün. Ein `Dirent` für einen Symlink
+  erfüllt weder `isDirectory()` noch `isFile()`.
+- **Die Fixturen prüfen die Hilfsfunktion, nicht den Wächter.**
+  `const f = findeTreffer(roh)` durch `const f = []` ersetzt liesse alles
+  grün. Die Regel dazu steht wörtlich in der CLAUDE.md.
+
+**Das Muster über beide Runden:** Jeder einzelne Befund war „die Behebung
+ist da, aber nichts würde ihren Verlust bemerken". Nicht falscher Code —
+ungesicherter richtiger Code. Das ist genau die Klasse, für die eine
+Gegenprobe nicht reicht: sie zeigt, dass eine Zusicherung fallen KANN, nicht
+dass sie beim Rückbau der Behebung fällt.
+
+**Eigener Messfehler in derselben Runde, festgehalten weil er die Lehre
+verdoppelt:** Mein erster Mutationsversuch für Befund 1 griff nicht
+(`NICHT EINDEUTIG: 0`), das gemessene `EXIT=0` galt der UNVERÄNDERTEN Datei.
+Ohne Nachsehen wäre daraus ein „bewacht, alles gut" geworden — also die
+umgekehrte Fehlaussage zum Befund selbst. Die Regel dagegen steht seit heute
+Vormittag in der CLAUDE.md; ich bin am selben Tag hineingelaufen.
+
+**Kosten der Bestätigungsrunde: 2,89 $** gegen 3,72 $ der ersten. Wieder war
+die engere Frage die billigere.
+
+## Die DRITTE Runde über denselben Wächter — und was sie über Auslagerungen zeigt (13.09.2026 nachts)
+
+Derselbe statische Wächter gegen die Zeitzonenfalle, dritter Gegenlese-Lauf,
+3,38 $. Sechs Befunde, fünf haben nach eigener Nachmessung getragen, einer ist
+in der Schwere gefallen. Zwei der getragenen waren BLOCKIEREND — nach zwei
+vorangegangenen Runden über dieselbe Datei.
+
+**Warum das kein Argument gegen die Rundenregel ist, sondern für sie.** Die
+CLAUDE.md sagt seit heute: Regelfall eine Runde, eine weitere nur, wenn die
+Behebung VERHALTEN ändert statt bloß eine Zusicherung zu ergänzen. Genau das
+war hier jedes Mal der Fall — Runde 2 hatte die Scanschleife in eine eigene
+Funktion ausgelagert, eine Regex umgebaut und einen neuen Fehlerweg
+eingeführt. Die Regel hat also richtig vorhergesagt, dass noch einmal
+hingesehen werden muss. Sie taugt.
+
+**Der Befund, der es wert ist, allgemein aufgeschrieben zu werden:** Runde 2
+hatte eine Lücke geschlossen, indem sie den Lesepfad in `scanneDateien()`
+AUSLAGERTE — vorher prüfte kein Test den vollständigen Weg Lesen →
+Erkennen → Sammeln. Die neue Funktion nimmt einen optionalen Basispfad. Der
+echte Scan ruft sie MIT Basisverzeichnis, der neue Test OHNE. Damit prüfte der
+Test einen Zweig, den die Produktion nie geht.
+
+Selbst gemessen, beide Male mit vorher bestätigter Mutation und Rückbau über
+eine beiseitegelegte Kopie:
+
+    const f = basisVerzeichnis ? [] : findeTreffer(roh);   -> EXIT 0, 49 PASS / 0 FAIL
+    scanneDateien([], ROOT) statt (gescannteDateien, ROOT) -> EXIT 0, 49 PASS / 0 FAIL
+
+Im ersten Fall wird keine einzige Bestandsdatei mehr auf Fallen geprüft, im
+zweiten überhaupt nichts mehr gelesen — und der Wächter meldet beide Male
+grün, einschließlich seiner Zeile „mindestens 170 Dateien gescannt". Die zählt
+die AUFGELISTETEN Dateien, nicht die gelesenen.
+
+Daraus die Regel, die jetzt auch in der CLAUDE.md steht: **eine Funktion
+auszulagern macht sie PRÜFBAR, nicht GEPRÜFT** — und wenn der Test sie anders
+aufruft als die Produktion, ist sie es weiterhin nicht.
+
+**Der zweite blockierende Befund war eine halbe Behebung.** Runde 2 hatte
+Symlinks geschlossen — aber nur im Baum-Scan, nicht im Wurzelverzeichnis, das
+an `verarbeiteEintrag()` vorbeigeht. Selbst gemessen: ein Wurzel-Symlink
+`zzz_gegenprobe_symlink.js` auf eine Datei mit einer echten Falle ergab
+`EXIT 0, 49 PASS / 0 FAIL, „0 von 186 Dateien"` — dieselbe Dateizahl wie ohne
+ihn. Die Falle war vollständig unsichtbar. Auch das ist ein Muster: wer einen
+Eintrittspunkt absichert, hat nicht die Eintrittspunkte abgesichert.
+
+**Der gefallene Befund war eine Schwereeinstufung**, und sie ist die dritte
+dieser Art an einem Tag. Die Gegenlesung stufte die temporäre Datei der neuen
+Fixtur (`mkdtempSync`/`writeFileSync`/`rmSync`) als blockierenden Verstoß gegen
+„Tests fassen kein echtes Dateisystem an" ein und verlangte einen Stub. Die
+Regel zielt aber auf `pm2`, `nginx`, `/var/www` — echte Prozesse, Dienste und
+Produktivpfade, weil dieselbe Suite auf dem Live-Server als Deploy-Gate läuft;
+64 Testdateien dieser Suite benutzen `mkdtempSync`. Vor allem: ein Stub auf
+`readFileSync` nähme der Fixtur genau das, wofür sie da ist. Die genannten
+Restrisiken (untergeschobener Symlink zwischen `mkdtemp` und dem Schreiben,
+`os.tmpdir()` über die Umgebung verschiebbar, `finally` läuft bei `SIGKILL`
+nicht) treffen zu und stehen jetzt im Kommentar — sie tragen die Umstellung
+nur nicht.
+
+**Was diese drei Runden zusammen NICHT belegen.** Es ist EIN Artefakt. Dass
+hier drei Runden je echte Befunde brachten, sagt etwas über diese Datei — ein
+Wächter, dessen Fehler sich definitionsgemäß als grüner Lauf tarnen —, nicht
+über Beiträge im Allgemeinen. Die Kosten sind ebenfalls real: 3,72 $ + 2,89 $
++ 3,38 $ = 9,99 $ für eine einzige neue Testdatei, dazu vier Bau-Runden. Wer
+das verallgemeinern will, braucht andere Artefakte in dieser Tabelle.
+
+**Und eine Selbstkorrektur, die hierher gehört:** dieser Lauf hat auch
+gefunden, dass meine eigene Aufräumarbeit unvollständig war. Ich hatte kurz
+zuvor die Herkunftsvermerke im Wächter vereinheitlicht (drei verschiedene
+Rundennummern für Befunde aus EINEM Bericht) — und dabei vier Stellen
+übersehen, alle in AUSGABETEXTEN statt in Kommentaren. Wer eine Datei
+aufräumt, prüft danach mit demselben `grep`, mit dem er sie gefunden hat.
+
+## Zwei Spuren über denselben Diff, NULL Überschneidung (13.09.2026 nachts)
+
+Vierte Gegenlese-Runde über den Zeitzonenfallen-Wächter, diesmal ZWEI Spuren
+parallel über denselben Diff: Astra (3,22 $) und eine Claude-Review mit freier
+Dateiwahl und Ausführungsrechten. **Neun Befunde zusammen, alle neun nach
+eigener Nachmessung getragen — und KEIN EINZIGER kam in beiden Spuren vor.**
+
+Das ist die bisher deutlichste Messung zu der Frage „reicht eine Spur?". Die
+Antwort ist nein, und sie ist nicht knapp.
+
+**Was nur die Claude-Spur fand** (jede Mutation von mir selbst nachgemessen,
+Ergebnis jeweils `EXIT 0, 65 PASS / 0 FAIL`):
+
+- `ERFASSTE_WURZELVERZEICHNISSE` auf vier statt sechs Einträge gekürzt — der
+  Wächter meldet zufrieden „0 von 182 Dateien" und „gelesen entspricht der
+  Anzahl gescannter Dateien (182 von 182)". `workers/` und `public/`
+  verschwinden lautlos: genau die 29 Dateien, deren Aufnahme in einem eigenen
+  Commit als Zweck der Nacharbeit benannt ist. **Beide Seiten der
+  Gleichung stammen aus derselben Liste** — die Hausregel „eine Zusicherung,
+  die ihren Sollwert aus dem bezieht, was sie bewachen soll, ist keine", in
+  ihrer teuersten Ausprägung.
+- `catch (fehler) { continue; }` statt der Fehlersammlung: der Zweig, der
+  einen Leseausfall überhaupt sichtbar macht, ist von keiner Fixtur berührt.
+- `gelesen: dateipfade.length`: die neue Zählung ist von der Länge der
+  Übergabeliste nirgends unterscheidbar.
+- Die Zusicherung „gelesen erreicht die Mindestschwelle" kann nicht ALLEIN
+  fallen — sie folgt logisch aus zwei anderen. Gemessen: eine Kürzung auf 180
+  Dateien lässt sie grün, während die Nachbarzusicherung fällt. Eine der 65
+  gezählten Zusicherungen ist damit hohl.
+- Der Verzeichniszweig in der neuen Wurzelbehandlung ist unbewacht.
+
+**Was nur Astra fand** (ebenfalls je selbst nachgemessen, alle `EXIT 0,
+65 PASS / 0 FAIL`):
+
+- Die Dateiliste durch `gescannteDateien.map(() => 'core/datum.js')` ersetzt:
+  ein und dieselbe fundfreie Datei wird 186-mal gelesen, die Zählung stimmt,
+  der Bestand ist ungeprüft. `gelesen` zählt LESEVORGÄNGE, nicht Dateien.
+- `wurzelJsDateien([])` statt `wurzelJsDateien(scanFehler)`: die neue
+  Wurzelfehler-Weitergabe ist abgeschnitten. Nachgemessen mit einem ECHTEN
+  Wurzel-Symlink auf eine Datei mit echter Falle — er ist wieder vollständig
+  unsichtbar, „0 von 186 Dateien", grün. Meine eigene Symlink-Gegenprobe
+  bestätigt also die heutige Implementierung, ist aber keine bleibende
+  Zusicherung gegen diesen Verdrahtungsfehler.
+- `gelesen: gelesen + proDateiFunde.size`: für die Fallen-Datei wird `gelesen`
+  gar nicht ausgelesen, die Doppelzählung fällt niemandem auf.
+- `workers` selbst als Symlink auf einen leeren Baum: 185 statt 186 Dateien,
+  KEIN Scanfehler, grün. Die Zusage „Symlink wird als Scanfehler gemeldet,
+  nicht aufgelöst" gilt ausgerechnet für die sechs Baumwurzeln nicht, weil
+  `readdirSync` dem Pfad folgt und `withFileTypes` die KINDER beschreibt.
+
+**Warum sich die Spuren so sauber trennen**, soweit sich das an einem Fall
+sagen lässt: Die Claude-Spur durfte AUSFÜHREN und hat mutiert und gemessen —
+ihre Funde sind durchweg „diese Zeile zurückdrehen, Lauf bleibt grün". Astra
+durfte nur LESEN und hat am Kontrollfluss gedacht — seine Funde sind durchweg
+„es gibt einen Zustand, den keine Fixtur je herstellt". Das sind zwei
+verschiedene Suchverfahren, keine zwei Meinungen über dieselbe Frage.
+
+**Astra hat außerdem eine eigene frühere Einstufung zurückgenommen** (die
+temporäre Datei als blockierender Verstoß gegen die Dateisystem-Regel): „Für
+die bewusste Temp-Verzeichnis-Entscheidung habe ich keinen zusätzlichen
+konkreten Angriffspfad nachgewiesen. Ich wiederhole deshalb die frühere
+blockierende Einstufung nicht." Das ist die Sorte Antwort, die ein Prüfer
+geben können muss, damit seine Befunde etwas wert sind.
+
+**Der gemeinsame Nenner aller neun Befunde** ist EIN struktureller Mangel, und
+das ist die eigentliche Erkenntnis: Es gibt keine Zusicherung darüber, WELCHE
+Dateien der echte Scan tatsächlich gelesen hat. Alles, was es gibt, sind
+Zahlen — und jede dieser Zahlen lässt sich aus derselben Quelle erzeugen wie
+ihr Sollwert. Vier der neun Befunde sind nur Ausprägungen davon.
+
+## Der Regress: jede Behebung erzeugt die nächste Blindstelle (13.09.2026, fünfte Runde)
+
+Ich hatte diese Runde als LETZTE angesetzt und mich vorher auf eine
+Abbruchregel festgelegt: nur noch blockierende Befunde werden gebaut. Sie kam
+mit zwei blockierenden zurück, 11,78 $ — der teuerste Lauf des Tages, weil die
+Prüfung 49 Suchen und 13 Runden brauchte.
+
+**Beide sind derselbe Fehler wie in Runde 4, nur eine Ebene tiefer — und die
+Ebene hat MEINE eigene Behebung eingezogen.**
+
+Runde 4 hatte gezeigt: der Wächter sichert eine ZAHL zu, wo er eine MENGE
+zusichern muss. Die Behebung ersetzte den Zähler durch `gelesenePfade`, die
+Liste der tatsächlich gelesenen Pfade, und verglich sie elementweise gegen die
+gescannten Dateien. Das sah nach dem Ende der Klasse aus.
+
+Gemessen, mit einer ECHTEN Falle in `verify-daily.js` als gemeinsamer
+Gegenprobe (Positivkontrolle zuerst: unmutiert meldet der Wächter sie,
+**EXIT 1, drei Kreuze**):
+
+    // in scanneDateien(), eine Zeile:
+    fs.readFileSync(basisVerzeichnis ? path.join(basisVerzeichnis, dateipfade[0]) : rel, 'utf8')
+    -> EXIT 0, 86 PASS / 0 FAIL
+
+    // an alleGescanntenDateien(), eine Zeile:
+    ergebnis.push(...wurzelJsDateien(scanFehler, wurzelEintraege).slice(0, 7));
+    -> EXIT 0, 86 PASS / 0 FAIL
+
+Im ersten Fall wird bei jedem Durchlauf DIESELBE erste Datei gelesen, während
+`gelesenePfade.push(rel)` weiterhin alle 186 verschiedenen Namen protokolliert.
+Der Mengenvergleich, den ich gerade als Lösung eingebaut hatte, bestätigt
+zufrieden eine Menge, die aus den ANGEFORDERTEN Namen stammt — nicht aus dem,
+was gelesen wurde. Im zweiten Fall wird die Wurzelliste auf sieben Einträge
+gekürzt; die literale Mindestzahl für Wurzeldateien steht auf genau 7, und der
+Leser bekommt die schon verkürzte Liste und bestätigt korrekt, dass er *diese*
+gelesen hat.
+
+**Das Muster, und es ist allgemeiner als dieser Wächter:** Jeder Nachweis, den
+ein Prüfling über die eigene Arbeit führt, stammt aus seinem EIGENEN
+Datenfluss. Man kann ihn beliebig verfeinern — Zahl, dann Menge, dann Menge
+mit Reihenfolge — und verschiebt die Lücke nur eine Ebene tiefer, statt sie zu
+schliessen. Der Regress endet erst an einer Referenz von AUSSEN.
+
+Für diesen Wächter heisst das konkret: die erwartete Dateimenge kommt aus
+`git ls-files` (der Scanner benutzt es nicht), und P6 ruft mit MEHREREN
+verschiedenen Dateien in EINEM Aufruf, damit ein falsch gelesener Inhalt eine
+falsche Fundzuordnung erzeugt statt nur eine falsche Zahl. Drei getrennte
+Ein-Datei-Aufrufe ersetzen das nicht — bei einer einelementigen Liste ist
+`rel` immer `dateipfade[0]`, die Mutation ist dort unsichtbar.
+
+**Was das über die Abbruchregel sagt:** Sie war richtig formuliert und hat
+funktioniert — „nur noch blockierend" hat die drei Anmerkungen dieser Runde
+korrekt aussortiert. Falsch war die Ankündigung „letzte Runde". Man kann
+festlegen, WAS man noch baut; man kann nicht vorher festlegen, dass nichts
+Blockierendes mehr kommt.
+
+**Kosten bis hier, damit es jemand gegen den Nutzen halten kann:** fünf
+Bau-Runden, fünf Gegenlesungen (3,72 + 2,89 + 3,38 + 3,22 + 11,78 = 24,99 $)
+plus eine Claude-Review, für EINE neue Testdatei. Der Gegenwert ist ein
+Wächter, der neun gemessene Wege, still zu erblinden, nicht mehr hat — und ein
+Geschwisterwächter im selben Repo, der die meisten davon weiterhin hat.
