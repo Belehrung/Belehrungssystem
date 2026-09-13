@@ -750,6 +750,32 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   auftritt. Gegenmittel: Fixtures, in denen jede Bedeutung eine ANDERE Zahl
   trägt (hier `11, 999` auf 40 Zeilen → von 11, bis 40, gesamt 40,
   Ausschnitt 30) — vier verschiedene Werte, und jede Verwechslung fällt auf.
+- **Eine Funktion auszulagern macht sie PRÜFBAR, nicht GEPRÜFT — und ein Test,
+  der sie ANDERS aufruft als die Produktion, prüft einen Zweig, den es in
+  Produktion nicht gibt.** Gemessen am 13.09.2026, und zwar an einer Behebung,
+  die genau diese Klasse schliessen sollte: der Lesepfad eines Wächters wurde
+  in `scanneDateien(dateipfade, basisVerzeichnis)` ausgelagert, damit ihn
+  endlich ein Test durchlaufen kann. Der neue Test rief sie OHNE Basispfad
+  (absolute Pfade), der echte Scan MIT. Folge, je einzeln gemessen:
+  `const f = basisVerzeichnis ? [] : findeTreffer(roh)` -> **EXIT 0, 49 PASS /
+  0 FAIL**, obwohl keine einzige Bestandsdatei mehr geprüft wurde; und
+  `scanneDateien([], ROOT)` statt der echten Dateiliste -> **ebenfalls EXIT 0**,
+  obwohl gar nichts mehr gelesen wurde. Die Untergrenze „mindestens 170 Dateien
+  gescannt" hielt beide Male, weil sie die AUFGELISTETEN Dateien zählt, nicht
+  die gelesenen. Zwei Gegenmittel, beide billig: der Test ruft die
+  ausgelagerte Funktion in der PRODUKTIONSFORM auf (dieselben Argumente,
+  dieselben Typen), und die Funktion gibt zurück, wie viel sie tatsächlich
+  getan hat (hier: Anzahl gelesener Dateien), damit eine Zusicherung das gegen
+  die erwartete Menge halten kann. Eine Mengenschwelle, die eine LISTE misst
+  statt der VERARBEITUNG, ist keine Absicherung der Verarbeitung.
+- **Wer EINEN Eintrittspunkt absichert, hat nicht die Eintrittspunkte
+  abgesichert.** Am selben Tag, in derselben Datei: ein Symlink im Baum-Scan
+  wurde neu als Fehler gemeldet — der Wurzelverzeichnis-Scan lief aber an
+  dieser Prüfung vorbei. Gemessen mit einem Wurzel-Symlink auf eine Datei mit
+  echter Falle: **EXIT 0, 49 PASS / 0 FAIL, „0 von 186 Dateien"** — dieselbe
+  Dateizahl wie ohne ihn, die Falle vollständig unsichtbar. Vor jeder
+  Behebung an einer Sammel-, Scan- oder Filterstelle deshalb zählen, wie viele
+  Wege in sie hineinführen, und jeden einzeln messen.
 - **Ein Mutationsmuster, das mehr als einmal passt, mutiert lautlos die
   falsche Stelle — und das Grün sieht aus wie ein Befund GEGEN den Test.**
   Gemessen am 13.09.2026, eine Stunde nachdem dieselbe Mehrdeutigkeit im

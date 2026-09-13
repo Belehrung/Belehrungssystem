@@ -34,6 +34,7 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 13.09.2026 | Bestaetigungsrunde: Deckel gilt dem Ausschnitt | Diff 336 Zeilen, Suchen 5, Lesungen 9, Token rein 174972, Token raus 6859, Runden 5 | 3 | 3 | 0 | 2,70 $ |
 | 13.09.2026 | Waechter gegen Zeitzonenfalle (repo-weit, statisch) | Diff 490 Zeilen, Suchen 13, Lesungen 22, Token rein 246849, Token raus 8508, Runden 6 | 5 | 5 | 0 | 3,72 $ |
 | 13.09.2026 | Bestaetigungsrunde: Waechter Zeitzonenfalle, fuenf Behebungen | Diff 331 Zeilen, Suchen 9, Lesungen 17, Token rein 185595, Token raus 7654, Runden 6 | 3 | 3 | 0 | 2,89 $ |
+| 13.09.2026 | Zweite Bestaetigungsrunde: Waechter Zeitzonenfalle, Runde-2-Behebungen | Diff 418 Zeilen, Suchen 9, Lesungen 18, Token rein 226531, Token raus 7283, Runden 6 | 6 | 5 | 1 (Schwereeinstufung: mkdtemp-Fixtur als „blockierend", gegen 64 gleichartige Testdateien und den Zweck der Regel gemessen) | 3,38 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -311,3 +312,75 @@ Vormittag in der CLAUDE.md; ich bin am selben Tag hineingelaufen.
 
 **Kosten der Bestätigungsrunde: 2,89 $** gegen 3,72 $ der ersten. Wieder war
 die engere Frage die billigere.
+
+## Die DRITTE Runde über denselben Wächter — und was sie über Auslagerungen zeigt (13.09.2026 nachts)
+
+Derselbe statische Wächter gegen die Zeitzonenfalle, dritter Gegenlese-Lauf,
+3,38 $. Sechs Befunde, fünf haben nach eigener Nachmessung getragen, einer ist
+in der Schwere gefallen. Zwei der getragenen waren BLOCKIEREND — nach zwei
+vorangegangenen Runden über dieselbe Datei.
+
+**Warum das kein Argument gegen die Rundenregel ist, sondern für sie.** Die
+CLAUDE.md sagt seit heute: Regelfall eine Runde, eine weitere nur, wenn die
+Behebung VERHALTEN ändert statt bloß eine Zusicherung zu ergänzen. Genau das
+war hier jedes Mal der Fall — Runde 2 hatte die Scanschleife in eine eigene
+Funktion ausgelagert, eine Regex umgebaut und einen neuen Fehlerweg
+eingeführt. Die Regel hat also richtig vorhergesagt, dass noch einmal
+hingesehen werden muss. Sie taugt.
+
+**Der Befund, der es wert ist, allgemein aufgeschrieben zu werden:** Runde 2
+hatte eine Lücke geschlossen, indem sie den Lesepfad in `scanneDateien()`
+AUSLAGERTE — vorher prüfte kein Test den vollständigen Weg Lesen →
+Erkennen → Sammeln. Die neue Funktion nimmt einen optionalen Basispfad. Der
+echte Scan ruft sie MIT Basisverzeichnis, der neue Test OHNE. Damit prüfte der
+Test einen Zweig, den die Produktion nie geht.
+
+Selbst gemessen, beide Male mit vorher bestätigter Mutation und Rückbau über
+eine beiseitegelegte Kopie:
+
+    const f = basisVerzeichnis ? [] : findeTreffer(roh);   -> EXIT 0, 49 PASS / 0 FAIL
+    scanneDateien([], ROOT) statt (gescannteDateien, ROOT) -> EXIT 0, 49 PASS / 0 FAIL
+
+Im ersten Fall wird keine einzige Bestandsdatei mehr auf Fallen geprüft, im
+zweiten überhaupt nichts mehr gelesen — und der Wächter meldet beide Male
+grün, einschließlich seiner Zeile „mindestens 170 Dateien gescannt". Die zählt
+die AUFGELISTETEN Dateien, nicht die gelesenen.
+
+Daraus die Regel, die jetzt auch in der CLAUDE.md steht: **eine Funktion
+auszulagern macht sie PRÜFBAR, nicht GEPRÜFT** — und wenn der Test sie anders
+aufruft als die Produktion, ist sie es weiterhin nicht.
+
+**Der zweite blockierende Befund war eine halbe Behebung.** Runde 2 hatte
+Symlinks geschlossen — aber nur im Baum-Scan, nicht im Wurzelverzeichnis, das
+an `verarbeiteEintrag()` vorbeigeht. Selbst gemessen: ein Wurzel-Symlink
+`zzz_gegenprobe_symlink.js` auf eine Datei mit einer echten Falle ergab
+`EXIT 0, 49 PASS / 0 FAIL, „0 von 186 Dateien"` — dieselbe Dateizahl wie ohne
+ihn. Die Falle war vollständig unsichtbar. Auch das ist ein Muster: wer einen
+Eintrittspunkt absichert, hat nicht die Eintrittspunkte abgesichert.
+
+**Der gefallene Befund war eine Schwereeinstufung**, und sie ist die dritte
+dieser Art an einem Tag. Die Gegenlesung stufte die temporäre Datei der neuen
+Fixtur (`mkdtempSync`/`writeFileSync`/`rmSync`) als blockierenden Verstoß gegen
+„Tests fassen kein echtes Dateisystem an" ein und verlangte einen Stub. Die
+Regel zielt aber auf `pm2`, `nginx`, `/var/www` — echte Prozesse, Dienste und
+Produktivpfade, weil dieselbe Suite auf dem Live-Server als Deploy-Gate läuft;
+64 Testdateien dieser Suite benutzen `mkdtempSync`. Vor allem: ein Stub auf
+`readFileSync` nähme der Fixtur genau das, wofür sie da ist. Die genannten
+Restrisiken (untergeschobener Symlink zwischen `mkdtemp` und dem Schreiben,
+`os.tmpdir()` über die Umgebung verschiebbar, `finally` läuft bei `SIGKILL`
+nicht) treffen zu und stehen jetzt im Kommentar — sie tragen die Umstellung
+nur nicht.
+
+**Was diese drei Runden zusammen NICHT belegen.** Es ist EIN Artefakt. Dass
+hier drei Runden je echte Befunde brachten, sagt etwas über diese Datei — ein
+Wächter, dessen Fehler sich definitionsgemäß als grüner Lauf tarnen —, nicht
+über Beiträge im Allgemeinen. Die Kosten sind ebenfalls real: 3,72 $ + 2,89 $
++ 3,38 $ = 9,99 $ für eine einzige neue Testdatei, dazu vier Bau-Runden. Wer
+das verallgemeinern will, braucht andere Artefakte in dieser Tabelle.
+
+**Und eine Selbstkorrektur, die hierher gehört:** dieser Lauf hat auch
+gefunden, dass meine eigene Aufräumarbeit unvollständig war. Ich hatte kurz
+zuvor die Herkunftsvermerke im Wächter vereinheitlicht (drei verschiedene
+Rundennummern für Befunde aus EINEM Bericht) — und dabei vier Stellen
+übersehen, alle in AUSGABETEXTEN statt in Kommentaren. Wer eine Datei
+aufräumt, prüft danach mit demselben `grep`, mit dem er sie gefunden hat.
