@@ -23,6 +23,12 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 13.09.2026 | Gegenlesung Drossel-Rennen `/passwort-vergessen` | Diff 129 Zeilen + Repo-Lesezugriff (20 Suchen, 30 Lesungen), 704k Token über 12 Runden | 3 | 2 | 1 (Schwereeinstufung) | 9,38 $ |
 | 13.09.2026 | Gegenlesung Archiv-Drossel, **abgebrochen** | Geheimnis-Riegel schlug nach 2 Runden an (Fehlalarm) | — | — | — | 0,32 $ |
 | 13.09.2026 | Gegenlesung Archiv-Drossel, Wiederholung ohne 13 gesperrte Dateien | Diff 115 Zeilen + Repo-Lesezugriff (130 Suchen, 26 Lesungen), 1.117k Token über 19 Runden | 3 | 2 | 1 (Prämissenfehler im Auftrag) | 15,39 $ |
+| 13.09.2026 | Gegenlesung `allSettled`-Abdeckung | Diff 111 Zeilen + Repo-Lesezugriff (19 Suchen, 24 Lesungen), 562k Token über 9 Runden | 2 | 2 | 0 | 7,47 $ |
+<!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
+     UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
+     verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
+     nicht still ab. Grund fuer die Marke: diese Datei hat ZWEI Tabellen, und
+     ohne sie landete die Zeile in der falschen. -->
 
 **Diese Datei ist der einzige Ort für die Zahlen.** Die CLAUDE.md trug die
 Läufe vom 10.09. bis zum 13.09.2026 als eigene Tabelle — dieselbe Aussage an
