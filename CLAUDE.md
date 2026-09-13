@@ -1033,6 +1033,18 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
   gilt dafür also NICHT. Im Archiv liegt je Job eine Textdatei plus ein
   Verzeichnis mit einer Datei je Schritt; `grep` darüber findet die
   FAIL-Zeile sofort.
+- **Nach jedem Squash-Merge die entstandene Botschaft ZURÜCKLESEN.** Am
+  13.09.2026 sind bei ZWEI Merges hintereinander die schliessenden Marken des
+  Werkzeugaufrufs (`</commit_message>`, `</invoke>`) im Parameterwert gelandet
+  und damit wörtlich in die Master-Historie. Gemerkt habe ich es erst, als die
+  Botschaft beim Lesen eines Deploy-Laufs zurückkam — zwei Merges zu spät.
+  Dieselbe Klasse wie früher beim `git commit` mit Heredoc, nur über ein
+  anderes Werkzeug: eine mehrzeilige Botschaft, die durch ein Argument geht,
+  kann das Markup ihres eigenen Aufrufs einschliessen. Umschreiben scheidet
+  aus (Force-Push auf master), die Botschaft bleibt also falsch stehen —
+  deshalb hinterher LESEN und sehen, dass sie dort endet, wo sie enden soll.
+  Ein Commit, den niemand zurückgelesen hat, ist ungeprüft; das gilt für die
+  eigene Botschaft wie für fremden Code.
 
 ## Werkzeuge
 
