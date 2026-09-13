@@ -26,6 +26,9 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 13.09.2026 | Gegenlesung `allSettled`-Abdeckung | Diff 111 Zeilen + Repo-Lesezugriff (19 Suchen, 24 Lesungen), 562k Token über 9 Runden | 2 | 2 | 0 | 7,47 $ |
 | 13.09.2026 | Gegenlesung Selbstprotokollierung des Gegenlesers | **abgebrochen** (Geheimnis-Riegel bei einer Werkzeug-Lesung (tools/geheimnis-riegel.js (116 von 300 Zeilen))): Diff 600 Zeilen, Suchen 1, Lesungen 4, Token rein 12886, Token raus 225, Runden 1 | — | — | — | 0,18 $ |
 | 13.09.2026 | Gegenlesung Selbstprotokollierung des Gegenlesers, Wiederholung ohne die Musterdatei | Diff 600 Zeilen, Suchen 8, Lesungen 14, Token rein 190835, Token raus 9742, Runden 5 | 6 | offen (Nacharbeit mit Gegenproben laeuft) | offen | 3,12 $ |
+| 13.09.2026 | Gegenlesung (e3)-Zustandsbeweis und neun Kardinalitaetspruefungen | Diff 143 Zeilen, Suchen 14, Lesungen 29, Token rein 592748, Token raus 8581, Runden 8 | 3 | offen (Nacharbeit mit Gegenproben laeuft; Prozesstod bei frueher Ablehnung bereits selbst gemessen) | offen | 8,05 $ |
+| 13.09.2026 | Gegenlesung CI-Fehlerlogs als Artefakt und Verrottungswaechter | **abgebrochen** (Geheimnis-Riegel auf dem Eingabediff): Diff 127 Zeilen, Suchen 0, Lesungen 0, Token rein 0, Token raus 0, Runden 0 | — | — | — | 0,00 $ |
+| 13.09.2026 | Gegenlesung CI-Fehlerlogs als Artefakt, Wiederholung mit geschwaerzter Kennung | Diff 127 Zeilen, Suchen 8, Lesungen 15, Token rein 221528, Token raus 9633, Runden 6 | 2 | offen (Nacharbeit laeuft; die Waechter-Umgehung habe ich selbst nachgebaut und gemessen) | offen | 3,49 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -131,3 +134,27 @@ dahin gehört dort `offen` und nicht `—`.
 **Das ist eine erkannte Lücke der Automatisierung, keine Eigenschaft der
 Daten.** Sie ist hier notiert, damit sie nicht in einem Monat als „damals
 wurde nichts gefunden" gelesen wird.
+
+## Der Geheimnis-Riegel bricht zu grob ab (13.09.2026)
+
+Drei von sieben Laufversuchen an diesem Tag endeten am eigenen Riegel, ohne
+dass je geprüft wurde:
+
+- zweimal, weil der Prüfer `tools/geheimnis-riegel.js` lesen wollte. Diese
+  Datei DEFINIERT die Muster und enthält sie deshalb zwangsläufig; 116 von
+  300 Zeilen würden geschwärzt, das reißt den Deckel und beendet den
+  **ganzen** Lauf statt nur diese eine Lesung. Kosten: 0,32 $ und 0,18 $.
+- einmal auf dem EINGABEDIFF, weil in den Kontextzeilen von `ci.yml` eine
+  Wegwerf-Zugangskennung der CI-Datenbank steht. Kosten 0,00 $ (es wurde
+  nichts gesendet).
+
+Der dritte Fall ist KEIN Fehler: der Abbruch auf dem Eingabediff ist
+absichtlich so gebaut, damit der Auftraggeber sein eigenes Geheimnis SIEHT
+statt es stillschweigend geschwärzt zu bekommen. Ich habe es gesehen, die
+Zeile selbst geschwärzt und im Auftrag dazugeschrieben, was dort stand und
+warum — genau der vorgesehene Ablauf.
+
+Die ersten beiden sind einer: **eine abgelehnte Lesung sollte eine abgelehnte
+Lesung sein, kein Abbruch des ganzen Laufs.** Das Werkzeug kann das schon —
+`suche()` schwärzt und läuft weiter —, nur der Deckel bei `lies()` kippt in
+einen Gesamtabbruch. Steht als eigener Punkt aus.
