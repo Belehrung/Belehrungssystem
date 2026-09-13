@@ -28,10 +28,15 @@
 // bevor es in die naechste Anfrage geht. Seit 13.09.2026 wird eine
 // Trefferzeile dabei GESCHWAERZT (die ganze Zeile durch einen Marker
 // ersetzt, bei PEM der ganze Block) und der Lauf geht weiter; der Bericht
-// nennt am Ende jede geschwaerzte Stelle. SOFORT abgebrochen (Exit 3, ohne
-// dass die Anfrage gesendet wird) wird nur noch, wenn bei lies() der Deckel
-// reisst (mehr als 20 Zeilen, oder ab 8 Zeilen Ausschnitt mehr als 25 %) —
-// oder wenn der EINGEGEBENE Diff ein Geheimnis enthaelt, siehe main().
+// nennt am Ende jede geschwaerzte Stelle. Reisst bei lies() der Deckel
+// (mehr als 20 Zeilen, oder ab 8 Zeilen Ausschnitt mehr als 25 %), wird
+// daraus KEIN Gesamtabbruch mehr (Nacharbeit 13.09.2026, Anlass: zwei
+// Laeufe brachen an derselben Datei ab, OHNE dass ueberhaupt geprueft
+// wurde): main() macht daraus ein abgelehntes Funktionsergebnis, sendet
+// weiterhin NICHTS aus der Datei, aber der Lauf geht weiter und der
+// Bericht nennt die Datei am Ende unter "ABGELEHNTE LESUNGEN". SOFORT
+// abgebrochen (Exit 3, ohne dass die Anfrage gesendet wird) wird nur noch,
+// wenn der EINGEGEBENE Diff ein Geheimnis enthaelt, siehe main().
 //
 // AUFRUF:
 //   node tools/gegenleser-repo.js <diff.txt> --brief=<auftrag.txt>
@@ -46,9 +51,11 @@
 // mitgelieferten Standardauftrag zu pruefen.
 //
 // EXIT-CODES: 0 fertig, 2 kein Schluessel/falscher Aufruf, 3 Geheimnis-Riegel
-// hat angeschlagen, 4 Runden- oder Mengenlimit erreicht (Bericht
-// UNVOLLSTAENDIG), 5 das Modell hat am Ende keinen Text geliefert, 6 kein
-// --brief angegeben oder die Datei ist leer/unlesbar, 1 sonstiger Fehler.
+// auf dem EINGEGEBENEN Diff hat angeschlagen (eine abgelehnte Lesung
+// waehrend des Laufs bricht seit 13.09.2026 NICHT mehr ab, siehe oben),
+// 4 Runden- oder Mengenlimit erreicht (Bericht UNVOLLSTAENDIG), 5 das
+// Modell hat am Ende keinen Text geliefert, 6 kein --brief angegeben oder
+// die Datei ist leer/unlesbar, 1 sonstiger Fehler.
 //
 // LAUF-PROTOKOLL (seit 13.09.2026, TEIL D weiter unten): JEDER echte Lauf --
 // Erfolg wie Abbruch ueber Exit 3/4/5 -- traegt sich selbst als Zeile in
@@ -232,10 +239,15 @@ const WERKZEUGE = [
     },
 ];
 
-// Wird geworfen, wenn der Geheimnis-Riegel auf einem Funktionsergebnis
-// anschlaegt. Eigene Klasse, damit main() diesen Fall von einem gewoehnlichen
-// "abgelehnt: ..."-Funktionsergebnis unterscheiden kann: hier wird NICHT
-// weitergemacht, sondern sofort mit Exit 3 abgebrochen.
+// Wird geworfen, wenn der Geheimnis-Riegel bei lies() auf zu vielen Zeilen
+// anschlaegt (der DECKEL, nicht das einzelne Schwaerzen -- siehe
+// entferneGeheimnisse()/werkzeugLies() weiter unten, beide unveraendert).
+// Eigene Klasse, damit main() diesen Fall von einem gewoehnlichen
+// "abgelehnt: ..."-Funktionsergebnis unterscheiden kann. main() macht daraus
+// seit 13.09.2026 selbst ein solches Funktionsergebnis und der Lauf geht
+// weiter -- NICHT mehr wie zuvor ein sofortiger Abbruch mit Exit 3 (den
+// gibt es weiterhin, aber nur noch beim Riegel auf dem EINGEGEBENEN Diff,
+// siehe main()).
 class GeheimnisAbbruch extends Error {
     constructor(treffer, ort) {
         super('Geheimnis-Riegel ausgeloest bei ' + ort);
@@ -876,6 +888,11 @@ async function main(argvUeberschreibung) {
     let completionTokenSumme = 0;
     const gelesenePfade = [];
     const geschwaerzteStellen = [];
+    // Deckel gerissen bei lies() (13.09.2026, Nacharbeit): keine dieser
+    // Dateien wurde je gesendet -- anders als geschwaerzteStellen (dort kam
+    // die Datei AN, nur eine Zeile fehlt) hat der Pruefer sie NIE gesehen.
+    // Eigene Liste, damit der Bericht diesen Unterschied auch zeigt.
+    const abgelehnteLesungen = [];
     // Punkt A (Nacharbeit 13.09.2026, Gegenlesung): main() hatte einen Pfad,
     // der bei einem geworfenen Fehler NACH Modellkontakt (anfragen() wirft
     // in einer spaeteren Runde, nachdem eine fruehere schon Tokens
@@ -971,6 +988,16 @@ async function main(argvUeberschreibung) {
                 console.log('  (keine)');
             } else {
                 for (const st of geschwaerzteStellen) console.log(`  ${st.pfad}:${st.zeile} (${st.name})`);
+            }
+            // Eine verschwiegene Luecke ist schlimmer als eine benannte
+            // (13.09.2026, Nacharbeit): diese Dateien wurden NIE gesendet,
+            // nicht bloss an einer Stelle geschwaerzt -- der Leser des
+            // Berichts muss wissen, welche der Pruefer nie gesehen hat.
+            console.log('ABGELEHNTE LESUNGEN (Deckel gerissen — diese Dateien hat der Pruefer NIE gesehen):');
+            if (abgelehnteLesungen.length === 0) {
+                console.log('  (keine)');
+            } else {
+                for (const a of abgelehnteLesungen) console.log(`  ${a.ort.replace(/\)$/, `, Muster: ${a.muster.join(', ')})`)}`);
             }
             console.log(`Suchen: ${sucheAnzahl}  Lesungen: ${liesAnzahl}  Ablehnungen: ${ablehnungenAnzahl}`);
             console.log(`Runden: ${runde}  Token rein: ${promptTokenSumme}  Token raus: ${completionTokenSumme}`);
@@ -1068,14 +1095,31 @@ async function main(argvUeberschreibung) {
                     }
                 } catch (e) {
                     if (e instanceof GeheimnisAbbruch) {
-                        console.error('ABBRUCH: Geheimnis-Riegel hat angeschlagen — es wurde NICHTS weiter gesendet.');
-                        for (const t of e.treffer) console.error(`  Muster "${t.name}" in ${e.ort}`);
-                        protokollSchreiben({ typ: 'geheimnis_abbruch', ort: e.ort, muster: e.treffer.map((t) => t.name) });
-                        zusammenfassungAusgeben();
-                        protokollLaufEintragen(`Geheimnis-Riegel bei einer Werkzeug-Lesung (${e.ort})`);
-                        return 3;
+                        // Eine ABGELEHNTE Lesung ist kein Abbruch des Laufs
+                        // mehr (13.09.2026, Nacharbeit): der Deckel bleibt
+                        // scharf -- es wird weiterhin NICHTS aus der Datei
+                        // gesendet --, aber statt den GANZEN Lauf zu
+                        // beenden, geht das Modell mit einem gewoehnlichen
+                        // abgelehnten Funktionsergebnis weiter, so wie bei
+                        // jeder anderen Ablehnung auch. Der Text nennt die
+                        // Datei und die Musternamen, aber KEINE Zeile und
+                        // KEINEN Musterinhalt -- ein erneuter Versuch liefert
+                        // erkennbar dasselbe Ergebnis, das Modell muss also
+                        // nicht nachfragen.
+                        const musterNamen = [...new Set(e.treffer.map((t) => t.name))];
+                        console.error(`LESUNG ABGELEHNT (Geheimnis-Deckel): ${e.ort} — nichts gesendet, der Lauf geht weiter.`);
+                        for (const name of musterNamen) console.error(`  Muster "${name}"`);
+                        protokollSchreiben({ typ: 'geheimnis_ablehnung', ort: e.ort, muster: musterNamen });
+                        abgelehnteLesungen.push({ ort: e.ort, muster: musterNamen });
+                        ergebnis = {
+                            text: `abgelehnt: Geheimnis-Riegel — ${e.ort} enthaelt zu viele Zeilen, die zu den Mustern `
+                                + `${musterNamen.join(', ')} passen; deshalb wird NICHTS aus dieser Datei geliefert. `
+                                + 'Ein erneuter Versuch liefert dasselbe Ergebnis.',
+                            abgelehnt: true,
+                        };
+                    } else {
+                        throw e;
                     }
-                    throw e;
                 }
 
                 if (ergebnis.abgelehnt) ablehnungenAnzahl++;
@@ -1162,7 +1206,7 @@ function httpsStubBauen(warteschlange, aufgezeichnet) {
 }
 
 async function selbsttest() {
-    const ERWARTETE_FAELLE = 58;
+    const ERWARTETE_FAELLE = 64;
     let gelaufen = 0;
     let fehler = 0;
     const pruefen = (bezeichnung, bedingung) => {
@@ -1524,6 +1568,92 @@ async function selbsttest() {
                 && geschwaerztBlock.includes('  schwaerzen-telegram.js:6 (Telegram-Bot-Token)')
                 && !geschwaerztBlock.includes('GESCHWAERZTE STELLEN (Geheimnis-Riegel; dort war die Pruefung blind):\n  (keine)'));
         }
+
+        // ===== LAUF E: geplatzter Lesungs-Deckel wird zur ABLEHNUNG, nicht
+        // mehr zum ABBRUCH (Nacharbeit 13.09.2026) =====
+        // schwaerzen-viele.js reisst in werkzeugLies() weiterhin denselben
+        // Deckel wie in DECKEL 27 oben (der bleibt unveraendert gruen,
+        // s. dort) -- main() macht daraus seit heute aber KEIN Exit 3 mehr,
+        // sondern ein abgelehntes Funktionsergebnis, und der Lauf laeuft bis
+        // zum regulaeren Abschluss weiter. Gemessen wird an allen Stellen,
+        // die main() tatsaechlich anfasst: dem gesendeten Funktionsergebnis
+        // (nicht an einer Behauptung im Text), der Konsole, dem
+        // JSONL-Protokoll UND der ASTRA-LAEUFE-Zeile.
+        {
+            const alterKey = process.env.OPENAI_API_KEY;
+            const alteDatei = process.env.OPENAI_KEY_DATEI;
+            process.env.OPENAI_API_KEY = 'selbsttest-dummy-schluessel-ohne-netz';
+            delete process.env.OPENAI_KEY_DATEI;
+            const echtesHttpsRequest = https.request;
+            const echtesLog = console.log;
+            const echtesError = console.error;
+
+            const aufgezeichnetE = [];
+            const ausgabeZeilenE = [];
+            const fehlerZeilenE = [];
+            const warteschlangeE = [
+                antwortKoerperBauen(elementFunktionsaufrufBauen('call-e1', 'lies', { pfad: 'schwaerzen-viele.js', von: 1, bis: 40 }), 100, 50),
+                antwortKoerperBauen(elementTextBauen('TESTBERICHT-ABLEHNUNG'), 100, 50),
+            ];
+            https.request = httpsStubBauen(warteschlangeE, aufgezeichnetE);
+            console.log = (msg) => ausgabeZeilenE.push(String(msg));
+            console.error = (msg) => fehlerZeilenE.push(String(msg));
+
+            const protokollPfadE = path.join(klon, 'selbsttest-protokoll-e.jsonl');
+            let codeE;
+            try {
+                codeE = await main([
+                    path.join(klon, 'harmlos.txt'),
+                    `--brief=${briefFixturePfad}`,
+                    `--wurzel=${klon}`,
+                    '--max-runden=10',
+                    `--protokoll=${protokollPfadE}`,
+                    '--zweck=selbsttest-lauf-e-ablehnung',
+                ]);
+            } finally {
+                console.log = echtesLog;
+                console.error = echtesError;
+                https.request = echtesHttpsRequest;
+                if (alterKey !== undefined) process.env.OPENAI_API_KEY = alterKey; else delete process.env.OPENAI_API_KEY;
+                if (alteDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteDatei;
+            }
+
+            pruefen(`LAUF E ABGESCHLOSSEN 36 (geplatzter Lesungs-Deckel bricht NICHT mehr den Lauf ab: Exit ${codeE} (erwartet 0), ${aufgezeichnetE.length} Anfragekoerper gebaut (erwartet 2 -- ein Abbruch nach der ersten Anfrage waere nur 1), Bericht kam an)`,
+                codeE === 0 && aufgezeichnetE.length === 2
+                && ausgabeZeilenE.some((z) => z.includes('TESTBERICHT-ABLEHNUNG'))
+                && ausgabeZeilenE.some((z) => z.includes('Bericht regulaer erstellt')));
+
+            pruefen('LAUF E KONSOLE 37 (Meldung heisst "LESUNG ABGELEHNT", nennt Ort und "der Lauf geht weiter" -- NICHT mehr "ABBRUCH")',
+                fehlerZeilenE.some((z) => z.includes('LESUNG ABGELEHNT') && z.includes('schwaerzen-viele.js (30 von 40 Zeilen)') && z.includes('der Lauf geht weiter'))
+                && !fehlerZeilenE.some((z) => z.includes('ABBRUCH') && z.toLowerCase().includes('geheimnis')));
+
+            const funktionsausgabeE = aufgezeichnetE.length === 2
+                ? aufgezeichnetE[1].input.filter((e) => e.type === 'function_call_output' && e.call_id === 'call-e1').map((e) => e.output).join('\n')
+                : '';
+            pruefen(`LAUF E FUNKTIONSERGEBNIS 38 (das an das Modell zurueckgegebene Funktionsergebnis fuer call-e1 ist eine Ablehnung, nennt Datei und Musternamen, aber KEIN Geheimnismaterial -- Fragment "N".repeat(20) kommt ${vorkommen(funktionsausgabeE, 'N'.repeat(20))}x vor, erwartet 0)`,
+                funktionsausgabeE.startsWith('abgelehnt:')
+                && funktionsausgabeE.includes('schwaerzen-viele.js (30 von 40 Zeilen)')
+                && funktionsausgabeE.includes('GitHub-Token')
+                && funktionsausgabeE.includes('Ein erneuter Versuch liefert dasselbe Ergebnis')
+                && vorkommen(funktionsausgabeE, 'N'.repeat(20)) === 0);
+
+            const zusammenfassungE = ausgabeZeilenE.join('\n');
+            pruefen('LAUF E ZUSAMMENFASSUNG 39 (neuer Block "ABGELEHNTE LESUNGEN" nennt die Datei mit Zeilenzahl und Musternamen)',
+                zusammenfassungE.includes('ABGELEHNTE LESUNGEN (Deckel gerissen — diese Dateien hat der Pruefer NIE gesehen):')
+                && zusammenfassungE.includes('  schwaerzen-viele.js (30 von 40 Zeilen, Muster: GitHub-Token)'));
+
+            const protokollEintraegeE = fs.readFileSync(protokollPfadE, 'utf8').trim().split('\n').filter(Boolean).map((z) => JSON.parse(z));
+            pruefen('LAUF E JSONL-PROTOKOLL 40 (ein Eintrag vom neuen Typ "geheimnis_ablehnung", KEINER mehr vom alten Typ "geheimnis_abbruch")',
+                protokollEintraegeE.some((e) => e.typ === 'geheimnis_ablehnung' && e.ort === 'schwaerzen-viele.js (30 von 40 Zeilen)'
+                    && Array.isArray(e.muster) && e.muster.includes('GitHub-Token'))
+                && !protokollEintraegeE.some((e) => e.typ === 'geheimnis_abbruch'));
+
+            const hintergrundNachLaufE = fs.readFileSync(process.env.ASTRA_LAUFPROTOKOLL, 'utf8');
+            const zeileE = hintergrundNachLaufE.split('\n').find((z) => z.includes('selbsttest-lauf-e-ablehnung'));
+            pruefen(`LAUF E ASTRA-LAEUFE-ZEILE 41 (der Lauf traegt sich als REGULAERER Abschluss ins Lauf-Protokoll ein, NICHT als Abbruch: Zeile "${zeileE}")`,
+                Boolean(zeileE) && !zeileE.includes('abgebrochen'));
+        }
+
         {
             const alterKey = process.env.OPENAI_API_KEY;
             const alteDatei = process.env.OPENAI_KEY_DATEI;
