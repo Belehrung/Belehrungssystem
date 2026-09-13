@@ -33,8 +33,12 @@
 // daraus KEIN Gesamtabbruch mehr (Nacharbeit 13.09.2026, Anlass: zwei
 // Laeufe brachen an derselben Datei ab, OHNE dass ueberhaupt geprueft
 // wurde): main() macht daraus ein abgelehntes Funktionsergebnis, sendet
-// weiterhin NICHTS aus der Datei, aber der Lauf geht weiter und der
-// Bericht nennt die Datei am Ende unter "ABGELEHNTE LESUNGEN". SOFORT
+// weiterhin NICHTS aus diesem AUSSCHNITT, aber der Lauf geht weiter und
+// der Bericht nennt ihn am Ende unter "ABGELEHNTE LESUNGEN". Der Deckel
+// gilt dabei fuer den ANGEFRAGTEN AUSSCHNITT, nicht fuer die Datei (so
+// stand es hier bis zur Gegenlesung vom 13.09.2026 faelschlich): ein
+// anderer oder kleinerer Bereich derselben Datei kann danach durchgehen
+// und steht dann zugleich unter "GELESENE DATEIEN". SOFORT
 // abgebrochen (Exit 3, ohne dass die Anfrage gesendet wird) wird nur noch,
 // wenn der EINGEGEBENE Diff ein Geheimnis enthaelt, siehe main().
 //
@@ -248,11 +252,28 @@ const WERKZEUGE = [
 // weiter -- NICHT mehr wie zuvor ein sofortiger Abbruch mit Exit 3 (den
 // gibt es weiterhin, aber nur noch beim Riegel auf dem EINGEGEBENEN Diff,
 // siehe main()).
+//
+// Nacharbeit 13.09.2026 (Gegenlesung): der Deckel gilt fuer den angefragten
+// AUSSCHNITT einer Datei, nicht fuer die Datei als Ganzes -- ein anderer
+// oder kleinerer Bereich derselben Datei kann danach trotzdem durchgehen.
+// "ort" war bislang ein fertiger Satz, den die Wurfstelle selbst zusammen-
+// baute (und der die Trefferzahl mit der ANGEFRAGTEN Ausschnittslaenge
+// verwechselbar machte, nicht mit der Dateilaenge) -- jetzt bekommt die
+// Ausnahme die Rohwerte und baut "ort" selbst, damit Bericht und
+// Ablehnungstext nicht mehr jeder fuer sich denselben Satz zusammenbauen
+// muessen und dabei auseinanderlaufen koennen.
 class GeheimnisAbbruch extends Error {
-    constructor(treffer, ort) {
+    constructor(treffer, { relativ, von, bis, gesamt, trefferZeilen, ausschnittZeilen }) {
+        const ort = `${relativ} Zeilen ${von}-${bis} (von ${gesamt})`;
         super('Geheimnis-Riegel ausgeloest bei ' + ort);
         this.treffer = treffer;
         this.ort = ort;
+        this.relativ = relativ;
+        this.von = von;
+        this.bis = bis;
+        this.gesamt = gesamt;
+        this.trefferZeilen = trefferZeilen;
+        this.ausschnittZeilen = ausschnittZeilen;
     }
 }
 
@@ -453,7 +474,18 @@ function werkzeugLies(pfad, von, bis) {
     const bereinigt = entferneGeheimnisse(ausschnittZeilen.join('\n'));
     if (bereinigt.zuViel) {
         const namen = [...new Set(bereinigt.entfernt.map((e) => e.name))].map((name) => ({ name }));
-        throw new GeheimnisAbbruch(namen, `${pruefung.relativ} (${bereinigt.entfernt.length} von ${ausschnittZeilen.length} Zeilen)`);
+        // gvon/ende, NICHT die ungekuerzten Argumente von/bis -- die sind an
+        // dieser Stelle schon auf Dateiende bzw. MAX_LIES_ZEILEN gekuerzt
+        // (s. o.), und genau dieser tatsaechlich gelesene Bereich gehoert in
+        // den Ablehnungstext, nicht der urspruenglich angefragte.
+        throw new GeheimnisAbbruch(namen, {
+            relativ: pruefung.relativ,
+            von: gvon,
+            bis: ende,
+            gesamt,
+            trefferZeilen: bereinigt.entfernt.length,
+            ausschnittZeilen: ausschnittZeilen.length,
+        });
     }
     // Zeilennummern auf die Datei umgerechnet, damit der Bericht am Ende die
     // blinde Stelle so nennt, wie man sie in der Datei wiederfindet.
@@ -888,10 +920,15 @@ async function main(argvUeberschreibung) {
     let completionTokenSumme = 0;
     const gelesenePfade = [];
     const geschwaerzteStellen = [];
-    // Deckel gerissen bei lies() (13.09.2026, Nacharbeit): keine dieser
-    // Dateien wurde je gesendet -- anders als geschwaerzteStellen (dort kam
-    // die Datei AN, nur eine Zeile fehlt) hat der Pruefer sie NIE gesehen.
-    // Eigene Liste, damit der Bericht diesen Unterschied auch zeigt.
+    // Deckel gerissen bei lies() (13.09.2026, Nacharbeit): dieser ANGEFRAGTE
+    // AUSSCHNITT wurde nie gesendet -- anders als geschwaerzteStellen (dort
+    // kam der Ausschnitt AN, nur eine Zeile fehlt) hat der Pruefer ihn NIE
+    // gesehen. Das gilt fuer den Ausschnitt, NICHT fuer die Datei: ein
+    // anderer oder kleinerer Bereich derselben Datei kann trotzdem als
+    // GELESEN dastehen (Gegenlesung 13.09.2026 -- die vorherige Fassung
+    // dieses Kommentars und der Berichtstext behaupteten genau das
+    // faelschlich ueber die ganze Datei). Eigene Liste, damit der Bericht
+    // diesen Unterschied auch zeigt.
     const abgelehnteLesungen = [];
     // Punkt A (Nacharbeit 13.09.2026, Gegenlesung): main() hatte einen Pfad,
     // der bei einem geworfenen Fehler NACH Modellkontakt (anfragen() wirft
@@ -990,14 +1027,26 @@ async function main(argvUeberschreibung) {
                 for (const st of geschwaerzteStellen) console.log(`  ${st.pfad}:${st.zeile} (${st.name})`);
             }
             // Eine verschwiegene Luecke ist schlimmer als eine benannte
-            // (13.09.2026, Nacharbeit): diese Dateien wurden NIE gesendet,
+            // (13.09.2026, Nacharbeit): dieser AUSSCHNITT wurde NIE gesendet,
             // nicht bloss an einer Stelle geschwaerzt -- der Leser des
-            // Berichts muss wissen, welche der Pruefer nie gesehen hat.
-            console.log('ABGELEHNTE LESUNGEN (Deckel gerissen — diese Dateien hat der Pruefer NIE gesehen):');
+            // Berichts muss wissen, welchen Ausschnitt der Pruefer nie
+            // gesehen hat. Ueberschrift spricht seit der Gegenlesung vom
+            // 13.09.2026 bewusst von AUSSCHNITTEN, nicht von Dateien: der
+            // Deckel gilt fuer den angefragten Bereich, nicht fuer die ganze
+            // Datei, und dieselbe Datei kann zugleich unter GELESENE DATEIEN
+            // stehen (ein anderer Ausschnitt kam durch). Baut die Zeile aus
+            // den strukturierten Feldern (Punkt 1 oben) statt aus einem
+            // String-Trick auf "ort" -- der hing daran, dass "ort" auf ")"
+            // endet, eine unnoetige Kopplung an die Textform.
+            console.log('ABGELEHNTE LESUNGEN (Geheimnis-Deckel — diese AUSSCHNITTE hat der Pruefer NIE gesehen; '
+                + 'andere Teile derselben Datei koennen geliefert worden sein):');
             if (abgelehnteLesungen.length === 0) {
                 console.log('  (keine)');
             } else {
-                for (const a of abgelehnteLesungen) console.log(`  ${a.ort.replace(/\)$/, `, Muster: ${a.muster.join(', ')})`)}`);
+                for (const a of abgelehnteLesungen) {
+                    console.log(`  ${a.relativ} Zeilen ${a.von}-${a.bis} (von ${a.gesamt}) — `
+                        + `${a.trefferZeilen} Trefferzeilen, Muster: ${a.muster.join(', ')}`);
+                }
             }
             console.log(`Suchen: ${sucheAnzahl}  Lesungen: ${liesAnzahl}  Ablehnungen: ${ablehnungenAnzahl}`);
             console.log(`Runden: ${runde}  Token rein: ${promptTokenSumme}  Token raus: ${completionTokenSumme}`);
@@ -1104,17 +1153,25 @@ async function main(argvUeberschreibung) {
                         // jeder anderen Ablehnung auch. Der Text nennt die
                         // Datei und die Musternamen, aber KEINE Zeile und
                         // KEINEN Musterinhalt -- ein erneuter Versuch liefert
-                        // erkennbar dasselbe Ergebnis, das Modell muss also
-                        // nicht nachfragen.
+                        // erkennbar dasselbe Ergebnis fuer DIESELBE Anfrage,
+                        // das Modell muss also nicht nachfragen -- ein
+                        // anderer oder kleinerer Ausschnitt DERSELBEN Datei
+                        // kann dagegen durchgehen (Nacharbeit 13.09.2026: der
+                        // Deckel gilt fuer den Ausschnitt, nicht fuer die
+                        // Datei, und der Text darf das nicht verschweigen).
                         const musterNamen = [...new Set(e.treffer.map((t) => t.name))];
                         console.error(`LESUNG ABGELEHNT (Geheimnis-Deckel): ${e.ort} — nichts gesendet, der Lauf geht weiter.`);
                         for (const name of musterNamen) console.error(`  Muster "${name}"`);
                         protokollSchreiben({ typ: 'geheimnis_ablehnung', ort: e.ort, muster: musterNamen });
-                        abgelehnteLesungen.push({ ort: e.ort, muster: musterNamen });
+                        abgelehnteLesungen.push({
+                            relativ: e.relativ, von: e.von, bis: e.bis, gesamt: e.gesamt,
+                            trefferZeilen: e.trefferZeilen, muster: musterNamen,
+                        });
                         ergebnis = {
-                            text: `abgelehnt: Geheimnis-Riegel — ${e.ort} enthaelt zu viele Zeilen, die zu den Mustern `
-                                + `${musterNamen.join(', ')} passen; deshalb wird NICHTS aus dieser Datei geliefert. `
-                                + 'Ein erneuter Versuch liefert dasselbe Ergebnis.',
+                            text: `abgelehnt: Geheimnis-Riegel — der angefragte Ausschnitt ${e.ort} enthaelt zu viele `
+                                + `Zeilen, die zu den Mustern ${musterNamen.join(', ')} passen; aus DIESEM Ausschnitt wird `
+                                + 'nichts geliefert. Dieselbe Anfrage liefert bei unveraendertem Dateiinhalt erneut eine '
+                                + 'Ablehnung. Ein anderer oder kleinerer Ausschnitt derselben Datei kann dagegen durchgehen.',
                             abgelehnt: true,
                         };
                     } else {
@@ -1206,7 +1263,7 @@ function httpsStubBauen(warteschlange, aufgezeichnet) {
 }
 
 async function selbsttest() {
-    const ERWARTETE_FAELLE = 64;
+    const ERWARTETE_FAELLE = 69;
     let gelaufen = 0;
     let fehler = 0;
     const pruefen = (bezeichnung, bedingung) => {
@@ -1414,26 +1471,37 @@ async function selbsttest() {
         {
             let ausgeloest = false;
             let ort = '-';
+            let abbruch = null;
             let ergebnisText = null;
             try {
                 ergebnisText = werkzeugLies('schwaerzen-viele.js', 1, 40).text;
             } catch (e) {
-                if (e instanceof GeheimnisAbbruch) { ausgeloest = true; ort = e.ort; }
+                if (e instanceof GeheimnisAbbruch) { ausgeloest = true; ort = e.ort; abbruch = e; }
             }
+            // "ort" benennt seit der Gegenlesung vom 13.09.2026 den
+            // AUSSCHNITT eindeutig (Zeilen von-bis, dazu die Dateigesamt-
+            // laenge) statt einer Trefferzahl, die mit der Dateilaenge
+            // verwechselbar war -- und die Ausnahme traegt dieselben Werte
+            // zusaetzlich strukturiert (Punkt 1 des Auftrags).
             pruefen(`DECKEL 27 (30 Geheimniszeilen unter 40 reissen den Deckel: GeheimnisAbbruch statt Schwaerzen, Ort: ${ort}; kein Funktionsergebnis)`,
-                ausgeloest && ort === 'schwaerzen-viele.js (30 von 40 Zeilen)' && ergebnisText === null);
+                ausgeloest && ort === 'schwaerzen-viele.js Zeilen 1-40 (von 40)' && ergebnisText === null
+                && abbruch.relativ === 'schwaerzen-viele.js' && abbruch.von === 1 && abbruch.bis === 40
+                && abbruch.gesamt === 40 && abbruch.trefferZeilen === 30 && abbruch.ausschnittZeilen === 40);
         }
         {
             let ausgeloest = false;
             let ort = '-';
+            let abbruch = null;
             let ergebnisText = null;
             try {
                 ergebnisText = werkzeugLies('schwaerzen-anteil.js', 1, 8).text;
             } catch (e) {
-                if (e instanceof GeheimnisAbbruch) { ausgeloest = true; ort = e.ort; }
+                if (e instanceof GeheimnisAbbruch) { ausgeloest = true; ort = e.ort; abbruch = e; }
             }
             pruefen(`DECKEL 35 (3 Geheimniszeilen unter 8 = 37,5 % reissen den Anteils-Deckel ab der Mindestzahl: GeheimnisAbbruch, Ort: ${ort}; kein Funktionsergebnis)`,
-                ausgeloest && ort === 'schwaerzen-anteil.js (3 von 8 Zeilen)' && ergebnisText === null);
+                ausgeloest && ort === 'schwaerzen-anteil.js Zeilen 1-8 (von 8)' && ergebnisText === null
+                && abbruch.relativ === 'schwaerzen-anteil.js' && abbruch.von === 1 && abbruch.bis === 8
+                && abbruch.gesamt === 8 && abbruch.trefferZeilen === 3 && abbruch.ausschnittZeilen === 8);
         }
         {
             // Positivkontrolle: ohne sie waere "nichts durchgelassen" auch
@@ -1624,27 +1692,34 @@ async function selbsttest() {
                 && ausgabeZeilenE.some((z) => z.includes('Bericht regulaer erstellt')));
 
             pruefen('LAUF E KONSOLE 37 (Meldung heisst "LESUNG ABGELEHNT", nennt Ort und "der Lauf geht weiter" -- NICHT mehr "ABBRUCH")',
-                fehlerZeilenE.some((z) => z.includes('LESUNG ABGELEHNT') && z.includes('schwaerzen-viele.js (30 von 40 Zeilen)') && z.includes('der Lauf geht weiter'))
+                fehlerZeilenE.some((z) => z.includes('LESUNG ABGELEHNT') && z.includes('schwaerzen-viele.js Zeilen 1-40 (von 40)') && z.includes('der Lauf geht weiter'))
                 && !fehlerZeilenE.some((z) => z.includes('ABBRUCH') && z.toLowerCase().includes('geheimnis')));
 
             const funktionsausgabeE = aufgezeichnetE.length === 2
                 ? aufgezeichnetE[1].input.filter((e) => e.type === 'function_call_output' && e.call_id === 'call-e1').map((e) => e.output).join('\n')
                 : '';
-            pruefen(`LAUF E FUNKTIONSERGEBNIS 38 (das an das Modell zurueckgegebene Funktionsergebnis fuer call-e1 ist eine Ablehnung, nennt Datei und Musternamen, aber KEIN Geheimnismaterial -- Fragment "N".repeat(20) kommt ${vorkommen(funktionsausgabeE, 'N'.repeat(20))}x vor, erwartet 0)`,
+            // Nacharbeit 13.09.2026 (Gegenlesung): der Ablehnungstext darf
+            // nicht mehr behaupten, aus der DATEI werde nichts geliefert
+            // (falsch -- ein anderer Ausschnitt kann durchgehen) und muss
+            // genau das auch sagen.
+            pruefen(`LAUF E FUNKTIONSERGEBNIS 38 (das an das Modell zurueckgegebene Funktionsergebnis fuer call-e1 ist eine Ablehnung, nennt Ausschnitt und Musternamen, sagt zutreffend statt "deshalb wird NICHTS aus dieser Datei geliefert", aber KEIN Geheimnismaterial -- Fragment "N".repeat(20) kommt ${vorkommen(funktionsausgabeE, 'N'.repeat(20))}x vor, erwartet 0)`,
                 funktionsausgabeE.startsWith('abgelehnt:')
-                && funktionsausgabeE.includes('schwaerzen-viele.js (30 von 40 Zeilen)')
+                && funktionsausgabeE.includes('schwaerzen-viele.js Zeilen 1-40 (von 40)')
                 && funktionsausgabeE.includes('GitHub-Token')
-                && funktionsausgabeE.includes('Ein erneuter Versuch liefert dasselbe Ergebnis')
+                && funktionsausgabeE.includes('aus DIESEM Ausschnitt wird')
+                && funktionsausgabeE.includes('Ein anderer oder kleinerer Ausschnitt derselben Datei kann dagegen durchgehen')
+                && !funktionsausgabeE.includes('deshalb wird NICHTS aus dieser Datei geliefert')
                 && vorkommen(funktionsausgabeE, 'N'.repeat(20)) === 0);
 
             const zusammenfassungE = ausgabeZeilenE.join('\n');
-            pruefen('LAUF E ZUSAMMENFASSUNG 39 (neuer Block "ABGELEHNTE LESUNGEN" nennt die Datei mit Zeilenzahl und Musternamen)',
-                zusammenfassungE.includes('ABGELEHNTE LESUNGEN (Deckel gerissen — diese Dateien hat der Pruefer NIE gesehen):')
-                && zusammenfassungE.includes('  schwaerzen-viele.js (30 von 40 Zeilen, Muster: GitHub-Token)'));
+            pruefen('LAUF E ZUSAMMENFASSUNG 39 (neuer Block "ABGELEHNTE LESUNGEN" spricht von AUSSCHNITTEN statt von Dateien und nennt Bereich, Gesamtlaenge, Trefferzahl und Musternamen)',
+                !zusammenfassungE.includes('diese Dateien hat der Pruefer NIE gesehen')
+                && zusammenfassungE.includes('ABGELEHNTE LESUNGEN (Geheimnis-Deckel — diese AUSSCHNITTE hat der Pruefer NIE gesehen; andere Teile derselben Datei koennen geliefert worden sein):')
+                && zusammenfassungE.includes('  schwaerzen-viele.js Zeilen 1-40 (von 40) — 30 Trefferzeilen, Muster: GitHub-Token'));
 
             const protokollEintraegeE = fs.readFileSync(protokollPfadE, 'utf8').trim().split('\n').filter(Boolean).map((z) => JSON.parse(z));
             pruefen('LAUF E JSONL-PROTOKOLL 40 (ein Eintrag vom neuen Typ "geheimnis_ablehnung", KEINER mehr vom alten Typ "geheimnis_abbruch")',
-                protokollEintraegeE.some((e) => e.typ === 'geheimnis_ablehnung' && e.ort === 'schwaerzen-viele.js (30 von 40 Zeilen)'
+                protokollEintraegeE.some((e) => e.typ === 'geheimnis_ablehnung' && e.ort === 'schwaerzen-viele.js Zeilen 1-40 (von 40)'
                     && Array.isArray(e.muster) && e.muster.includes('GitHub-Token'))
                 && !protokollEintraegeE.some((e) => e.typ === 'geheimnis_abbruch'));
 
@@ -1652,6 +1727,89 @@ async function selbsttest() {
             const zeileE = hintergrundNachLaufE.split('\n').find((z) => z.includes('selbsttest-lauf-e-ablehnung'));
             pruefen(`LAUF E ASTRA-LAEUFE-ZEILE 41 (der Lauf traegt sich als REGULAERER Abschluss ins Lauf-Protokoll ein, NICHT als Abbruch: Zeile "${zeileE}")`,
                 Boolean(zeileE) && !zeileE.includes('abgebrochen'));
+        }
+
+        // ===== GEMISCHTER LAUF: derselbe Lauf liest dieselbe Datei ERST in
+        // einem harmlosen Teilbereich, DANACH im vollen Bereich, wo der
+        // Deckel reisst (Nacharbeit 13.09.2026, Gegenlesung) =====
+        // Das ist der Fall, der den eigentlichen Befund bewacht: die alte
+        // Formulierung behauptete, der Pruefer habe die DATEI nie gesehen --
+        // hier hat er sie tatsaechlich schon gelesen (Zeilen 1-10, reine
+        // Fuellzeilen aus der Fixture-Anlage oben), BEVOR derselbe Deckel
+        // wie in DECKEL 27 auf den vollen Bereich 1-40 reisst. Die Datei
+        // muss danach GLEICHZEITIG unter GELESENE DATEIEN und mit ihrem
+        // abgelehnten Ausschnitt unter ABGELEHNTE LESUNGEN stehen.
+        {
+            const alterKey = process.env.OPENAI_API_KEY;
+            const alteDatei = process.env.OPENAI_KEY_DATEI;
+            process.env.OPENAI_API_KEY = 'selbsttest-dummy-schluessel-ohne-netz';
+            delete process.env.OPENAI_KEY_DATEI;
+            const echtesHttpsRequest = https.request;
+            const echtesLog = console.log;
+            const echtesError = console.error;
+
+            const aufgezeichnetGL = [];
+            const ausgabeZeilenGL = [];
+            const warteschlangeGL = [
+                antwortKoerperBauen(elementFunktionsaufrufBauen('call-gl1', 'lies', { pfad: 'schwaerzen-viele.js', von: 1, bis: 10 }), 100, 50),
+                antwortKoerperBauen(elementFunktionsaufrufBauen('call-gl2', 'lies', { pfad: 'schwaerzen-viele.js', von: 1, bis: 40 }), 100, 50),
+                antwortKoerperBauen(elementTextBauen('TESTBERICHT-GEMISCHT'), 100, 50),
+            ];
+            https.request = httpsStubBauen(warteschlangeGL, aufgezeichnetGL);
+            console.log = (msg) => ausgabeZeilenGL.push(String(msg));
+            console.error = () => {}; // eigene Ausgabe hier nicht gebraucht, LAUF E prueft sie bereits
+
+            const protokollPfadGL = path.join(klon, 'selbsttest-protokoll-gemischt.jsonl');
+            let codeGL;
+            try {
+                codeGL = await main([
+                    path.join(klon, 'harmlos.txt'),
+                    `--brief=${briefFixturePfad}`,
+                    `--wurzel=${klon}`,
+                    '--max-runden=10',
+                    `--protokoll=${protokollPfadGL}`,
+                    '--zweck=selbsttest-lauf-gemischt',
+                ]);
+            } finally {
+                console.log = echtesLog;
+                console.error = echtesError;
+                https.request = echtesHttpsRequest;
+                if (alterKey !== undefined) process.env.OPENAI_API_KEY = alterKey; else delete process.env.OPENAI_API_KEY;
+                if (alteDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteDatei;
+            }
+
+            pruefen(`GEMISCHTER LAUF ABGESCHLOSSEN 59 (dieselbe Datei wird ERST im harmlosen Bereich 1-10, DANN im vollen Bereich 1-40 gelesen, wo der Deckel reisst: Exit ${codeGL} (erwartet 0), ${aufgezeichnetGL.length} Anfragekoerper gebaut (erwartet 3: Lesung 1 -> Lesung 2 -> Bericht), Bericht kam an)`,
+                codeGL === 0 && aufgezeichnetGL.length === 3
+                && ausgabeZeilenGL.some((z) => z.includes('TESTBERICHT-GEMISCHT')));
+
+            // Die letzte Anfrage traegt die volle Historie, also BEIDE
+            // Funktionsergebnisse -- wie bei aufgezeichnetD[4] in LAUF D.
+            const funktionsausgabeGL1 = aufgezeichnetGL.length === 3
+                ? aufgezeichnetGL[2].input.filter((e) => e.type === 'function_call_output' && e.call_id === 'call-gl1').map((e) => e.output).join('\n')
+                : '';
+            const funktionsausgabeGL2 = aufgezeichnetGL.length === 3
+                ? aufgezeichnetGL[2].input.filter((e) => e.type === 'function_call_output' && e.call_id === 'call-gl2').map((e) => e.output).join('\n')
+                : '';
+
+            pruefen('GEMISCHTER LAUF ERSTE LESUNG 60 (Bereich 1-10 ist reiner Fuellzeilenbereich: das Funktionsergebnis enthaelt echten Dateiinhalt, keine Ablehnung)',
+                !funktionsausgabeGL1.startsWith('abgelehnt:')
+                && funktionsausgabeGL1.includes('schwaerzen-viele.js (Zeilen 1-10 von 40)')
+                && funktionsausgabeGL1.includes('1:// Zeile 1') && funktionsausgabeGL1.includes('10:// Zeile 10'));
+
+            pruefen('GEMISCHTER LAUF ZWEITE LESUNG 61 (derselbe Deckel wie in DECKEL 27, diesmal auf denselben Bereich wie dort: das Funktionsergebnis ist eine Ablehnung)',
+                funktionsausgabeGL2.startsWith('abgelehnt:'));
+
+            const zusammenfassungGL = ausgabeZeilenGL.join('\n');
+            pruefen('GEMISCHTER LAUF ZUSAMMENFASSUNG 62 (die Datei steht in GELESENE DATEIEN UND ihr abgelehnter Ausschnitt in ABGELEHNTE LESUNGEN -- die Ueberschrift behauptet NICHT mehr, die DATEI sei nie gesehen worden)',
+                zusammenfassungGL.includes('GELESENE DATEIEN:') && zusammenfassungGL.includes('  schwaerzen-viele.js:1-10')
+                && !zusammenfassungGL.includes('diese Dateien hat der Pruefer NIE gesehen')
+                && zusammenfassungGL.includes('ABGELEHNTE LESUNGEN (Geheimnis-Deckel — diese AUSSCHNITTE hat der Pruefer NIE gesehen; andere Teile derselben Datei koennen geliefert worden sein):')
+                && zusammenfassungGL.includes('  schwaerzen-viele.js Zeilen 1-40 (von 40) — 30 Trefferzeilen, Muster: GitHub-Token'));
+
+            pruefen(`GEMISCHTER LAUF ABLEHNUNGSTEXT 63 (der an das Modell gesendete Ablehnungstext nennt den Bereich 1-40 und den Satz ueber den kleineren Ausschnitt, ohne Geheimnismaterial -- Fragment "N".repeat(20) kommt ${vorkommen(funktionsausgabeGL2, 'N'.repeat(20))}x vor, erwartet 0)`,
+                funktionsausgabeGL2.includes('schwaerzen-viele.js Zeilen 1-40 (von 40)')
+                && funktionsausgabeGL2.includes('Ein anderer oder kleinerer Ausschnitt derselben Datei kann dagegen durchgehen')
+                && vorkommen(funktionsausgabeGL2, 'N'.repeat(20)) === 0);
         }
 
         {
