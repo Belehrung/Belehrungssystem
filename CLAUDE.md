@@ -212,8 +212,31 @@ des Repos; sie kann nicht ausgelagert werden. Sobald am Ende eine Freigabe
 steht, verlagert sich die Verantwortung dorthin und der eigene Prüfgang
 wird zur Formsache.
 
-**Rundenbegrenzung:** eine volle Prüfung, eine Bestätigungsrunde. Weitere nur
-bei einem NEUEN blockierenden Befund, nicht für Geschmacksfragen.
+**Rundenbegrenzung — entschieden am 13.09.2026, und zwar GEGEN die
+Bestätigungsrunde als Regelfall.** Bis hierher stand hier „eine volle Prüfung,
+eine Bestätigungsrunde". Die zweite Runde hat seit Einführung des Verfahrens
+**kein einziges Mal** stattgefunden: am 12.09. nicht (das stand schon als
+offener Widerspruch weiter unten), und am 13.09. bei drei Läufen ebenfalls
+nicht. Eine Regel, die nie befolgt wird, ist keine Regel, sondern eine
+Behauptung über uns selbst.
+
+Was STATTDESSEN wirklich passiert, und es trägt: Astra prüft den Diff, JEDER
+Befund wird vom Haupt-Agenten selbst nachgemessen, die Nacharbeit wird
+wiederum selbst geprüft — Diff gelesen, Gegenprobe in beide Richtungen, volle
+Suite. Am 13.09. fielen dabei zwei von sechs Befunden (eine falsche
+Schwereeinstufung, eine Prämisse aus meinem eigenen Auftrag). Diese Messung
+leistet keine zweite Astra-Runde; sie leistet der eigene Prüfgang.
+
+**Der Regelfall ist damit: EINE Runde.** Eine zweite wird gefahren, wenn die
+Behebung selbst nicht trivial ist — also wenn sie VERHALTEN ändert statt nur
+eine Zusicherung zu ergänzen. Begründung, aus dem eigenen Bestand: am
+12.09.2026 lieferte eine Prüfung einen Behebungsvorschlag, der seinen eigenen
+Befund nicht geschlossen hätte. Diese Klasse trifft Behebungen, nicht Tests.
+
+Praktisch heißt „zweite Runde" ohnehin: dasselbe Material noch einmal
+schicken. `store: false` schließt `previous_response_id` aus (gemessen, siehe
+unten), es gibt also keinen billigen Rückbezug. Eine Runde kostete am
+13.09.2026 zwischen 7,47 $ und 15,39 $. Wer sie fährt, fährt sie ganz.
 
 ### Wann
 
@@ -574,12 +597,20 @@ Repo-Zugriff (Begründung unverändert: wer mitbaut, prüft seinen eigenen
 Entwurf), und „Astra bestätigt" ist keine Freigabe. Tor bleiben die CI
 und das Prüf-Ritual.
 
-**Ehrlich dazu:** die zweite Runde („Astra bestätigt") lief am 12.09.2026
-faktisch nicht. Der Befund wurde selbst nachgemessen, seine Einstufung
-korrigiert — und damit war die Sache erledigt. Das war im Einzelfall
-richtig, heißt aber, dass die Schleife aus dem Abschnitt oben real nicht
-stattfindet. Entweder sie wird gefahren, oder hier steht, dass wir sie
-nicht fahren. Nicht beides.
+**Ehrlich dazu — der Widerspruch stand hier vom 12. bis zum 13.09.2026 und
+ist ENTSCHIEDEN, nicht weggeräumt:** Die zweite Runde („Astra bestätigt")
+lief am 12.09. faktisch nicht, und am 13.09. bei drei Läufen ebenfalls nicht.
+Statt die Regel ein drittes Mal unbefolgt stehen zu lassen, ist sie geändert:
+der Regelfall ist EINE Runde, eine zweite nur bei einer Behebung, die
+Verhalten ändert. Die Begründung steht bei der Rundenbegrenzung oben, wo die
+Regel gilt — hier bleibt nur die Spur, dass es ein erkannter Widerspruch war
+und wie lange er stand.
+
+Das Muster ist allgemeiner und gehört benannt: Eine Regel, die zweimal
+hintereinander nicht befolgt wurde, ist keine Regel mehr. Sie wird entweder
+durchgesetzt oder geändert — sie unverändert stehen zu lassen macht das
+ganze Dokument unzuverlässig, weil dann niemand mehr weiß, welche Sätze
+darin gelten und welche nur gut gemeint sind.
 
 ### Context Notes — was daran stimmt und was nicht
 
