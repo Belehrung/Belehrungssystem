@@ -736,6 +736,31 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   in einer `<td>`, 66px gut ↔ 162px defekt, und ein DIREKTES Flex-Item,
   71px ↔ 862px). Verallgemeinert: bei jeder Messung fragen, ob der gemessene
   Wert überhaupt von der geprüften Eigenschaft abhängen KANN.
+  **VIERTE Erscheinungsform, gemessen am 13.09.2026: die Testdaten lassen
+  mehrere verschiedene Bedeutungen auf DIESELBE Zahl fallen.** Eine Ausnahme
+  bekam sechs strukturierte Felder, damit Dateilänge, angefragtes Ende,
+  tatsächlich gelesenes Ende und Ausschnittslänge nicht mehr verwechselbar
+  sind. Alle Fixtures lasen 1–40 einer 40-zeiligen Datei — also sind `bis`,
+  `gbis`, `gesamt` und `ausschnittZeilen` allesamt 40. Gemessen, je einzeln:
+  `gesamt` durch die Ausschnittslänge ersetzt → **EXIT 0, 69 Haken, 0
+  Kreuze**; `bis: ende` durch `bis: gbis` ersetzt → **ebenfalls EXIT 0**.
+  Genau die Trennung, für die die Felder eingeführt wurden, war ungeprüft.
+  Der Unterschied zur dritten Form: dort war das Element strukturell
+  geschützt, hier sind die DATEN so gewählt, dass der Unterschied gar nicht
+  auftritt. Gegenmittel: Fixtures, in denen jede Bedeutung eine ANDERE Zahl
+  trägt (hier `11, 999` auf 40 Zeilen → von 11, bis 40, gesamt 40,
+  Ausschnitt 30) — vier verschiedene Werte, und jede Verwechslung fällt auf.
+- **Ein Mutationsmuster, das mehr als einmal passt, mutiert lautlos die
+  falsche Stelle — und das Grün sieht aus wie ein Befund GEGEN den Test.**
+  Gemessen am 13.09.2026, eine Stunde nachdem dieselbe Mehrdeutigkeit im
+  Gegenleser behoben worden war: das Suchmuster kam zweimal vor,
+  `String.replace()` nahm die erste Fundstelle (einen anderen
+  Fehlerbehandler), die Suite blieb grün — was sich wie „die Zusicherung
+  bewacht nichts" las. Sie bewachte sehr wohl; gemessen wurde am falschen
+  Code. **Jedes Mutationsskript zählt die Fundstellen und bricht bei 0 UND
+  bei mehr als 1 ab**, statt stillschweigend die erste zu nehmen. Wer nach
+  einer Gegenprobe ein unerwartetes Grün sieht, prüft ZUERST, ob die
+  Mutation dort gelandet ist, wo sie hin sollte.
 - **Ein Agent, der abbricht, ist wertvoller als einer, der immer liefert.**
   Fehlt eine Vorbedingung, ist der Abbruch mit Rückfrage das richtige Ergebnis.
 - **Sollwerte statt geratener Schwellen.** Wer eine Prüfanweisung an den

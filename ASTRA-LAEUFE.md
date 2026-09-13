@@ -25,12 +25,13 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 13.09.2026 | Gegenlesung Archiv-Drossel, Wiederholung ohne 13 gesperrte Dateien | Diff 115 Zeilen + Repo-Lesezugriff (130 Suchen, 26 Lesungen), 1.117k Token über 19 Runden | 3 | 2 | 1 (Prämissenfehler im Auftrag) | 15,39 $ |
 | 13.09.2026 | Gegenlesung `allSettled`-Abdeckung | Diff 111 Zeilen + Repo-Lesezugriff (19 Suchen, 24 Lesungen), 562k Token über 9 Runden | 2 | 2 | 0 | 7,47 $ |
 | 13.09.2026 | Gegenlesung Selbstprotokollierung des Gegenlesers | **abgebrochen** (Geheimnis-Riegel bei einer Werkzeug-Lesung (tools/geheimnis-riegel.js (116 von 300 Zeilen))): Diff 600 Zeilen, Suchen 1, Lesungen 4, Token rein 12886, Token raus 225, Runden 1 | — | — | — | 0,18 $ |
-| 13.09.2026 | Gegenlesung Selbstprotokollierung des Gegenlesers, Wiederholung ohne die Musterdatei | Diff 600 Zeilen, Suchen 8, Lesungen 14, Token rein 190835, Token raus 9742, Runden 5 | 6 | offen (Nacharbeit mit Gegenproben laeuft) | offen | 3,12 $ |
+| 13.09.2026 | Gegenlesung Selbstprotokollierung des Gegenlesers, Wiederholung ohne die Musterdatei | Diff 600 Zeilen, Suchen 8, Lesungen 14, Token rein 190835, Token raus 9742, Runden 5 | 6 | 6 | 0 | 3,12 $ |
 | 13.09.2026 | Gegenlesung (e3)-Zustandsbeweis und neun Kardinalitaetspruefungen | Diff 143 Zeilen, Suchen 14, Lesungen 29, Token rein 592748, Token raus 8581, Runden 8 | 3 | 3 | 0 | 8,05 $ |
 | 13.09.2026 | Gegenlesung CI-Fehlerlogs als Artefakt und Verrottungswaechter | **abgebrochen** (Geheimnis-Riegel auf dem Eingabediff): Diff 127 Zeilen, Suchen 0, Lesungen 0, Token rein 0, Token raus 0, Runden 0 | — | — | — | 0,00 $ |
 | 13.09.2026 | Gegenlesung CI-Fehlerlogs als Artefakt, Wiederholung mit geschwaerzter Kennung | Diff 127 Zeilen, Suchen 8, Lesungen 15, Token rein 221528, Token raus 9633, Runden 6 | 2 | 2 | 0 | 3,49 $ |
-| 13.09.2026 | Gegenlesung Offline-C7 Navigationsrennen | Diff 91 Zeilen, Suchen 11, Lesungen 12, Token rein 217868, Token raus 13426, Runden 6 | 4 | offen (Nacharbeit laeuft; Befund 1 selbst gemessen) | offen | 3,73 $ |
-| 13.09.2026 | Gegenleser: Deckel lehnt Lesung ab statt Lauf | Diff 229 Zeilen, Suchen 8, Lesungen 11, Token rein 213092, Token raus 7458, Runden 6 | — | — | — | 3,22 $ |
+| 13.09.2026 | Gegenlesung Offline-C7 Navigationsrennen | Diff 91 Zeilen, Suchen 11, Lesungen 12, Token rein 217868, Token raus 13426, Runden 6 | 4 | 4 | 0 | 3,73 $ |
+| 13.09.2026 | Gegenleser: Deckel lehnt Lesung ab statt Lauf | Diff 229 Zeilen, Suchen 8, Lesungen 11, Token rein 213092, Token raus 7458, Runden 6 | 2 | 1 | 1 (Schwereeinstufung: angeblich neuer Ausgabekanal, gegen HEAD~1 als wortgleich bestehend gemessen) | 3,22 $ |
+| 13.09.2026 | Bestaetigungsrunde: Deckel gilt dem Ausschnitt | Diff 336 Zeilen, Suchen 5, Lesungen 9, Token rein 174972, Token raus 6859, Runden 5 | 3 | 3 | 0 | 2,70 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -186,3 +187,49 @@ Gewinn war dort nicht mehr Empfindlichkeit, sondern GENAUIGKEIT — die
 Meldung sagt jetzt „in 3 s wurde niemand von As Backend blockiert" statt
 „B war zufaellig schon fertig". Wer diese Zeile als „Astra findet, was
 sonst durchrutscht" liest, liest sie falsch.
+
+## Die erste Bestaetigungsrunde, die es wirklich gab (13.09.2026 abends)
+
+Die CLAUDE.md hat am selben Tag die zweite Runde vom Regelfall zur Ausnahme
+gemacht, weil sie **nie stattgefunden hatte** — dreimal hintereinander nicht.
+Dies ist die erste. Ausloeser war genau das Kriterium, das dort steht: die
+Behebung aenderte VERHALTEN (Form von `ort`, Text an das Modell, Ueberschrift
+des Berichtsblocks, Konstruktor der Ausnahme), nicht bloss eine Zusicherung.
+
+Sie hat sich bezahlt gemacht, und zwar nicht dort, wo ich es erwartet haette:
+
+- **Der Befund war nicht vollstaendig geschlossen.** Dieselbe Falschaussage
+  stand an einer VIERTEN Stelle — im Kommentar des Ausnahmebehandlers selbst,
+  zwoelf Zeilen ueber dem korrigierten Text, den er widerspricht. Drei Orte
+  waren bekannt und behoben; der vierte lag im geaenderten Hunk und ist beim
+  Lesen des Diffs trotzdem niemandem aufgefallen, mir eingeschlossen.
+- **Meine neuen Zusicherungen konnten zwei Verwechslungen nicht bemerken.**
+  Alle Deckel-Fixtures lesen 1–40 einer 40-zeiligen Datei; damit fallen `bis`,
+  `gbis`, `gesamt` und `ausschnittZeilen` auf dieselbe Zahl 40 zusammen.
+  SELBST GEMESSEN, je einzeln: `gesamt` durch die Ausschnittslaenge ersetzt →
+  **EXIT 0, 69 Haken, 0 Kreuze**; `bis: ende` durch `bis: gbis` ersetzt →
+  **EXIT 0, 69 Haken, 0 Kreuze**. Genau die Trennung, fuer die die
+  strukturierten Felder eingefuehrt wurden, war ungeprueft. Dieselbe Klasse
+  wie die dritte Erscheinungsform in der CLAUDE.md: der gemessene Wert kann
+  von der geprueften Eigenschaft gar nicht abhaengen, weil die Testdaten ihn
+  vorher gleichgemacht haben.
+- **Eine meiner vier Begruendungen war schlicht falsch.** Ich hatte den
+  Verzicht auf eine Pfad-Schwaerzung unter anderem mit einer Re-Entranz
+  begruendet: der Schwaerzer wuerde im Behandler fuer die Ausnahme aufgerufen,
+  die er selbst wirft. Nachgemessen: `tools/geheimnis-riegel.js` enthaelt
+  **null** `throw`-Anweisungen, `entferneGeheimnisse()` liefert
+  `{text, entfernt, zuViel}` zurueck, und geworfen wird erst beim Aufrufer.
+  Die Entscheidung traegt weiter — auf den drei anderen Gruenden —, die
+  Begruendung nicht. Sie stand da schon woertlich in einer Commit-Botschaft.
+
+**Was die Runde NICHT geleistet hat:** keinen neuen Laufzeitfehler. Alle drei
+Befunde sind Testluecke, Kommentar und Begruendung. Wer daraus „die zweite
+Runde findet die schweren Sachen" macht, liest zu viel hinein; sie hat hier
+eine unvollstaendige Behebung und eine blinde Zusicherung gefunden — beides
+teuer genug, aber beides von der leiseren Sorte.
+
+**Kosten der Runde: 2,70 $** gegen 3,22 $ der ersten. Der Rueckbezug ueber
+`previous_response_id` bleibt durch `store: false` ausgeschlossen; das
+Material ging vollstaendig erneut mit, und es war trotzdem die billigere der
+beiden Runden — weil der Auftrag eng war (zwei benannte Fragen statt einer
+offenen Pruefung) und der Pruefer weniger suchen musste.
