@@ -29,15 +29,21 @@
 // abgebrochen (Exit 3), ohne dass die Anfrage gesendet wird.
 //
 // AUFRUF:
-//   node tools/gegenleser-repo.js <diff.txt> [--wurzel=/pfad/zum/repo]
-//                                 [--modell=gpt-5.5] [--max-runden=25]
+//   node tools/gegenleser-repo.js <diff.txt> --brief=<auftrag.txt>
+//                                 [--wurzel=/pfad/zum/repo]
+//                                 [--modell=gpt-6-astra] [--max-runden=25]
 //                                 [--protokoll=/pfad.jsonl]
 //   node tools/gegenleser-repo.js --selbsttest   (prueft die Riegel, OHNE Netz)
 //
+// --brief=<datei> ist PFLICHT (seit 12.09.2026, siehe BRIEF_KOPF-Kommentar
+// weiter unten): sie liefert den beitragsspezifischen Teil des Auftrags.
+// Fehlt sie, bricht das Werkzeug mit Exit 6 ab, statt still gegen einen
+// mitgelieferten Standardauftrag zu pruefen.
+//
 // EXIT-CODES: 0 fertig, 2 kein Schluessel/falscher Aufruf, 3 Geheimnis-Riegel
 // hat angeschlagen, 4 Runden- oder Mengenlimit erreicht (Bericht
-// UNVOLLSTAENDIG), 5 das Modell hat am Ende keinen Text geliefert, 1 sonstiger
-// Fehler.
+// UNVOLLSTAENDIG), 5 das Modell hat am Ende keinen Text geliefert, 6 kein
+// --brief angegeben oder die Datei ist leer/unlesbar, 1 sonstiger Fehler.
 
 const fs = require('node:fs');
 const https = require('node:https');
@@ -46,41 +52,51 @@ const os = require('node:os');
 const { execFileSync } = require('node:child_process');
 const { pruefeGeheimnisse } = require('./geheimnis-riegel');
 
-const ENDPUNKT = 'https://api.openai.com/v1/chat/completions';
-// Gemessen 10.09.2026 gegen unser Konto (GET /v1/models): gpt-5 stammte vom
-// 05.08.2025 und war damit mehrere Stufen alt; verfuegbar sind seither u. a.
-// gpt-5.5, gpt-5.6-sol/terra/luna und gpt-6-astra.
+const ENDPUNKT = 'https://api.openai.com/v1/responses';
+// Bis 10.09.2026 stand hier /v1/chat/completions mit gpt-5.5 als Vorgabe --
+// GEMESSEN als Sackgasse fuer die staerkeren Stufen: gpt-5.6-sol und
+// gpt-6-astra melden ueber /v1/chat/completions mit "tools" im Request
+// woertlich "Function tools with reasoning_effort are not supported for
+// <modell> in /v1/chat/completions. To use function tools, use /v1/responses
+// or set reasoning_effort to 'none'." Der angebotene Ausweg reasoning_effort:
+// 'none' ist fuer gpt-6-astra selbst eine Sackgasse -- die Herstellerdoku
+// nennt 'none' ausdruecklich als von Astra NICHT unterstuetzte Stufe.
 //
-// WARUM NICHT SOL ODER ASTRA, obwohl das die staerkeren Stufen sind: sie
-// koennen ueber DIESEN Endpunkt keine Werkzeuge. Gemessen am selben Tag,
-// woertliche Antwort der API auf einen Aufruf mit "tools":
-//   "Function tools with reasoning_effort are not supported for gpt-5.6-sol
-//    in /v1/chat/completions. To use function tools, use /v1/responses or
-//    set reasoning_effort to 'none'."
-// Der Fehler kommt auch OHNE eigenes reasoning_effort im Request (dieses
-// Werkzeug setzt es nirgends) -- die Stufe bringt einen Standardwert mit,
-// der sich mit Function Tools hier nicht vertraegt. reasoning_effort:'none'
-// waere zwar messbar moeglich (geprueft: tool_calls kommen dann), nimmt aber
-// genau das Nachdenken weg, wegen dem man die Stufe ueberhaupt nimmt.
+// UMGEBAUT auf /v1/responses am 12.09.2026, GEMESSEN gegen das echte Konto
+// (nicht angenommen): mit "tools" im Request kommt bei gpt-6-astra ein
+// output[]-Eintrag {type:"function_call", name, arguments, call_id} zurueck
+// -- Funktionsaufrufe funktionieren also, wo /v1/chat/completions ablehnte.
+// Unterschiede zum alten Endpunkt, alle an der echten Antwort abgelesen:
+//   - "messages" heisst hier "input" (Liste von Objekten mit role/content;
+//     bereits gelieferte output[]-Elemente gehen unveraendert zurueck).
+//   - Werkzeuge werden FLACH uebergeben: {type:"function", name,
+//     description, parameters} -- kein "function"-Unterobjekt mehr.
+//   - Ein Funktionsaufruf traegt sein eigenes "id" (Item-ID, z. B. "fc_..."),
+//     ZUSAETZLICH ein "call_id" (z. B. "call_..."). Das Werkzeugergebnis geht
+//     als {type:"function_call_output", call_id, output} zurueck -- an das
+//     call_id, nicht an das id.
+//   - Ein Textbericht steckt in einem output[]-Eintrag {type:"message",
+//     role:"assistant", content:[{type:"output_text", text}]}, nicht mehr in
+//     choices[0].message.content.
+//   - "max_completion_tokens" heisst "max_output_tokens" (gemessen: wird
+//     angenommen und im Antwort-Objekt gespiegelt).
+//   - usage traegt "input_tokens"/"output_tokens" statt "prompt_tokens"/
+//     "completion_tokens" (gemessen, siehe kostenSchaetzen()-Aufrufer unten).
+//   - temperature/top_p/top_logprobs: diese Datei hat nie eines der drei
+//     gesendet (nachgesehen) -- nichts zu entfernen, nur festgehalten, damit
+//     es nicht versehentlich nachgezogen wird.
 //
-// LEHRE, damit der Fehler nicht wiederkommt: eine Ein-Wort-Anfrage OHNE
-// Werkzeuge beweist NICHT, dass ein Modell auf dem echten Weg funktioniert.
-// Genau so ist diese Datei kurzzeitig auf gpt-5.6-sol gestellt worden, und
-// der erste echte Lauf starb sofort mit HTTP 400. Wer die Stufe wechselt,
-// prueft mit "tools" im Request, nicht mit "sag bereit".
+// LEHRE, damit der Fehler von damals nicht wiederkommt: eine Ein-Wort-Anfrage
+// OHNE Werkzeuge beweist NICHT, dass ein Modell auf dem echten Weg
+// funktioniert -- die Messung oben lief ausdruecklich MIT "tools" im Request
+// und mit einem echten, mehrrundigen Aufruf inklusive zurueckgeschicktem
+// Funktionsergebnis.
 //
-// gpt-5.5 kann Werkzeuge ueber /v1/chat/completions (gemessen: tool_calls
-// kommen) und ist die Stufe mit der einzigen belegten CODE-REVIEW-Zahl, die
-// vorliegt: 79,2 % erwartete Befunde gefunden gegen 58,3 % Basis, Praezision
-// 27,9 % -> 40,6 % (Stand 10.09.2026). Die Praezision heisst zugleich: mehr
-// als die Haelfte der Meldungen sind Fehlalarme, jeder Befund gehoert
-// nachgemessen.
-//
-// Um Sol/Astra nutzbar zu machen, muesste dieses Werkzeug auf /v1/responses
-// umgebaut werden (anderes Antwortformat: output[] mit function_call statt
-// choices[].message.tool_calls; gemessen, dass es dort geht). Eigener
-// Auftrag. --modell= bleibt der Schalter zum Vergleichen.
-const VORGABE_MODELL = 'gpt-5.5';
+// --modell= bleibt der Schalter zum Vergleichen -- aber NUR gpt-6-astra ist
+// auf DIESEM Endpunkt gemessen. Ein anderes Modell (z. B. das bisherige
+// gpt-5.5) laeuft hier ungeprueft; vor Verlass darauf erst messen, nicht
+// annehmen, dass /v1/responses fuer jede Stufe gleich funktioniert.
+const VORGABE_MODELL = 'gpt-6-astra';
 // 25 reichten in Messlauf 1 (09.09.2026) NICHT: das Modell rief je Antwort
 // genau EINEN Werkzeugaufruf auf (gemessen: 25 Antworten, 25 Aufrufe) und lief
 // mitten in der Arbeit ins Limit. Der Abbruch war richtig -- ein Lauf, der
@@ -115,60 +131,87 @@ function kostenSchaetzen(modell, promptToken, completionToken) {
     return (promptToken / 1e6) * preis.rein + (completionToken / 1e6) * preis.raus;
 }
 
-// Wörtlich aus /tmp/claude-0/codereview.py uebernommen (Auftrag Teil B) — der
-// dortige Sechs-Punkte-Auftrag ist erprobt (siehe tools/zweitmeinung.js-Kopf).
-// Per JSON.stringify aus der Quelle extrahiert und unveraendert eingesetzt,
-// damit keine Uebertragungsfehler (Umlaute, Gedankenstriche) hineinkommen.
-const BRIEF_KERN = "Du bist unabhängiger Code-Gegenleser für ein Node.js/PostgreSQL-System\n(GymDocu, Arbeitsschutz-Dokumentation für Fitnessstudios). Unten steht ein Diff.\n\nDer Zweig baut ein neues Feld: für jedes Prüfintervall wird maschinenlesbar\nfestgehalten, worauf die Zahl beruht — `gesetz`, `eigene_festlegung` oder\n`hersteller`. Dazu Migration 0054 mit den Spalten `frist_herkunft`, `frist_norm`,\n`frist_festgelegt_am`, `frist_festgelegt_von`, `hersteller_intervall_monate`;\nein Bestätigungsknopf; ein Hinweis, wenn das eigene Intervall länger ist als das\ndes Herstellers; ein Schritt in der Einrichtungs-Checkliste; eine neue Testdatei.\n\nPRÜFE IN DIESER REIHENFOLGE — und melde zu jedem Punkt auch, wenn du nichts\ngefunden hast:\n\n1. ZUSICHERUNGEN, DIE NICHT FEHLSCHLAGEN KÖNNEN. Für jede Zusicherung in der\n   Testdatei: welche EINE Zeile müsste man ändern, damit genau sie fällt? Bezieht\n   eine ihren Sollwert aus dem, was sie bewachen soll (z. B. Vergleich gegen\n   dieselbe Konstante auf beiden Seiten, oder eine Vergleichsmenge, die aus\n   derselben Schleife gefüllt wird, die geprüft wird)? Gibt es eine Sollzahl, und\n   ist sie ein von Hand eingetragenes Literal? Erzwingt der Vorzustand das\n   erwartete Ergebnis ohnehin?\n\n2. ZEITZONEN. Ein Date aus lokalen Werten gebaut (`new Date(j,m,t)`, `setDate`,\n   `setMonth`) und dann über `toISOString()` gelesen, ergibt den UTC-Kalendertag —\n   östlich von UTC oft den Vortag. Richtig wären `formatBerlinDate()` bzw.\n   `plusMonate()`/`plusTage()` aus `core/datum.js`. WICHTIG: unter UTC liefert\n   dieser Fehler zufällig das richtige Ergebnis, der CI-Runner läuft auf UTC.\n   Suche nach der KOMBINATION, nicht nach `toISOString` allein.\n\n3. DER SCHREIBWEG. Wird das neue Feld auf ALLEN Anlegewegen gesetzt? Gibt es\n   Pfade, die daran vorbeigehen? Ein bereits vom Admin gesetzter Wert darf bei\n   einem erneuten Assistenten-Durchlauf nicht überschrieben werden.\n\n4. DIE BEDINGUNG DES HINWEISES. Er soll NUR erscheinen, wenn beide Zahlen gesetzt\n   sind UND das eigene Intervall LÄNGER ist. Prüfe Randfälle: gleich, null,\n   undefined, 0, Zeichenkette statt Zahl.\n\n5. FEHLERBEHANDLUNG. Ein DB-Fehler in einem Teilschritt darf nicht die ganze\n   Seite reissen. Ein verschluckter Fehler, der als \"alles in Ordnung\"\n   durchgeht, ist schlimmer als ein lauter Abbruch.\n\n6. SQL. Trägt jede Abfrage den Mandantenbezug (`studio_id`)? Ist die Migration\n   idempotent? Passt sie zum Schema?\n\nMELDE je Befund: Datei und Zeile aus dem Diff, die betroffene Zeichenkette\nwörtlich, was falsch ist, und die Schwere (blockierend / sollte behoben werden /\nAnmerkung). Erfinde nichts; wo du etwas nicht aus dem Diff entscheiden kannst,\nsag das ausdrücklich. Antworte auf Deutsch.\n";
+// BRIEF_KOPF und PRUEFPUNKTE_ALLGEMEIN sind der FESTE Teil des Auftrags, der
+// fuer JEDEN Beitrag dieses Systems gilt. Der beitragsspezifische Teil (bis
+// 10.09.2026 hier als Absatz "Der Zweig baut ein neues Feld ..." fest
+// eingebaut) kommt seit dem 12.09.2026 NICHT MEHR aus dieser Datei, sondern
+// ausschliesslich aus der per --brief=<datei> uebergebenen Datei -- siehe
+// main(). ANLASS (gemessen, siehe --brief-Pruefung in main()): ein Lauf mit
+// einem FREMDEN Diff (OWASP-Haertung: Host-Pruefung, PIN-Reset-Drossel,
+// execFile) gegen den bis dahin fest eingebauten frist_herkunft-Auftrag
+// lieferte EXIT 0 und 213 Zeilen formal tadellosen Bericht -- ueber Felder
+// (`frist_herkunft`, `hersteller_intervall_monate`) und eine Datei
+// (routes/admin/geraete.js), die der Diff gar nicht anfasste. Zwei Befunde
+// waren als "blockierend" ausgewiesen. Ein Werkzeug, das das falsche prueft,
+// ist schlimmer als keines -- deshalb bricht main() OHNE --brief jetzt LAUT
+// ab, statt still gegen einen mitgelieferten Standardauftrag zu pruefen.
+//
+// Die vormaligen Punkte 3 ("DER SCHREIBWEG") und 4 ("DIE BEDINGUNG DES
+// HINWEISES") waren beitragsspezifisch (frist_herkunft) und sind mit dem
+// entfernten Absatz ebenfalls hier herausgeflogen -- sie gehoeren kuenftig in
+// die jeweilige Brief-Datei. Die verbliebenen vier Punkte sind nur
+// umnummeriert (vormals 1, 2, 5, 6), am Wortlaut unveraendert; ihr Ursprung
+// bleibt derselbe wie vorher: woertlich aus /tmp/claude-0/codereview.py
+// uebernommen (Auftrag Teil B) — der dortige Sechs-Punkte-Auftrag ist erprobt
+// (siehe tools/zweitmeinung.js-Kopf).
+const BRIEF_KOPF = "Du bist unabhängiger Code-Gegenleser für ein Node.js/PostgreSQL-System\n(GymDocu, Arbeitsschutz-Dokumentation für Fitnessstudios). Unten stehen ZWEI\nAbschnitte: zuerst der beitragsspezifische Auftrag, danach ein Diff.\n\n";
+
+const PRUEFPUNKTE_ALLGEMEIN = "PRÜFE ZUSÄTZLICH IMMER IN DIESER REIHENFOLGE — und melde zu jedem Punkt auch,\nwenn du nichts gefunden hast:\n\n1. ZUSICHERUNGEN, DIE NICHT FEHLSCHLAGEN KÖNNEN. Für jede Zusicherung in der\n   Testdatei: welche EINE Zeile müsste man ändern, damit genau sie fällt? Bezieht\n   eine ihren Sollwert aus dem, was sie bewachen soll (z. B. Vergleich gegen\n   dieselbe Konstante auf beiden Seiten, oder eine Vergleichsmenge, die aus\n   derselben Schleife gefüllt wird, die geprüft wird)? Gibt es eine Sollzahl, und\n   ist sie ein von Hand eingetragenes Literal? Erzwingt der Vorzustand das\n   erwartete Ergebnis ohnehin?\n\n2. ZEITZONEN. Ein Date aus lokalen Werten gebaut (`new Date(j,m,t)`, `setDate`,\n   `setMonth`) und dann über `toISOString()` gelesen, ergibt den UTC-Kalendertag —\n   östlich von UTC oft den Vortag. Richtig wären `formatBerlinDate()` bzw.\n   `plusMonate()`/`plusTage()` aus `core/datum.js`. WICHTIG: unter UTC liefert\n   dieser Fehler zufällig das richtige Ergebnis, der CI-Runner läuft auf UTC.\n   Suche nach der KOMBINATION, nicht nach `toISOString` allein.\n\n3. FEHLERBEHANDLUNG. Ein DB-Fehler in einem Teilschritt darf nicht die ganze\n   Seite reissen. Ein verschluckter Fehler, der als \"alles in Ordnung\"\n   durchgeht, ist schlimmer als ein lauter Abbruch.\n\n4. SQL. Trägt jede Abfrage den Mandantenbezug (`studio_id`)? Ist die Migration\n   idempotent? Passt sie zum Schema?\n\nMELDE je Befund: Datei und Zeile aus dem Diff, die betroffene Zeichenkette\nwörtlich, was falsch ist, und die Schwere (blockierend / sollte behoben werden /\nAnmerkung). Erfinde nichts; wo du etwas nicht aus dem Diff entscheiden kannst,\nsag das ausdrücklich. Antworte auf Deutsch.\n";
 
 // Genau dieser eine Absatz (Auftrag Teil B), der den Sinn dieses Werkzeugs
 // gegenueber tools/zweitmeinung.js ausmacht: es DARF nachsehen.
 const WERKZEUG_ABSATZ = "DU HAST WERKZEUGE. Behaupte nichts, was du nachsehen kannst, und schreibe\nNIEMALS \"aus dem Diff nicht ersichtlich\" oder \"falls künftig\" — sieh\nstattdessen nach. Prüfe insbesondere: werden die neuen Spalten in der\nSELECT-Abfrage der betroffenen Seiten überhaupt ausgewählt? Wie werden die\nWerte beim Schreiben normalisiert? Gibt es weitere Schreibwege ausserhalb\ndes Diffs? Bevor du einen Befund meldest, sieh dir die tragende Stelle im\nOriginal an und zitiere sie mit Datei und Zeilennummer. Ein Befund ohne\nnachgesehene Fundstelle ist keiner.\n\nDu darfst und sollst MEHRERE Werkzeugaufrufe in EINER Antwort buendeln, wenn sie\nvoneinander unabhaengig sind — das spart Runden, und die Rundenzahl ist begrenzt.";
 
-const AUFTRAGSTEXT = BRIEF_KERN + '\n' + WERKZEUG_ABSATZ;
+// Baut den vollstaendigen Auftragstext aus dem beitragsspezifischen
+// Brief-Inhalt (--brief=<datei>, siehe main()) und dem festen Teil zusammen.
+// KEIN eingebauter Standardauftrag -- briefInhalt kommt IMMER vom Aufrufer.
+function auftragstextBauen(briefInhalt) {
+    return BRIEF_KOPF + briefInhalt.trim() + '\n\n' + PRUEFPUNKTE_ALLGEMEIN + '\n' + WERKZEUG_ABSATZ;
+}
 
+// FLACH, ohne "function"-Unterobjekt -- so verlangt es /v1/responses (siehe
+// Endpunkt-Umbau oben, gemessen 12.09.2026: mit dieser Form kommt ein
+// output[]-Eintrag vom Typ "function_call" zurueck, mit "function"-Huelle
+// lehnt die API ab). fuer /v1/chat/completions waere die verschachtelte Form
+// noetig gewesen -- dieses Werkzeug spricht nur noch /v1/responses.
 const WERKZEUGE = [
     {
         type: 'function',
-        function: {
-            name: 'suche',
-            description: 'Volltextsuche ueber alle Dateien der Erlaubnisliste (das ist genau, '
-                + 'was "git ls-files" im Projekt auflistet). Liefert Treffer als '
-                + '"pfad:zeilennummer:inhalt", hoechstens ' + MAX_SUCHE_ZEILEN + ' Zeilen; gibt es '
-                + 'mehr, werden die ersten ' + MAX_SUCHE_ZEILEN + ' UND die Gesamtzahl gemeldet.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    muster: {
-                        type: 'string',
-                        description: 'Regulaerer Ausdruck (JavaScript-Syntax), pro Zeile geprueft.',
-                    },
-                    dateimuster: {
-                        type: 'string',
-                        description: 'Optionaler Glob (* und ?) gegen den relativen Pfad, um die '
-                            + 'Suche einzugrenzen, z. B. "*.js" oder "routes/admin/*".',
-                    },
+        name: 'suche',
+        description: 'Volltextsuche ueber alle Dateien der Erlaubnisliste (das ist genau, '
+            + 'was "git ls-files" im Projekt auflistet). Liefert Treffer als '
+            + '"pfad:zeilennummer:inhalt", hoechstens ' + MAX_SUCHE_ZEILEN + ' Zeilen; gibt es '
+            + 'mehr, werden die ersten ' + MAX_SUCHE_ZEILEN + ' UND die Gesamtzahl gemeldet.',
+        parameters: {
+            type: 'object',
+            properties: {
+                muster: {
+                    type: 'string',
+                    description: 'Regulaerer Ausdruck (JavaScript-Syntax), pro Zeile geprueft.',
                 },
-                required: ['muster'],
+                dateimuster: {
+                    type: 'string',
+                    description: 'Optionaler Glob (* und ?) gegen den relativen Pfad, um die '
+                        + 'Suche einzugrenzen, z. B. "*.js" oder "routes/admin/*".',
+                },
             },
+            required: ['muster'],
         },
     },
     {
         type: 'function',
-        function: {
-            name: 'lies',
-            description: 'Liefert einen Zeilenbereich einer einzelnen Datei aus der '
-                + 'Erlaubnisliste, jede Zeile mit ihrer Nummer. Hoechstens ' + MAX_LIES_ZEILEN
-                + ' Zeilen je Aufruf; ein groesserer Bereich wird gekuerzt und das wird gemeldet.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    pfad: { type: 'string', description: 'Pfad relativ zum Projekt-Wurzelverzeichnis.' },
-                    von: { type: 'integer', description: 'Erste Zeile, 1-basiert.' },
-                    bis: { type: 'integer', description: 'Letzte Zeile, 1-basiert, inklusive.' },
-                },
-                required: ['pfad', 'von', 'bis'],
+        name: 'lies',
+        description: 'Liefert einen Zeilenbereich einer einzelnen Datei aus der '
+            + 'Erlaubnisliste, jede Zeile mit ihrer Nummer. Hoechstens ' + MAX_LIES_ZEILEN
+            + ' Zeilen je Aufruf; ein groesserer Bereich wird gekuerzt und das wird gemeldet.',
+        parameters: {
+            type: 'object',
+            properties: {
+                pfad: { type: 'string', description: 'Pfad relativ zum Projekt-Wurzelverzeichnis.' },
+                von: { type: 'integer', description: 'Erste Zeile, 1-basiert.' },
+                bis: { type: 'integer', description: 'Letzte Zeile, 1-basiert, inklusive.' },
             },
+            required: ['pfad', 'von', 'bis'],
         },
     },
 ];
@@ -369,12 +412,12 @@ function werkzeugLies(pfad, von, bis) {
 // Teil 2c): OHNE "tools" im Request KANN das Modell keine Funktion mehr
 // aufrufen, nur noch Text liefern. Vorgabe true, damit ein Aufrufer, der den
 // Parameter vergisst, nicht versehentlich den Riegel auf JEDE Runde legt.
-function anfragen(schluessel, modell, messages, mitWerkzeugen = true) {
+function anfragen(schluessel, modell, verlauf, mitWerkzeugen = true) {
     const koerper = JSON.stringify({
         model: modell,
-        messages,
+        input: verlauf,
         ...(mitWerkzeugen ? { tools: WERKZEUGE } : {}),
-        max_completion_tokens: MAX_ANTWORT_TOKEN,
+        max_output_tokens: MAX_ANTWORT_TOKEN,
     });
     return new Promise((erfuellen, ablehnen) => {
         const anfrage = https.request(ENDPUNKT, {
@@ -404,8 +447,9 @@ function anfragen(schluessel, modell, messages, mitWerkzeugen = true) {
 
 // Protokoll: JEDE gesendete Nachricht und jede Funktionsantwort, einmal pro
 // Zeile. Absichtlich NIE der rohe HTTP-Request (der trueg den
-// Authorization-Header) — nur die messages[]-Elemente und Zaehl-Metadaten
-// laufen hier durch, der Header wird nirgends an diese Funktion uebergeben.
+// Authorization-Header) — nur die input[]-Elemente (frueher messages[]) und
+// Zaehl-Metadaten laufen hier durch, der Header wird nirgends an diese
+// Funktion uebergeben.
 let protokollPfadAktuell = null;
 function protokollSchreiben(eintrag) {
     if (!protokollPfadAktuell) return;
@@ -413,14 +457,18 @@ function protokollSchreiben(eintrag) {
 }
 
 function konsoleUsage() {
-    console.error('Aufruf: node tools/gegenleser-repo.js <diff.txt> [--wurzel=/pfad/zum/repo]');
-    console.error('        [--modell=gpt-5.5] [--max-runden=25] [--protokoll=/pfad.jsonl]');
+    console.error('Aufruf: node tools/gegenleser-repo.js <diff.txt> --brief=<auftrag.txt>');
+    console.error('        [--wurzel=/pfad/zum/repo] [--modell=gpt-6-astra] [--max-runden=25]');
+    console.error('        [--protokoll=/pfad.jsonl]');
     console.error('        node tools/gegenleser-repo.js --selbsttest');
+    console.error('--brief ist PFLICHT: liefert den beitragsspezifischen Teil des Auftrags,');
+    console.error('kein eingebauter Standardauftrag mehr (siehe Dateikopf).');
 }
 
 function argumenteLesen(argv) {
     const optionen = {
         diffPfad: null,
+        briefPfad: null,
         wurzel: process.cwd(),
         modell: VORGABE_MODELL,
         maxRunden: VORGABE_MAX_RUNDEN,
@@ -428,6 +476,7 @@ function argumenteLesen(argv) {
     };
     for (const a of argv) {
         if (a.startsWith('--wurzel=')) { optionen.wurzel = a.slice('--wurzel='.length); continue; }
+        if (a.startsWith('--brief=')) { optionen.briefPfad = a.slice('--brief='.length); continue; }
         if (a.startsWith('--modell=')) { optionen.modell = a.slice('--modell='.length); continue; }
         if (a.startsWith('--max-runden=')) { optionen.maxRunden = Number(a.slice('--max-runden='.length)); continue; }
         if (a.startsWith('--protokoll=')) { optionen.protokollPfad = a.slice('--protokoll='.length); continue; }
@@ -465,6 +514,22 @@ function rundenHinweisBauen(runde, maxRunden, istLetzteZweiRunden, ist70Prozent)
     return text;
 }
 
+// Liest den Text eines Berichts aus output[] heraus (/v1/responses): der
+// Endtext steckt in einem oder mehreren Eintraegen {type:"message",
+// role:"assistant", content:[{type:"output_text", text}]} -- gemessen am
+// echten Konto 12.09.2026 (siehe Endpunkt-Kommentar oben), NICHT mehr in
+// choices[0].message.content wie bei /v1/chat/completions.
+function textAusAusgabe(ausgabeElemente) {
+    const teile = [];
+    for (const element of ausgabeElemente) {
+        if (element.type !== 'message' || element.role !== 'assistant' || !Array.isArray(element.content)) continue;
+        for (const teil of element.content) {
+            if (teil.type === 'output_text' && typeof teil.text === 'string') teile.push(teil.text);
+        }
+    }
+    return teile.join('\n');
+}
+
 async function main(argvUeberschreibung) {
     const argumente = argvUeberschreibung || process.argv.slice(2);
     if (argumente[0] === '--selbsttest') return selbsttest();
@@ -480,6 +545,34 @@ async function main(argvUeberschreibung) {
     if (!optionen.diffPfad) {
         konsoleUsage();
         return 2;
+    }
+
+    // --brief ist PFLICHT (Defekt 2, behoben 12.09.2026, siehe BRIEF_KOPF-
+    // Kommentar): OHNE ihn haette dieses Werkzeug keinen beitragsspezifischen
+    // Auftrag mehr und wuerde entweder gar nichts oder -- schlimmer -- still
+    // gegen etwas Falsches pruefen. Deshalb laut abbrechen, BEVOR ein
+    // Schluessel gebraucht wird (Selbsttest-Grenzfall: ohne Schluessel und
+    // ohne Netz prüfbar).
+    if (!optionen.briefPfad) {
+        console.error('ABBRUCH: Kein --brief=<datei> angegeben. Dieses Werkzeug hat KEINEN\n'
+            + 'eingebauten Standardauftrag mehr -- ohne Brief wuerde es entweder gar nicht oder,\n'
+            + 'schlimmer, gegen den FALSCHEN Beitrag pruefen und dabei einen formal sauberen,\n'
+            + 'inhaltlich falschen Bericht liefern (gemessener Fall: ein OWASP-Diff gegen den\n'
+            + 'frist_herkunft-Auftrag lieferte EXIT 0 und 213 Zeilen Bericht ueber Code, den der\n'
+            + 'Diff nie anfasste). Ausweg: --brief=<pfad-zur-briefdatei> mit dem\n'
+            + 'beitragsspezifischen Teil des Auftrags.');
+        return 6;
+    }
+    let briefInhalt;
+    try {
+        briefInhalt = fs.readFileSync(optionen.briefPfad, 'utf8');
+    } catch (e) {
+        console.error(`ABBRUCH: --brief=${optionen.briefPfad} konnte nicht gelesen werden (${e.message}).`);
+        return 6;
+    }
+    if (!briefInhalt.trim()) {
+        console.error(`ABBRUCH: --brief=${optionen.briefPfad} ist leer -- das waere derselbe stille Fehlschlag wie ein fehlender Brief.`);
+        return 6;
     }
 
     // Grenzfall zuerst, weil er ohne Schluessel und ohne Netz prüfbar sein
@@ -513,11 +606,12 @@ async function main(argvUeberschreibung) {
         return 3;
     }
 
-    const messages = [{
+    const auftragstext = auftragstextBauen(briefInhalt);
+    const verlauf = [{
         role: 'user',
-        content: AUFTRAGSTEXT + '\n\n########## DIFF ##########\n\n' + diffInhalt,
+        content: auftragstext + '\n\n########## DIFF ##########\n\n' + diffInhalt,
     }];
-    protokollSchreiben({ typ: 'start', nachricht: messages[0] });
+    protokollSchreiben({ typ: 'start', element: verlauf[0] });
 
     let runde = 0;
     let sucheAnzahl = 0;
@@ -562,31 +656,41 @@ async function main(argvUeberschreibung) {
         const istLetzteZweiRunden = (optionen.maxRunden - runde) <= 1;
         const ist70Prozent = runde >= Math.ceil(optionen.maxRunden * 0.7);
         const rundenHinweis = rundenHinweisBauen(runde, optionen.maxRunden, istLetzteZweiRunden, ist70Prozent);
-        messages.push({ role: 'user', content: rundenHinweis });
+        verlauf.push({ role: 'user', content: rundenHinweis });
         protokollSchreiben({ typ: 'rundenhinweis', runde, istLetzteZweiRunden, ist70Prozent, text: rundenHinweis });
 
         let antwort;
         try {
-            antwort = await anfragen(schluessel, optionen.modell, messages, !istLetzteZweiRunden);
+            antwort = await anfragen(schluessel, optionen.modell, verlauf, !istLetzteZweiRunden);
         } catch (e) {
             console.error(`FEHLER bei der Anfrage: ${e.message}`);
             zusammenfassungAusgeben();
             throw e;
         }
+        // Feldnamen gemessen am echten Konto 12.09.2026 (siehe Endpunkt-
+        // Kommentar oben): usage traegt input_tokens/output_tokens, nicht
+        // mehr prompt_tokens/completion_tokens.
         const verbrauch = antwort.usage || {};
-        promptTokenSumme += verbrauch.prompt_tokens || 0;
-        completionTokenSumme += verbrauch.completion_tokens || 0;
-        const nachricht = antwort.choices[0].message;
-        protokollSchreiben({ typ: 'antwort', runde, nachricht, verbrauch });
-        messages.push(nachricht);
+        promptTokenSumme += verbrauch.input_tokens || 0;
+        completionTokenSumme += verbrauch.output_tokens || 0;
+        const ausgabeElemente = antwort.output || [];
+        protokollSchreiben({ typ: 'antwort', runde, ausgabe: ausgabeElemente, verbrauch });
+        // Alle zurueckgegebenen output[]-Elemente unveraendert an den Verlauf
+        // anhaengen (Nachrichten UND Funktionsaufrufe) -- /v1/responses ist
+        // zustandslos ohne previous_response_id, die naechste Anfrage muss
+        // die volle bisherige Historie erneut mitschicken.
+        verlauf.push(...ausgabeElemente);
 
-        if (!nachricht.tool_calls || nachricht.tool_calls.length === 0) {
-            if (!nachricht.content || !nachricht.content.trim()) {
+        const funktionsaufrufe = ausgabeElemente.filter((element) => element.type === 'function_call');
+
+        if (funktionsaufrufe.length === 0) {
+            const text = textAusAusgabe(ausgabeElemente);
+            if (!text || !text.trim()) {
                 console.error('ABBRUCH: Das Modell hat am Ende keinen Text geliefert — kein sauberes Ergebnis.');
                 zusammenfassungAusgeben();
                 return 5;
             }
-            console.log(nachricht.content);
+            console.log(text);
             // WICHTIG (Auftrag Teil 2): ein unter Rundendruck erzeugter
             // Bericht ist NICHT dasselbe wie ein regulaerer und muss als
             // solcher erkennbar sein -- sonst waere er schlimmer als der
@@ -598,19 +702,19 @@ async function main(argvUeberschreibung) {
             return 0;
         }
 
-        for (const aufruf of nachricht.tool_calls) {
+        for (const aufruf of funktionsaufrufe) {
             let ergebnis;
             try {
                 let werkzeugArgumente;
                 try {
-                    werkzeugArgumente = JSON.parse(aufruf.function.arguments || '{}');
+                    werkzeugArgumente = JSON.parse(aufruf.arguments || '{}');
                 } catch (e) {
                     ergebnis = { text: `abgelehnt: ungueltige Argumente (${e.message})`, abgelehnt: true };
                 }
                 if (!ergebnis) {
-                    if (aufruf.function.name === 'suche') sucheAnzahl++;
-                    else if (aufruf.function.name === 'lies') liesAnzahl++;
-                    ergebnis = werkzeugAufrufen(aufruf.function.name, werkzeugArgumente);
+                    if (aufruf.name === 'suche') sucheAnzahl++;
+                    else if (aufruf.name === 'lies') liesAnzahl++;
+                    ergebnis = werkzeugAufrufen(aufruf.name, werkzeugArgumente);
                     if (ergebnis.relativ) gelesenePfade.push({ pfad: ergebnis.relativ, von: ergebnis.von, bis: ergebnis.bis });
                 }
             } catch (e) {
@@ -633,8 +737,11 @@ async function main(argvUeberschreibung) {
                 return 4;
             }
 
-            protokollSchreiben({ typ: 'funktionsantwort', runde, werkzeug: aufruf.function.name, tool_call_id: aufruf.id, text: ergebnis.text });
-            messages.push({ role: 'tool', tool_call_id: aufruf.id, content: ergebnis.text });
+            // Das Werkzeugergebnis geht mit demselben call_id zurueck, NICHT
+            // mit der Item-id des Funktionsaufrufs (gemessen 12.09.2026,
+            // siehe Endpunkt-Kommentar oben).
+            protokollSchreiben({ typ: 'funktionsantwort', runde, werkzeug: aufruf.name, call_id: aufruf.call_id, text: ergebnis.text });
+            verlauf.push({ type: 'function_call_output', call_id: aufruf.call_id, output: ergebnis.text });
         }
     }
 }
@@ -647,19 +754,16 @@ async function main(argvUeberschreibung) {
 
 // Baustoff fuer die gestubbten OpenAI-Antworten im Selbsttest (Runden- und
 // Kostenpruefungen unten) -- KEIN Netz, nur Datenstrukturen, die genau wie
-// eine echte /v1/chat/completions-Antwort geformt sind.
-function nachrichtWerkzeugaufrufBauen(id, funktionName, argumente) {
-    return {
-        role: 'assistant',
-        content: null,
-        tool_calls: [{ id, type: 'function', function: { name: funktionName, arguments: JSON.stringify(argumente) } }],
-    };
+// eine echte /v1/responses-Antwort geformt sind (Form am echten Konto
+// gemessen 12.09.2026, siehe Endpunkt-Kommentar am Dateikopf).
+function elementFunktionsaufrufBauen(callId, funktionName, argumente) {
+    return { id: `fc-${callId}`, type: 'function_call', status: 'completed', call_id: callId, name: funktionName, arguments: JSON.stringify(argumente) };
 }
-function nachrichtTextBauen(text) {
-    return { role: 'assistant', content: text, tool_calls: null };
+function elementTextBauen(text) {
+    return { id: 'msg-selbsttest', type: 'message', status: 'completed', role: 'assistant', content: [{ type: 'output_text', text }] };
 }
-function antwortKoerperBauen(nachricht, promptToken, completionToken) {
-    return { choices: [{ message: nachricht }], usage: { prompt_tokens: promptToken, completion_tokens: completionToken } };
+function antwortKoerperBauen(ausgabeElement, inputToken, outputToken) {
+    return { output: [ausgabeElement], usage: { input_tokens: inputToken, output_tokens: outputToken } };
 }
 
 // Stub fuer https.request: KEIN Netz, keine echten Sockets. Beantwortet der
@@ -692,7 +796,7 @@ function httpsStubBauen(warteschlange, aufgezeichnet) {
 }
 
 async function selbsttest() {
-    const ERWARTETE_FAELLE = 20;
+    const ERWARTETE_FAELLE = 21;
     let gelaufen = 0;
     let fehler = 0;
     const pruefen = (bezeichnung, bedingung) => {
@@ -722,6 +826,15 @@ async function selbsttest() {
 
         execFileSync('git', ['add', 'harmlos.txt', '.env.beispiel', 'zeiger_auf_etc', 'geheim.js'], { cwd: klon });
         execFileSync('git', ['commit', '-q', '-m', 'Testdaten'], { cwd: klon });
+
+        // Brief-Fixture fuer die main()-Aufrufe unten (Defekt 2, 12.09.2026):
+        // --brief ist jetzt PFLICHT, kein main()-Lauf im Selbsttest kommt
+        // ohne sie ueber den neuen Abbruch hinaus. Liegt AUSSERHALB der
+        // Erlaubnisliste des Klons (wie ein echter Aufrufer die Brief-Datei
+        // auch von ausserhalb des Repos uebergeben wuerde) -- absichtlich
+        // nicht ueber pfadPruefen() geprueft, siehe main().
+        const briefFixturePfad = path.join(klon, 'brief-selbsttest.txt');
+        fs.writeFileSync(briefFixturePfad, 'Selbsttest-Auftrag: nichts Beitragsspezifisches, nur die Mechanik pruefen.\n');
 
         wurzelEinrichten(klon);
 
@@ -770,12 +883,33 @@ async function selbsttest() {
             delete process.env.OPENAI_KEY_DATEI;
             let code;
             try {
-                code = await main([path.join(klon, 'harmlos.txt'), `--wurzel=${klon}`, '--max-runden=0']);
+                code = await main([path.join(klon, 'harmlos.txt'), `--brief=${briefFixturePfad}`, `--wurzel=${klon}`, '--max-runden=0']);
             } finally {
                 if (alterKey !== undefined) process.env.OPENAI_API_KEY = alterKey;
                 if (alteDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteDatei;
             }
             pruefen('GRENZFALL 8 (--max-runden=0 bricht sofort mit Exit 4 ab, ohne Schluessel und ohne Netz)', code === 4);
+        }
+
+        // ===== DEFEKT 2, GEGENPROBE: fehlendes --brief bricht laut ab =====
+        // Positivkontrolle zu den Faellen unten, die --brief korrekt setzen:
+        // OHNE --brief darf main() nicht bis zum Schluessel-/Netz-Code
+        // vordringen, sondern muss VORHER mit dem eigenen Exit-Code 6
+        // abbrechen -- ohne Schluessel und ohne Netz pruefbar, aus demselben
+        // Grund wie GRENZFALL 8.
+        {
+            const alterKey = process.env.OPENAI_API_KEY;
+            const alteDatei = process.env.OPENAI_KEY_DATEI;
+            delete process.env.OPENAI_API_KEY;
+            delete process.env.OPENAI_KEY_DATEI;
+            let code;
+            try {
+                code = await main([path.join(klon, 'harmlos.txt'), `--wurzel=${klon}`]);
+            } finally {
+                if (alterKey !== undefined) process.env.OPENAI_API_KEY = alterKey;
+                if (alteDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteDatei;
+            }
+            pruefen('GRENZFALL 21 (kein --brief angegeben bricht sofort mit Exit 6 ab, ohne Schluessel und ohne Netz)', code === 6);
         }
 
         // ===== LAUF A: Rundenriegel und Rundenhinweis ueber 10 Runden =====
@@ -797,11 +931,11 @@ async function selbsttest() {
             const warteschlangeA = [];
             for (let r = 1; r <= 9; r++) {
                 warteschlangeA.push(antwortKoerperBauen(
-                    nachrichtWerkzeugaufrufBauen(`call-${r}`, 'suche', { muster: 'Zeile' }),
+                    elementFunktionsaufrufBauen(`call-${r}`, 'suche', { muster: 'Zeile' }),
                     100, 50,
                 ));
             }
-            warteschlangeA.push(antwortKoerperBauen(nachrichtTextBauen('TESTBERICHT-ENDE'), 100, 50));
+            warteschlangeA.push(antwortKoerperBauen(elementTextBauen('TESTBERICHT-ENDE'), 100, 50));
 
             https.request = httpsStubBauen(warteschlangeA, aufgezeichnetA);
             console.log = (msg) => ausgabeZeilenA.push(String(msg));
@@ -810,6 +944,7 @@ async function selbsttest() {
             try {
                 codeA = await main([
                     path.join(klon, 'harmlos.txt'),
+                    `--brief=${briefFixturePfad}`,
                     `--wurzel=${klon}`,
                     '--modell=gpt-5.6-terra',
                     '--max-runden=10',
@@ -832,7 +967,7 @@ async function selbsttest() {
                 && aufgezeichnetA[8].tools === undefined && aufgezeichnetA[9].tools === undefined;
             pruefen('RUNDENRIEGEL 11 (Runden 9+10 -- die letzten zwei -- schicken KEIN "tools" mit, geprueft an der tatsaechlich gebauten Anfrage)', keineWerkzeugeLetzteZwei);
 
-            const letzteNachricht = (koerper) => koerper && koerper.messages[koerper.messages.length - 1].content;
+            const letzteNachricht = (koerper) => koerper && koerper.input[koerper.input.length - 1].content;
             const hinweisRunde3 = letzteNachricht(aufgezeichnetA[2]);
             pruefen(`RUNDENHINWEIS 12 (Runde 3 von 10 zeigt den schlichten Stand: "${hinweisRunde3}")`,
                 hinweisRunde3 === '[Rundenstand: Runde 3 von 10 -- danach noch 7 moeglich.]');
@@ -872,7 +1007,7 @@ async function selbsttest() {
 
             const aufgezeichnetB = [];
             const ausgabeZeilenB = [];
-            const warteschlangeB = [antwortKoerperBauen(nachrichtTextBauen('TESTBERICHT-SOFORT'), 100, 50)];
+            const warteschlangeB = [antwortKoerperBauen(elementTextBauen('TESTBERICHT-SOFORT'), 100, 50)];
 
             https.request = httpsStubBauen(warteschlangeB, aufgezeichnetB);
             console.log = (msg) => ausgabeZeilenB.push(String(msg));
@@ -881,6 +1016,7 @@ async function selbsttest() {
             try {
                 codeB = await main([
                     path.join(klon, 'harmlos.txt'),
+                    `--brief=${briefFixturePfad}`,
                     `--wurzel=${klon}`,
                     '--modell=gpt-5.6-terra',
                     '--max-runden=10',
@@ -924,7 +1060,7 @@ async function selbsttest() {
 
             const aufgezeichnetC = [];
             const ausgabeZeilenC = [];
-            const warteschlangeC = [antwortKoerperBauen(nachrichtTextBauen('TESTBERICHT-UNBEKANNTES-MODELL'), 100, 50)];
+            const warteschlangeC = [antwortKoerperBauen(elementTextBauen('TESTBERICHT-UNBEKANNTES-MODELL'), 100, 50)];
 
             https.request = httpsStubBauen(warteschlangeC, aufgezeichnetC);
             console.log = (msg) => ausgabeZeilenC.push(String(msg));
@@ -933,6 +1069,7 @@ async function selbsttest() {
             try {
                 codeC = await main([
                     path.join(klon, 'harmlos.txt'),
+                    `--brief=${briefFixturePfad}`,
                     `--wurzel=${klon}`,
                     '--modell=modell-unbekannt-xyz-imaginaer',
                     '--max-runden=10',
