@@ -1,8 +1,9 @@
 name: CI
 
 # Prueft nur die Werkzeuge, die sich selbst durchsetzen (.claude/settings.json,
-# tools/live-check.sh, test/hooks-pruefen.sh) — NICHT die Anwendung selbst,
-# die liegt im GymDocu-Repo. tools/live-check.sh wird hier bewusst NUR auf
+# tools/live-check.sh, test/hooks-pruefen.sh, der Selbsttest von
+# tools/gegenleser-repo.js) — NICHT die Anwendung selbst, die liegt im
+# GymDocu-Repo. tools/live-check.sh wird hier bewusst NUR auf
 # Syntax geprueft, nicht ausgefuehrt: es geht live gegen gymdocu.de ins
 # offene Netz, und das waere bei jedem Push/PR ein Fremdzugriff obendrein
 # flatterhaft (DNS/TLS/Netzwerk-Flakes wuerden CI grundlos rot faerben).
@@ -28,3 +29,19 @@ jobs:
 
       - name: Hook-Waechter pruefen (pipe.sh, www.sh)
         run: sh test/hooks-pruefen.sh
+
+      - name: Gegenleser-Selbsttest (Erlaubnisliste, Geheimnis-Riegel, Rundenriegel)
+        # Laeuft ohne Netz und ohne Schluessel: https.request ist gestubbt, der
+        # Klon liegt unter os.tmpdir(). Bis 13.09.2026 wurde --selbsttest
+        # NIRGENDS automatisch gefahren — ein Riegel, den niemand ausfuehrt,
+        # ist eine Absichtserklaerung. Exit ungleich 0 faerbt den Lauf rot.
+        run: node tools/gegenleser-repo.js --selbsttest
+
+      - name: Riegel-Selbsttest ueber zweitmeinung (Musterebene)
+        # ZWEI Schritte, weil es zwei Pruefstaende sind: der obige deckt
+        # Erlaubnisliste, Werkzeugpfade (suche/lies) und Rundenriegel ab; dieser
+        # hier ruft selbsttestRiegel() aus tools/geheimnis-riegel.js — die
+        # Musterebene (ROT/GRUEN je Muster, entferneGeheimnisse() mit
+        # PEM-Bloecken und Deckeln). Nur tools/zweitmeinung.js ruft diese
+        # Funktion; ohne diesen Schritt liefe sie nirgends automatisch.
+        run: node tools/zweitmeinung.js --selbsttest
