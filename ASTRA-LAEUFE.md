@@ -38,6 +38,7 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 13.09.2026 | Dritte Bestaetigungsrunde: Waechter Zeitzonenfalle, Runde-3-Behebungen | Diff 442 Zeilen, Suchen 8, Lesungen 13, Token rein 223229, Token raus 5762, Runden 6 | 4 | 4 | 0 | 3,22 $ |
 | 13.09.2026 | Vierte Bestaetigungsrunde: Waechter Zeitzonenfalle (als „letzte" angesetzt, war es nicht) | Diff 608 Zeilen, Suchen 49, Lesungen 9, Token rein 876854, Token raus 10903, Runden 13 | 2 | 2 | 0 | 11,78 $ |
 | 14.09.2026 | Fuenfte Bestaetigungsrunde: Waechter Zeitzonenfalle, Referenzen von aussen | Diff 579 Zeilen, Suchen 8, Lesungen 11, Token rein 231345, Token raus 6894, Runden 5 | 2 | 2 | 0 | 3,41 $ |
+| 14.09.2026 | Sechste Bestaetigungsrunde: Waechter Zeitzonenfalle, Kopie und git-Referenz nach dem Lesen | Diff 373 Zeilen, Suchen 11, Lesungen 13, Token rein 276620, Token raus 6289, Runden 6 | 1 | 1 | 0 | 3,93 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -567,3 +568,41 @@ der einem anderen Nutzer gehört — auf dem Deploy-Gate hätte das zugeschlagen
 Beide Leser haben in fünf Runden keinen davon gesehen. Das ist das stärkste
 Argument dafür, dass die Trennung lesend/ausführend mehr trägt als eine
 weitere Lese-Spur.
+
+## Sieben Runden, sieben blockierende Wege (14.09.2026)
+
+Siebte Gegenlesung (3,93 $), ein Befund, blockierend, selbst nachgemessen.
+Damit steht die Trefferquote bei **7 von 7**: jede einzelne Runde über diesen
+einen Wächter hat einen Weg gefunden, auf dem er grün meldet, während eine
+echte Falle im Bestand liegt.
+
+Dieser hier ist die zeitliche Beweislücke eine Stufe später als die vom
+Vortag:
+
+    const f = findeTreffer(puffer.toString('utf8', 0, 1024));
+
+Jede Datei wird VOLLSTÄNDIG gelesen, ihre volle Länge korrekt protokolliert
+und gegen `fs.statSync().size` bestätigt — an den Erkenner geht aber nur das
+erste Kilobyte. GEMESSEN mit einer echten Falle am Ende von `verify-daily.js`
+(2.914 Byte, die Falle liegt weit hinter der Grenze; Positivkontrolle
+unmutiert: EXIT 1, drei Kreuze):
+
+    EXIT 0, 87 PASS / 0 FAIL, null Kreuze.
+
+Die Größenprüfung belegt den gelesenen PUFFER, nicht den an den Erkenner
+ÜBERGEBENEN Text. Alle vier P6-Dateien sind kürzer als 1 KiB, also sieht auch
+dort niemand etwas.
+
+**Was diese sieben Runden über die Methode sagen, und das ist der eigentliche
+Ertrag:** Sie belegen NICHT, dass der Wächter schlecht gebaut ist — jede
+einzelne Behebung hat gehalten, keine hat Abdeckung gekostet, und alle
+früheren Mutationen bleiben bis heute rot. Sie belegen etwas anderes: **„es
+gibt keinen weiteren Weg" ist eine negative Aussage, und ein Prüfer mit
+beliebig vielen Versuchen findet gegen eine solche Aussage immer noch einen.**
+Die Schleife wird nicht dadurch beendet, dass der Code gut genug wird, sondern
+dadurch, dass jemand aufhört zu fragen. Das ist eine Entscheidung, keine
+Messung — und sie gehört dem Betreiber, nicht dem Prüfgang.
+
+**Kosten bis hier:** sieben Bau-Runden, sieben Gegenlesungen
+(3,72 + 2,89 + 3,38 + 3,22 + 11,78 + 3,41 + 3,93 = **32,33 $**), dazu eine
+Claude-Review, für eine einzige neue Testdatei.
