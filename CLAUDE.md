@@ -801,6 +801,38 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   gegen eine Zahl, die aus demselben Datenfluss fällt. Eine Untergrenze
   („mindestens 170") ist dabei keine Absicherung, sondern nur ein Schutz gegen
   den Totalausfall.
+- **Ein Selbstnachweis aus dem eigenen Datenfluss lässt sich beliebig
+  verfeinern, ohne je zu schliessen — der Regress endet erst an einer Referenz
+  von AUSSEN.** Das ist die Verallgemeinerung der beiden Regeln direkt darüber,
+  und sie ist an EINEM Wächter über drei Runden gemessen worden (13.09.2026):
+  Runde 3 gab ihm einen ZÄHLER der gelesenen Dateien — vier Mutationen
+  überlebten. Runde 4 ersetzte den Zähler durch die MENGE der gelesenen Pfade —
+  das sah nach dem Ende der Klasse aus. Runde 5 zeigte mit einer ECHTEN Falle
+  in einer Bestandsdatei (Positivkontrolle: unmutiert **EXIT 1, drei Kreuze**),
+  dass zwei weitere Ein-Zeilen-Mutationen weiterhin **EXIT 0, 86 PASS / 0 FAIL**
+  liefern: bei jedem Durchlauf dieselbe erste Datei lesen und trotzdem jeden
+  ANGEFORDERTEN Namen protokollieren; und die Dateiliste kürzen, bevor der
+  Leser sie bekommt — er bestätigt dann korrekt, dass er die verkürzte Liste
+  gelesen hat. Die Menge stammte eben nicht aus dem, was gelesen wurde, sondern
+  aus dem, was angefordert war.
+  Die Frage lautet deshalb nicht „ist der Nachweis fein genug?", sondern:
+  **woher kommt der Sollwert, und kann derselbe Defekt ihn mitverändern?**
+  Kommt er aus demselben Datenfluss, verschiebt jede Verfeinerung die Lücke nur
+  eine Ebene tiefer. Brauchbare Referenzen von aussen sind etwa `git ls-files`
+  (wenn der Prüfling das Dateisystem abläuft), eine unabhängig ermittelte
+  Grösse oder Prüfsumme des INHALTS (wenn er liest), oder ein Aufruf mit
+  MEHREREN unterscheidbaren Eingaben statt mehrerer Aufrufe mit je einer — bei
+  einer einelementigen Liste ist „das erste Element" nicht von „das richtige
+  Element" zu unterscheiden, und genau daran ist die Prüfung oben vorbeigelaufen.
+- **Eine Abbruchregel darf sagen, WAS man noch baut — nicht, dass nichts mehr
+  kommt.** Am 13.09.2026 habe ich eine Gegenlesung als „letzte Runde"
+  angekündigt und mich zugleich darauf festgelegt, nur noch Blockierendes zu
+  bauen. Der zweite Teil war richtig und hat gewirkt (drei Anmerkungen
+  derselben Runde wurden korrekt aussortiert und als datierte offene Punkte
+  festgehalten). Der erste war eine Vorhersage über ein Ergebnis, das noch
+  nicht vorlag — und sie war falsch, die Runde brachte zwei blockierende
+  Befunde. Wer eine Grenze zieht, zieht sie am eigenen Verhalten, nicht am
+  Befund des anderen.
 - **Ein Verdrahtungsfehler ist die Lücke, die eine Behebung hinterlässt.**
   Am selben Tag: eine Behebung meldete Symlinks im Wurzelverzeichnis neu als
   Fehler, und ich hatte das mit einem ECHTEN Symlink rot gemessen. Trotzdem
