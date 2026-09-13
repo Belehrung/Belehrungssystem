@@ -410,12 +410,39 @@ letzte Instanz, Datengrenze). Drei Punkte daraus sind neu und übernommen:
 
 **Ausdrücklich NICHT übernommen**, obwohl vorgeschlagen:
 
-- **Werkzeuge und Repo-Zugriff für den Prüfer** (`read_file`, `run_tests`,
-  `get_ci_status`, `create_review_comment`). Das löst genau die Eigenschaft
-  auf, die ihn wertvoll macht: er baut nicht, er fasst nichts an, er hat
-  keinen Anteil. `create_review_comment` wäre zusätzlich ein Schreibweg in
-  unseren Ablauf, den niemand gemessen hat. Die Messung vom 10.09. spricht
-  auch dagegen: mehr Material ließ ihn ANDERES finden, nicht mehr.
+- **AUSFÜHRUNG UND SCHREIBZUGRIFF für den Prüfer** (`run_tests`,
+  `get_ci_status`, `create_review_comment`). `create_review_comment` wäre ein
+  Schreibweg in unseren Ablauf, den niemand gemessen hat; `run_tests` und
+  `get_ci_status` koppeln den Prüfer an unsere Infrastruktur. Bleibt abgelehnt.
+
+  **NACHGESCHÄRFT 13.09.2026 — reines LESEN fällt NICHT unter diese
+  Ablehnung.** Bis hierher stand hier „Werkzeuge und Repo-Zugriff" in einem
+  Atemzug, mit `read_file` in derselben Klammer. Das widersprach zwei Dingen
+  zugleich: `tools/gegenleser-repo.js` (Freigabe 09.09.2026, umgebaut 12.09.)
+  gibt dem Prüfer genau zwei LESENDE Werkzeuge, begrenzt auf das, was
+  `git ls-files` auflistet — und der Abschnitt „Nachgemessen 12.09." verlangt
+  weiter unten SELBST, die Geschwisterstellen mitzugeben, weil Astra eine von
+  zwei Stellen derselben Regelverletzung nicht finden KONNTE: die zweite lag
+  in einer Datei, die nicht im Bündel war. Lesen ist nicht Bauen; die
+  Begründung der Ablehnung („er baut nicht, er fasst nichts an, er hat keinen
+  Anteil") trägt gegen Ausführung und Schreibzugriff, nicht gegen eine
+  begrenzte Leseerlaubnis.
+  GEMESSEN am 13.09.2026: Von zwei Befunden dieses Laufs war einer NUR über
+  die Suche im Repo erreichbar — das Prüfen-dann-Zählen-Muster in
+  `routes/archiv.js` stand in keiner Zeile des Diffs. Ohne Lesewerkzeuge wäre
+  er unauffindbar gewesen, und über die Bündelwahl hätte ihn niemand
+  hineingelegt, weil niemand wusste, dass er existiert.
+  ERLAUBT ist damit: lesender Zugriff über `tools/gegenleser-repo.js`,
+  Erlaubnisliste `git ls-files`, Geheimnis-Riegel auf JEDES
+  Funktionsergebnis. NICHT erlaubt bleibt alles darüber — kein Ausführen,
+  kein Schreiben, kein Zugriff auf CI oder Betrieb.
+  WAS SICH DADURCH NICHT ÄNDERT: Astra bleibt ein LESER, kein MESSER. Es sagt
+  das am 13.09. selbst („Prüfgrenze: … keine Tests oder Mutationen ausgeführt;
+  dafür steht hier kein Ausführungswerkzeug bereit") und hat die Messwerte aus
+  dem Auftrag übernommen, statt sie nachzuvollziehen. Jeder Befund bleibt eine
+  BEHAUPTUNG, bis der Haupt-Agent sie selbst gemessen hat — am selben Tag in
+  beide Richtungen bestätigt: der eine Befund hielt der eigenen
+  Mutationsmessung stand, beim anderen war die SCHWEREEINSTUFUNG falsch.
 - **„Erst danach wird gemerged."** Astra bestätigt, er gibt nie frei. Sobald
   am Ende eine Freigabe steht, verlagert sich die Verantwortung dorthin und
   der eigene Prüfgang wird zur Formsache. Das Tor bleiben die CI und das
