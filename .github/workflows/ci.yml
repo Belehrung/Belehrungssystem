@@ -45,3 +45,9 @@ jobs:
         # PEM-Bloecken und Deckeln). Nur tools/zweitmeinung.js ruft diese
         # Funktion; ohne diesen Schritt liefe sie nirgends automatisch.
         run: node tools/zweitmeinung.js --selbsttest
+
+      - name: Syntax-Check .claude/hooks/session-start.sh
+        run: sh -n .claude/hooks/session-start.sh
+
+      - name: SessionStart-Hook pruefen (PostgreSQL-Cluster)
+        run: sh test/session-start-hook-pruefen.sh
