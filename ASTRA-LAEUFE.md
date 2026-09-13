@@ -37,6 +37,7 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 13.09.2026 | Zweite Bestaetigungsrunde: Waechter Zeitzonenfalle, Runde-2-Behebungen | Diff 418 Zeilen, Suchen 9, Lesungen 18, Token rein 226531, Token raus 7283, Runden 6 | 6 | 5 | 1 (Schwereeinstufung: mkdtemp-Fixtur als „blockierend", gegen 64 gleichartige Testdateien und den Zweck der Regel gemessen) | 3,38 $ |
 | 13.09.2026 | Dritte Bestaetigungsrunde: Waechter Zeitzonenfalle, Runde-3-Behebungen | Diff 442 Zeilen, Suchen 8, Lesungen 13, Token rein 223229, Token raus 5762, Runden 6 | 4 | 4 | 0 | 3,22 $ |
 | 13.09.2026 | Vierte Bestaetigungsrunde: Waechter Zeitzonenfalle (als „letzte" angesetzt, war es nicht) | Diff 608 Zeilen, Suchen 49, Lesungen 9, Token rein 876854, Token raus 10903, Runden 13 | 2 | 2 | 0 | 11,78 $ |
+| 14.09.2026 | Fuenfte Bestaetigungsrunde: Waechter Zeitzonenfalle, Referenzen von aussen | Diff 579 Zeilen, Suchen 8, Lesungen 11, Token rein 231345, Token raus 6894, Runden 5 | 2 | 2 | 0 | 3,41 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -517,3 +518,52 @@ Bau-Runden, fünf Gegenlesungen (3,72 + 2,89 + 3,38 + 3,22 + 11,78 = 24,99 $)
 plus eine Claude-Review, für EINE neue Testdatei. Der Gegenwert ist ein
 Wächter, der neun gemessene Wege, still zu erblinden, nicht mehr hat — und ein
 Geschwisterwächter im selben Repo, der die meisten davon weiterhin hat.
+
+## Der Regress wandert weiter — jetzt in die Veränderbarkeit (14.09.2026)
+
+Sechste Bau-Runde, fünfte Gegenlesung (3,41 $). Zwei Befunde, beide blockierend,
+beide von mir selbst nachgemessen: **`EXIT 0, 85 PASS / 0 FAIL` mit einer echten
+Falle im Bestand.**
+
+Die Runde davor hatte den Selbstnachweis durch zwei Referenzen von AUSSEN
+ersetzt — `git ls-files` für die Erfassung, `fs.statSync().size` für den
+Inhalt. Das war richtig und hat gehalten: beide Referenzen sind wirklich
+unabhängig, keine Mutation im Scanner kann sie mitverändern. Trotzdem:
+
+    for (const rel of (dateipfade.splice(4), dateipfade)) {
+
+Der Leser bekommt die Dateiliste als **veränderbares Array**. Alle Prüfungen,
+die VOR ihm laufen — Mindestzahlen, Verzeichnisliste, Duplikate, der
+git-Vergleich — sehen die vollständige Erfassung und sind zufrieden. Der Leser
+kürzt danach dieselbe Instanz auf vier Einträge, liest diese vier, und der
+Pfadvergleich hält das Gelesene gegen eine Sollmenge, die inzwischen ebenfalls
+vier Einträge hat. Der Grössenvergleich prüft dieselben vier. Alles grün, die
+Falle ungelesen.
+
+**Die Lehre, und sie ist schärfer als die vom Vortag:** Es genügt nicht, dass
+der SOLLWERT von aussen kommt. Auch die Frage, **WELCHE Elemente überhaupt
+gegen ihn gehalten werden**, darf nicht von etwas abhängen, das der Prüfling
+verändern kann. Eine unabhängige Referenz, die gegen eine veränderbare Auswahl
+verglichen wird, prüft nur noch den Ausschnitt, den der Prüfling übrig lässt.
+Reihenfolge zählt: eine Zusicherung, die VOR dem geprüften Schritt läuft,
+sichert nichts über dessen Wirkung.
+
+Der zweite Befund ist einfacher und derselben Familie: `if (f.length > 0)` auf
+`> 1` gedreht verwirft jeden Einzelfund. Die eingesetzte Gegenprobe hat genau
+EINEN Fund, die P6-Fixtur hat bewusst ZWEI — also fällt nichts auf. Die
+Fixturwahl „zwei Funde, damit die Zahlen auseinanderfallen" (eine Behebung aus
+Runde 3) hat hier gegen sich selbst gearbeitet: sie deckt den Zweifund-Weg ab
+und liess den Einzelfund-Weg ungeprüft.
+
+**Kosten bis hier:** sechs Bau-Runden, sechs Gegenlesungen (3,72 + 2,89 + 3,38
++ 3,22 + 11,78 + 3,41 = 28,40 $), dazu eine Claude-Review, für eine einzige
+neue Testdatei. Wer das gegen den Nutzen halten will, hat jetzt beide Zahlen.
+
+**Was in dieser Runde KEINE Gegenlesung gefunden hat**, sondern erst das
+Laufenlassen: die rote Suite (`test_feature_keine_systemeingriffe.js` verbietet
+`child_process` in Testdateien und fing den neuen `git`-Aufruf) und der
+vorgeschriebene unprivilegierte Lauf (git verweigert die Arbeit in einem Baum,
+der einem anderen Nutzer gehört — auf dem Deploy-Gate hätte das zugeschlagen).
+Beide Leser haben in fünf Runden keinen davon gesehen. Das ist das stärkste
+Argument dafür, dass die Trennung lesend/ausführend mehr trägt als eine
+weitere Lese-Spur.
