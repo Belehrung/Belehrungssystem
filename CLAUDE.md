@@ -1019,6 +1019,20 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
   `success`. Wer `get_status` liest, schließt aus „total_count 0"
   fälschlich „die CI hat noch nicht angefangen" und wartet endlos.
   Dieselbe Klasse wie „ein Wächter, der die falsche Quelle liest".
+- **An das VOLLSTÄNDIGE CI-Log kommt man nur über das ZIP-Archiv des Laufs**
+  (gemessen 13.09.2026). `get_job_logs` liefert ausschliesslich das ENDE des
+  Logs, und dort steht bei uns der Postgres-Dienstcontainer: rund 330 Zeilen
+  erwartetes Rauschen aus absichtlich verletzten Constraints. Die eigentliche
+  Fehlerzeile lag an jenem Tag ~1.100 Zeilen davor und war über diesen Weg
+  NICHT erreichbar — auch nicht mit `failed_only`, und einen Offset gibt es
+  nicht. Wer nur das Ende liest, sucht den Fehler an der falschen Stelle.
+  Der Ausweg: `actions_get` mit `get_workflow_run_logs_url`, dann
+  `curl -L -o logs.zip "<url>"` und entpacken. **Das geht durch den
+  Egress-Proxy**, weil die URL auf `results-receiver.actions.githubusercontent.com`
+  zeigt und nicht auf `api.github.com` — die Sperre eine Zeile weiter oben
+  gilt dafür also NICHT. Im Archiv liegt je Job eine Textdatei plus ein
+  Verzeichnis mit einer Datei je Schritt; `grep` darüber findet die
+  FAIL-Zeile sofort.
 
 ## Werkzeuge
 
