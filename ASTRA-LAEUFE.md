@@ -35,6 +35,7 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 13.09.2026 | Waechter gegen Zeitzonenfalle (repo-weit, statisch) | Diff 490 Zeilen, Suchen 13, Lesungen 22, Token rein 246849, Token raus 8508, Runden 6 | 5 | 5 | 0 | 3,72 $ |
 | 13.09.2026 | Bestaetigungsrunde: Waechter Zeitzonenfalle, fuenf Behebungen | Diff 331 Zeilen, Suchen 9, Lesungen 17, Token rein 185595, Token raus 7654, Runden 6 | 3 | 3 | 0 | 2,89 $ |
 | 13.09.2026 | Zweite Bestaetigungsrunde: Waechter Zeitzonenfalle, Runde-2-Behebungen | Diff 418 Zeilen, Suchen 9, Lesungen 18, Token rein 226531, Token raus 7283, Runden 6 | 6 | 5 | 1 (Schwereeinstufung: mkdtemp-Fixtur als „blockierend", gegen 64 gleichartige Testdateien und den Zweck der Regel gemessen) | 3,38 $ |
+| 13.09.2026 | Dritte Bestaetigungsrunde: Waechter Zeitzonenfalle, Runde-3-Behebungen | Diff 442 Zeilen, Suchen 8, Lesungen 13, Token rein 223229, Token raus 5762, Runden 6 | 4 | 4 | 0 | 3,22 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -384,3 +385,73 @@ zuvor die Herkunftsvermerke im Wächter vereinheitlicht (drei verschiedene
 Rundennummern für Befunde aus EINEM Bericht) — und dabei vier Stellen
 übersehen, alle in AUSGABETEXTEN statt in Kommentaren. Wer eine Datei
 aufräumt, prüft danach mit demselben `grep`, mit dem er sie gefunden hat.
+
+## Zwei Spuren über denselben Diff, NULL Überschneidung (13.09.2026 nachts)
+
+Vierte Gegenlese-Runde über den Zeitzonenfallen-Wächter, diesmal ZWEI Spuren
+parallel über denselben Diff: Astra (3,22 $) und eine Claude-Review mit freier
+Dateiwahl und Ausführungsrechten. **Neun Befunde zusammen, alle neun nach
+eigener Nachmessung getragen — und KEIN EINZIGER kam in beiden Spuren vor.**
+
+Das ist die bisher deutlichste Messung zu der Frage „reicht eine Spur?". Die
+Antwort ist nein, und sie ist nicht knapp.
+
+**Was nur die Claude-Spur fand** (jede Mutation von mir selbst nachgemessen,
+Ergebnis jeweils `EXIT 0, 65 PASS / 0 FAIL`):
+
+- `ERFASSTE_WURZELVERZEICHNISSE` auf vier statt sechs Einträge gekürzt — der
+  Wächter meldet zufrieden „0 von 182 Dateien" und „gelesen entspricht der
+  Anzahl gescannter Dateien (182 von 182)". `workers/` und `public/`
+  verschwinden lautlos: genau die 29 Dateien, deren Aufnahme in einem eigenen
+  Commit als Zweck der Nacharbeit benannt ist. **Beide Seiten der
+  Gleichung stammen aus derselben Liste** — die Hausregel „eine Zusicherung,
+  die ihren Sollwert aus dem bezieht, was sie bewachen soll, ist keine", in
+  ihrer teuersten Ausprägung.
+- `catch (fehler) { continue; }` statt der Fehlersammlung: der Zweig, der
+  einen Leseausfall überhaupt sichtbar macht, ist von keiner Fixtur berührt.
+- `gelesen: dateipfade.length`: die neue Zählung ist von der Länge der
+  Übergabeliste nirgends unterscheidbar.
+- Die Zusicherung „gelesen erreicht die Mindestschwelle" kann nicht ALLEIN
+  fallen — sie folgt logisch aus zwei anderen. Gemessen: eine Kürzung auf 180
+  Dateien lässt sie grün, während die Nachbarzusicherung fällt. Eine der 65
+  gezählten Zusicherungen ist damit hohl.
+- Der Verzeichniszweig in der neuen Wurzelbehandlung ist unbewacht.
+
+**Was nur Astra fand** (ebenfalls je selbst nachgemessen, alle `EXIT 0,
+65 PASS / 0 FAIL`):
+
+- Die Dateiliste durch `gescannteDateien.map(() => 'core/datum.js')` ersetzt:
+  ein und dieselbe fundfreie Datei wird 186-mal gelesen, die Zählung stimmt,
+  der Bestand ist ungeprüft. `gelesen` zählt LESEVORGÄNGE, nicht Dateien.
+- `wurzelJsDateien([])` statt `wurzelJsDateien(scanFehler)`: die neue
+  Wurzelfehler-Weitergabe ist abgeschnitten. Nachgemessen mit einem ECHTEN
+  Wurzel-Symlink auf eine Datei mit echter Falle — er ist wieder vollständig
+  unsichtbar, „0 von 186 Dateien", grün. Meine eigene Symlink-Gegenprobe
+  bestätigt also die heutige Implementierung, ist aber keine bleibende
+  Zusicherung gegen diesen Verdrahtungsfehler.
+- `gelesen: gelesen + proDateiFunde.size`: für die Fallen-Datei wird `gelesen`
+  gar nicht ausgelesen, die Doppelzählung fällt niemandem auf.
+- `workers` selbst als Symlink auf einen leeren Baum: 185 statt 186 Dateien,
+  KEIN Scanfehler, grün. Die Zusage „Symlink wird als Scanfehler gemeldet,
+  nicht aufgelöst" gilt ausgerechnet für die sechs Baumwurzeln nicht, weil
+  `readdirSync` dem Pfad folgt und `withFileTypes` die KINDER beschreibt.
+
+**Warum sich die Spuren so sauber trennen**, soweit sich das an einem Fall
+sagen lässt: Die Claude-Spur durfte AUSFÜHREN und hat mutiert und gemessen —
+ihre Funde sind durchweg „diese Zeile zurückdrehen, Lauf bleibt grün". Astra
+durfte nur LESEN und hat am Kontrollfluss gedacht — seine Funde sind durchweg
+„es gibt einen Zustand, den keine Fixtur je herstellt". Das sind zwei
+verschiedene Suchverfahren, keine zwei Meinungen über dieselbe Frage.
+
+**Astra hat außerdem eine eigene frühere Einstufung zurückgenommen** (die
+temporäre Datei als blockierender Verstoß gegen die Dateisystem-Regel): „Für
+die bewusste Temp-Verzeichnis-Entscheidung habe ich keinen zusätzlichen
+konkreten Angriffspfad nachgewiesen. Ich wiederhole deshalb die frühere
+blockierende Einstufung nicht." Das ist die Sorte Antwort, die ein Prüfer
+geben können muss, damit seine Befunde etwas wert sind.
+
+**Der gemeinsame Nenner aller neun Befunde** ist EIN struktureller Mangel, und
+das ist die eigentliche Erkenntnis: Es gibt keine Zusicherung darüber, WELCHE
+Dateien der echte Scan tatsächlich gelesen hat. Alles, was es gibt, sind
+Zahlen — und jede dieser Zahlen lässt sich aus derselben Quelle erzeugen wie
+ihr Sollwert. Vier der neun Befunde sind nur Ausprägungen davon.

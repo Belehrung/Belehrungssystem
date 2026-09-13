@@ -356,6 +356,24 @@ selbst am Quelltext nachgeprüft, alle trafen zu.
 der drei Spuren hatte etwas, das keine andere hatte. Das ist der Beleg für
 „beide", nicht für „das bessere".
 
+**NACHGEMESSEN am 13.09.2026, und diesmal ist es kein knappes Ergebnis:** zwei
+Spuren parallel über EINEN Diff (der Zeitzonenfallen-Wächter, vierte Runde) —
+**neun Befunde, alle neun nach eigener Nachmessung getragen, NULL
+Überschneidung.** Keine Spur fand auch nur einen Befund der anderen. Damit
+steht „beide statt eine" nicht mehr auf drei Läufen mit teilweiser
+Überlappung, sondern auf einer vollständigen Trennung.
+Die Trennung hat eine erkennbare Ursache, und sie ist für die Aufgabenteilung
+wichtiger als die Zahl: **die Claude-Spur durfte AUSFÜHREN, Astra nur LESEN.**
+Claudes Befunde lauten durchweg „diese Zeile zurückdrehen, der Lauf bleibt
+grün" — gemessene Mutationen. Astras Befunde lauten durchweg „es gibt einen
+Zustand, den keine Fixtur je herstellt" — durchdachter Kontrollfluss. Das sind
+zwei Suchverfahren, nicht zwei Meinungen über dieselbe Frage. Wer eine davon
+weglässt, verliert nicht Redundanz, sondern eine Klasse.
+Astra hat in diesem Lauf zusätzlich eine EIGENE frühere Einstufung
+zurückgenommen, unaufgefordert und mit Begründung („keinen zusätzlichen
+konkreten Angriffspfad nachgewiesen"). Ein Prüfer, der das kann, ist mehr wert
+als einer, der immer liefert.
+
 Der Fund, der die Entscheidung trägt: Astra sah, dass ein neuer
 Verhaltenstest ECHTE Telegram-Alarme auslöst (der melde-Wrapper reichte an
 das echte `melde()` weiter, und dieselbe Suite läuft auf dem Live-Server als
@@ -768,6 +786,31 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   getan hat (hier: Anzahl gelesener Dateien), damit eine Zusicherung das gegen
   die erwartete Menge halten kann. Eine Mengenschwelle, die eine LISTE misst
   statt der VERARBEITUNG, ist keine Absicherung der Verarbeitung.
+- **Eine Zusicherung über eine ZAHL ist keine Zusicherung über eine MENGE.**
+  Gemessen am 13.09.2026 gleich VIERFACH an einem einzigen Wächter, von zwei
+  unabhängigen Prüfspuren, jede Mutation selbst nachgemessen mit dem Ergebnis
+  `EXIT 0, 65 PASS / 0 FAIL`: die Liste der erfassten Verzeichnisse von sechs
+  auf vier gekürzt (der Wächter meldet stolz „gelesen entspricht der Anzahl
+  gescannter Dateien (182 von 182)", während `workers/` und `public/` lautlos
+  verschwunden sind); dieselbe fundfreie Datei 186-mal statt 186 verschiedene
+  gelesen; der Zähler durch die Länge der Übergabeliste ersetzt; der Zähler bei
+  Funden verdoppelt. Alle vier überleben, weil eine ANZAHL geprüft wurde und
+  beide Seiten des Vergleichs aus derselben Quelle stammen. Ein Scan, ein
+  Filter, ein Export, ein Import: geprüft gehört, WELCHE Elemente verarbeitet
+  wurden — die Menge gegen eine UNABHÄNGIG hingeschriebene Erwartung, nicht
+  gegen eine Zahl, die aus demselben Datenfluss fällt. Eine Untergrenze
+  („mindestens 170") ist dabei keine Absicherung, sondern nur ein Schutz gegen
+  den Totalausfall.
+- **Ein Verdrahtungsfehler ist die Lücke, die eine Behebung hinterlässt.**
+  Am selben Tag: eine Behebung meldete Symlinks im Wurzelverzeichnis neu als
+  Fehler, und ich hatte das mit einem ECHTEN Symlink rot gemessen. Trotzdem
+  reichte `wurzelJsDateien([])` statt `wurzelJsDateien(scanFehler)` — eine
+  Zeile —, damit derselbe Symlink wieder unsichtbar wurde, bei `65 PASS /
+  0 FAIL`. Eine Gegenprobe von Hand belegt, dass die Behebung HEUTE wirkt;
+  sie ist keine bleibende Zusicherung dagegen, dass jemand die Fehlersammlung
+  abklemmt. Für jede neue Meldekette deshalb einmal den Sperrfall durch die
+  GANZE Kette schicken und am äußersten Aufrufer prüfen, nicht nur die
+  einzelne Funktion.
 - **Wer EINEN Eintrittspunkt absichert, hat nicht die Eintrittspunkte
   abgesichert.** Am selben Tag, in derselben Datei: ein Symlink im Baum-Scan
   wurde neu als Fehler gemeldet — der Wurzelverzeichnis-Scan lief aber an
