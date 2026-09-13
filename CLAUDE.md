@@ -212,8 +212,31 @@ des Repos; sie kann nicht ausgelagert werden. Sobald am Ende eine Freigabe
 steht, verlagert sich die Verantwortung dorthin und der eigene Prüfgang
 wird zur Formsache.
 
-**Rundenbegrenzung:** eine volle Prüfung, eine Bestätigungsrunde. Weitere nur
-bei einem NEUEN blockierenden Befund, nicht für Geschmacksfragen.
+**Rundenbegrenzung — entschieden am 13.09.2026, und zwar GEGEN die
+Bestätigungsrunde als Regelfall.** Bis hierher stand hier „eine volle Prüfung,
+eine Bestätigungsrunde". Die zweite Runde hat seit Einführung des Verfahrens
+**kein einziges Mal** stattgefunden: am 12.09. nicht (das stand schon als
+offener Widerspruch weiter unten), und am 13.09. bei drei Läufen ebenfalls
+nicht. Eine Regel, die nie befolgt wird, ist keine Regel, sondern eine
+Behauptung über uns selbst.
+
+Was STATTDESSEN wirklich passiert, und es trägt: Astra prüft den Diff, JEDER
+Befund wird vom Haupt-Agenten selbst nachgemessen, die Nacharbeit wird
+wiederum selbst geprüft — Diff gelesen, Gegenprobe in beide Richtungen, volle
+Suite. Am 13.09. fielen dabei zwei von sechs Befunden (eine falsche
+Schwereeinstufung, eine Prämisse aus meinem eigenen Auftrag). Diese Messung
+leistet keine zweite Astra-Runde; sie leistet der eigene Prüfgang.
+
+**Der Regelfall ist damit: EINE Runde.** Eine zweite wird gefahren, wenn die
+Behebung selbst nicht trivial ist — also wenn sie VERHALTEN ändert statt nur
+eine Zusicherung zu ergänzen. Begründung, aus dem eigenen Bestand: am
+12.09.2026 lieferte eine Prüfung einen Behebungsvorschlag, der seinen eigenen
+Befund nicht geschlossen hätte. Diese Klasse trifft Behebungen, nicht Tests.
+
+Praktisch heißt „zweite Runde" ohnehin: dasselbe Material noch einmal
+schicken. `store: false` schließt `previous_response_id` aus (gemessen, siehe
+unten), es gibt also keinen billigen Rückbezug. Eine Runde kostete am
+13.09.2026 zwischen 7,47 $ und 15,39 $. Wer sie fährt, fährt sie ganz.
 
 ### Wann
 
@@ -317,15 +340,18 @@ Nicht die allgemeine Liste, sondern die für DIESES System:
 
 ### Worauf sich das stützt — und was es nicht hergibt
 
-Drei Läufe über EINEN Diff (#144) am 10.09.2026, Prompt wörtlich gleich:
+**Die Zahlen je Lauf stehen in `ASTRA-LAEUFE.md`, nicht hier.** Dieser
+Abschnitt trägt nur, was daraus für die REGEL folgt. Der Grund für die
+Trennung ist eine Hausregel aus dieser Datei: Bis zum 13.09.2026 stand die
+Lauftabelle an BEIDEN Orten — dieselbe Aussage an zwei Orten, angelegt am
+selben Tag, an dem das Protokoll entstand. Eine Liste, die bei jedem Lauf
+wächst, gehört in die Datei, die für sie da ist; hier stünde sie in einem
+Monat falsch da und niemand würde es merken.
 
-| Lauf | Material | Befunde | nur dort | Dauer | Kosten |
-|---|---|---|---|---|---|
-| Astra, nur Diff | Diff + 2 Testdateien | 4 | 2 | 37 s | 0,21 $ |
-| Claude, Arbeitsbaum | frei gewählt | 8 | 6 | ~12 min | 177k Token |
-| Astra, volle Dateien | 8 Dateien | 4 | 3 | 58 s | 2,03 $ |
-
-Alle zwölf Befunde wurden selbst am Quelltext nachgeprüft, alle trafen zu.
+Grundlage ist bis heute: drei Läufe über EINEN Diff (#144) am 10.09.2026,
+Prompt wörtlich gleich, zwei Spuren (Astra mit und ohne volles Material,
+dazu eine Claude-Review mit freier Dateiwahl). Alle zwölf Befunde wurden
+selbst am Quelltext nachgeprüft, alle trafen zu.
 **Mehr Material ließ Astra nicht MEHR finden, sondern ANDERES** — und jede
 der drei Spuren hatte etwas, das keine andere hatte. Das ist der Beleg für
 „beide", nicht für „das bessere".
@@ -551,23 +577,40 @@ das waren die eigentlichen Lücken, alle drei gegen unsere eigenen Regeln):
    im Bündel war. Es KONNTE sie nicht finden. Die Bündelwahl entscheidet
    also über den Befund, und wer nur die geänderten Dateien mitgibt,
    bekommt einen Teil und hält ihn für das Ganze.
-3. **Jeder Lauf wird zählbar festgehalten:** Datum, Zweck, Material
+3. **Jeder Lauf wird zählbar festgehalten — in `ASTRA-LAEUFE.md`**, nicht
+   hier und nicht im Sitzungsprotokoll: Datum, Zweck, Material
    (Dateien/Token), Befunde, davon nach EIGENER Nachmessung getragen,
    Kosten. Ohne das bleibt die Beweislage für immer, was sie seit dem
    10.09. ist — ein Diff, drei Läufe, ein Tag. Mit `json_schema` ist der
    Zählteil jetzt Maschinenarbeit statt Fleißarbeit.
+   Die Regel stand vom 12.09. bis zum 13.09.2026 da, OHNE dass die Datei
+   existierte — eine Anweisung ohne Ort, an dem sie erfüllt werden konnte.
+   Wer hier eine Regel einträgt, die einen Ablageort voraussetzt, legt ihn
+   im selben Zug an.
+   **Ein abgebrochener Lauf bekommt dort eine Zeile mit Strichen, keine
+   Null.** „Null Befunde" hiesse geprüft und sauber; bei einem Abbruch hat
+   niemand geprüft. Die Kosten werden trotzdem eingetragen, sie sind
+   angefallen.
 
 **Was sich NICHT ändert:** Astra bekommt keine Werkzeuge und keinen
 Repo-Zugriff (Begründung unverändert: wer mitbaut, prüft seinen eigenen
 Entwurf), und „Astra bestätigt" ist keine Freigabe. Tor bleiben die CI
 und das Prüf-Ritual.
 
-**Ehrlich dazu:** die zweite Runde („Astra bestätigt") lief am 12.09.2026
-faktisch nicht. Der Befund wurde selbst nachgemessen, seine Einstufung
-korrigiert — und damit war die Sache erledigt. Das war im Einzelfall
-richtig, heißt aber, dass die Schleife aus dem Abschnitt oben real nicht
-stattfindet. Entweder sie wird gefahren, oder hier steht, dass wir sie
-nicht fahren. Nicht beides.
+**Ehrlich dazu — der Widerspruch stand hier vom 12. bis zum 13.09.2026 und
+ist ENTSCHIEDEN, nicht weggeräumt:** Die zweite Runde („Astra bestätigt")
+lief am 12.09. faktisch nicht, und am 13.09. bei drei Läufen ebenfalls nicht.
+Statt die Regel ein drittes Mal unbefolgt stehen zu lassen, ist sie geändert:
+der Regelfall ist EINE Runde, eine zweite nur bei einer Behebung, die
+Verhalten ändert. Die Begründung steht bei der Rundenbegrenzung oben, wo die
+Regel gilt — hier bleibt nur die Spur, dass es ein erkannter Widerspruch war
+und wie lange er stand.
+
+Das Muster ist allgemeiner und gehört benannt: Eine Regel, die zweimal
+hintereinander nicht befolgt wurde, ist keine Regel mehr. Sie wird entweder
+durchgesetzt oder geändert — sie unverändert stehen zu lassen macht das
+ganze Dokument unzuverlässig, weil dann niemand mehr weiß, welche Sätze
+darin gelten und welche nur gut gemeint sind.
 
 ### Context Notes — was daran stimmt und was nicht
 
@@ -693,6 +736,31 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   in einer `<td>`, 66px gut ↔ 162px defekt, und ein DIREKTES Flex-Item,
   71px ↔ 862px). Verallgemeinert: bei jeder Messung fragen, ob der gemessene
   Wert überhaupt von der geprüften Eigenschaft abhängen KANN.
+  **VIERTE Erscheinungsform, gemessen am 13.09.2026: die Testdaten lassen
+  mehrere verschiedene Bedeutungen auf DIESELBE Zahl fallen.** Eine Ausnahme
+  bekam sechs strukturierte Felder, damit Dateilänge, angefragtes Ende,
+  tatsächlich gelesenes Ende und Ausschnittslänge nicht mehr verwechselbar
+  sind. Alle Fixtures lasen 1–40 einer 40-zeiligen Datei — also sind `bis`,
+  `gbis`, `gesamt` und `ausschnittZeilen` allesamt 40. Gemessen, je einzeln:
+  `gesamt` durch die Ausschnittslänge ersetzt → **EXIT 0, 69 Haken, 0
+  Kreuze**; `bis: ende` durch `bis: gbis` ersetzt → **ebenfalls EXIT 0**.
+  Genau die Trennung, für die die Felder eingeführt wurden, war ungeprüft.
+  Der Unterschied zur dritten Form: dort war das Element strukturell
+  geschützt, hier sind die DATEN so gewählt, dass der Unterschied gar nicht
+  auftritt. Gegenmittel: Fixtures, in denen jede Bedeutung eine ANDERE Zahl
+  trägt (hier `11, 999` auf 40 Zeilen → von 11, bis 40, gesamt 40,
+  Ausschnitt 30) — vier verschiedene Werte, und jede Verwechslung fällt auf.
+- **Ein Mutationsmuster, das mehr als einmal passt, mutiert lautlos die
+  falsche Stelle — und das Grün sieht aus wie ein Befund GEGEN den Test.**
+  Gemessen am 13.09.2026, eine Stunde nachdem dieselbe Mehrdeutigkeit im
+  Gegenleser behoben worden war: das Suchmuster kam zweimal vor,
+  `String.replace()` nahm die erste Fundstelle (einen anderen
+  Fehlerbehandler), die Suite blieb grün — was sich wie „die Zusicherung
+  bewacht nichts" las. Sie bewachte sehr wohl; gemessen wurde am falschen
+  Code. **Jedes Mutationsskript zählt die Fundstellen und bricht bei 0 UND
+  bei mehr als 1 ab**, statt stillschweigend die erste zu nehmen. Wer nach
+  einer Gegenprobe ein unerwartetes Grün sieht, prüft ZUERST, ob die
+  Mutation dort gelandet ist, wo sie hin sollte.
 - **Ein Agent, der abbricht, ist wertvoller als einer, der immer liefert.**
   Fehlt eine Vorbedingung, ist der Abbruch mit Rückfrage das richtige Ergebnis.
 - **Sollwerte statt geratener Schwellen.** Wer eine Prüfanweisung an den
@@ -733,6 +801,25 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   dem falschen Grund. Mit `meinRechner` wiederholt: der Wächter blieb GRÜN
   (EXIT=0), der Befund war echt. Testdaten so benennen, dass sie mit dem
   gesuchten Muster nichts gemein haben.
+- **Ein Mutationsskript mit fest verdrahtetem Pfad mutiert den falschen
+  Baum — lautlos.** Gemessen am 13.09.2026: ein Skript trug den Pfad
+  `/home/user/gymdocu/...` fest im Quelltext, wurde aber aus einem ZWEITEN
+  Arbeitsbaum heraus aufgerufen. Es veränderte den erstgenannten Baum, der
+  auf einem ganz anderen Zweig stand; gemessen wurde im zweiten. Die
+  Sabotage blieb danach im ersten Baum liegen.
+  ZWEI Schutzmechanismen haben dabei NICHT gegriffen, und nur einer war
+  Absicht:
+  *Der Marker-Scan fand nichts* — weil das Skript gar keinen
+  `GEGENPROBE-DEFEKT`-Marker schrieb, sondern nur eine unauffällige Zeile.
+  **Der Scan ist nur so gut wie die Marker; ein Skript, das keinen setzt,
+  hebelt ihn aus.** Jede Mutation schreibt den Marker MIT, auch die
+  vermeintlich offensichtliche.
+  *Gerettet hat `git add <datei>` statt `git add -A`.* Deshalb steht die
+  Zeile in keinem Commit. Das war Gewohnheit, keine Prüfung — verlassen
+  kann man sich darauf nicht.
+  Regeln daraus: Mutationsskripte nehmen den Zielpfad als ARGUMENT, nicht
+  fest verdrahtet; und `git status` über ALLE Arbeitsbäume gehört zum
+  Abschluss einer Gegenprobe, nicht nur über den, in dem man gerade misst.
 - **Eine Behebung kann Wächter BLIND machen, die vorher gesehen haben.**
   Nicht nur „kostet sie Abdeckung" — sie kann eine bestehende Zusicherung
   in eine verwandeln, die nicht mehr fallen KANN. Dreimal gemessen am
@@ -976,6 +1063,32 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
   `success`. Wer `get_status` liest, schließt aus „total_count 0"
   fälschlich „die CI hat noch nicht angefangen" und wartet endlos.
   Dieselbe Klasse wie „ein Wächter, der die falsche Quelle liest".
+- **An das VOLLSTÄNDIGE CI-Log kommt man nur über das ZIP-Archiv des Laufs**
+  (gemessen 13.09.2026). `get_job_logs` liefert ausschliesslich das ENDE des
+  Logs, und dort steht bei uns der Postgres-Dienstcontainer: rund 330 Zeilen
+  erwartetes Rauschen aus absichtlich verletzten Constraints. Die eigentliche
+  Fehlerzeile lag an jenem Tag ~1.100 Zeilen davor und war über diesen Weg
+  NICHT erreichbar — auch nicht mit `failed_only`, und einen Offset gibt es
+  nicht. Wer nur das Ende liest, sucht den Fehler an der falschen Stelle.
+  Der Ausweg: `actions_get` mit `get_workflow_run_logs_url`, dann
+  `curl -L -o logs.zip "<url>"` und entpacken. **Das geht durch den
+  Egress-Proxy**, weil die URL auf `results-receiver.actions.githubusercontent.com`
+  zeigt und nicht auf `api.github.com` — die Sperre eine Zeile weiter oben
+  gilt dafür also NICHT. Im Archiv liegt je Job eine Textdatei plus ein
+  Verzeichnis mit einer Datei je Schritt; `grep` darüber findet die
+  FAIL-Zeile sofort.
+- **Nach jedem Squash-Merge die entstandene Botschaft ZURÜCKLESEN.** Am
+  13.09.2026 sind bei ZWEI Merges hintereinander die schliessenden Marken des
+  Werkzeugaufrufs (`</commit_message>`, `</invoke>`) im Parameterwert gelandet
+  und damit wörtlich in die Master-Historie. Gemerkt habe ich es erst, als die
+  Botschaft beim Lesen eines Deploy-Laufs zurückkam — zwei Merges zu spät.
+  Dieselbe Klasse wie früher beim `git commit` mit Heredoc, nur über ein
+  anderes Werkzeug: eine mehrzeilige Botschaft, die durch ein Argument geht,
+  kann das Markup ihres eigenen Aufrufs einschliessen. Umschreiben scheidet
+  aus (Force-Push auf master), die Botschaft bleibt also falsch stehen —
+  deshalb hinterher LESEN und sehen, dass sie dort endet, wo sie enden soll.
+  Ein Commit, den niemand zurückgelesen hat, ist ungeprüft; das gilt für die
+  eigene Botschaft wie für fremden Code.
 
 ## Werkzeuge
 
