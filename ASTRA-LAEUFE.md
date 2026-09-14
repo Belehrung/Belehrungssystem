@@ -46,6 +46,7 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 14.09.2026 | **PLAN**-Pruefung: Erfassungsbereich parametrieren, zwei weitere Waechter anschliessen (VOR der Umsetzung) | Plan + 4 Dateien vollstaendig, 174.838 Zeichen, Token rein 51.981, Token raus 11.082 (davon 8.192 Nachdenken) | 8 | 8 | 0 | n. e. (nicht ablesbar) |
 | 14.09.2026 | Gegenlesung Erfassungsbereich parametriert (Diff, NACH der Planpruefung) | Diff + Messungen + 5 Dateien vollstaendig, 311.837 Zeichen, Token rein 92.693, Token raus 15.087 (davon 12.992 Nachdenken) | 6 | 3 | 2 gefallen (beide Praemissen gegen den Bestand gemessen falsch: der Mengenvergleich gegen git faengt beides); 1 ging in einen tragenden auf | n. e. (nicht ablesbar) |
 | 14.09.2026 | **PLAN**-Pruefung: `test/rohwert-scan.js` schluckt unlesbare Verzeichnisse (VOR der Umsetzung) | Plan + 6 Dateien vollstaendig, 198.325 Zeichen, Token rein 58.056, Token raus 11.819 (davon 9.152 Nachdenken) | 6 | 4 | 1 gefallen (Aufruferbehauptung am Quelltext widerlegt); 1 formal (meine eigene Fragenzahl) | n. e. (nicht ablesbar) |
+| 14.09.2026 | Gegenlesung Rohwert-Scan an den Helfer (Diff, NACH der Planpruefung) | Diff + Messungen + 5 Dateien vollstaendig, 197.722 Zeichen, Token rein 58.277, Token raus 12.775 (davon 11.136 Nachdenken) | 5 | offen (Nachmessung steht aus) | offen | n. e. (nicht ablesbar) |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
