@@ -831,6 +831,28 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   MEHREREN unterscheidbaren Eingaben statt mehrerer Aufrufe mit je einer — bei
   einer einelementigen Liste ist „das erste Element" nicht von „das richtige
   Element" zu unterscheiden, und genau daran ist die Prüfung oben vorbeigelaufen.
+- **Eine FEHLERSAMMLUNG ist auch nur ein Selbstnachweis aus dem eigenen
+  Datenfluss — sie fängt genau das, was die Leseschicht als Fehler MELDET, und
+  sonst nichts.** Gemessen am 14.09.2026 an `test/rohwert-scan.js`: dessen
+  `alleGescanntenDateien()` hat `catch (e) { return; }` und liefert mit
+  unlesbarem `core/` statt 212 nur noch **108** Pfade, ohne jedes Signal. Mein
+  erster Plan wollte genau dagegen eine Fehlersammlung einziehen — und wäre an
+  der eigentlichen Klasse vorbeigegangen: eine gekürzte Endungsliste, ein
+  zusätzlicher Ausschluss oder eine verschobene Wurzelpolitik schrumpfen den
+  Scan, OHNE dass `readdirSync` je einen Fehler wirft. Die Fehlersammlung bleibt
+  richtig, sie ist nur nicht die Absicherung; die ist der Mengenvergleich gegen
+  `git ls-files`. Wer einen schluckenden Scanner reparieren will, fragt deshalb
+  zuerst: **welche Schrumpfungen erzeugen überhaupt einen Fehler, und welche
+  nicht?**
+- **Eine Entscheidung auf falscher Tatsachengrundlage bleibt falsch, auch wenn
+  sie als Entscheidung gekennzeichnet ist.** Am selben Tag hatte ich in einem
+  Plan eine Verschmelzung ausgeschlossen („der Helfer kennt diese Regel nicht")
+  und redlich dazugeschrieben, das sei eine Entscheidung und kein Messergebnis.
+  Die Kennzeichnung war ehrlich und half nichts: der Helfer kannte die Regel
+  (`verarbeiteWurzelEintrag()`), nachgemessen **212 = 212 in beide Richtungen**.
+  Ein Satz der Form „X geht nicht, weil Y" ist eine TATSACHENBEHAUPTUNG über Y,
+  auch wenn er in einem Absatz über Entscheidungen steht — und gehört gemessen,
+  bevor er einen Vorschlag ausschliesst.
 - **Eine Referenz von AUSSEN belegt genau die Stufe, die sie misst — nicht die
   Kette dahinter.** Gemessen am 14.09.2026, und zwar an genau der Behebung, die
   den Regress oben beenden sollte: der Wächter hielt jede gelesene Datei gegen
