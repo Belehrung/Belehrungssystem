@@ -942,12 +942,22 @@ Der Helfer bekommt die Repo-Wurzel deshalb injiziert, nie `__dirname`.
 
 *Das Schrumpfen am Pathspec.* Die beiden Modi brauchen verschiedene Muster,
 und der Unterschied ist kein Feinheitsunterschied: `':(glob)*.js'` trifft
-**320** Wurzeldateien, `':(glob)**/*.js'` **519** im ganzen Baum (beide fuer
-diesen Eintrag noch einmal nachgemessen; eine frueher notierte 3033 hielt der
-Wiederholung NICHT stand und ist damit hinfaellig). Wer beim
+**320** Wurzeldateien, `':(glob)**/*.js'` **519** im ganzen Baum. Wer beim
 Umbau versehentlich das eine gegen das andere tauscht, bekommt keinen Fehler,
 sondern einen lautlos geschrumpften Erfassungsbereich — genau die Klasse, die
 dieser ganze Apparat schliessen soll.
+
+*Und eine dieser beiden Zahlen war bei mir selbst falsch notiert — auf genau
+die Art, vor der dieser Apparat schuetzt.* In meiner Notiz stand „320 gegen
+**3033**". Fuer diesen Eintrag noch einmal gemessen: `git ls-files --
+':(glob)**/*.js'` liefert **519**. Die 3033 kam aus `find . -name '*.js'`
+(heute 3035) — also aus einer Quelle, die `node_modules` mitzaehlt und mit
+`git ls-files` nichts zu tun hat. Der Befund selbst bleibt unberuehrt, 320
+gegen 519 ist genauso ein lautloses Schrumpfen. Aber die Zahl haette in einem
+Monat als Messwert AN EINER git-Referenz dagestanden, obwohl sie von einer
+ganz anderen Stufe stammt — dieselbe Verwechslung, die die Regel „eine
+Referenz von AUSSEN belegt genau die Stufe, die sie misst" beschreibt, nur
+diesmal in meiner eigenen Buchfuehrung statt im Code.
 
 **Auf der Diffseite fielen dagegen drei von sechs**, und zwar an derselben
 Stelle wie in der Runde davor: beide gefallenen Praemissen lauteten „das
