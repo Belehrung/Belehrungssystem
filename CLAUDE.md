@@ -1098,6 +1098,27 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   MELDET statt ihn abzuhaken, mehr wert ist als einer, der immer liefert:
   seine Meldung ist der einzige Grund, warum dieser zweite Verstoß überhaupt
   aufgefallen ist.
+  **EIN DRITTES MAL am selben Tag — und diesmal reichte die Regel oben NICHT,
+  weil sie eine Lücke hatte: eine BENACHRICHTIGUNG gilt nur bis zur nächsten
+  FORTSETZUNG.** Der Ausführende hatte gemeldet, ich hielt den Baum für frei,
+  schickte ihm aber per SendMessage einen Folgeauftrag — und arbeitete danach
+  selbst im Baum weiter, im Glauben, seine ALTE Meldung gelte noch. Sie galt
+  nicht: wer einen Agenten fortsetzt, macht ihn wieder aktiv, und seine
+  vorherige Meldung ist damit verbraucht. Ich habe dabei sogar auf laufende
+  Prozesse geprüft — und nur nach `test/run.sh` gesucht, nicht nach dem
+  Agenten selbst; die Suite war durch, er nicht.
+  Diesmal ist es nicht folgenlos geblieben: er fand eine unkommittierte
+  Änderung in einer Datei, die er gerade selbst bearbeitete, und mehrere
+  parallele Suite-Läufe im selben Arbeitsbaum. **Gutgegangen ist es nur, weil
+  er sie nicht blind übernahm, sondern selbst nachmass** (mit und ohne die
+  fremde Zeile identische 497 bzw. 537 Pfade) und sie mit Begründung
+  übernahm. Ein Ausführender, der stattdessen „das war ich wohl" gedacht
+  hätte, hätte eine ungeprüfte Änderung mitcommittet.
+  Die Regel lautet deshalb vollständig: **Der Baum ist frei, wenn die
+  Benachrichtigung da ist UND ich den Agenten seither NICHT fortgesetzt
+  habe.** Wer fortsetzt, wartet auf die NÄCHSTE Meldung. Und: nach laufenden
+  Prozessen zu suchen ersetzt das nicht — ein Agent kann zwischen zwei
+  Kommandos denken, ohne dass `pgrep` etwas findet.
 - **Der Container kann jederzeit neu starten** (in der Nacht zum 29.08.2026
   zweimal). `/workspace` überlebt, laufende Subagenten NICHT, und beiseite-
   gelegte Kopien unter `/tmp` womöglich auch nicht. Folgen: früh committen und

@@ -43,6 +43,8 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 14.09.2026 | Gegenlesung Archiv-Abschneiden samt Herausloesung des Messwegs | Diff + 8 Dateien + VIER Testausgaben, ~175.000 Zeichen, Token rein 49235, Token raus 35756 | 2 | 2 | 0 | n. e. (nicht ablesbar) |
 | 14.09.2026 | **PLAN**-Pruefung: Scan-Apparat herausloesen (VOR der Umsetzung) | Plan + 3 Dateien, 181.491 Zeichen, Token rein 53776, Token raus 9565 (davon 7040 Nachdenken) | 5 | 5 | 0 | n. e. (nicht ablesbar) |
 | 14.09.2026 | Gegenlesung Scan-Apparat herausgeloest (Diff, NACH der Planpruefung) | Diff + 5 Dateien vollstaendig + Messungen, 293.727 Zeichen, Token rein 86823, Token raus 14265 (davon 12736 Nachdenken) | 3 | 1 voll + 2 teilweise | 0 ganz gefallen; bei einem fiel die Praemisse („Duplikat bliebe unentdeckt" — es wird erkannt), bei einem zwei von drei Vorschlaegen | n. e. (nicht ablesbar) |
+| 14.09.2026 | **PLAN**-Pruefung: Erfassungsbereich parametrieren, zwei weitere Waechter anschliessen (VOR der Umsetzung) | Plan + 4 Dateien vollstaendig, 174.838 Zeichen, Token rein 51.981, Token raus 11.082 (davon 8.192 Nachdenken) | 8 | 8 | 0 | n. e. (nicht ablesbar) |
+| 14.09.2026 | Gegenlesung Erfassungsbereich parametriert (Diff, NACH der Planpruefung) | Diff + Messungen + 5 Dateien vollstaendig, 311.837 Zeichen, Token rein 92.693, Token raus 15.087 (davon 12.992 Nachdenken) | 6 | 3 | 2 gefallen (beide Praemissen gegen den Bestand gemessen falsch: der Mengenvergleich gegen git faengt beides); 1 ging in einen tragenden auf | n. e. (nicht ablesbar) |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -915,3 +917,56 @@ er hat die Messzahlen aus dem Auftrag NACHVOLLZOGEN, nicht nachgemessen, weil
 ihm dafuer kein Ausfuehrungswerkzeug bereitsteht. Jeder Befund blieb damit eine
 Behauptung, bis ich sie selbst gemessen hatte; bei einem von dreien hat sich
 das direkt ausgezahlt.
+
+## Die Planpruefung, die zum zweiten Mal mehr trug als die Diffpruefung (14.09.2026)
+
+Dritte und vierte Runde desselben Tages, diesmal zum Anschliessen der beiden
+letzten Waechter an den Scan-Helfer. Zum zweiten Mal hintereinander wurde
+ZUERST der Plan gegengelesen und erst danach gebaut — und zum zweiten Mal
+liegt die Ausbeute deutlich auf der Planseite:
+
+| Runde | Material | Befunde | getragen |
+|---|---|---|---|
+| Plan (vor dem Bau) | 174.838 Zeichen | 8 | **8** |
+| Diff (nach dem Bau) | 311.837 Zeichen | 6 | 3 |
+
+**Acht von acht Planbefunden hielten der eigenen Nachmessung stand.** Zwei
+davon haetten je eine ganze Bau-Runde gekostet, wenn sie erst am Diff
+aufgefallen waeren:
+
+*Die `safe.directory`-Falle.* Der Plan liess offen, wie die git-Referenz im
+Wurzel-Modus aufgerufen wird. Selbst nachgemessen, unprivilegiert: `git -c
+safe.directory=<pfad>` will die WURZEL des Arbeitsbaums, nicht ein
+Unterverzeichnis darin — mit einem Unterverzeichnis verweigert git den Dienst.
+Der Helfer bekommt die Repo-Wurzel deshalb injiziert, nie `__dirname`.
+
+*Das Schrumpfen am Pathspec.* Die beiden Modi brauchen verschiedene Muster,
+und der Unterschied ist kein Feinheitsunterschied: `':(glob)*.js'` trifft
+**320** Wurzeldateien, `':(glob)**/*.js'` **519** im ganzen Baum (beide fuer
+diesen Eintrag noch einmal nachgemessen; eine frueher notierte 3033 hielt der
+Wiederholung NICHT stand und ist damit hinfaellig). Wer beim
+Umbau versehentlich das eine gegen das andere tauscht, bekommt keinen Fehler,
+sondern einen lautlos geschrumpften Erfassungsbereich — genau die Klasse, die
+dieser ganze Apparat schliessen soll.
+
+**Auf der Diffseite fielen dagegen drei von sechs**, und zwar an derselben
+Stelle wie in der Runde davor: beide gefallenen Praemissen lauteten „das
+bliebe unbemerkt", und beide Male fing es der Mengenvergleich gegen `git
+ls-files` sehr wohl. Gemessen statt geglaubt — eine leere
+Wurzeldatei-Injektion: **EXIT 1, 82 PASS / 3 FAIL** (B) bzw. **EXIT 1, 107 /
+1** (C); `endsWith` auf `includes` gedreht: **EXIT 1, 89 PASS / 3 FAIL**,
+weil im Bestand fuenf `.json`-Dateien `.js` als Teilzeichenkette tragen. Der
+sechste Befund war kein eigener, er ging in einen der drei tragenden auf.
+
+**Was das ueber das Verfahren sagt — und was nicht.** Zwei Runden mit
+demselben Muster sind zwei Runden, keine Statistik; der Vorsprung des Plans
+kann auch daran liegen, dass ein Plan weniger Text ist und die Aufmerksamkeit
+nicht in Nebensaechlichkeiten laeuft. Was aber ueber beide Runden stabil ist
+und gegen die eigene Bequemlichkeit spricht: **die gefallenen Befunde waren
+ausnahmslos die auf der DIFF-Seite, und ausnahmslos von der Form „X bliebe
+unentdeckt".** Ein Pruefer ohne Ausfuehrungswerkzeug kann diese Form nicht
+selbst pruefen — er sieht, dass keine Zusicherung X namentlich nennt, und
+schliesst daraus, dass X durchkaeme. Der Mengenvergleich nennt nichts
+namentlich und faengt trotzdem alles. Daraus folgt kein Misstrauen gegen den
+Pruefer, sondern eine Arbeitsanweisung an mich: **jeder Befund der Form „das
+bliebe unbemerkt" wird als erstes mutiert, nicht als erstes geglaubt.**
