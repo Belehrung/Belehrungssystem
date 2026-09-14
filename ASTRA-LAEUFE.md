@@ -37,6 +37,8 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 13.09.2026 | Zweite Bestaetigungsrunde: Waechter Zeitzonenfalle, Runde-2-Behebungen | Diff 418 Zeilen, Suchen 9, Lesungen 18, Token rein 226531, Token raus 7283, Runden 6 | 6 | 5 | 1 (Schwereeinstufung: mkdtemp-Fixtur als „blockierend", gegen 64 gleichartige Testdateien und den Zweck der Regel gemessen) | 3,38 $ |
 | 13.09.2026 | Dritte Bestaetigungsrunde: Waechter Zeitzonenfalle, Runde-3-Behebungen | Diff 442 Zeilen, Suchen 8, Lesungen 13, Token rein 223229, Token raus 5762, Runden 6 | 4 | 4 | 0 | 3,22 $ |
 | 13.09.2026 | Vierte Bestaetigungsrunde: Waechter Zeitzonenfalle (als „letzte" angesetzt, war es nicht) | Diff 608 Zeilen, Suchen 49, Lesungen 9, Token rein 876854, Token raus 10903, Runden 13 | 2 | 2 | 0 | 11,78 $ |
+| 14.09.2026 | Fuenfte Bestaetigungsrunde: Waechter Zeitzonenfalle, Referenzen von aussen | Diff 579 Zeilen, Suchen 8, Lesungen 11, Token rein 231345, Token raus 6894, Runden 5 | 2 | 2 | 0 | 3,41 $ |
+| 14.09.2026 | Sechste Bestaetigungsrunde: Waechter Zeitzonenfalle, Kopie und git-Referenz nach dem Lesen | Diff 373 Zeilen, Suchen 11, Lesungen 13, Token rein 276620, Token raus 6289, Runden 6 | 1 | 1 | 0 | 3,93 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -517,3 +519,138 @@ Bau-Runden, fünf Gegenlesungen (3,72 + 2,89 + 3,38 + 3,22 + 11,78 = 24,99 $)
 plus eine Claude-Review, für EINE neue Testdatei. Der Gegenwert ist ein
 Wächter, der neun gemessene Wege, still zu erblinden, nicht mehr hat — und ein
 Geschwisterwächter im selben Repo, der die meisten davon weiterhin hat.
+
+## Der Regress wandert weiter — jetzt in die Veränderbarkeit (14.09.2026)
+
+Sechste Bau-Runde, fünfte Gegenlesung (3,41 $). Zwei Befunde, beide blockierend,
+beide von mir selbst nachgemessen: **`EXIT 0, 85 PASS / 0 FAIL` mit einer echten
+Falle im Bestand.**
+
+Die Runde davor hatte den Selbstnachweis durch zwei Referenzen von AUSSEN
+ersetzt — `git ls-files` für die Erfassung, `fs.statSync().size` für den
+Inhalt. Das war richtig und hat gehalten: beide Referenzen sind wirklich
+unabhängig, keine Mutation im Scanner kann sie mitverändern. Trotzdem:
+
+    for (const rel of (dateipfade.splice(4), dateipfade)) {
+
+Der Leser bekommt die Dateiliste als **veränderbares Array**. Alle Prüfungen,
+die VOR ihm laufen — Mindestzahlen, Verzeichnisliste, Duplikate, der
+git-Vergleich — sehen die vollständige Erfassung und sind zufrieden. Der Leser
+kürzt danach dieselbe Instanz auf vier Einträge, liest diese vier, und der
+Pfadvergleich hält das Gelesene gegen eine Sollmenge, die inzwischen ebenfalls
+vier Einträge hat. Der Grössenvergleich prüft dieselben vier. Alles grün, die
+Falle ungelesen.
+
+**Die Lehre, und sie ist schärfer als die vom Vortag:** Es genügt nicht, dass
+der SOLLWERT von aussen kommt. Auch die Frage, **WELCHE Elemente überhaupt
+gegen ihn gehalten werden**, darf nicht von etwas abhängen, das der Prüfling
+verändern kann. Eine unabhängige Referenz, die gegen eine veränderbare Auswahl
+verglichen wird, prüft nur noch den Ausschnitt, den der Prüfling übrig lässt.
+Reihenfolge zählt: eine Zusicherung, die VOR dem geprüften Schritt läuft,
+sichert nichts über dessen Wirkung.
+
+Der zweite Befund ist einfacher und derselben Familie: `if (f.length > 0)` auf
+`> 1` gedreht verwirft jeden Einzelfund. Die eingesetzte Gegenprobe hat genau
+EINEN Fund, die P6-Fixtur hat bewusst ZWEI — also fällt nichts auf. Die
+Fixturwahl „zwei Funde, damit die Zahlen auseinanderfallen" (eine Behebung aus
+Runde 3) hat hier gegen sich selbst gearbeitet: sie deckt den Zweifund-Weg ab
+und liess den Einzelfund-Weg ungeprüft.
+
+**Kosten bis hier:** sechs Bau-Runden, sechs Gegenlesungen (3,72 + 2,89 + 3,38
++ 3,22 + 11,78 + 3,41 = 28,40 $), dazu eine Claude-Review, für eine einzige
+neue Testdatei. Wer das gegen den Nutzen halten will, hat jetzt beide Zahlen.
+
+**Was in dieser Runde KEINE Gegenlesung gefunden hat**, sondern erst das
+Laufenlassen: die rote Suite (`test_feature_keine_systemeingriffe.js` verbietet
+`child_process` in Testdateien und fing den neuen `git`-Aufruf) und der
+vorgeschriebene unprivilegierte Lauf (git verweigert die Arbeit in einem Baum,
+der einem anderen Nutzer gehört — auf dem Deploy-Gate hätte das zugeschlagen).
+Beide Leser haben in fünf Runden keinen davon gesehen. Das ist das stärkste
+Argument dafür, dass die Trennung lesend/ausführend mehr trägt als eine
+weitere Lese-Spur.
+
+## Sieben Runden, sieben blockierende Wege (14.09.2026)
+
+Siebte Gegenlesung (3,93 $), ein Befund, blockierend, selbst nachgemessen.
+Damit steht die Trefferquote bei **7 von 7**: jede einzelne Runde über diesen
+einen Wächter hat einen Weg gefunden, auf dem er grün meldet, während eine
+echte Falle im Bestand liegt.
+
+Dieser hier ist die zeitliche Beweislücke eine Stufe später als die vom
+Vortag:
+
+    const f = findeTreffer(puffer.toString('utf8', 0, 1024));
+
+Jede Datei wird VOLLSTÄNDIG gelesen, ihre volle Länge korrekt protokolliert
+und gegen `fs.statSync().size` bestätigt — an den Erkenner geht aber nur das
+erste Kilobyte. GEMESSEN mit einer echten Falle am Ende von `verify-daily.js`
+(2.914 Byte, die Falle liegt weit hinter der Grenze; Positivkontrolle
+unmutiert: EXIT 1, drei Kreuze):
+
+    EXIT 0, 87 PASS / 0 FAIL, null Kreuze.
+
+Die Größenprüfung belegt den gelesenen PUFFER, nicht den an den Erkenner
+ÜBERGEBENEN Text. Alle vier P6-Dateien sind kürzer als 1 KiB, also sieht auch
+dort niemand etwas.
+
+**Was diese sieben Runden über die Methode sagen, und das ist der eigentliche
+Ertrag:** Sie belegen NICHT, dass der Wächter schlecht gebaut ist — jede
+einzelne Behebung hat gehalten, keine hat Abdeckung gekostet, und alle
+früheren Mutationen bleiben bis heute rot. Sie belegen etwas anderes: **„es
+gibt keinen weiteren Weg" ist eine negative Aussage, und ein Prüfer mit
+beliebig vielen Versuchen findet gegen eine solche Aussage immer noch einen.**
+Die Schleife wird nicht dadurch beendet, dass der Code gut genug wird, sondern
+dadurch, dass jemand aufhört zu fragen. Das ist eine Entscheidung, keine
+Messung — und sie gehört dem Betreiber, nicht dem Prüfgang.
+
+**Kosten bis hier:** sieben Bau-Runden, sieben Gegenlesungen
+(3,72 + 2,89 + 3,38 + 3,22 + 11,78 + 3,41 + 3,93 = **32,33 $**), dazu eine
+Claude-Review, für eine einzige neue Testdatei.
+
+## Achte Nacharbeit: die erste Behebung, die eine Klasse SCHLIESST (14.09.2026)
+
+Keine achte Gegenlesung — eine Behebung des Befunds aus der siebten, und sie
+ist aus einem Grund festgehalten, der über diesen Wächter hinausgeht: sie ist
+die erste, die die Klasse schliesst, statt sie eine Ebene tiefer zu schieben.
+
+Der Befund war: beide Referenzen von AUSSEN (`git ls-files`, `fs.statSync`)
+belegen das LESEN. Keine belegt das ERKENNEN. Eine dritte Zusicherung über den
+gelesenen Puffer hätte daran nichts geändert — sie käme wieder aus demselben
+Datenfluss.
+
+Stattdessen eine Fixtur (P7), deren Falle HINTER der grössten wirklich
+gescannten Datei liegt. Die Schwelle kommt von aussen und wächst mit:
+`fs.statSync` über die git-Referenz, heute `routes/admin/geraete.js` mit
+420.036 Bytes; die Fixtur schreibt so viele Füllzeilen, dass die Falle bei
+Byte 420.174 beginnt.
+
+Das Argument, warum das die Klasse schliesst und nicht nur den Einzelfall:
+schneidet jemand den Puffer bei N Bytes ab, dann gilt entweder N < grösste
+Bestandsdatei — dann liegt die Falle der Fixtur hinter N, die Fixtur wird rot
+—, oder N > jede Bestandsdatei, dann wird im Bestand gar nichts abgeschnitten
+und es gibt nichts zu verstecken.
+
+GEMESSEN, je einzeln, mit derselben Datei:
+
+| Mutation | Ergebnis |
+|---|---|
+| keine | EXIT 0, 90 PASS / 0 FAIL |
+| `toString('utf8', 0, 1024)` | **EXIT 1, 88 PASS / 2 FAIL** |
+| `toString('utf8', 0, 419999)` (knapp unter der grössten Bestandsdatei) | **EXIT 1, 88 / 2** |
+| `toString('utf8', 0, 999999)` (über jeder Bestandsdatei) | EXIT 0, 90 / 0 — richtigerweise |
+
+Die letzte Zeile ist kein Loch, sondern der Beleg für die Grenze: bei dieser
+Schranke wird im Bestand nichts abgeschnitten. Eine Gegenprobe, die nur den
+ersten Wert misst, belegt den Einzelfall; erst die Grenze in beide Richtungen
+belegt die Klasse.
+
+Nebenbefund aus demselben Lauf, weil er eine Hausregel bestätigt: das
+Mutationsskript brach beim zweiten Versuch mit `ABBRUCH: Muster kommt 2-mal
+vor, erwartet genau 1 — nichts geaendert.` ab. Die zweite Fundstelle war der
+Kopfkommentar, der den Befund dokumentiert. Ohne die Eindeutigkeitsprüfung
+hätte `String.replace()` den Kommentar mutiert und ein grünes Ergebnis
+geliefert, das wie „die Zusicherung bewacht nichts" ausgesehen hätte.
+
+**Kosten dieser Nacharbeit:** keine Gegenlesung, also 0 $ — die Messung lief
+im eigenen Prüfstand. Der Gesamtstand für diesen Wächter bleibt bei
+**32,33 $** Gegenlesung, jetzt über acht Bau-Runden.
