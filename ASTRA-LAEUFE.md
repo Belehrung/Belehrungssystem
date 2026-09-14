@@ -45,6 +45,7 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 14.09.2026 | Gegenlesung Scan-Apparat herausgeloest (Diff, NACH der Planpruefung) | Diff + 5 Dateien vollstaendig + Messungen, 293.727 Zeichen, Token rein 86823, Token raus 14265 (davon 12736 Nachdenken) | 3 | 1 voll + 2 teilweise | 0 ganz gefallen; bei einem fiel die Praemisse („Duplikat bliebe unentdeckt" — es wird erkannt), bei einem zwei von drei Vorschlaegen | n. e. (nicht ablesbar) |
 | 14.09.2026 | **PLAN**-Pruefung: Erfassungsbereich parametrieren, zwei weitere Waechter anschliessen (VOR der Umsetzung) | Plan + 4 Dateien vollstaendig, 174.838 Zeichen, Token rein 51.981, Token raus 11.082 (davon 8.192 Nachdenken) | 8 | 8 | 0 | n. e. (nicht ablesbar) |
 | 14.09.2026 | Gegenlesung Erfassungsbereich parametriert (Diff, NACH der Planpruefung) | Diff + Messungen + 5 Dateien vollstaendig, 311.837 Zeichen, Token rein 92.693, Token raus 15.087 (davon 12.992 Nachdenken) | 6 | 3 | 2 gefallen (beide Praemissen gegen den Bestand gemessen falsch: der Mengenvergleich gegen git faengt beides); 1 ging in einen tragenden auf | n. e. (nicht ablesbar) |
+| 14.09.2026 | **PLAN**-Pruefung: `test/rohwert-scan.js` schluckt unlesbare Verzeichnisse (VOR der Umsetzung) | Plan + 6 Dateien vollstaendig, 198.325 Zeichen, Token rein 58.056, Token raus 11.819 (davon 9.152 Nachdenken) | 6 | 4 | 1 gefallen (Aufruferbehauptung am Quelltext widerlegt); 1 formal (meine eigene Fragenzahl) | n. e. (nicht ablesbar) |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -980,3 +981,58 @@ schliesst daraus, dass X durchkaeme. Der Mengenvergleich nennt nichts
 namentlich und faengt trotzdem alles. Daraus folgt kein Misstrauen gegen den
 Pruefer, sondern eine Arbeitsanweisung an mich: **jeder Befund der Form „das
 bliebe unbemerkt" wird als erstes mutiert, nicht als erstes geglaubt.**
+
+## Der erste Lauf, der eine ABLEHNUNG von mir gekippt hat (14.09.2026)
+
+Bis hierher hatte die Gegenlesung immer Lücken IN dem gefunden, was ich bauen
+wollte. Dieser Lauf hat etwas anderes getroffen: einen Satz, mit dem ich einen
+Vorschlag von vornherein AUSGESCHLOSSEN hatte.
+
+Im Plan stand unter „Was ich bewusst NICHT vorschlage": keine Verschmelzung mit
+dem parametrierten Helfer aus #437, weil dessen Parametermodell die
+`test_`-Präfixregel für Wurzeldateien nicht kenne und man ihn dafür „für genau
+einen Aufrufer verbreitern" müsste. Ich hatte dazugeschrieben, das sei eine
+Entscheidung und kein Messergebnis — was ehrlich war und trotzdem nicht
+genügt: eine Entscheidung auf einer falschen Tatsachengrundlage ist eine
+falsche Entscheidung, egal wie sie gekennzeichnet ist.
+
+Der Befund lautete, der Helfer trage alle drei genannten Unterschiede bereits:
+Endungen über `bereich.endungen`, den Einzelausschluss über
+`bereich.ausgeschlosseneDateien`, und die Präfixregel stecke in
+`verarbeiteWurzelEintrag()`. Selbst nachgemessen, mit einer Probe ausserhalb
+des Repos, die beide Scanner ruft und die Mengen elementweise vergleicht:
+
+| Vergleich | Ergebnis |
+|---|---|
+| alter Scanner gegen Helfer mit Rohwert-Bereich | **212 = 212**, nur-im-Alten 0, nur-im-Neuen 0 |
+| Helfer-Scan gegen `ermittleGitReferenz()` desselben Bereichs | **212 = 212**, nur-im-Scan 0, nur-in-git 0 |
+
+Damit fällt nicht nur meine Begründung, sondern die ganze Struktur des Plans:
+statt eine Fehlersammlung in den alten Scanner zu bauen, ziehen die drei
+Wächter auf den Helfer um und erben dabei die git-Referenz, gegen die eine
+blosse Fehlersammlung ohnehin nicht ankommt.
+
+**Das war zugleich der blockierende Befund dieses Laufs**, und er ist eine
+Anwendung unserer eigenen Regel auf einen Fall, den ich nicht als solchen
+gesehen hatte: *eine Fehlersammlung ist AUCH ein Selbstnachweis aus dem
+eigenen Datenfluss.* „Keine Scanfehler" fängt nur, was `readdirSync` als
+Fehler meldet — eine gekürzte Endungsliste oder ein zusätzlicher Ausschluss
+schrumpft den Scan, ohne je einen Fehler zu erzeugen. Ich hatte die Regel
+zwei Tage lang selbst eingetragen und trotzdem einen Plan geschrieben, der
+genau daran vorbeigeht.
+
+**Was FIEL, und warum das den Lauf nicht entwertet:** Ein Befund behauptete,
+`test_feature_wartung_faelligkeit_datumsfallen.js` benutze längst den neuen
+Helfer, mein Plan sei insoweit überholt. Am Quelltext widerlegt — Zeile 475
+lautet `const { alleGescanntenDateien } = require('./test/rohwert-scan');`,
+und die Funktion wird in 477 und 502 mit null Argumenten gerufen. Alle drei
+Aufrufer brauchen also Arbeit, nicht zwei. Ein sechster Befund war rein
+formal (mein Vorspann sprach von vier Fragen, der Plan stellte fünf).
+
+Die Lehre für die Aufgabenteilung ist dieselbe wie am 13.09., nur von der
+anderen Seite: **der Prüfer liest gut und misst nicht.** Er hat in einer
+grossen Datei richtig gesehen, welche Fähigkeiten der Helfer trägt — und in
+einer anderen falsch geschlossen, welchen Scanner ein Wächter ruft. Beides
+hätte ein einziger `grep` entschieden. Jeder Befund bleibt eine Behauptung,
+bis ich sie selbst gemessen habe; hier hat sich das in BEIDE Richtungen
+ausgezahlt.
