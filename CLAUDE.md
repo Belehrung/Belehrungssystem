@@ -866,6 +866,27 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   nicht vorlag — und sie war falsch, die Runde brachte zwei blockierende
   Befunde. Wer eine Grenze zieht, zieht sie am eigenen Verhalten, nicht am
   Befund des anderen.
+- **Wer zwei Wächter an denselben Helfer hängt, erbt dessen Stärken NICHT
+  automatisch — die Zusicherungen bleiben beim AUFRUFER.** Gemessen am
+  14.09.2026 beim Herauslösen eines Verzeichnis-Scan-Apparats aus einem
+  Wächter, der dafür acht Bau-Runden und sieben Gegenlesungen gebraucht hatte.
+  Der Helfer war korrekt, die Herauslösung kostete nachweislich keine
+  Abdeckung (dieselben Gegenproben, identische Zahlen). Trotzdem war der neu
+  angeschlossene Geschwisterwächter schwächer: das Vorbild hält seit seiner
+  dritten Runde die Erfassungs-Konstante des Helfers gegen eine EIGENE, literal
+  hingeschriebene Erwartung; der Neuling hatte diese eine Zusicherung nicht.
+  Folge, in zwei Schritten gemessen: das Argument der Referenzermittlung auf
+  die Helfer-Konstante getauscht — eine plausible Aufräum-Änderung — ergibt
+  **EXIT 0, 40 PASS / 0 FAIL** und nimmt lautlos den Schutz weg; die Konstante
+  danach von sechs auf zwei Verzeichnisse gekürzt ergibt **weiterhin EXIT 0,
+  40 PASS / 0 FAIL**, während vier Verzeichnisse ungelesen bleiben. Mit der
+  fehlenden Zusicherung: **EXIT 1, 41 PASS / 1 FAIL**, genau auf diese Zeile
+  zeigend. Der Fehler ist nicht im Helfer und nicht in den Aufrufen — er ist
+  eine FEHLENDE Zusicherung an einer Stelle, an der niemand sie vermisst, weil
+  der Helfer ja „schon geprüft" ist. Nach jedem Anschluss an einen bestehenden
+  Helfer deshalb die ZUSICHERUNGSLISTE des Vorbilds durchgehen, nicht nur die
+  Aufrufstellen. Und die Prüfung gehört an den Aufrufer, nicht in den Helfer:
+  nur der Aufrufer besitzt eine von dessen Konstante unabhängige zweite Quelle.
 - **Ein Verdrahtungsfehler ist die Lücke, die eine Behebung hinterlässt.**
   Am selben Tag: eine Behebung meldete Symlinks im Wurzelverzeichnis neu als
   Fehler, und ich hatte das mit einem ECHTEN Symlink rot gemessen. Trotzdem
