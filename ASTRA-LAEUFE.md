@@ -710,3 +710,65 @@ Das ist das zweite Mal (nach dem 12.09.2026), dass ein Behebungsvorschlag der
 Gegenlesung seinen eigenen Befund nicht richtig geschlossen hätte. Die
 Hausregel dazu steht bereits in der CLAUDE.md und hat diesmal gehalten: der
 Befund wurde übernommen, der Vorschlag nicht.
+
+## Archiv-Abschneiden: zwei Anmerkungen, beide getragen (14.09.2026)
+
+Zweite Gegenlesung des Tages, diesmal zur Reparatur des stillen Abschneidens
+auf `/admin/archiv` samt neuem Wächter und der Herauslösung eines gemeinsamen
+Messwegs.
+
+**Material:** Diff, der neue Wächter vollständig, der herausgelöste Helfer, der
+umgestellte Geschwisterwächter, `route-harness`, `chromium-start`, der
+Systemeingriffe-Wächter, ein Ausschnitt aus `routes/archiv.js` — dazu VIER
+Testausgaben (je grün und rot für beide Wächter). Rund 175.000 Zeichen.
+
+**Zahlen:** `status: completed`, 49.235 Eingabe-Token, 35.756 Ausgabe-Token,
+84.991 gesamt. Dollarbetrag wieder nicht eingetragen — nicht ablesbar.
+
+**Befunde: 2, beide als Anmerkung eingestuft. Nach eigener Nachmessung
+getragen: 2.** Erstmals hat kein Befund dieser Reihe nicht getragen.
+
+*Befund 1 — die Zusicherung prüfte Stellvertreter, der Kommentar versprach
+mehr.* Der Kopfkommentar beschrieb die Reparatur über eine Scroll-Probe, die
+Zusicherungen prüften `overflow-x`, Boxlage und `scrollWidth`. Nachgezogen:
+die Probe gehört jetzt zur Zusicherung.
+
+*Befund 2 — die Verfügbarkeitsprüfung startete Chromium anders als der
+Messpfad* (ohne Flags gegen `--no-sandbox`). **Selbst nachgemessen, und der
+Schaden ist HIER NICHT herstellbar:** als root UND unprivilegiert startet
+Chromium mit und ohne Flag. Nachgezogen trotzdem, aber mit der ehrlichen
+Begründung im Kommentar — Hausregel, nicht Messung. Das gehört unterschieden,
+sonst steht in einem Monat eine Behauptung im Code, die nie gemessen wurde.
+
+**Der eigentliche Ertrag kam aber nicht aus den Befunden, sondern aus der
+SUCHE nach einer Gegenprobe dazu.** Der Ausführende sollte eine Mutation
+finden, die die drei alten Stellvertreter erfüllt und das Scrollen trotzdem
+verhindert. Er prüfte sechs Kandidaten, fand nur `direction:rtl` wirksam
+(`scrollLeft=9999` klemmt bei 1), stufte das als unrealistisch ein und meldete
+es ausdrücklich als NICHT übernommenen Fund statt als Gegenbeweis.
+
+Genau diese Ehrlichkeit legte die eigentliche Schwäche offen: die Schwelle
+lautete „`scrollLeft` grösser als 0" — eine Schwelle über eine ZAHL, keine
+Zusicherung über ERREICHBARKEIT, also unsere eigene Fehlerklasse. Verschärft
+auf „bis ans Ende" (`sl >= scrollWidth - clientWidth - 1`) und gemessen:
+
+| Fall | Ergebnis |
+|---|---|
+| unverändert | EXIT 0, 8 PASS / 0 FAIL (223/223, 155/155, 275/275) |
+| Regel entfernt | **EXIT 1, 4 PASS / 4 FAIL** |
+| `direction:rtl` | **EXIT 1, 4 PASS / 4 FAIL** |
+
+Im dritten Fall sind alle drei alten Stellvertreter erfüllt und nur die neue
+Zusicherung fällt. Die alte Fassung wäre bei zwei von drei Behältern grün
+geblieben.
+
+**Lehre für das Verfahren, und sie ist neu:** Ein Prüfer, der einen Fund
+FINDET und ihn dann selbst als unrealistisch zurückstuft, liefert mehr als
+einer, der ihn verschweigt ODER als Beweis verkauft. Der Fund war für seinen
+ursprünglichen Zweck wertlos und für einen anderen entscheidend. Wer solche
+Funde im Bericht unterdrückt, weil sie „nichts zeigen", wirft genau das weg.
+
+Nebenbefund aus derselben Nacharbeit, vom Ausführenden beim Bauen selbst
+entdeckt: bei `scroll-behavior:smooth` liefert ein sofortiges Zurücklesen von
+`scrollLeft` den Wert 0, nach 50 ms 19, erst nach ~300 ms den vollen Wert.
+Eine Probe ohne Wartezeit hätte künftig falsch rot gemeldet.

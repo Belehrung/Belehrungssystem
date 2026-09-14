@@ -897,6 +897,23 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   Mutation dort gelandet ist, wo sie hin sollte.
 - **Ein Agent, der abbricht, ist wertvoller als einer, der immer liefert.**
   Fehlt eine Vorbedingung, ist der Abbruch mit Rückfrage das richtige Ergebnis.
+- **Ein Fund, den der Finder selbst als unrealistisch zurückstuft, gehört
+  trotzdem in den Bericht — er ist für seinen ursprünglichen Zweck wertlos und
+  womöglich für einen anderen entscheidend.** Gemessen am 14.09.2026: Auf der
+  Suche nach einer Mutation, die drei Stellvertreter-Zusicherungen erfüllt und
+  das Scrollen trotzdem verhindert, fand der Ausführende unter sechs Kandidaten
+  nur `direction:rtl` wirksam (`scrollLeft=9999` klemmt bei 1). Er stufte das
+  als Verrenkung ein — zu Recht, die Oberfläche ist deutschsprachig und setzt
+  `direction` nirgends — und meldete es ausdrücklich als NICHT übernommenen
+  Fund statt als Gegenbeweis. Genau diese Meldung legte die eigentliche
+  Schwäche offen: die Zusicherung lautete „`scrollLeft` grösser als 0", also
+  eine Schwelle über eine ZAHL statt einer Zusicherung über ERREICHBARKEIT.
+  Verschärft auf „bis ans Ende" und nachgemessen: im rtl-Fall sind
+  `overflow-x`, Boxlage und `scrollWidth` ALLE DREI erfüllt, der Inhalt bleibt
+  verdeckt, und allein die neue Zusicherung fällt (EXIT 1, 4 PASS / 4 FAIL).
+  Wer solche Funde im Bericht unterdrückt, weil sie „nichts zeigen", wirft
+  genau das weg. Die Gegenprobe selbst bleibt dabei die realistische — der
+  unrealistische Fund ist Anlass zum Nachschärfen, nicht der Beleg.
 - **Sollwerte statt geratener Schwellen.** Wer eine Prüfanweisung an den
   Betreiber gibt, nennt den erwarteten Wert oder den Vergleich gegen eine
   Quelle — keine aus dem Bauch gegriffene Grenze.
@@ -1029,6 +1046,18 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   lag (Reflog: Commit 06:29:49, Wechsel 06:30:53). Das war Glück, kein
   Verfahren. Wer parallel arbeiten will, nimmt einen eigenen `git worktree`
   unter `/workspace` — oder wartet.
+  **NACHGESCHÄRFT am selben Tag, weil ich dieselbe Regel zwei Stunden später
+  ein zweites Mal gebrochen habe: ein Subagent ist NICHT fertig, wenn sein
+  Hintergrundlauf fertig ist — sondern wenn seine BENACHRICHTIGUNG da ist.**
+  Genau diese Verwechslung war der Denkfehler: seine Suite war durch, also
+  hielt ich den Baum für frei und fuhr dort meine eigene Gegenprobe. Er sah
+  mitten in seiner Abschlussprüfung einen `GEGENPROBE-DEFEKT`-Marker in einer
+  Datei, die er nie angefasst hatte, und meldete ihn als unerklärlich — vier
+  eigene Nachmessungen inklusive. Wieder ohne Schaden, wieder aus Glück.
+  Nebenbei ist das der Beleg, warum ein Agent, der einen unerklärlichen Befund
+  MELDET statt ihn abzuhaken, mehr wert ist als einer, der immer liefert:
+  seine Meldung ist der einzige Grund, warum dieser zweite Verstoß überhaupt
+  aufgefallen ist.
 - **Der Container kann jederzeit neu starten** (in der Nacht zum 29.08.2026
   zweimal). `/workspace` überlebt, laufende Subagenten NICHT, und beiseite-
   gelegte Kopien unter `/tmp` womöglich auch nicht. Folgen: früh committen und
