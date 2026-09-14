@@ -503,12 +503,23 @@ letzte Instanz, Datengrenze). Drei Punkte daraus sind neu und übernommen:
   Beratung; unsere Prüfreihenfolge oben ist schärfer, weil sie aus
   Messungen an DIESEM System kommt.
 
-### Was die Schnittstelle wirklich kann (gemessen 11.09.2026)
+### Was die Schnittstelle wirklich kann (gemessen 11.09. und 14.09.2026)
 
 Alles hier ist am echten Endpunkt gemessen, nicht aus einer Doku
 abgeschrieben. Die Gegenprobe steht dabei: ein frei erfundener Parameter
 wird mit „Unknown parameter" abgelehnt — ein „OK" sagt also wirklich etwas.
 
+- **BILDEINGABE geht — gemessen 14.09.2026, mit Positivkontrolle.** Ein
+  Eintrag `{"type":"input_image","image_url":"data:image/png;base64,…"}` neben
+  `{"type":"input_text",…}` im `content` einer `input`-Rolle wird angenommen
+  UND gelesen: die Probe zeigte ein Bild mit dem frei erfundenen Wort
+  `KWIRZELPFAND-7742`, die Antwort nannte es wörtlich. Ein Wort, das nicht
+  zu erraten ist — die Gegenprobe steht also. Damit kann der Prüfer eine
+  GERENDERTE Oberfläche beurteilen statt nur den Quelltext, der sie erzeugt.
+  Kosten sind dabei nebensächlich: drei ganzseitige Tablet-Screenshots
+  (820×3064, 820×1180, 820×2221) fielen im Gesamtverbrauch nicht auf.
+  `input` darf dafür KEINE Zeichenkette mehr sein, sondern muss die Listenform
+  `[{"role":"user","content":[…]}]` haben.
 - **`tools: [{"type":"web_search"}]` existiert UND WIRKT.** Nicht nur
   akzeptiert: im Ergebnis stehen `web_search_call`-Einträge, die Antwort
   nennt Quellen und trifft den tagesaktuellen Stand. Damit kann der Prüfer
