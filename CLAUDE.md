@@ -1014,6 +1014,32 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   `10.20.30.40:3100` null, also 404. Toter Code, den mein Auftrag in eine
   zweite Datei kopiert hätte. Wer eine bestehende Stelle als Vorbild nennt,
   hat sie damit nicht geprüft; sie ist eine Fundstelle, kein Beleg.
+- **Eine Behebung kann das Gemeldete gegen etwas SCHLIMMERES tauschen — und der
+  Tausch fällt nicht auf, weil der ursprüngliche Befund ja weg ist.** Gemessen am
+  14.09.2026 auf dem Trainer-Tablet, an einem Befund aus meinem EIGENEN
+  Behebungsauftrag: gemeldet war eine falsche Zusage („Frage dazu steht weiter
+  unten") für ein ausgemustertes Gerät, bei dem es unten nichts gibt (gemessen:
+  `status_<id>` 0×, `oeffneFreigabe(<id>,` 0×). Mein Auftrag stellte es frei, den
+  Eintrag herauszufiltern — der Ausführende tat es, und damit verschwand ein
+  offener, dokumentationspflichtiger Mangel **vollständig** von der Prüfseite
+  (Gerätename auf der GANZEN Seite: 0). Die falsche Zusage war weg, der Mangel
+  auch. Auf dem alten Stand war er wenigstens noch in der Zählung des Banners
+  enthalten. Die Frage vor jeder Behebung lautet deshalb nicht „ist der Befund
+  damit weg?", sondern: **was sieht der Benutzer NACHHER, und ist das besser als
+  vorher?** Bei „weniger anzeigen" als Behebung immer zuerst prüfen, was dadurch
+  unsichtbar wird — und ob es das Ding ist, um dessentwillen die Seite existiert.
+- **Ein Satz, den die Oberfläche neu behauptet, ist eine Zusicherung und gehört
+  gemessen wie jede andere.** Am selben Tag drei Runden an DERSELBEN Zeile, und
+  jede Behebung brachte eine neue ungeprüfte Behauptung mit: erst „Frage dazu
+  steht weiter unten" (für ein Gerät, das unten nicht vorkommt), dann das
+  Ausblenden (s.o.), dann „Reaktivierung oder Ausmusterung läuft über die
+  Geräteverwaltung" — auch das eine Sackgasse, denn `/geraete/reaktivieren/:id`
+  ist seit dem 22.08.2026 nicht mehr registriert (`grep -rn "reaktivieren"
+  routes/` findet nur Kommentarzeilen) und der Löschweg bleibt bei aktiver Sperre
+  blockiert. Dreimal hintereinander habe ICH den Text vorgegeben und dreimal
+  nicht nachgesehen, ob er stimmt. Was dagegen hilft, ist billig: der Hinweistext
+  bekommt eine eigene Zusicherung, die ihm die Wörter VERBIETET, mit denen er
+  einen Weg behauptet — gemessen 62 PASS / 3 FAIL mit dem alten Satz, 65 / 0 ohne.
 - **Ein Verweis kann in eine Sackgasse zeigen.** Derselbe Tag: mein Auftrag
   ließ einen Hinweis „siehe Einstellungen" bauen — `basis_url` wird in der
   ganzen Anwendung nirgends geschrieben (`setConfig(…,'basis_url',…)` nur in
