@@ -99,6 +99,13 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
 4. **Volle Testsuite** (test/run.sh). WÄHREND des Laufs keine parallelen
    Skripte gegen dieselbe DB: der Studio-Zähl-Wächter schlägt sonst
    falsch an, und eine Pipe (`| tail`) verschluckt seinen Fehler-Exit.
+   **Sie NICHT in ein äußeres `flock` einpacken — sie sperrt selbst**
+   (`/tmp/gymdocu-suite.lock`, s. Kopf von `test/run.sh`). Gemessen am
+   14.09.2026: `flock /tmp/gymdocu-suite.lock bash test/run.sh` legt den
+   Lauf lahm, weil das innere `flock -w 900` bis zu 15 Minuten auf die
+   Sperre wartet, die der eigene Aufrufer hält. Das Bild dabei ist
+   heimtückisch — kein Fehler, keine Meldung, das Logfile bleibt schlicht
+   LEER, und es sieht aus wie eine langsame Suite.
    Danach das Dateizahl-Ritual: die im Log gelaufenen Dateien gegen die in
    `test/run.sh` registrierten halten und `diff` EXIT 0 verlangen — sonst
    meldet ein Lauf grün, der die Hälfte nie angefasst hat. **Zum Normalisieren
@@ -824,6 +831,32 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   MEHREREN unterscheidbaren Eingaben statt mehrerer Aufrufe mit je einer — bei
   einer einelementigen Liste ist „das erste Element" nicht von „das richtige
   Element" zu unterscheiden, und genau daran ist die Prüfung oben vorbeigelaufen.
+- **Eine Referenz von AUSSEN belegt genau die Stufe, die sie misst — nicht die
+  Kette dahinter.** Gemessen am 14.09.2026, und zwar an genau der Behebung, die
+  den Regress oben beenden sollte: der Wächter hielt jede gelesene Datei gegen
+  `git ls-files` (WELCHE Dateien) und gegen `fs.statSync().size` (WIE VIELE
+  Bytes) — beide von aussen, beide richtig, beide unverändert grün. Trotzdem
+  lieferte `findeTreffer(puffer.toString('utf8', 0, 1024))` **EXIT 0, 87 PASS /
+  0 FAIL** mit einer echten Falle im Bestand: gelesen wurde vollständig, an den
+  ERKENNER ging ein Kilobyte. Beide Referenzen beschreiben das LESEN, keine das
+  ERKENNEN. Für jede Kette — auflisten → lesen → erkennen → sammeln → melden —
+  deshalb einzeln fragen, welche Stufe die vorhandene Referenz eigentlich
+  belegt; eine Stufe weiter ist sie nur noch Dekoration.
+- **Eine Fixtur, die kleiner ist als jeder echte Fall, kann eine
+  Grössenabhängigkeit nicht sehen — und die Schwelle dafür gehört von aussen.**
+  Alle vier Fixturen jenes Wächters lagen unter 1 KiB; für sie IST ein Präfix
+  von 1024 Bytes die ganze Datei. Die Behebung war deshalb keine weitere
+  Zusicherung über den eigenen Datenfluss, sondern eine Fixtur, deren Falle
+  HINTER der grössten wirklich gescannten Datei liegt — Sollwert `fs.statSync`
+  über die git-Referenz, also von aussen und mitwachsend. Das SCHLIESST die
+  Klasse, statt sie zu verschieben: schneidet jemand den Puffer bei N Bytes ab,
+  ist entweder N kleiner als die grösste Bestandsdatei — dann wird die Fixtur
+  rot — oder N ist grösser als jede, dann wird im Bestand gar nichts
+  abgeschnitten. GEMESSEN, je einzeln: Grenze 1024 → **EXIT 1, 88 PASS / 2
+  FAIL**; Grenze 419.999, knapp unter der grössten Bestandsdatei → **EXIT 1,
+  88 / 2**; Grenze 999.999, über jeder → **EXIT 0, 90 / 0**, und das ist
+  richtig so, nicht eine Lücke. Eine Gegenprobe, die nur den ersten Wert misst,
+  belegt den Einzelfall; erst die Grenze in beide Richtungen belegt die Klasse.
 - **Eine Abbruchregel darf sagen, WAS man noch baut — nicht, dass nichts mehr
   kommt.** Am 13.09.2026 habe ich eine Gegenlesung als „letzte Runde"
   angekündigt und mich zugleich darauf festgelegt, nur noch Blockierendes zu

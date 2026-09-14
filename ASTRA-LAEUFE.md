@@ -606,3 +606,51 @@ Messung — und sie gehört dem Betreiber, nicht dem Prüfgang.
 **Kosten bis hier:** sieben Bau-Runden, sieben Gegenlesungen
 (3,72 + 2,89 + 3,38 + 3,22 + 11,78 + 3,41 + 3,93 = **32,33 $**), dazu eine
 Claude-Review, für eine einzige neue Testdatei.
+
+## Achte Nacharbeit: die erste Behebung, die eine Klasse SCHLIESST (14.09.2026)
+
+Keine achte Gegenlesung — eine Behebung des Befunds aus der siebten, und sie
+ist aus einem Grund festgehalten, der über diesen Wächter hinausgeht: sie ist
+die erste, die die Klasse schliesst, statt sie eine Ebene tiefer zu schieben.
+
+Der Befund war: beide Referenzen von AUSSEN (`git ls-files`, `fs.statSync`)
+belegen das LESEN. Keine belegt das ERKENNEN. Eine dritte Zusicherung über den
+gelesenen Puffer hätte daran nichts geändert — sie käme wieder aus demselben
+Datenfluss.
+
+Stattdessen eine Fixtur (P7), deren Falle HINTER der grössten wirklich
+gescannten Datei liegt. Die Schwelle kommt von aussen und wächst mit:
+`fs.statSync` über die git-Referenz, heute `routes/admin/geraete.js` mit
+420.036 Bytes; die Fixtur schreibt so viele Füllzeilen, dass die Falle bei
+Byte 420.174 beginnt.
+
+Das Argument, warum das die Klasse schliesst und nicht nur den Einzelfall:
+schneidet jemand den Puffer bei N Bytes ab, dann gilt entweder N < grösste
+Bestandsdatei — dann liegt die Falle der Fixtur hinter N, die Fixtur wird rot
+—, oder N > jede Bestandsdatei, dann wird im Bestand gar nichts abgeschnitten
+und es gibt nichts zu verstecken.
+
+GEMESSEN, je einzeln, mit derselben Datei:
+
+| Mutation | Ergebnis |
+|---|---|
+| keine | EXIT 0, 90 PASS / 0 FAIL |
+| `toString('utf8', 0, 1024)` | **EXIT 1, 88 PASS / 2 FAIL** |
+| `toString('utf8', 0, 419999)` (knapp unter der grössten Bestandsdatei) | **EXIT 1, 88 / 2** |
+| `toString('utf8', 0, 999999)` (über jeder Bestandsdatei) | EXIT 0, 90 / 0 — richtigerweise |
+
+Die letzte Zeile ist kein Loch, sondern der Beleg für die Grenze: bei dieser
+Schranke wird im Bestand nichts abgeschnitten. Eine Gegenprobe, die nur den
+ersten Wert misst, belegt den Einzelfall; erst die Grenze in beide Richtungen
+belegt die Klasse.
+
+Nebenbefund aus demselben Lauf, weil er eine Hausregel bestätigt: das
+Mutationsskript brach beim zweiten Versuch mit `ABBRUCH: Muster kommt 2-mal
+vor, erwartet genau 1 — nichts geaendert.` ab. Die zweite Fundstelle war der
+Kopfkommentar, der den Befund dokumentiert. Ohne die Eindeutigkeitsprüfung
+hätte `String.replace()` den Kommentar mutiert und ein grünes Ergebnis
+geliefert, das wie „die Zusicherung bewacht nichts" ausgesehen hätte.
+
+**Kosten dieser Nacharbeit:** keine Gegenlesung, also 0 $ — die Messung lief
+im eigenen Prüfstand. Der Gesamtstand für diesen Wächter bleibt bei
+**32,33 $** Gegenlesung, jetzt über acht Bau-Runden.
