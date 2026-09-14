@@ -1017,6 +1017,18 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   Behebung: `git worktree move`, aber nur bei einem VERKNÜPFTEN Arbeitsbaum —
   auf einem Haupt-Arbeitsbaum bricht es mit `fatal: '.' is a main working tree`
   ab. Dann neu klonen oder `chmod o+x` auf die klemmende Ebene.
+- **Nie im selben Arbeitsbaum arbeiten wie ein laufender Subagent — auch nicht
+  „kurz".** Die Regel stand bisher als „nie zwei Agenten im selben
+  Arbeitsbaum" da und liess den Haupt-Agenten aussen vor. Gemessen am
+  14.09.2026: Während ein Executer in `/home/user/gymdocu` arbeitete, habe ich
+  dort den Zweig gewechselt und `master` in einen anderen Zweig gemergt. Für
+  ihn erschien mitten in seiner Arbeit ein unaufgelöster Merge-Konflikt in
+  einer Datei, die er nie angefasst hatte; er hat es gemeldet, statt darauf
+  loszuarbeiten — sonst wäre sein Commit auf dem falschen Zweig gelandet.
+  Gutgegangen ist es nur, weil der Wechsel zufällig NACH seinem letzten Commit
+  lag (Reflog: Commit 06:29:49, Wechsel 06:30:53). Das war Glück, kein
+  Verfahren. Wer parallel arbeiten will, nimmt einen eigenen `git worktree`
+  unter `/workspace` — oder wartet.
 - **Der Container kann jederzeit neu starten** (in der Nacht zum 29.08.2026
   zweimal). `/workspace` überlebt, laufende Subagenten NICHT, und beiseite-
   gelegte Kopien unter `/tmp` womöglich auch nicht. Folgen: früh committen und

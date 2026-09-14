@@ -654,3 +654,59 @@ geliefert, das wie „die Zusicherung bewacht nichts" ausgesehen hätte.
 **Kosten dieser Nacharbeit:** keine Gegenlesung, also 0 $ — die Messung lief
 im eigenen Prüfstand. Der Gesamtstand für diesen Wächter bleibt bei
 **32,33 $** Gegenlesung, jetzt über acht Bau-Runden.
+
+## Symbole-Überlauf: zwei Befunde, einer hält (14.09.2026)
+
+Erste Gegenlesung zu einem anderen Beitrag als dem Zeitzonenfallen-Wächter —
+die Reparatur des waagerechten Überlaufs auf `/admin/lageplan/symbole` samt
+neuem verhaltensbasiertem Wächter.
+
+**Material:** Diff, die neue Testdatei vollständig, der Geschwisterwächter
+`test_feature_content_min_width_static.js`, `test/helfer/route-harness.js`,
+`test/helfer/chromium-start.js`, `test_feature_keine_systemeingriffe.js`, ein
+Ausschnitt aus `routes/lageplan.js`, dazu BEIDE Testausgaben (grün und die
+Gegenprobe rot). Rund 144.000 Zeichen.
+
+**Zahlen:** `status: completed`, 41.296 Eingabe-Token, 28.810 Ausgabe-Token,
+70.106 gesamt. Der Dollarbetrag ist hier NICHT eingetragen, weil ich ihn nicht
+abgelesen habe — er steht auf der OpenAI-Abrechnung. Eine geschätzte Zahl wäre
+schlechter als keine.
+
+**Befunde: 2. Nach eigener Nachmessung getragen: 1.**
+
+*Befund 1 (wichtig) — trägt.* Fehlt Chromium, überspringt der neue Wächter
+seine vier eigentlichen Zusicherungen und endet trotzdem mit `EXIT 0`. Selbst
+nachgemessen mit leerem `PLAYWRIGHT_BROWSERS_PATH`:
+
+    EXIT=0 — 2 PASS / 0 FAIL / 1 ÜBERSPRUNGEN
+
+Auf einem Prüfstand ohne Chromium winkt er damit dauerhaft durch.
+
+*Befund 2 (Anmerkung) — trägt NICHT.* Die Behauptung war, die Warnung im
+Kopfkommentar sei überholt, weil `test_feature_keine_systemeingriffe.js` nur
+noch echte `require`-Aufrufe erfasse und nicht mehr die bloße Zeichenkette.
+Die Prämisse stimmt zur Hälfte, die Schlussfolgerung nicht: der Wächter liest
+in Zeile 519 den ROHEN Quelltext (`fs.readFileSync`) und zieht keine
+Kommentare ab. Selbst gemessen, ein Kommentar mit der vollständigen
+require-Schreibweise:
+
+    EXIT=1 — test_feature_lageplan_symbole_ueberlauf.js (child_process)
+
+zurückgenommen `EXIT=0`. Die Warnung ist also nötig, nicht überholt. Übrig
+bleibt eine Formulierungsschärfung: die bloße Zeichenkette ist harmlos, erst
+die volle Schreibweise schlägt an.
+
+**Der wichtigste Punkt dieses Laufs ist aber nicht der Befund, sondern sein
+BEHEBUNGSVORSCHLAG — und der war falsch.** Vorgeschlagen war, „Chromium fehlt"
+überall hart rot zu machen, hilfsweise über einen Opt-out-Schalter. Auf dem
+Live-Server, wo dieselbe Suite als Deploy-Gate läuft, wird bewusst kein
+Chromium installiert; der Vorschlag hätte also das Deploy-Gate lahmgelegt.
+Die richtige Antwort stand längst im Repo, gemessen und begründet
+(`test_feature_offline_service_worker.js`, Befund B2 vom 09.09.2026):
+**in der CI ein FAIL, ausserhalb ein SKIP** — weil die CI-Stufe Chromium
+ausdrücklich installiert und der Live-Server nicht.
+
+Das ist das zweite Mal (nach dem 12.09.2026), dass ein Behebungsvorschlag der
+Gegenlesung seinen eigenen Befund nicht richtig geschlossen hätte. Die
+Hausregel dazu steht bereits in der CLAUDE.md und hat diesmal gehalten: der
+Befund wurde übernommen, der Vorschlag nicht.
