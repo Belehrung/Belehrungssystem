@@ -914,6 +914,25 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   Wer solche Funde im Bericht unterdrückt, weil sie „nichts zeigen", wirft
   genau das weg. Die Gegenprobe selbst bleibt dabei die realistische — der
   unrealistische Fund ist Anlass zum Nachschärfen, nicht der Beleg.
+- **Dass A ausreicht, heisst nicht, dass B wirkungslos ist — und eine Messung an
+  EINER Geometrie beantwortet die Frage nicht.** Gemessen am 14.09.2026, und
+  zwar gegen meine eigene Behauptung vom selben Tag: Zwei Eigenschaften waren
+  gemeinsam eingeführt worden (`min-width:0` und `overflow-x:auto` an einem
+  Flex-Kind). Eine Messung an einer Seite zeigte „nur `min-width:0` entfernt:
+  Δ 0" — daraus hatte ich geschlossen, allein `overflow-x:auto` sei wirksam,
+  und genau so in eine Notiz geschrieben. Am Minimalfall nachgemessen, vier
+  Varianten mal zwei Aufbauten: bei einer Tabelle OHNE eigenen scrollenden
+  Kasten trägt allein `overflow-x:auto` (`min-width:0` allein: Δ 547 bleibt
+  Δ 547); steckt dieselbe Tabelle IN einem solchen Kasten, trägt `min-width:0`
+  allein sehr wohl (Δ 547 → Δ 0). Beide Sätze sind wahr, je nach Aufbau — und
+  die geprüfte Datei hat beide Aufbauten nebeneinander. Die Lehre ist nicht
+  „mehr Seiten messen", sondern: **wer von „X reicht" auf „Y ist überflüssig"
+  schliesst, hat eine zweite Behauptung aufgestellt, die er nicht gemessen
+  hat.** Für ein Wegnehmen braucht es die Messung, dass Y in KEINEM
+  vorkommenden Aufbau trägt — und solange die niemand hat, bleibt beides
+  stehen. Billigster Weg dorthin ist fast immer der Minimalfall, nicht die
+  echte Seite: er isoliert genau die beiden Eigenschaften, während die echte
+  Seite ein Dutzend weitere mitbringt.
 - **Sollwerte statt geratener Schwellen.** Wer eine Prüfanweisung an den
   Betreiber gibt, nennt den erwarteten Wert oder den Vergleich gegen eine
   Quelle — keine aus dem Bauch gegriffene Grenze.
