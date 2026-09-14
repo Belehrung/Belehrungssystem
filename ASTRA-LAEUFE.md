@@ -39,6 +39,10 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 13.09.2026 | Vierte Bestaetigungsrunde: Waechter Zeitzonenfalle (als „letzte" angesetzt, war es nicht) | Diff 608 Zeilen, Suchen 49, Lesungen 9, Token rein 876854, Token raus 10903, Runden 13 | 2 | 2 | 0 | 11,78 $ |
 | 14.09.2026 | Fuenfte Bestaetigungsrunde: Waechter Zeitzonenfalle, Referenzen von aussen | Diff 579 Zeilen, Suchen 8, Lesungen 11, Token rein 231345, Token raus 6894, Runden 5 | 2 | 2 | 0 | 3,41 $ |
 | 14.09.2026 | Sechste Bestaetigungsrunde: Waechter Zeitzonenfalle, Kopie und git-Referenz nach dem Lesen | Diff 373 Zeilen, Suchen 11, Lesungen 13, Token rein 276620, Token raus 6289, Runden 6 | 1 | 1 | 0 | 3,93 $ |
+| 14.09.2026 | Gegenlesung Symbole-Ueberlauf (erster Beitrag ausserhalb der Zeitzonen-Reihe) | Diff + 7 Dateien + beide Testausgaben, ~144.000 Zeichen, Token rein 41296, Token raus 28810 | 2 | 1 | 1 (Behebungsvorschlag haette das Deploy-Gate lahmgelegt) | n. e. (nicht ablesbar) |
+| 14.09.2026 | Gegenlesung Archiv-Abschneiden samt Herausloesung des Messwegs | Diff + 8 Dateien + VIER Testausgaben, ~175.000 Zeichen, Token rein 49235, Token raus 35756 | 2 | 2 | 0 | n. e. (nicht ablesbar) |
+| 14.09.2026 | **PLAN**-Pruefung: Scan-Apparat herausloesen (VOR der Umsetzung) | Plan + 3 Dateien, 181.491 Zeichen, Token rein 53776, Token raus 9565 (davon 7040 Nachdenken) | 5 | 5 | 0 | n. e. (nicht ablesbar) |
+| 14.09.2026 | Gegenlesung Scan-Apparat herausgeloest (Diff, NACH der Planpruefung) | Diff + 5 Dateien vollstaendig + Messungen, 293.727 Zeichen, Token rein 86823, Token raus 14265 (davon 12736 Nachdenken) | 3 | 1 voll + 2 teilweise | 0 ganz gefallen; bei einem fiel die Praemisse („Duplikat bliebe unentdeckt" — es wird erkannt), bei einem zwei von drei Vorschlaegen | n. e. (nicht ablesbar) |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -772,3 +776,142 @@ Nebenbefund aus derselben Nacharbeit, vom Ausführenden beim Bauen selbst
 entdeckt: bei `scroll-behavior:smooth` liefert ein sofortiges Zurücklesen von
 `scrollLeft` den Wert 0, nach 50 ms 19, erst nach ~300 ms den vollen Wert.
 Eine Probe ohne Wartezeit hätte künftig falsch rot gemeldet.
+
+## Die erste PLAN-Pruefung, die es wirklich gab (14.09.2026)
+
+Seit dem 10.09.2026 steht in der CLAUDE.md, der Plan sei „der Punkt mit dem
+groessten Hebel" — und bis heute ging trotzdem immer nur der fertige Diff
+raus. Das hier ist die erste Ausnahme, und sie hat sich sofort bezahlt
+gemacht.
+
+**Anlass:** `test_feature_geraete_datumsfallen.js` meldet gruen, waehrend vier
+von sechs Verzeichnissen ungelesen bleiben. Selbst gemessen, acht Mutationen
+einzeln, Basis `EXIT 0, 38 PASS / 0 FAIL`:
+
+| Mutation | Ergebnis |
+|---|---|
+| `readdirSync` wirft fuer `ops` / `tools` / `workers` / `public` | je **EXIT 0, 38 PASS / 0 FAIL** |
+| `wurzelJsDateien()` liefert `[]` | **EXIT 0, 38 PASS / 0 FAIL** |
+| Verzeichnisliste sechs → zwei gekuerzt | **EXIT 0, 38 PASS / 0 FAIL** |
+| dito `routes` / `core` | je EXIT 1, 37 PASS / 1 FAIL |
+
+`routes` und `core` fallen nur ZUFAELLIG auf: die Ausnahmeliste hat genau dort
+Eintraege. Das ist keine Absicherung des Scans, sondern ein Nebeneffekt.
+
+**Material:** der Plan (87 Zeilen), beide Waechter vollstaendig, dazu
+`test/helfer/ueberlauf-messung.js` als Vorbild fuer die Aufteilung
+„Helfer liefert Tatsachen, Waechter entscheidet". 181.491 Zeichen.
+
+**Fuenf Befunde, alle fuenf nach eigener Nachmessung getragen.** Das ist
+ungewoehnlich — in dieser Reihe ist sonst regelmaessig einer gefallen. Der
+Grund ist vermutlich die Gattung: ein Plan hat keine Zeilen, an denen sich
+eine Schwereeinstufung vergreifen kann.
+
+**Der Befund, der den Auftrag gerettet hat** — der Plan sagte „wortgleich
+herausloesen". Im gehaerteten Waechter steht `const ROOT = __dirname;` und
+wird fuer `safe.directory=${ROOT}` und `cwd: ROOT` benutzt. In
+`test/helfer/` zeigte `__dirname` dann auf das Helferverzeichnis. Selbst
+unprivilegiert nachgemessen, mit Positivkontrolle:
+
+    sudo -u nobody env HOME=/tmp git -c safe.directory=<repo>/test/helfer \
+         -C <repo>/test/helfer ls-files
+      -> fatal: detected dubious ownership in repository at '<repo>'
+
+    sudo -u nobody env HOME=/tmp git -c safe.directory=<repo> -C <repo> ls-files
+      -> .env.example, .github/dependabot.yml, ...
+
+Git will die WURZEL des Arbeitsbaums, nicht ein Unterverzeichnis. Die
+wortgleiche Herausloesung waere im unprivilegierten Gegenlauf rot geworden —
+mit einer Meldung, die auf git zeigt und nicht auf den Auftrag. Der Repo-Pfad
+wird jetzt vom Aufrufer INJIZIERT.
+
+**Die anderen vier, je selbst nachgemessen:**
+
+*Die Liste der herauszuloesenden Bausteine war unvollstaendig.* Gezaehlt: alle
+vier zusaetzlich genannten Funktionen (`verarbeiteWurzelEintrag`,
+`wurzelJsDateien`, `alleGescanntenDateien`, `liegtImErfassungsbereich`)
+existieren im gehaerteten Waechter. Ohne sie haette jeder Waechter den
+Wurzel-Scan neu formuliert — genau die verbotene Klasse, und die gemessene
+Mutation „Wurzeldateien leer" waere still geblieben.
+
+*„Verhalten unveraendert" war ueber Zusicherungszahlen versprochen.* Eine Zahl
+ist keine Menge — unsere eigene Regel, im Plan uebersehen. Der Auftrag verlangt
+jetzt zusaetzlich einen Diff der erfassten PFADMENGE in beide Richtungen.
+
+*Die Rotung von `routes`/`core` haengt an der Ausnahmeliste.* Der Plan sagte
+„sechs Mutationen rot bekommen", ohne zu sagen, dass die Absicherung
+UNABHAENGIG von Ausnahmeeintraegen tragen muss.
+
+*Der neue Helfer faellt unter den Systemeingriffe-Waechter.* Gemessen:
+`alleTestdateien()` sammelt `test/` VOLLSTAENDIG, das Muster
+`require\(\s*['"](?:node:)?child_process['"]\s*\)` trifft also auch einen
+Helfer, und der Schluessel ist `path.relative(__dirname, datei)`. Kein einziger
+`test/helfer/`-Pfad steht bisher in der Ausnahmeliste. Dazu die
+Nebenbehauptung, die ebenfalls hielt: der Geraete-Waechter begruendet in
+Block 3b ausdruecklich Unabhaengigkeit „von git, Netzwerk und
+Checkout-Tiefe" — das galt gegen `git show <commit>`, nicht gegen
+`git ls-files`, aber der Satz wird mit diesem Beitrag falsch und gehoert
+mitgezogen.
+
+**Was das ueber das Verfahren sagt:** Vier der fuenf Befunde betreffen Dinge,
+die ein Diff-Gegenleser erst NACH einer vollen Bau-Runde gesehen haette. Der
+Plan war ein paar Kilobyte. Das ist kein Beweis, dass Planpruefungen immer
+lohnen — es ist EIN Lauf —, aber es ist der erste eigene Messwert dazu
+ueberhaupt, und er zeigt in dieselbe Richtung wie die Regel, die seit dem
+10.09. unbefolgt dastand.
+
+## Der Befund, der die eigene Behebung eine Ebene hoeher wiederholt (14.09.2026)
+
+Zweiter Lauf zum selben Beitrag wie die Planpruefung weiter oben — diesmal der
+fertige Diff. Das Material trug erstmals BEIDE Sorten Beleg zusammen: den Diff,
+fuenf Dateien vollstaendig (Helfer, beide Waechter, den Systemeingriffe-
+Waechter, den Messweg-Helfer als Vorbild) UND eine eigene Messungen-Seite mit
+allen Gegenproben-Zahlen, vorher gegen nachher.
+
+**Drei Befunde. Einer trug vollstaendig, zwei nur zum Teil** — und das ist
+der Eintrag wert, weil es die erste Runde dieser Reihe ist, in der eine
+PRAEMISSE eines Befunds messbar falsch war.
+
+**Der tragende Befund, blockierend:** Der Geraete-Waechter schuetzt sich
+dagegen, dass sein Scan lautlos schrumpft, allein dadurch, dass er die
+git-Referenz mit seiner EIGENEN literalen Verzeichnisliste aufruft, waehrend
+der Scan die Konstante aus dem Helfer benutzt. Tauscht jemand das Argument
+gegen die Helfer-Konstante — eine plausible Aufraeum-Aenderung —, stammen beide
+Seiten aus derselben Quelle. Selbst gemessen, in zwei Schritten:
+
+| Schritt | Ergebnis |
+|---|---|
+| nur das Argument getauscht | EXIT 0, 40 PASS / 0 FAIL — nichts kaputt, aber der Schutz ist lautlos weg |
+| zusaetzlich die Konstante sechs → zwei gekuerzt | **EXIT 0, 40 PASS / 0 FAIL**, waehrend `ops/`, `tools/`, `workers/`, `public/` verschwunden sind |
+
+Das ist genau die Klasse, die dieser Beitrag schliessen sollte — eine Ebene
+hoeher. Der gehaertete Waechter hat dagegen seit seiner dritten Runde eine
+eigene Zusicherung („der Erfassungsbereich entspricht der unabhaengig
+hingeschriebenen, literalen Erwartung"); dem Geschwisterwaechter fehlte sie.
+**Verallgemeinert, und das ist die Lehre:** wer zwei Waechter an denselben
+Helfer haengt, erbt dessen Staerken NICHT automatisch — die Zusicherungen
+bleiben beim Aufrufer, und genau dort faellt eine fehlende nicht auf, weil der
+Helfer ja „schon geprueft" ist.
+
+**Die falsche Praemisse:** Befund 2 sagte, ein Duplikat in der Erfassungsliste
+bliebe im Geraete-Waechter unentdeckt. Selbst gemessen, Duplikat eingeschleust:
+**EXIT 1, 39 PASS / 1 FAIL**, ueber den Laengenteil des Mengenvergleichs
+(`186 … gescannt 187`). Die Klasse ist gedeckt. Was trug, war die zweite
+Haelfte desselben Befunds: der gehaertete Waechter NENNT die Ursache
+(`gescannteDateien enthaelt keine Doppelten (1 Duplikate gefunden)`), der
+andere nicht. Uebernommen wurde also die Diagnose, nicht die Abdeckung — und
+genau so steht es jetzt auch im Kommentar, damit dort in einem Monat keine
+Behauptung steht, die die Messung nicht hergibt.
+
+**Zwei Vorschlaege ausdruecklich NICHT uebernommen:** das uebergebene
+Verzeichnis-Array im Helfer zu validieren, und eine einschaltbare
+Selbstpruefung zu exportieren, die der Helfer ueber seine eigene Konstante
+fuehrt. Das zweite waere genau der Selbstnachweis aus dem eigenen Datenfluss,
+gegen den der ganze Apparat gebaut ist; beim ersten hat niemand gemessen, dass
+er etwas faengt.
+
+**Was der Pruefer selbst benannt hat:** seine Pruefgrenze steht im Ergebnis —
+er hat die Messzahlen aus dem Auftrag NACHVOLLZOGEN, nicht nachgemessen, weil
+ihm dafuer kein Ausfuehrungswerkzeug bereitsteht. Jeder Befund blieb damit eine
+Behauptung, bis ich sie selbst gemessen hatte; bei einem von dreien hat sich
+das direkt ausgezahlt.
