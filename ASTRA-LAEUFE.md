@@ -1089,3 +1089,39 @@ Betriebsabhängigkeit, und die Beobachtung, dass die Doppelten-Zusicherung im
 Wurzel-Modus strukturell nicht fallen kann. Der letzte ist der beste von den
 vieren und bleibt offen: die messende Spur hat dafür ebenfalls keinen
 Ein-Zeilen-Defekt gefunden, der sie fällt.
+
+### Nachtrag am selben Tag: eine DRITTE Spur, die beide anderen schlug
+
+Der Abschnitt oben vergleicht zwei Spuren. Am PR zu diesem Beitrag lief eine
+dritte mit, die keine von uns eingerichtet hat: ein Review-Bot, der als
+CI-Prüfung am Pull Request hängt. Er meldete sich mit einem Befund, den
+**beide** anderen Spuren übersehen hatten — die Bereichs-Zusicherung verglich
+`ausgeschlosseneDateien` nicht, obwohl `pruefeBereich()` auch dieses Feld
+normalisiert und beide Seiten des Mengenvergleichs es anwenden.
+
+Selbst nachgemessen (`'server.js'` dort injiziert, unprivilegiert, danach
+zurückgenommen):
+
+| Wächter | Ergebnis | gescannt |
+|---|---|---|
+| `test_feature_geraete_typ_filter_static.js` | **EXIT 0, 108 / 0** | 185 statt 186 |
+| `test_feature_datum_zeitzonenfalle_static.js` | **EXIT 0, 90 / 0** | 185 statt 186 |
+| die drei neuen Wächter | je EXIT 1 | 211 statt 212 |
+
+Gegengezählt statt vermutet: von vier Wächtern führten drei das Feld
+**null**-mal im Vergleich — exakt die drei, die der Bot genannt hatte.
+
+**Was das für die Aufgabenteilung heisst.** Es ist genau dieselbe Klasse, die
+die messende Spur eine Ebene tiefer gefunden hatte (Modus statt Einzeldatei) —
+und trotzdem hat sie keine der beiden Spuren eine Feldebene weitergedacht. Der
+Bot hat nichts gemessen; er hat eine Aufzählung gelesen und bemerkt, dass ein
+Feld darin fehlt. Das ist eine dritte Suchmethode neben „gemessene Mutation"
+und „durchdachter Kontrollfluss": **stumpfer Vollständigkeitsabgleich einer
+Aufzählung.** Billig, automatisch, und bei genau dieser Fehlerform stärker als
+beide teuren Spuren.
+
+**Was es NICHT heisst:** ein Befund an einem Tag. Der Bot lief hier zum ersten
+Mal überhaupt mit, er kostet uns nichts, und er hat in denselben vier Läufen
+sonst nichts beigetragen. Wer daraus „der Bot ersetzt eine Spur" macht, stützt
+sich auf eine Stichprobe von eins — dieselbe Falle wie beim Modellvergleich
+weiter oben in der CLAUDE.md.
