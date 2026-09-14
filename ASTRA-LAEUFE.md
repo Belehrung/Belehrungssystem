@@ -42,6 +42,7 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 14.09.2026 | Gegenlesung Symbole-Ueberlauf (erster Beitrag ausserhalb der Zeitzonen-Reihe) | Diff + 7 Dateien + beide Testausgaben, ~144.000 Zeichen, Token rein 41296, Token raus 28810 | 2 | 1 | 1 (Behebungsvorschlag haette das Deploy-Gate lahmgelegt) | n. e. (nicht ablesbar) |
 | 14.09.2026 | Gegenlesung Archiv-Abschneiden samt Herausloesung des Messwegs | Diff + 8 Dateien + VIER Testausgaben, ~175.000 Zeichen, Token rein 49235, Token raus 35756 | 2 | 2 | 0 | n. e. (nicht ablesbar) |
 | 14.09.2026 | **PLAN**-Pruefung: Scan-Apparat herausloesen (VOR der Umsetzung) | Plan + 3 Dateien, 181.491 Zeichen, Token rein 53776, Token raus 9565 (davon 7040 Nachdenken) | 5 | 5 | 0 | n. e. (nicht ablesbar) |
+| 14.09.2026 | Gegenlesung Scan-Apparat herausgeloest (Diff, NACH der Planpruefung) | Diff + 5 Dateien vollstaendig + Messungen, 293.727 Zeichen, Token rein 86823, Token raus 14265 (davon 12736 Nachdenken) | 3 | 1 voll + 2 teilweise | 0 ganz gefallen; bei einem fiel die Praemisse („Duplikat bliebe unentdeckt" — es wird erkannt), bei einem zwei von drei Vorschlaegen | n. e. (nicht ablesbar) |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -858,3 +859,59 @@ Plan war ein paar Kilobyte. Das ist kein Beweis, dass Planpruefungen immer
 lohnen — es ist EIN Lauf —, aber es ist der erste eigene Messwert dazu
 ueberhaupt, und er zeigt in dieselbe Richtung wie die Regel, die seit dem
 10.09. unbefolgt dastand.
+
+## Der Befund, der die eigene Behebung eine Ebene hoeher wiederholt (14.09.2026)
+
+Zweiter Lauf zum selben Beitrag wie die Planpruefung weiter oben — diesmal der
+fertige Diff. Das Material trug erstmals BEIDE Sorten Beleg zusammen: den Diff,
+fuenf Dateien vollstaendig (Helfer, beide Waechter, den Systemeingriffe-
+Waechter, den Messweg-Helfer als Vorbild) UND eine eigene Messungen-Seite mit
+allen Gegenproben-Zahlen, vorher gegen nachher.
+
+**Drei Befunde. Einer trug vollstaendig, zwei nur zum Teil** — und das ist
+der Eintrag wert, weil es die erste Runde dieser Reihe ist, in der eine
+PRAEMISSE eines Befunds messbar falsch war.
+
+**Der tragende Befund, blockierend:** Der Geraete-Waechter schuetzt sich
+dagegen, dass sein Scan lautlos schrumpft, allein dadurch, dass er die
+git-Referenz mit seiner EIGENEN literalen Verzeichnisliste aufruft, waehrend
+der Scan die Konstante aus dem Helfer benutzt. Tauscht jemand das Argument
+gegen die Helfer-Konstante — eine plausible Aufraeum-Aenderung —, stammen beide
+Seiten aus derselben Quelle. Selbst gemessen, in zwei Schritten:
+
+| Schritt | Ergebnis |
+|---|---|
+| nur das Argument getauscht | EXIT 0, 40 PASS / 0 FAIL — nichts kaputt, aber der Schutz ist lautlos weg |
+| zusaetzlich die Konstante sechs → zwei gekuerzt | **EXIT 0, 40 PASS / 0 FAIL**, waehrend `ops/`, `tools/`, `workers/`, `public/` verschwunden sind |
+
+Das ist genau die Klasse, die dieser Beitrag schliessen sollte — eine Ebene
+hoeher. Der gehaertete Waechter hat dagegen seit seiner dritten Runde eine
+eigene Zusicherung („der Erfassungsbereich entspricht der unabhaengig
+hingeschriebenen, literalen Erwartung"); dem Geschwisterwaechter fehlte sie.
+**Verallgemeinert, und das ist die Lehre:** wer zwei Waechter an denselben
+Helfer haengt, erbt dessen Staerken NICHT automatisch — die Zusicherungen
+bleiben beim Aufrufer, und genau dort faellt eine fehlende nicht auf, weil der
+Helfer ja „schon geprueft" ist.
+
+**Die falsche Praemisse:** Befund 2 sagte, ein Duplikat in der Erfassungsliste
+bliebe im Geraete-Waechter unentdeckt. Selbst gemessen, Duplikat eingeschleust:
+**EXIT 1, 39 PASS / 1 FAIL**, ueber den Laengenteil des Mengenvergleichs
+(`186 … gescannt 187`). Die Klasse ist gedeckt. Was trug, war die zweite
+Haelfte desselben Befunds: der gehaertete Waechter NENNT die Ursache
+(`gescannteDateien enthaelt keine Doppelten (1 Duplikate gefunden)`), der
+andere nicht. Uebernommen wurde also die Diagnose, nicht die Abdeckung — und
+genau so steht es jetzt auch im Kommentar, damit dort in einem Monat keine
+Behauptung steht, die die Messung nicht hergibt.
+
+**Zwei Vorschlaege ausdruecklich NICHT uebernommen:** das uebergebene
+Verzeichnis-Array im Helfer zu validieren, und eine einschaltbare
+Selbstpruefung zu exportieren, die der Helfer ueber seine eigene Konstante
+fuehrt. Das zweite waere genau der Selbstnachweis aus dem eigenen Datenfluss,
+gegen den der ganze Apparat gebaut ist; beim ersten hat niemand gemessen, dass
+er etwas faengt.
+
+**Was der Pruefer selbst benannt hat:** seine Pruefgrenze steht im Ergebnis —
+er hat die Messzahlen aus dem Auftrag NACHVOLLZOGEN, nicht nachgemessen, weil
+ihm dafuer kein Ausfuehrungswerkzeug bereitsteht. Jeder Befund blieb damit eine
+Behauptung, bis ich sie selbst gemessen hatte; bei einem von dreien hat sich
+das direkt ausgezahlt.
