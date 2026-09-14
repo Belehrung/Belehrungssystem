@@ -1029,6 +1029,18 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   lag (Reflog: Commit 06:29:49, Wechsel 06:30:53). Das war Glück, kein
   Verfahren. Wer parallel arbeiten will, nimmt einen eigenen `git worktree`
   unter `/workspace` — oder wartet.
+  **NACHGESCHÄRFT am selben Tag, weil ich dieselbe Regel zwei Stunden später
+  ein zweites Mal gebrochen habe: ein Subagent ist NICHT fertig, wenn sein
+  Hintergrundlauf fertig ist — sondern wenn seine BENACHRICHTIGUNG da ist.**
+  Genau diese Verwechslung war der Denkfehler: seine Suite war durch, also
+  hielt ich den Baum für frei und fuhr dort meine eigene Gegenprobe. Er sah
+  mitten in seiner Abschlussprüfung einen `GEGENPROBE-DEFEKT`-Marker in einer
+  Datei, die er nie angefasst hatte, und meldete ihn als unerklärlich — vier
+  eigene Nachmessungen inklusive. Wieder ohne Schaden, wieder aus Glück.
+  Nebenbei ist das der Beleg, warum ein Agent, der einen unerklärlichen Befund
+  MELDET statt ihn abzuhaken, mehr wert ist als einer, der immer liefert:
+  seine Meldung ist der einzige Grund, warum dieser zweite Verstoß überhaupt
+  aufgefallen ist.
 - **Der Container kann jederzeit neu starten** (in der Nacht zum 29.08.2026
   zweimal). `/workspace` überlebt, laufende Subagenten NICHT, und beiseite-
   gelegte Kopien unter `/tmp` womöglich auch nicht. Folgen: früh committen und
