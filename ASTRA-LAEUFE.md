@@ -46,6 +46,7 @@ sonst misst diese Datei nur die eigene Zustimmung.
 | 14.09.2026 | **PLAN**-Pruefung: Erfassungsbereich parametrieren, zwei weitere Waechter anschliessen (VOR der Umsetzung) | Plan + 4 Dateien vollstaendig, 174.838 Zeichen, Token rein 51.981, Token raus 11.082 (davon 8.192 Nachdenken) | 8 | 8 | 0 | n. e. (nicht ablesbar) |
 | 14.09.2026 | Gegenlesung Erfassungsbereich parametriert (Diff, NACH der Planpruefung) | Diff + Messungen + 5 Dateien vollstaendig, 311.837 Zeichen, Token rein 92.693, Token raus 15.087 (davon 12.992 Nachdenken) | 6 | 3 | 2 gefallen (beide Praemissen gegen den Bestand gemessen falsch: der Mengenvergleich gegen git faengt beides); 1 ging in einen tragenden auf | n. e. (nicht ablesbar) |
 | 14.09.2026 | **PLAN**-Pruefung: `test/rohwert-scan.js` schluckt unlesbare Verzeichnisse (VOR der Umsetzung) | Plan + 6 Dateien vollstaendig, 198.325 Zeichen, Token rein 58.056, Token raus 11.819 (davon 9.152 Nachdenken) | 6 | 4 | 1 gefallen (Aufruferbehauptung am Quelltext widerlegt); 1 formal (meine eigene Fragenzahl) | n. e. (nicht ablesbar) |
+| 14.09.2026 | Gegenlesung Rohwert-Scan an den Helfer (Diff, NACH der Planpruefung) | Diff + Messungen + 5 Dateien vollstaendig, 197.722 Zeichen, Token rein 58.277, Token raus 12.775 (davon 11.136 Nachdenken) | 5 | 1 voll (beide Seiten am selben Helfer — als „niedrig" eingestuft, gemessen BLOCKIEREND) | 0 ganz gefallen; 4 blieben Anmerkungen ohne eigene Messung | n. e. (nicht ablesbar) |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -1036,3 +1037,91 @@ einer anderen falsch geschlossen, welchen Scanner ein Wächter ruft. Beides
 hätte ein einziger `grep` entschieden. Jeder Befund bleibt eine Behauptung,
 bis ich sie selbst gemessen habe; hier hat sich das in BEIDE Richtungen
 ausgezahlt.
+
+## Der erste Befund, den BEIDE Spuren fanden — und der Unterschied war die Messung (14.09.2026)
+
+Am 13.09.2026 steht weiter oben als Ergebnis: neun Befunde, zwei Spuren, **null
+Überschneidung**. Heute gab es die erste, und sie ist lehrreicher als jede
+Trennung.
+
+Beide Spuren liefen über denselben Diff. Beide sahen dieselbe Struktur: der
+Scan, die git-Referenz und das Bereichsprädikat schicken ihren `bereich` alle
+durch dieselbe Funktion `pruefeBereich()`. Was sie daraus machten, war
+gegensätzlich:
+
+| | Astra (nur LESEN) | Claude-Spur (darf AUSFÜHREN) |
+|---|---|---|
+| Einstufung | **niedrig** | **hoch** |
+| Formulierung | „Ein Fehler dort *könnte* beide Seiten auf dieselbe Menge ziehen, **wenn** der Pathspec ihn nicht bereits eliminiert" | „Eine Zeile, 212 → 167 Dateien, alle drei Wächter EXIT 0" |
+| Vorschlag | eine „Minimalinvariante" ergänzen | den wirksamen Bereich exportieren und gegen das Literal halten |
+
+Selbst nachgemessen, mit Reachability-Beleg (die gemeldete Dateizahl änderte
+sich): **alle drei umgestellten Wächter EXIT 0, 92/0, 26/0 und 45/0**, während
+45 Dateien fehlten — und die Zusicherung meldete „167 = 167, in beide
+Richtungen". Dazu, und das wog schwerer als der Beitrag selbst: **der bereits
+ausgelieferte `test_feature_geraete_typ_filter_static.js` (#437, Deploy 408)
+blieb bei EXIT 0, 108 PASS / 0 FAIL**, Scan auf 164 geschrumpft.
+
+**Die Lehre ist nicht „Astra war schlechter".** Astra hat die Stelle GEFUNDEN,
+ohne sie ausführen zu können — das ist genau die Leistung, für die es da ist.
+Aber ein Befund im Konjunktiv wird nach Konjunktiv eingestuft, und eine
+Einstufung „niedrig" hätte ihn in der Nacharbeit hinter vier andere sortiert.
+Erst die Mutation macht aus „könnte" ein „tut". Das schärft die Regel vom
+13.09. („die eine Spur darf ausführen, die andere nur lesen") um einen Satz,
+der praktisch wichtiger ist als die Zahlen: **eine Schwereeinstufung aus einer
+Spur ohne Ausführungswerkzeug ist eine Vermutung über die Schwere, nicht eine
+Feststellung — und sie fällt systematisch zu niedrig aus.** Wer Befunde nach
+gemeldeter Schwere abarbeitet, arbeitet die lesende Spur damit in der falschen
+Reihenfolge ab.
+
+**Was die messende Spur allein fand** (vier weitere, alle selbst nachgemessen
+und alle getragen): ein `catch (e) { continue; }` ohne Sammlung im LESEZUGRIFF
+desselben Wächters, dessen Kommentar genau das an anderer Stelle anprangert
+(Datei unlesbar → EXIT 0, 92/0, bei gepflanztem Fund); zwei Wächter mit
+zweistelligem `ok()`, die ihre Diagnose still verwarfen; die Filter-/Lesestufe
+als ungebundene Klasse (Filter halbiert → EXIT 0, 26/0, Metas still 27 → 25);
+und eine Berichtigung von MIR, die selbst falsch war.
+
+**Was Astra allein fand und was davon trug:** die vier übrigen Befunde blieben
+Anmerkungen — ein undokumentierter Sonderfall im Pathspec (aus #437, nicht aus
+diesem Diff), ein Erfassungsbereich, der weiter reicht als nötig, `git` als
+Betriebsabhängigkeit, und die Beobachtung, dass die Doppelten-Zusicherung im
+Wurzel-Modus strukturell nicht fallen kann. Der letzte ist der beste von den
+vieren und bleibt offen: die messende Spur hat dafür ebenfalls keinen
+Ein-Zeilen-Defekt gefunden, der sie fällt.
+
+### Nachtrag am selben Tag: eine DRITTE Spur, die beide anderen schlug
+
+Der Abschnitt oben vergleicht zwei Spuren. Am PR zu diesem Beitrag lief eine
+dritte mit, die keine von uns eingerichtet hat: ein Review-Bot, der als
+CI-Prüfung am Pull Request hängt. Er meldete sich mit einem Befund, den
+**beide** anderen Spuren übersehen hatten — die Bereichs-Zusicherung verglich
+`ausgeschlosseneDateien` nicht, obwohl `pruefeBereich()` auch dieses Feld
+normalisiert und beide Seiten des Mengenvergleichs es anwenden.
+
+Selbst nachgemessen (`'server.js'` dort injiziert, unprivilegiert, danach
+zurückgenommen):
+
+| Wächter | Ergebnis | gescannt |
+|---|---|---|
+| `test_feature_geraete_typ_filter_static.js` | **EXIT 0, 108 / 0** | 185 statt 186 |
+| `test_feature_datum_zeitzonenfalle_static.js` | **EXIT 0, 90 / 0** | 185 statt 186 |
+| die drei neuen Wächter | je EXIT 1 | 211 statt 212 |
+
+Gegengezählt statt vermutet: von vier Wächtern führten drei das Feld
+**null**-mal im Vergleich — exakt die drei, die der Bot genannt hatte.
+
+**Was das für die Aufgabenteilung heisst.** Es ist genau dieselbe Klasse, die
+die messende Spur eine Ebene tiefer gefunden hatte (Modus statt Einzeldatei) —
+und trotzdem hat sie keine der beiden Spuren eine Feldebene weitergedacht. Der
+Bot hat nichts gemessen; er hat eine Aufzählung gelesen und bemerkt, dass ein
+Feld darin fehlt. Das ist eine dritte Suchmethode neben „gemessene Mutation"
+und „durchdachter Kontrollfluss": **stumpfer Vollständigkeitsabgleich einer
+Aufzählung.** Billig, automatisch, und bei genau dieser Fehlerform stärker als
+beide teuren Spuren.
+
+**Was es NICHT heisst:** ein Befund an einem Tag. Der Bot lief hier zum ersten
+Mal überhaupt mit, er kostet uns nichts, und er hat in denselben vier Läufen
+sonst nichts beigetragen. Wer daraus „der Bot ersetzt eine Spur" macht, stützt
+sich auf eine Stichprobe von eins — dieselbe Falle wie beim Modellvergleich
+weiter oben in der CLAUDE.md.
