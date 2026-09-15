@@ -1141,6 +1141,57 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   noch die Hälfte trifft, liefert weiter grün. Die gefährlichere Änderung ist
   deshalb die kleine.
 
+## Transaktionen und Sperren
+
+- **Ein UPDATE und sein Audit in EINE Transaktion zu ziehen, erzeugt eine
+  Lock-Reihenfolge, die es unter Autocommit nicht gab.** Gemessen am
+  15.09.2026, und zwar an einer Behebung, die genau richtig war: ein
+  Freigabe-UPDATE und sein `auditAppend` standen getrennt (blankes `db.run`,
+  also Autocommit, danach ein eigener Audit-Vorgang) und wurden zusammengezogen,
+  damit bei null getroffenen Zeilen kein Audit mehr entsteht. Damit hält der
+  Vorgang aber ab sofort die ZEILENSPERREN und verlangt DANACH den
+  studioweiten Advisory-Lock, den `auditAppend` nimmt
+  (`core/integritaet.js:65`, `pg_advisory_xact_lock(studioId)` — auch mit
+  übergebenem `t`, also in der Transaktion des Aufrufers). Ein zweiter
+  Schreibweg auf dieselben Zeilen (dort der Seil-Tagescheck: Audit bei
+  `routes/module.js:2782`, UPDATEs bei `:2911`/`:2951`) nimmt beides in
+  umgekehrter Reihenfolge — ein Kreis, den PostgreSQL mit `deadlock detected`
+  auflöst. Vorher gab es ihn nicht: die Zeilensperre war vor dem Audit schon
+  wieder weg.
+  **Vor jedem solchen Zusammenziehen deshalb zählen, welche ANDEREN
+  Transaktionen dieselben Zeilen anfassen, und in welcher Reihenfolge sie den
+  Audit-Lock nehmen.** Der billige Ausweg ist, den Audit-Lock im neuen Weg
+  ausdrücklich ZUERST zu nehmen (`SELECT pg_advisory_xact_lock($1)` vor dem
+  UPDATE) — Advisory-Locks sind innerhalb derselben Transaktion
+  wiedereintrittsfähig, der spätere Griff in `auditAppend` stört also nicht.
+  Die Begründung gehört als Kommentar daneben, samt der Fundstellen des
+  gegenläufigen Wegs; sonst räumt sie jemand als „doppelt" wieder weg.
+- **Im Bestand steht bereits ein solcher Kreis** (gemessen 15.09.2026, NICHT
+  behoben, eigener Auftrag): der Seil-Tagescheck nimmt
+  `seilkontrolle:<studio>:<tag>` (`routes/module.js:2710`), dann über
+  `auditAppend(…, t)` den Studio-Lock (`:2725`), dann
+  `nachtrag:<studio>:seilkontrolle` (`:2777`). Der eigenständige
+  Beurteilungs-Nachtrag nimmt `nachtrag:…` (`:3140`), dann über
+  `auditAppend(…, t)` den Studio-Lock (`:997`). Folge für die Arbeitsweise:
+  **keine NEUE globale Lock-Klasse einführen, solange diese Ordnung ungelöst
+  ist.** Am selben Tag wurde ein ganzer geplanter Beitrag deshalb GESTRICHEN
+  statt verfeinert — er war für die Richtigkeit nicht nötig, weil ein
+  Schnappschuss-Vergleich innerhalb der Transaktion dasselbe leistete.
+- **`db.q`/`db.run` benutzen den POOL, nicht die Transaktionsverbindung**
+  (`core/db.js:421-432`). Einen Helfer „in die `db.tx()` zu ziehen" macht ihn
+  NICHT transaktional; nur das übergebene `t` schreibt dort. Und `unlinkSync()`
+  lässt sich ohnehin nie zurückrollen — Dateilöschungen gehören NACH den
+  Commit, nicht in die Transaktion.
+- **Wer eine Angabe aus einem Audit-Eintrag entfernt, weil sie zum
+  Audit-Zeitpunkt noch nicht feststeht, braucht einen NACHGELAGERTEN
+  Nachweis — nicht deren Wegfall.** Gemessen am selben Tag: die Zahl der bei
+  einer Freigabe gelöschten Fotos stand nach dem Verschieben der Löschung
+  hinter den Commit nicht mehr fest und flog aus dem Payload. Damit war die
+  Löschung personenbezogener Daten in der gehashten Kette NIRGENDS mehr
+  nachweisbar (weder der Löschhelfer noch der Reaper schreiben ein Audit), und
+  die zugehörige Zusicherung war auf die ABWESENHEIT des früheren Nachweises
+  umgedreht worden.
+
 ## Prüfstand-Regeln
 
 - **Im unprivilegiertesten Umfeld prüfen, nicht im bequemsten.** Der
