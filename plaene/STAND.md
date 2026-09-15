@@ -1,4 +1,4 @@
-# Stand beim Tokenlimit — 15.09.2026, ~13:30 UTC
+# Stand — 16.09.2026, ~00:00 UTC
 
 Diese Datei ist der Übergabepunkt. Der Takt-Prompt ist beim Bau von
 Beitrag 1 stehengeblieben und verweist für den Plan noch auf den
@@ -34,40 +34,53 @@ und deshalb erst in der CI aufflog.
 
 ## Läuft gerade — Beitrag 2 ist GETEILT
 
-Plan v4 führt die Ausmusterung als EINEN Beitrag. Das ist am 15.09.2026
-aufgeteilt worden, weil er Migration, zwei Routen, einen Bestätigungsablauf,
-sechs Leserstellen und drei bestehende Deploy-Gates umfasst — und ein
-Beitrag mit DREI Fehlern am selben Tag fünf Runden gebraucht hat. Der Plan
-bleibt inhaltlich gültig, nur der Zuschnitt ist ein anderer.
+**2a („Ein ausgemusterter Mangel wird überall RICHTIG GELESEN") ist gebaut,
+gepusht und durchgeprüft; die Nacharbeit aus zwei Prüfspuren läuft.**
 
-**2a — Darstellen und Lesen** (Zweig `claude/ausmusterung-darstellen-und-lesen`,
-läuft): Migration 0057 plus alle Leserstellen. Rein additiv, KEINE Route
-erzeugt den Zustand. Neun Punkte: Migration und `core/db.js`; Aufbewahrung
-(`core/retention.js:174-186`, COALESCE, EIN Eintrag je Tabelle); Ausfallzeit
-(`core/wiederholung.js:105/116`); PDF-Defekt-Anhang dritter Zweig
-(`core/pdf-engine.js:2032/2089/2172`); PDF-Sperren-Anhang eigener Zweig VOR
-`:1077`, dazu `:913` und `:993`; BEIDE Zeitraumfilter (`:773`, `:1997`);
-Statistik (`routes/admin/geraete.js:4454`); Reparaturformular
-(`routes/sichtpruefung.js:2902/3081`); und das Deploy-Gate
-`test_feature_korrektur_dokumente_static.js:51-53`, das die alte
-Retention-Semantik per Regex festschreibt.
+Zweig `claude/ausmusterung-darstellen-und-lesen`, 18 Dateien, +1122/−30:
+Migration 0057 (CHECK-Erweiterung auf `ausgemustert`, sechs neue
+Zeitstempel-Spalten), `core/retention.js` (COALESCE auf beiden
+Fristspalten), `core/wiederholung.js`, `core/pdf-engine.js` (beide Anhänge,
+beide Zeitraumfilter), `routes/admin/geraete.js`, `routes/sichtpruefung.js`
+(„Bereits ausgemustert"-Karte), sechs neue Testdateien, drei bestehende
+Deploy-Gates fachlich umgestellt.
 
-Zwei weitere `SELECT * FROM geraete_…` in `core/pdf-engine.js` sind geprüft
-und ausgeschlossen, mit Begründung statt aus Glück: `:1683` ist eine
-Wartungs-Sperre (`typ='wartung'`, Bereich unberührt), `:1931` listet Defekte
-unter ihrer Sitzung und rendert gar keinen Status.
+**Eigener Prüfgang durch:** Diff Datei für Datei gelesen; volle Suite zweimal
+`SUITE_EXIT=0`, 0 FAIL; Dateizahl-Ritual 322 = 322, `diff` EXIT 0;
+`npm run lint` EXIT 0; Marker-Scan 6 (Sollwert). Alle fünf Gegenproben des
+Ausführenden nachgesehen — alle substanziell.
 
-**Fixturen stellen den Zustand per Hand-INSERT her** — das ist in 2a richtig
-und kein Schlupfloch, weil der Schreibweg erst in 2b entsteht. Steht so im
-Auftrag und gehört in jeden Kopfkommentar.
+**Zwei eigene Befunde, bereits behoben und gepusht** (Commit f190a3a,
+Einzelheiten in `plaene/2a-eigene-befunde.md`): eine
+Mandantentrennungs-Zusicherung, die nicht rot werden konnte, und die
+Zeitzonenfalle aus #432 in einer neuen Testdatei. Beide in beide Richtungen
+gemessen.
 
-**2b — Erzeugen** (noch nicht begonnen): Bestätigungsseite mit drei Blöcken,
-serverseitiger Schnappschuss mit INHALTS-Fingerabdruck, beide
-Ausmusterungs-Routen, Reaktivierungssperre an der ROUTE, Rückweg „Offene
-Mängel abschliessen" für JEDES inaktive Gerät mit offenen Mängeln, der
-Kopfkommentar `routes/admin/geraete-typen.js:54-62`, und die zwei
-Deploy-Gates `test_feature_admin_lifecycle.js:96` und
-`test_feature_geraete_loeschen.js:165`.
+**Zwei unabhängige Prüfspuren gefahren** (`/code-review` und Astra, Lauf in
+`ASTRA-LAEUFE.md`): 9 Astra-Befunde (7 getragen, 2 in der Schwere gefallen),
+12 aus der Claude-Spur. Beide fanden unabhängig denselben schwersten Befund —
+der Migrationstest prüft den Schema-Umbau gar nicht, weil `db.init()` sein
+Ergebnis schon hergestellt hat. Selbst gemessen: den GANZEN DO-Block entfernt,
+beide Schema-Tests bleiben grün (13/0 bzw. 34/0).
+
+**Der Nacharbeits-Auftrag läuft** (`/tmp/claude-0/pruef/auftrag-2a-nacharbeit.md`,
+elf Punkte A–K): Migrationstest gegen eine unabhängig definierte
+Vor-0057-Tabelle; Schema-Kopplung von `status='ausgemustert'` an den
+Zeitstempel (schließt zugleich zwei PDF-Reihenfolgeprobleme als unmögliche
+Zustände); Fixturen mit unterscheidbaren Zahlen statt dreier Bedeutungen auf
+derselben; Mandantentrennung auch für Trockenlauf und Löschlauf; Fristbeginn
+wirklich belegen; Zeitzonenfalle im Retention-Test; ausgemusterte Vorbefunde
+in Defekt-Mail und Tablet-Hinweis; HTML-Kommentar aus dem `.map()`;
+Anzeigefeld für die Aufbewahrungs-Oberfläche; Satz-Konstante statt drei
+Kopien; Temp-Verzeichnis aufräumen; Studio-Kürzel-Helfer.
+
+**Danach erst:** PR, CI, Bot-Kommentare VOR den Check-Runs, Merge, Deploy,
+live-check. Regel 6a gilt — keine PR-Nummer an den Betreiber, bevor das
+alles durch ist.
+
+**2b ist noch nicht begonnen.** Der Auftragsentwurf liegt als
+`plaene/auftrag-2b-entwurf.md`; alle von 2a abhängigen Stellen sind dort mit
+`@@2a@@` markiert und vor dem Absenden neu zu messen.
 
 ## Danach
 
