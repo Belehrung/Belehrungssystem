@@ -32,6 +32,43 @@ und deshalb erst in der CI aufflog.
 `deploy.yml`, richtiger `head_sha`, `success`) und
 `bash tools/live-check.sh`.
 
+## Läuft gerade — Beitrag 2 ist GETEILT
+
+Plan v4 führt die Ausmusterung als EINEN Beitrag. Das ist am 15.09.2026
+aufgeteilt worden, weil er Migration, zwei Routen, einen Bestätigungsablauf,
+sechs Leserstellen und drei bestehende Deploy-Gates umfasst — und ein
+Beitrag mit DREI Fehlern am selben Tag fünf Runden gebraucht hat. Der Plan
+bleibt inhaltlich gültig, nur der Zuschnitt ist ein anderer.
+
+**2a — Darstellen und Lesen** (Zweig `claude/ausmusterung-darstellen-und-lesen`,
+läuft): Migration 0057 plus alle Leserstellen. Rein additiv, KEINE Route
+erzeugt den Zustand. Neun Punkte: Migration und `core/db.js`; Aufbewahrung
+(`core/retention.js:174-186`, COALESCE, EIN Eintrag je Tabelle); Ausfallzeit
+(`core/wiederholung.js:105/116`); PDF-Defekt-Anhang dritter Zweig
+(`core/pdf-engine.js:2032/2089/2172`); PDF-Sperren-Anhang eigener Zweig VOR
+`:1077`, dazu `:913` und `:993`; BEIDE Zeitraumfilter (`:773`, `:1997`);
+Statistik (`routes/admin/geraete.js:4454`); Reparaturformular
+(`routes/sichtpruefung.js:2902/3081`); und das Deploy-Gate
+`test_feature_korrektur_dokumente_static.js:51-53`, das die alte
+Retention-Semantik per Regex festschreibt.
+
+Zwei weitere `SELECT * FROM geraete_…` in `core/pdf-engine.js` sind geprüft
+und ausgeschlossen, mit Begründung statt aus Glück: `:1683` ist eine
+Wartungs-Sperre (`typ='wartung'`, Bereich unberührt), `:1931` listet Defekte
+unter ihrer Sitzung und rendert gar keinen Status.
+
+**Fixturen stellen den Zustand per Hand-INSERT her** — das ist in 2a richtig
+und kein Schlupfloch, weil der Schreibweg erst in 2b entsteht. Steht so im
+Auftrag und gehört in jeden Kopfkommentar.
+
+**2b — Erzeugen** (noch nicht begonnen): Bestätigungsseite mit drei Blöcken,
+serverseitiger Schnappschuss mit INHALTS-Fingerabdruck, beide
+Ausmusterungs-Routen, Reaktivierungssperre an der ROUTE, Rückweg „Offene
+Mängel abschliessen" für JEDES inaktive Gerät mit offenen Mängeln, der
+Kopfkommentar `routes/admin/geraete-typen.js:54-62`, und die zwei
+Deploy-Gates `test_feature_admin_lifecycle.js:96` und
+`test_feature_geraete_loeschen.js:165`.
+
 ## Danach
 
 **Beitrag 2 — die Ausmusterung.** Der Plan liegt jetzt im Repo:
