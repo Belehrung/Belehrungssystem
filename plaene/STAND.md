@@ -5,49 +5,32 @@ Beitrag 1 stehengeblieben und verweist für den Plan noch auf den
 Scratchpad — der ist weg, sobald der Container neu startet. **Hier steht,
 was wirklich gilt.**
 
-## Läuft gerade
+## Erledigt — Beitrag 1 ist gemergt
 
-**PR #446 im GymDocu-Repo** (`claude/freigabe-nur-wenn-stattgefunden`),
-Beitrag 1: „Eine Freigabe wird nur gemeldet und protokolliert, wenn sie
-stattgefunden hat". Behebt drei Fehler, die heute schon falsch sind:
+**PR #446, Squash `186c0aa`**, „Eine Freigabe wird nur gemeldet und
+protokolliert, wenn sie stattgefunden hat". Drei Fehler behoben, die
+vorher schon falsch waren:
 
-- ein falsches `reparatur_freigabe`/`seilkontrolle_freigabe`-Audit, wenn
-  das UPDATE null Zeilen trifft,
+- ein `reparatur_freigabe`/`seilkontrolle_freigabe`-Audit für ein UPDATE,
+  das keine Zeile getroffen hat,
 - die Tablet-Meldung „Das reparierte Gerät darf wieder genutzt werden" bei
   einer wirkungslosen Absendung,
 - eine unwiderrufliche Fotolöschung innerhalb eines rollbaren Vorgangs.
 
-**Stand:** CI auf Commit `25c7fc5` grün (Isolationstests, Browser-E2E,
-Lint, Dependency-Audit). Eigener Prüfstand ebenfalls: Suite EXIT 0,
-Dateizahl-Ritual 316 = 316, Lint EXIT 0, Marker 6.
+Dazu ein eigener, nachgelagerter Löschnachweis `seil_fotos_geloescht`, der
+Datei-Erfolge, „war bereits weg" und Fehlschläge getrennt beurkundet und
+nur nennt, was er selbst gemessen hat.
 
-**Offen, und deshalb NICHT gemergt:** der Review-Bot hat zwei Befunde
-gemeldet (P1 rot, P2), beide von mir nachgemessen und beide zutreffend.
-Ein Executer arbeitet sie gerade ab:
+Fünf Runden, vier Prüfspuren (eigene Lesung, Gegenlesung, Review-Bot, CI).
+Der Bot ging von 4/5 auf 5/5; alle Befunde wurden nachgemessen, keiner
+blind übernommen. Zwei Befunde betrafen Regressionen der Behebung selbst
+(ein Verklemmungs-Kreis, ein verschwundener Löschnachweis), einer eine
+Sandbox-Eigenschaft, die als allgemeingültige Tatsache festgeschrieben war
+und deshalb erst in der CI aufflog.
 
-- **P1:** `loescheSeilFotos()` zählt in `anzahl` die gelöschten
-  DATENBANKZEILEN, nicht die gelöschten Dateien; der `unlinkSync`-Fehler
-  wird mit leerem `catch` geschluckt. Der neue Löschnachweis kann also
-  beurkunden, was nicht stattgefunden hat — dieselbe Klasse, gegen die
-  dieser Beitrag antritt. Zweite Hälfte: scheitert `auditAppend` nach der
-  Löschung, gibt es weder Nachweis noch eine Zeile für einen zweiten
-  Versuch.
-  **Behebung (beauftragt):** Dateien einzeln löschen und drei Mengen
-  führen (entfernt / nicht vorhanden / fehlgeschlagen), **das Audit VOR
-  dem DELETE schreiben** (dann sind die Zeilen bei einem Audit-Fehlschlag
-  noch da und selbst der Wiederholungs-Anker), und nur die Zeilen löschen,
-  deren Datei wirklich weg ist.
-- **P2:** Der Eintrag nennt `seil_defekt_fotos` als Bezugstyp, übergibt
-  aber `sperrIds[0]` aus `geraete_sperren`. `routes/admin/audit.js:251`
-  rendert `${bezug_typ} #${bezug_id}` — im Protokoll steht also
-  `seil_defekt_fotos #<Sperr-ID>`. **Behebung:** Bezugstyp auf
-  `'geraete_sperren'`.
-
-**Vor dem Merge:** Diff selbst lesen, volle Suite, Dateizahl-Ritual,
-`npm run lint`, Bot-Kommentare erneut lesen (nicht nur den Check),
-`head_sha` des grünen Laufs gegen den Zweigkopf halten. Danach die beiden
-Threads beantworten und schliessen. Nach dem Merge: Deploy-Lauf und
-`tools/live-check.sh`.
+**Noch zu tun nach dem Merge:** Deploy-Lauf prüfen (`actions_list` auf
+`deploy.yml`, richtiger `head_sha`, `success`) und
+`bash tools/live-check.sh`.
 
 ## Danach
 
