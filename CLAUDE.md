@@ -1098,6 +1098,43 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   jetzt erfüllen, ohne dass das Bewachte noch da ist?** Wer einen bereits
   verwendeten Statuscode für einen neuen Zweck einführt, hat diese Frage
   IMMER zu beantworten.
+- **Wer ein lautes Scheitern in eine gesammelte Fehlerliste verwandelt, macht
+  JEDE Stelle blind, die den Fehler nicht selbst zusichert — und die
+  Aufrufstellen nachzuziehen reicht nicht.** Am 15.09.2026 in EINEM Beitrag
+  VIERMAL gemessen, in vier verschiedenen Verkleidungen. Ein gemeinsamer
+  Lesehelfer bekam ein `try/catch` um den Erkenner-Aufruf und eine eigene
+  Liste `erkennerFehler`; an JEDER der sechs umgestellten Aufrufstellen wurde
+  eine Zusicherung „keine Erkennerfehler" ergänzt. Trotzdem, je einzeln
+  gemessen:
+  *Der Vorbild-Wächter selbst las die Liste nicht* — echte Falle im Bestand,
+  Erkenner wirft für genau diese Datei: **EXIT 0, 93 PASS / 0 FAIL**, die Falle
+  vollständig unsichtbar; mit dem ALTEN Helfer riss derselbe Wurf den Lauf ab
+  (`Error: gegenprobe: Erkenner wirft`).
+  *Ein Selbsttest wurde grün aus genau dem Zustand, den er ausschliessen
+  soll* — der Fixtur-Dateiname durch `"existiert-nicht.js"` ersetzt: **EXIT 0,
+  29 PASS / 0 FAIL**. Der Test hiess „0 Verstösse UND 0 gefundene Metas ist
+  nie geprüft, nicht geprüft und sauber".
+  *Ein Schreibweg lief trotz FAIL durch* — die neue Zusicherung schlug an, die
+  Zeile `✗ FAIL: keine Lese- oder Erkennerfehler` stand im Log, und
+  `--senken` schrieb die Budget-Datei danach trotzdem: **EXIT 0**, 40 auf 39
+  Dateien gesenkt, ein Eintrag gelöscht.
+  *Die Gegenprobe des Umbaus belegte die falsche Stufe* — der neue Block sollte
+  zeigen, dass die Schleife nach einem Wurf weiterläuft; `f = erkennerFehler.length
+  ? [] : erkenner(...)` (nach dem ersten Wurf wird für KEINE Datei mehr erkannt)
+  liess ihn **EXIT 0, 95 PASS / 0 FAIL**. Er belegte Weiterlesen, nicht
+  Weitererkennen.
+  Die Ursache ist dieselbe und sie ist allgemein: ein `throw` ENTSCHEIDET, eine
+  Fehlerliste VERSCHIEBT die Entscheidung zu jedem Verbraucher. Nach jeder
+  solchen Umstellung deshalb nicht die Aufrufstellen durchgehen, sondern die
+  AUSGÄNGE: jeden `process.exit`, jeden Schreibweg, jeden Selbsttest und jede
+  bestehende Zusicherung, die den neuen Leerzustand ab jetzt erfüllen kann.
+- **Eine Zusicherung, die nur einen Zähler erhöht, hält keinen Schreibweg
+  auf.** Der dritte Fall oben ist die eigenständige Regel wert: `ok(...)`
+  erhöht `fail`, mehr nicht — wer danach `schreibeBudget(...)` und
+  `process.exit(0)` ausführt, hat eine Prüfung, die MELDET, und keine, die
+  VERHINDERT. Jeder Weg, der etwas Bleibendes schreibt (Datei, Datenbank,
+  Auslieferung), fragt den Fehlerzähler SELBST ab, bevor er schreibt; sonst ist
+  das Protokoll voller Kreuze und das Ergebnis trotzdem draussen.
 - **Ein vollständig kaputter Ausdruck fällt laut aus, ein halb kaputter
   still.** Wiederholt am 30.08.2026: eine Regex, die gar nichts mehr matcht,
   reißt den Lauf mit einer Ausnahme ab und wird sofort bemerkt; eine, die
