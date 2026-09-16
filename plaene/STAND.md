@@ -1,4 +1,4 @@
-# Stand — 16.09.2026, ~03:53 UTC
+# Stand — 16.09.2026, ~11:50 UTC
 
 Diese Datei ist der Übergabepunkt. Der Takt-Prompt ist beim Bau von
 Beitrag 1 stehengeblieben. **Hier steht, was wirklich gilt.**
@@ -221,8 +221,14 @@ richtiger Schlussfolgerung.** Am Thread beantwortet und berichtigt.
 
 ## Als Nächstes
 
-1. **Die sieben BGB-Einträge in `core/rechtsstand.js` bestätigen** (geprüft,
-   nur noch einzutragen) — eigener Zweig ab master, nicht an 2b-1 anhängen.
+1. **LÄUFT: die sieben BGB-Einträge in `core/rechtsstand.js` bestätigen.**
+   Zweig `claude/rechtsstand-bgb-nr226` ab master. Alle sieben tragen jetzt
+   `Art. 6 G v. 23.7.2026 I Nr. 226` und `bestaetigt_am: '2026-09-16'`,
+   dazu ein Kommentar mit der Kette der drei Änderungsgesetze und der
+   Positivkontrolle. Beide Richtungen SELBST gemessen gegen das echt
+   geholte `bgb/xml.zip` (HTTP 200, 467.258 Bytes, ausgelesener Stand
+   `zuletzt geändert durch Art. 6 G v. 23.7.2026 I Nr. 226`): mit dem neuen
+   Eintrag siebenmal `unveraendert`, mit dem alten siebenmal `geaendert`.
 2. **Rechtsstand-Wächter Stufe 1** — Plan liegt fertig, aber NICHT
    gegengelesen. Gegenlesung vor dem Bau.
 3. **Beitrag 2b-2** — Rückweg „Offene Mängel abschliessen" für jedes
@@ -230,6 +236,18 @@ richtiger Schlussfolgerung.** Am Thread beantwortet und berichtigt.
    Wettlauf sichtbar.
 4. **Takt-Prompt eindampfen**, sobald `plaene/ENTSCHIEDEN.md` im
    Standardzweig steht.
+
+## Erledigt — Orbit4-Recherche (Betreiberfrage 16.09.2026)
+
+`plaene/wettbewerb-orbit4.md`. Nur die öffentliche Seite erreichbar
+(`orbit4.com`/`.io` blockt der Egress-Proxy, `orbit4.org` geht), nichts
+hinter dem Login. Kern: Orbit4 ist ein Betriebskosten-Werkzeug
+(Kostenbudget je Gerät, Ticketkette mit Belegen, SLA gegen die
+Servicefirma), wir ein Nachweis-Werkzeug — ihre deutsche Seite trägt
+gemessen null Treffer für DGUV, Prüfung, Norm, Haftung. Empfehlung:
+Gerätealter und Reparaturhistorie an der Ausmusterung sichtbar machen;
+das ist der billige Teil ihrer Idee und trägt die Entscheidung
+reparieren-oder-ausmustern schon allein.
 
 ### Verlauf der Runden zu 2b-1
 
