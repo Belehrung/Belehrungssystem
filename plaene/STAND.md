@@ -268,8 +268,18 @@ richtiger Schlussfolgerung.** Am Thread beantwortet und berichtigt.
    Behebung ist naheliegend (erst `ORDER BY nummer FOR UPDATE`, dann
    schreiben), aber NICHT gebaut und NICHT gemessen; die Gegenprobe muss den
    `40P01` erst wirklich erzeugen. Kein Wiederholen bei `40P01`.
-5. **Takt-Prompt eindampfen**, sobald `plaene/ENTSCHIEDEN.md` im
-   Standardzweig steht.
+5. **Takt-Prompt eindampfen.** Die Vorbedingung ist seit dem 16.09.2026
+   erfüllt: `ENTSCHIEDEN.md` und `STAND.md` stehen im Standardzweig (`#43`,
+   Squash `cbf5c31`). **Vorher aber messen, was NUR im Prompt steht** — er
+   ist laut eigenem Vorspann eine Kopie der CLAUDE.md, aber nicht durchweg.
+   Gemessen am 16.09.2026, Trefferzahl in `CLAUDE.md`: `pg_lsclusters` 3,
+   `flock` 3, `workflow_run` 4, `get_check_runs` 2, ZIP-Archiv 1,
+   Schlusszeile 1 — diese Teile sind doppelt und gehören gestrichen, nicht
+   gepflegt. **NICHT in der CLAUDE.md und deshalb VOR dem Kürzen dorthin zu
+   übernehmen:** der Suite-Aufruf mit `echo "SUITE_EXIT=$?"` samt der
+   Begründung („wer das `echo` vergisst, wartet auf ein Signal, das nie
+   kommt"), und der Umgang mit dem Review-Bot am PR. Wer den Prompt kürzt,
+   ohne das zuerst zu verschieben, löscht die einzige Fassung.
 
 ## Erledigt — Orbit4-Recherche (Betreiberfrage 16.09.2026)
 
