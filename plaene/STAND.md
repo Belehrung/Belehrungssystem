@@ -189,7 +189,45 @@ beiden Prüfspuren diesmal in drei von sechs Befunden. Die dortige
 Verallgemeinerung („null Überschneidung, zwei Suchverfahren") beschrieb einen
 Lauf, keine Regel. Die Einzelheiten stehen in `ASTRA-LAEUFE.md`.
 
-### Runde 4 läuft (16.09.2026, ~11:00 UTC) — GENAU drei Punkte, dann Schluss
+### Runde 5 läuft (16.09.2026, ~12:00 UTC) — EIN Punkt, dann PR
+
+Runde 4 ist gebaut und von mir geprüft (`355776f`): Suite `SUITE_EXIT=0`,
+0 FAIL; **323 = 323**, `diff` EXIT 0; Lint EXIT 0; Marker 6; Baum sauber.
+
+**BERICHTIGUNG an einem meiner eigenen Befunde — der Ausführende hat mir
+widersprochen und recht behalten.** Ich hatte gemeldet, ein `try/finally` um
+den Audit-Aufruf lasse die Transaktion OHNE Audit-Eintrag committen. Das ist
+FALSCH, von mir selbst nachgemessen (eigene Wegwerf-DB, fachliches UPDATE,
+dann `try { throw } finally { void 0; }` im schluckenden äusseren catch):
+
+    aeusserer catch lief: true
+    Wert in der DB danach: "alt"
+    ERGEBNIS: ROLLBACK GRIFF — die Aenderung wurde NICHT committet.
+
+`finally` ohne `return`/`throw` unterdrückt nichts; der Fehler läuft weiter,
+`db.tx()` rollt zurück und wirft erneut. Der äussere Routen-catch schluckt
+ihn nur auf HTTP-Ebene. **Richtig blieb die andere Hälfte:** ein SCHLUCKENDER
+catch INNERHALB des Callbacks, erreicht über ein `try/finally` oder einen
+weiterwerfenden catch, wurde vom Wächter übersehen — der ist geschlossen.
+
+Ebenso zutreffend: dass die Mutation den Wächter NICHT rot werden lässt, ist
+das RICHTIGE Ergebnis. Würde die Suche die Funktionsgrenze überschreiten,
+würden die unveränderten, korrekten Aufrufe zu Fehlalarmen — das deckt sich
+mit meiner eigenen Messung `EXIT 1, 54 PASS / 4 FAIL` aus der Runde davor.
+
+Kleine Abweichung ohne Folge: sein Dateizahl-Ritual meldete 319 = 319, weil
+beide Seiten mit demselben zu engen Sieb gemessen wurden. Mit dem breiten
+Muster sind es 323 = 323.
+
+**Runde 5 baut GENAU einen Punkt:** der Audit-Eintrag `geraet_ausgemustert`
+hält die Blockherkunft je Mangel-ID fest (drei Listen statt `mangel_ids` und
+`anzahl`). Das ist die Voraussetzung der Betreiber-Entscheidung von heute —
+nachgemessen wird `mangel_ids` ausserhalb des Schreibers nur an einer
+einzigen Stelle gelesen, die Umstellung ist also frei.
+
+**Danach: PR, CI, Review-Bot-Kommentare, Merge, Deploy, live-check.**
+
+### Verlauf der früheren Runden
 
 Die dritte Gegenlesung fand drei Befunde, alle an Stellen, die Runde 3 neu
 gebaut hat. **Zwei habe ich selbst gemessen:**
