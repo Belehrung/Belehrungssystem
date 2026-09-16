@@ -189,7 +189,49 @@ beiden Prüfspuren diesmal in drei von sechs Befunden. Die dortige
 Verallgemeinerung („null Überschneidung, zwei Suchverfahren") beschrieb einen
 Lauf, keine Regel. Die Einzelheiten stehen in `ASTRA-LAEUFE.md`.
 
-### Runde 6 läuft (16.09.2026, ~12:50 UTC) — die Sperrreihenfolge
+### 2b-1 IST AUSGELIEFERT (16.09.2026, 11:30 UTC)
+
+**PR #448, Squash `eb276d9`, Deploy 416 `success` mit dem richtigen
+`head_sha`, live-check grün** (die beiden bekannten ℹ-Punkte: Zertifikat und
+Health-Endpunkt sind aus dieser Umgebung nicht messbar, das ist erklärt).
+
+Sechs Bau-Runden, drei Gegenlesungen, eine Review-Spur mit
+Ausführungsrechten, ein Review-Bot. Mein Ritual auf dem Endstand: Suite
+`SUITE_EXIT=0`, 0 FAIL; **324 = 324**, `diff` EXIT 0; Lint EXIT 0; Marker 6.
+Merge-Botschaft zurückgelesen, endet an der Schlusszeile.
+
+**Runde 6 hat die Messung geliefert, die niemand hatte:** der
+Verklemmungskreis ist erstmals empirisch erzeugt worden —
+`T1: 40P01 — deadlock detected`, nach der Behebung kein Deadlock. Behoben an
+der Wurzel (kanonische Sperrreihenfolge im Nachtrag), nicht durch Wiederholen
+bei `40P01`.
+
+**Zwei Widersprüche des Ausführenden, beide gemessen — einer trug, einer
+nicht:**
+
+- **Er hatte recht:** mein Satz „ein `try/finally` lässt die Transaktion ohne
+  Audit-Eintrag committen" war falsch. Selbst nachgemessen: `ROLLBACK GRIFF`.
+- **Er hatte unrecht:** seine Dateizahl 320 = 320 stammt aus einem zu engen
+  Sieb auf BEIDEN Seiten und übersieht genau die vier Einträge, die die
+  Hausregel als Falle nennt (`ops/boot-smoke.js`, `test_deprovision.js`,
+  `test_export.js`, `test_isolation_reads.js`). Richtig sind 324 = 324.
+
+**Der Review-Bot hatte genau einen Befund — mit falscher Begründung und
+richtiger Schlussfolgerung.** Am Thread beantwortet und berichtigt.
+
+## Als Nächstes
+
+1. **Die sieben BGB-Einträge in `core/rechtsstand.js` bestätigen** (geprüft,
+   nur noch einzutragen) — eigener Zweig ab master, nicht an 2b-1 anhängen.
+2. **Rechtsstand-Wächter Stufe 1** — Plan liegt fertig, aber NICHT
+   gegengelesen. Gegenlesung vor dem Bau.
+3. **Beitrag 2b-2** — Rückweg „Offene Mängel abschliessen" für jedes
+   anderweitig inaktive Gerät. Macht den in 2b-1 bewusst offengelassenen
+   Wettlauf sichtbar.
+4. **Takt-Prompt eindampfen**, sobald `plaene/ENTSCHIEDEN.md` im
+   Standardzweig steht.
+
+### Verlauf der Runden zu 2b-1
 
 **Der Review-Bot am PR hat genau EINEN Befund**, und es ist derselbe, den der
 Ausführende in Runde 2 selbst gemeldet und ich vertagt hatte: die
