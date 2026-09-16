@@ -21,13 +21,16 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Beitrag 1 (Freigabe nur melden, wenn sie stattfand) | gemergt, `186c0aa` |
 | Beitrag 2a (Datenmodell und Leser) | gemergt `613a2c9`, Deploy 415, live-check grün |
 | Beitrag 2b-1 (Ausmustern auslösbar) | gemergt `eb276d9`, Deploy 416, live-check grün |
-| Die sieben BGB-Einträge | gebaut und geprüft, PR offen, CI läuft |
-| Rechtsstand-Wächter Stufe 1 | Plan gegengelesen, Bauauftrag steht, noch nicht gebaut |
+| Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
+| Rechtsstand-Wächter Stufe 1 | **Executer baut gerade** (Zweig `claude/rechtsstand-normtext-stufe1`) |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
-| Beitrag 2b-2 (Rückweg) | noch nicht geschrieben |
-| Doku ins Belehrungssystem-main | PR offen |
+| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen, s. `plaene/auftrag-geistersperre-nachtrag.md` |
+| Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
+| Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 
-**Kein Arbeitsbaum ist belegt**, es läuft kein Executer.
+**`/home/user/gymdocu` ist BELEGT** — dort arbeitet ein Executer am
+Rechtsstand-Wächter Stufe 1. Nicht anfassen, bis seine Benachrichtigung da
+ist; eine Benachrichtigung ist verbraucht, sobald ich ihn fortgesetzt habe.
 
 ## Erledigt — Beitrag 1 ist gemergt
 
@@ -268,8 +271,23 @@ richtiger Schlussfolgerung.** Am Thread beantwortet und berichtigt.
    Behebung ist naheliegend (erst `ORDER BY nummer FOR UPDATE`, dann
    schreiben), aber NICHT gebaut und NICHT gemessen; die Gegenprobe muss den
    `40P01` erst wirklich erzeugen. Kein Wiederholen bei `40P01`.
-5. **Takt-Prompt eindampfen**, sobald `plaene/ENTSCHIEDEN.md` im
-   Standardzweig steht.
+5. **Takt-Prompt eindampfen.** Die Vorbedingung ist seit dem 16.09.2026
+   erfüllt: `ENTSCHIEDEN.md` und `STAND.md` stehen im Standardzweig (`#43`,
+   Squash `cbf5c31`). **Vorher aber messen, was NUR im Prompt steht** — er
+   ist laut eigenem Vorspann eine Kopie der CLAUDE.md, aber nicht durchweg.
+   Gemessen am 16.09.2026, Trefferzahl in `CLAUDE.md`: `pg_lsclusters` 3,
+   `flock` 3, `workflow_run` 4, `get_check_runs` 2, ZIP-Archiv 1,
+   Schlusszeile 1 — diese Teile sind doppelt und gehören gestrichen, nicht
+   gepflegt. **NICHT in der CLAUDE.md und deshalb VOR dem Kürzen dorthin zu
+   übernehmen:** der Suite-Aufruf mit `echo "SUITE_EXIT=$?"` samt der
+   Begründung („wer das `echo` vergisst, wartet auf ein Signal, das nie
+   kommt"), und der Umgang mit dem Review-Bot am PR. Wer den Prompt kürzt,
+   ohne das zuerst zu verschieben, löscht die einzige Fassung.
+   **ERLEDIGT am 16.09.2026:** beide stehen jetzt in der CLAUDE.md dieses
+   Repos — der Suite-Aufruf in Schritt 4 des Prüf-Rituals, der Review-Bot als
+   eigener Schritt 6b. Damit ist die letzte Sperre gegen das Kürzen weg; der
+   Abgleich, welche übrigen Regeln WIRKLICH doppelt sind, braucht weiterhin
+   den Prompttext und damit die Stunde nach einem Feuern.
 
 ## Erledigt — Orbit4-Recherche (Betreiberfrage 16.09.2026)
 
@@ -564,6 +582,35 @@ Ausfall, kein Befund behauptet, Wiederholung beim nächsten Lauf.
 
 ## Notiert, aber ausdrücklich NICHT gebaut
 
+- **Keine Abfrage-Zeitgrenzen im Repo, und `test/run.sh:865` startet jede
+  Testdatei ohne Laufzeitgrenze** (Gegenlesung 16.09.2026, von mir am
+  Quelltext bestätigt). Ein hängender Test hält damit das Deploy-Gate auf.
+  Die Testdateien dieses Beitrags bekommen deshalb einen eigenen
+  Laufzeitwächter — die WURZEL bleibt offen, denn eine Grenze in
+  `test/run.sh` trifft alle 325 Dateien und gehört in einen eigenen Beitrag
+  mit eigener Prüfung.
+- **Bewusster Abdeckungsverlust:** mit `P1b` ist die Integration ZWEIER
+  echter `beanspruche()`-Aufrufe über überlappende Spannen entfallen. Das war
+  MEIN Zuschnitt („was nicht bindet, fliegt raus"), kein Fehler des
+  Ausführenden — und es steht im Kopfkommentar der Datei, damit der nächste
+  Leser es weiß. **Regel daraus: wer eine Streichung anordnet, lässt auch
+  prüfen, was mitgeflogen ist.**
+
+
+- **Ein harmloser Wettlauf kann `beanspruche()` mit einem 500er abstürzen
+  lassen — VORBESTEHEND, gefunden am 16.09.2026.** Das Klassifizierungs-Lesen
+  NACH dem Schreiben (`alle = SELECT … WHERE nummer BETWEEN von AND bis`,
+  `core/qr-zuordnung.js`) ist ein DRITTER Snapshot. Bleibt eine
+  zwischenzeitlich eingefügte Zeile dort unentschieden (`studio_id` noch
+  NULL, Besitzer nicht ableitbar — etwa weil ein zweiter, gleichzeitiger
+  Aufruf sie beansprucht, aber noch nicht committet hat), läuft der Vorgang
+  in den `throw` „gebrochenes Invariant". Der Ausführende hat es beim Bau der
+  Gegenprobe gefunden, gemeldet statt gebaut (wie beauftragt) und in seiner
+  Reproduktion 12 bis 20 von 25 Läufen getroffen. **Von mir bestätigt, dass
+  es vorbesteht:** der Zweig ist wortgleich schon in `7abea9f`, also vor der
+  ersten Runde dieses Beitrags. Eigener Beitrag, noch nicht geschrieben.
+
+
 - **Rechtsstand-Wächter, Stufe 2: mittelbare Betroffenheit.** Ein Paragraf
   kann betroffen sein, ohne dass sein eigener Wortlaut sich ändert — wenn
   eine Norm, auf die er VERWEIST, geändert wird. Zurückgestellt durch
@@ -641,3 +688,41 @@ Ausfall, kein Befund behauptet, Wiederholung beim nächsten Lauf.
   Wartungsgeräte haben womöglich dieselbe Sackgasse. Beides eigene
   Aufträge, Begründung in v4 Abschnitt 2.7.
 - Der kleine Folgebeitrag aus der Bot-Prüfung zu #444.
+
+## Befund 16.09.2026 — die Geistersperre ist wieder offen
+
+Bei der Vorarbeit zu Beitrag 2b-2 selbst gemessen, nicht aus einem Bericht
+übernommen. Der Auftrag dazu steht in
+`plaene/auftrag-geistersperre-nachtrag.md`; hier nur, was für den Stand zählt.
+
+**Der Plan v4 lag in der Ursache falsch, nicht im Ergebnis.** Er beschrieb
+den Zustand „inaktiv, nicht ausgemustert, mit offenem Mangel" richtig, führte
+ihn aber allgemein auf eine Prüfung vor der Transaktion zurück. Gemessen ist
+es enger und schlimmer: Der Schlüssel `seilkontrolle:<studio>:<tag>` wird von
+DREI Stellen genommen (`routes/admin/geraete.js:342` Löschen, `:463`
+Umbenennen, `routes/module.js:2870` Tagescheck), aber eine Seil-Sperre
+schreiben ZWEI Stellen — `routes/module.js:2982` mit Lock,
+`routes/sichtpruefung.js:4630` **ohne jeden**. `grep -n
+"advisory_xact_lock" routes/sichtpruefung.js` findet drei Treffer, keinen
+davon in der Seil-Transaktion ab `:4609`.
+
+Das Rennen wurde am 22.08.2026 geschlossen; der Nachtragsweg entstand am
+26.08.2026 und hat es wieder geöffnet. Am selben 22.08. wurde auf
+Betreiber-Entscheidung der Heilweg `/geraete/reaktivieren/:id` entfernt
+(Begründung im Kopf von `routes/admin/geraete.js:283-290`), und für
+`seilkontrolle` gibt es keinen Ersatz: `routes/admin/geraete-typen.js:98`
+lässt nur Cardio und Kraft zu. Ein so entstandenes Gerät steht damit in
+keiner Liste und ist über die Oberfläche nicht mehr erreichbar.
+
+**Was sich am Zuschnitt ändert:** Der Bauauftrag schliesst NUR das Rennen.
+Der Rückweg für bereits entstandene Fälle ist eine Betreiber-Frage, weil er
+genau die Entscheidung vom 22.08.2026 berührt — und ob es solche Fälle im
+Betrieb überhaupt gibt, ist von hier aus nicht feststellbar und soll es
+bleiben.
+
+**Zwei Punkte aus Plan v4 Abschnitt 2.4 sind bereits erledigt** und gehören
+nicht mehr in den Auftrag: die Reaktivierungssperre steht an der Route
+(`routes/admin/geraete-typen.js:552-554`, `AND ausgemustert_am IS NULL`, mit
+benanntem Wächter daneben), und die Cardio/Kraft-Liste zeigt ohnehin alle
+Geräte (`:283`, kein Aktivfilter) samt Ausmustern-Verweis bei
+`!g.ausgemustert_am` (`:344`). Die Lücke betrifft allein die Seilkontrolle.
