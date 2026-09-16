@@ -189,7 +189,47 @@ beiden Prüfspuren diesmal in drei von sechs Befunden. Die dortige
 Verallgemeinerung („null Überschneidung, zwei Suchverfahren") beschrieb einen
 Lauf, keine Regel. Die Einzelheiten stehen in `ASTRA-LAEUFE.md`.
 
-### Runde 3 ist gebaut (16.09.2026, ~10:00 UTC), dritte Gegenlesung läuft
+### Runde 4 läuft (16.09.2026, ~11:00 UTC) — GENAU drei Punkte, dann Schluss
+
+Die dritte Gegenlesung fand drei Befunde, alle an Stellen, die Runde 3 neu
+gebaut hat. **Zwei habe ich selbst gemessen:**
+
+- **Die neue Blockanalyse des Audit-Wächters lässt ein `finally` durch —
+  STILL.** `try { await auditAppend(…) } finally { void 0; }` um den Aufruf
+  → `EXIT 0, 58 PASS / 0 FAIL`, während der Fehler in den schluckenden
+  äusseren catch der Route läuft und die Transaktion ohne Audit-Eintrag
+  committet. **Rückschritt gegenüber der Fassung vor Runde 3** — die alte
+  Vorwärtssuche lehnte ein folgendes `finally` ausdrücklich ab.
+- **Eine gewöhnliche Funktion wird nicht als Grenze erkannt.**
+  `db.tx(async (t) => {` → `db.tx(async function (t) {` ergibt
+  `EXIT 1, 54 PASS / 4 FAIL`. Laute Richtung, deshalb weniger gefährlich.
+
+Der dritte Befund (die Nachsperrabfrage prüft die Gerätezuordnung nicht mit)
+ist eine **Lücke, kein erreichbarer Fehler**: von mir nachgemessen, sieben
+`UPDATE geraete_defekte` im Bestand, keines setzt `geraet_id`
+(Positivkontrolle steht).
+
+**Abbruchregel, die MICH bindet:** an 2b-1 werden nur noch diese drei Punkte
+gebaut. Was der Ausführende sonst findet, wird gemeldet und festgehalten,
+nicht gebaut. Das ist keine Vorhersage über das Ergebnis der nächsten
+Prüfung — nur eine Aussage darüber, was ich noch baue.
+
+**Festgehaltene Reste von 2b-1** (nicht gebaut, bewusst):
+
+- Der Nachvergleich aus B1 ist unbewacht (stillgelegt bleibt die Suite grün);
+  das Fenster liegt innerhalb einer Transaktion, der Schreibweg fängt eine
+  nebenläufig geschlossene Zeile ohnehin selbst.
+- Der 40P01-Kreis ist von NIEMANDEM empirisch reproduziert — weder vorher
+  noch nachher. Steht so im Kopfkommentar und bleibt so.
+- Erzeuger-Prüfung, `core/korrekturen.js`, der Hinweistext in
+  `routes/module.js`, die zweite schmalere Verklemmung.
+
+**Methodisch, und es hat gewirkt:** Der Vorbehalt „Testabfragen ohne
+`studio_id` sind kein Befund" stand diesmal im PRÜFBRIEF statt in der
+Nachmessung — und wurde zum ersten Mal in vier Läufen nicht gemeldet. Der
+Eintrag aus dem Lauf davor hat seinen Zweck erfüllt.
+
+### Verlauf der früheren Runden
 
 Alle vier A-Punkte und alle drei B-Punkte behoben, Stand `46cf2af`. Eigene
 Ritualzahlen: Suite `SUITE_EXIT=0`, 0 FAIL; 323 = 323, `diff` EXIT 0; Lint
