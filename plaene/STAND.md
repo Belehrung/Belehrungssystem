@@ -24,7 +24,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
 | Rechtsstand-Wächter Stufe 1 | **Executer baut gerade** (Zweig `claude/rechtsstand-normtext-stufe1`) |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
-| Beitrag 2b-2 (Rückweg) | noch nicht geschrieben |
+| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen, s. `plaene/auftrag-geistersperre-nachtrag.md` |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 
@@ -688,3 +688,41 @@ Ausfall, kein Befund behauptet, Wiederholung beim nächsten Lauf.
   Wartungsgeräte haben womöglich dieselbe Sackgasse. Beides eigene
   Aufträge, Begründung in v4 Abschnitt 2.7.
 - Der kleine Folgebeitrag aus der Bot-Prüfung zu #444.
+
+## Befund 16.09.2026 — die Geistersperre ist wieder offen
+
+Bei der Vorarbeit zu Beitrag 2b-2 selbst gemessen, nicht aus einem Bericht
+übernommen. Der Auftrag dazu steht in
+`plaene/auftrag-geistersperre-nachtrag.md`; hier nur, was für den Stand zählt.
+
+**Der Plan v4 lag in der Ursache falsch, nicht im Ergebnis.** Er beschrieb
+den Zustand „inaktiv, nicht ausgemustert, mit offenem Mangel" richtig, führte
+ihn aber allgemein auf eine Prüfung vor der Transaktion zurück. Gemessen ist
+es enger und schlimmer: Der Schlüssel `seilkontrolle:<studio>:<tag>` wird von
+DREI Stellen genommen (`routes/admin/geraete.js:342` Löschen, `:463`
+Umbenennen, `routes/module.js:2870` Tagescheck), aber eine Seil-Sperre
+schreiben ZWEI Stellen — `routes/module.js:2982` mit Lock,
+`routes/sichtpruefung.js:4630` **ohne jeden**. `grep -n
+"advisory_xact_lock" routes/sichtpruefung.js` findet drei Treffer, keinen
+davon in der Seil-Transaktion ab `:4609`.
+
+Das Rennen wurde am 22.08.2026 geschlossen; der Nachtragsweg entstand am
+26.08.2026 und hat es wieder geöffnet. Am selben 22.08. wurde auf
+Betreiber-Entscheidung der Heilweg `/geraete/reaktivieren/:id` entfernt
+(Begründung im Kopf von `routes/admin/geraete.js:283-290`), und für
+`seilkontrolle` gibt es keinen Ersatz: `routes/admin/geraete-typen.js:98`
+lässt nur Cardio und Kraft zu. Ein so entstandenes Gerät steht damit in
+keiner Liste und ist über die Oberfläche nicht mehr erreichbar.
+
+**Was sich am Zuschnitt ändert:** Der Bauauftrag schliesst NUR das Rennen.
+Der Rückweg für bereits entstandene Fälle ist eine Betreiber-Frage, weil er
+genau die Entscheidung vom 22.08.2026 berührt — und ob es solche Fälle im
+Betrieb überhaupt gibt, ist von hier aus nicht feststellbar und soll es
+bleiben.
+
+**Zwei Punkte aus Plan v4 Abschnitt 2.4 sind bereits erledigt** und gehören
+nicht mehr in den Auftrag: die Reaktivierungssperre steht an der Route
+(`routes/admin/geraete-typen.js:552-554`, `AND ausgemustert_am IS NULL`, mit
+benanntem Wächter daneben), und die Cardio/Kraft-Liste zeigt ohnehin alle
+Geräte (`:283`, kein Aktivfilter) samt Ausmustern-Verweis bei
+`!g.ausgemustert_am` (`:344`). Die Lücke betrifft allein die Seilkontrolle.
