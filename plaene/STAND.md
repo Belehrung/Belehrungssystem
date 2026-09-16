@@ -576,6 +576,20 @@ Ausfall, kein Befund behauptet, Wiederholung beim nächsten Lauf.
 
 ## Notiert, aber ausdrücklich NICHT gebaut
 
+- **Ein harmloser Wettlauf kann `beanspruche()` mit einem 500er abstürzen
+  lassen — VORBESTEHEND, gefunden am 16.09.2026.** Das Klassifizierungs-Lesen
+  NACH dem Schreiben (`alle = SELECT … WHERE nummer BETWEEN von AND bis`,
+  `core/qr-zuordnung.js`) ist ein DRITTER Snapshot. Bleibt eine
+  zwischenzeitlich eingefügte Zeile dort unentschieden (`studio_id` noch
+  NULL, Besitzer nicht ableitbar — etwa weil ein zweiter, gleichzeitiger
+  Aufruf sie beansprucht, aber noch nicht committet hat), läuft der Vorgang
+  in den `throw` „gebrochenes Invariant". Der Ausführende hat es beim Bau der
+  Gegenprobe gefunden, gemeldet statt gebaut (wie beauftragt) und in seiner
+  Reproduktion 12 bis 20 von 25 Läufen getroffen. **Von mir bestätigt, dass
+  es vorbesteht:** der Zweig ist wortgleich schon in `7abea9f`, also vor der
+  ersten Runde dieses Beitrags. Eigener Beitrag, noch nicht geschrieben.
+
+
 - **Rechtsstand-Wächter, Stufe 2: mittelbare Betroffenheit.** Ein Paragraf
   kann betroffen sein, ohne dass sein eigener Wortlaut sich ändert — wenn
   eine Norm, auf die er VERWEIST, geändert wird. Zurückgestellt durch
