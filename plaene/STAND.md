@@ -195,6 +195,49 @@ Rückweg „Offene Mängel abschliessen" für jedes inaktive Gerät mit offenen
 Mängeln. Noch nicht geschrieben. Brauchbare Vorarbeit steht im überholten
 `plaene/auftrag-2b-entwurf.md`, aber nur dieser Teil davon.
 
+## Rechtsstand-Meldung vom 16.09.2026 — geprüft, Lexikon NICHT betroffen
+
+Der Wächter meldete für das BGB einen neuen Änderungsstand
+(`Art. 2 G v. 2.7.2026 I Nr. 198` → `Art. 6 G v. 23.7.2026 I Nr. 226`) und
+fragte, ob der Lexikon-Text betroffen ist. **Antwort: nein.** Alle Quellen
+selbst geholt (`recht.bund.de`, Volltext-PDFs), nicht zusammengefasst.
+
+**Es war nicht EINE Änderung, sondern DREI.** Der Wächter vergleicht nur
+Kopfstand gegen Kopfstand; was dazwischen liegt, sieht er nicht. Die Kette,
+rückwärts über die Präambeln der Änderungsgesetze verfolgt bis zu unserem
+festgehaltenen Stand:
+
+| BGBl. 2026 I | Datum | ändert im BGB | trifft uns |
+|---|---|---|---|
+| Nr. 198 | 2.7. | unser bestätigter Stand | — |
+| Nr. 212 | 16.7. | §§ 434, 445a, 453, 475, 475a, 475d, 479, 650 + Untertitel (EU-Reparatur-Richtlinie 2024/1799) | nein |
+| Nr. 221 | 21.7. | §§ 1597a, 1598 (Vaterschaftsanerkennung) | nein |
+| Nr. 226 | 23.7. | §§ 555b, 559e, neu 559f (Wärmepumpe, Mietrecht) | nein |
+
+Unsere Normen — §§ 823, 309, 965, 966, 967, 973, 978 BGB — kommen in
+KEINEM der drei Gesetze vor. **Positivkontrolle:** dieselbe Suche findet die
+tatsächlich geänderten Normen sehr wohl (§ 434: 6 Treffer, § 475: 5,
+§ 650: 1, § 1598: 6, § 555b: 1, § 559f: 1). „Null Treffer" heisst hier also
+wirklich „nicht berührt".
+
+Nr. 212 war der einzige ernsthafte Kandidat — „Förderung der Reparatur von
+Waren" hätte § 309 (Klauselverbote) treffen können. Hat es nicht.
+
+**Offen:** die sieben BGB-Einträge in `core/rechtsstand.js` auf
+`Art. 6 G v. 23.7.2026 I Nr. 226` mit `bestaetigt_am: '2026-09-16'`
+nachziehen. Wartet, weil im GymDocu-Baum ein Executer arbeitet.
+
+**Eigener Befund für später, nicht gebaut:** Dass der Wächter drei
+Änderungen als eine meldet, ist kein Fehler — aber eine Lücke. Hätte eine
+der übersprungenen unsere Normen berührt, sähe die Meldung genau gleich aus,
+und ein Bestätigen ohne Kettenprüfung hätte sie zugedeckt. Entweder der
+Wächter verfolgt die Kette selbst, oder die Regel lautet ausdrücklich: vor
+jedem Bestätigen die Präambeln rückwärts bis zum festgehaltenen Stand lesen.
+
+Die zweite Meldung (§ 3 UVSV nicht erreichbar) hat sich erledigt: die Quelle
+antwortet wieder (HTTP 200). Der Wächter hat richtig gehandelt — erster
+Ausfall, kein Befund behauptet, Wiederholung beim nächsten Lauf.
+
 ## Notiert, aber ausdrücklich NICHT gebaut
 
 - **Der Marker-Sollwert für dieses Repo ist überholt, und die Zählform taugt
