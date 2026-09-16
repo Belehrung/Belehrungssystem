@@ -503,12 +503,23 @@ letzte Instanz, Datengrenze). Drei Punkte daraus sind neu und übernommen:
   Beratung; unsere Prüfreihenfolge oben ist schärfer, weil sie aus
   Messungen an DIESEM System kommt.
 
-### Was die Schnittstelle wirklich kann (gemessen 11.09.2026)
+### Was die Schnittstelle wirklich kann (gemessen 11.09. und 14.09.2026)
 
 Alles hier ist am echten Endpunkt gemessen, nicht aus einer Doku
 abgeschrieben. Die Gegenprobe steht dabei: ein frei erfundener Parameter
 wird mit „Unknown parameter" abgelehnt — ein „OK" sagt also wirklich etwas.
 
+- **BILDEINGABE geht — gemessen 14.09.2026, mit Positivkontrolle.** Ein
+  Eintrag `{"type":"input_image","image_url":"data:image/png;base64,…"}` neben
+  `{"type":"input_text",…}` im `content` einer `input`-Rolle wird angenommen
+  UND gelesen: die Probe zeigte ein Bild mit dem frei erfundenen Wort
+  `KWIRZELPFAND-7742`, die Antwort nannte es wörtlich. Ein Wort, das nicht
+  zu erraten ist — die Gegenprobe steht also. Damit kann der Prüfer eine
+  GERENDERTE Oberfläche beurteilen statt nur den Quelltext, der sie erzeugt.
+  Kosten sind dabei nebensächlich: drei ganzseitige Tablet-Screenshots
+  (820×3064, 820×1180, 820×2221) fielen im Gesamtverbrauch nicht auf.
+  `input` darf dafür KEINE Zeichenkette mehr sein, sondern muss die Listenform
+  `[{"role":"user","content":[…]}]` haben.
 - **`tools: [{"type":"web_search"}]` existiert UND WIRKT.** Nicht nur
   akzeptiert: im Ergebnis stehen `web_search_call`-Einträge, die Antwort
   nennt Quellen und trifft den tagesaktuellen Stand. Damit kann der Prüfer
@@ -1003,6 +1014,32 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   `10.20.30.40:3100` null, also 404. Toter Code, den mein Auftrag in eine
   zweite Datei kopiert hätte. Wer eine bestehende Stelle als Vorbild nennt,
   hat sie damit nicht geprüft; sie ist eine Fundstelle, kein Beleg.
+- **Eine Behebung kann das Gemeldete gegen etwas SCHLIMMERES tauschen — und der
+  Tausch fällt nicht auf, weil der ursprüngliche Befund ja weg ist.** Gemessen am
+  14.09.2026 auf dem Trainer-Tablet, an einem Befund aus meinem EIGENEN
+  Behebungsauftrag: gemeldet war eine falsche Zusage („Frage dazu steht weiter
+  unten") für ein ausgemustertes Gerät, bei dem es unten nichts gibt (gemessen:
+  `status_<id>` 0×, `oeffneFreigabe(<id>,` 0×). Mein Auftrag stellte es frei, den
+  Eintrag herauszufiltern — der Ausführende tat es, und damit verschwand ein
+  offener, dokumentationspflichtiger Mangel **vollständig** von der Prüfseite
+  (Gerätename auf der GANZEN Seite: 0). Die falsche Zusage war weg, der Mangel
+  auch. Auf dem alten Stand war er wenigstens noch in der Zählung des Banners
+  enthalten. Die Frage vor jeder Behebung lautet deshalb nicht „ist der Befund
+  damit weg?", sondern: **was sieht der Benutzer NACHHER, und ist das besser als
+  vorher?** Bei „weniger anzeigen" als Behebung immer zuerst prüfen, was dadurch
+  unsichtbar wird — und ob es das Ding ist, um dessentwillen die Seite existiert.
+- **Ein Satz, den die Oberfläche neu behauptet, ist eine Zusicherung und gehört
+  gemessen wie jede andere.** Am selben Tag drei Runden an DERSELBEN Zeile, und
+  jede Behebung brachte eine neue ungeprüfte Behauptung mit: erst „Frage dazu
+  steht weiter unten" (für ein Gerät, das unten nicht vorkommt), dann das
+  Ausblenden (s.o.), dann „Reaktivierung oder Ausmusterung läuft über die
+  Geräteverwaltung" — auch das eine Sackgasse, denn `/geraete/reaktivieren/:id`
+  ist seit dem 22.08.2026 nicht mehr registriert (`grep -rn "reaktivieren"
+  routes/` findet nur Kommentarzeilen) und der Löschweg bleibt bei aktiver Sperre
+  blockiert. Dreimal hintereinander habe ICH den Text vorgegeben und dreimal
+  nicht nachgesehen, ob er stimmt. Was dagegen hilft, ist billig: der Hinweistext
+  bekommt eine eigene Zusicherung, die ihm die Wörter VERBIETET, mit denen er
+  einen Weg behauptet — gemessen 62 PASS / 3 FAIL mit dem alten Satz, 65 / 0 ohne.
 - **Ein Verweis kann in eine Sackgasse zeigen.** Derselbe Tag: mein Auftrag
   ließ einen Hinweis „siehe Einstellungen" bauen — `basis_url` wird in der
   ganzen Anwendung nirgends geschrieben (`setConfig(…,'basis_url',…)` nur in
@@ -1061,11 +1098,99 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   jetzt erfüllen, ohne dass das Bewachte noch da ist?** Wer einen bereits
   verwendeten Statuscode für einen neuen Zweck einführt, hat diese Frage
   IMMER zu beantworten.
+- **Wer ein lautes Scheitern in eine gesammelte Fehlerliste verwandelt, macht
+  JEDE Stelle blind, die den Fehler nicht selbst zusichert — und die
+  Aufrufstellen nachzuziehen reicht nicht.** Am 15.09.2026 in EINEM Beitrag
+  VIERMAL gemessen, in vier verschiedenen Verkleidungen. Ein gemeinsamer
+  Lesehelfer bekam ein `try/catch` um den Erkenner-Aufruf und eine eigene
+  Liste `erkennerFehler`; an JEDER der sechs umgestellten Aufrufstellen wurde
+  eine Zusicherung „keine Erkennerfehler" ergänzt. Trotzdem, je einzeln
+  gemessen:
+  *Der Vorbild-Wächter selbst las die Liste nicht* — echte Falle im Bestand,
+  Erkenner wirft für genau diese Datei: **EXIT 0, 93 PASS / 0 FAIL**, die Falle
+  vollständig unsichtbar; mit dem ALTEN Helfer riss derselbe Wurf den Lauf ab
+  (`Error: gegenprobe: Erkenner wirft`).
+  *Ein Selbsttest wurde grün aus genau dem Zustand, den er ausschliessen
+  soll* — der Fixtur-Dateiname durch `"existiert-nicht.js"` ersetzt: **EXIT 0,
+  29 PASS / 0 FAIL**. Der Test hiess „0 Verstösse UND 0 gefundene Metas ist
+  nie geprüft, nicht geprüft und sauber".
+  *Ein Schreibweg lief trotz FAIL durch* — die neue Zusicherung schlug an, die
+  Zeile `✗ FAIL: keine Lese- oder Erkennerfehler` stand im Log, und
+  `--senken` schrieb die Budget-Datei danach trotzdem: **EXIT 0**, 40 auf 39
+  Dateien gesenkt, ein Eintrag gelöscht.
+  *Die Gegenprobe des Umbaus belegte die falsche Stufe* — der neue Block sollte
+  zeigen, dass die Schleife nach einem Wurf weiterläuft; `f = erkennerFehler.length
+  ? [] : erkenner(...)` (nach dem ersten Wurf wird für KEINE Datei mehr erkannt)
+  liess ihn **EXIT 0, 95 PASS / 0 FAIL**. Er belegte Weiterlesen, nicht
+  Weitererkennen.
+  Die Ursache ist dieselbe und sie ist allgemein: ein `throw` ENTSCHEIDET, eine
+  Fehlerliste VERSCHIEBT die Entscheidung zu jedem Verbraucher. Nach jeder
+  solchen Umstellung deshalb nicht die Aufrufstellen durchgehen, sondern die
+  AUSGÄNGE: jeden `process.exit`, jeden Schreibweg, jeden Selbsttest und jede
+  bestehende Zusicherung, die den neuen Leerzustand ab jetzt erfüllen kann.
+- **Eine Zusicherung, die nur einen Zähler erhöht, hält keinen Schreibweg
+  auf.** Der dritte Fall oben ist die eigenständige Regel wert: `ok(...)`
+  erhöht `fail`, mehr nicht — wer danach `schreibeBudget(...)` und
+  `process.exit(0)` ausführt, hat eine Prüfung, die MELDET, und keine, die
+  VERHINDERT. Jeder Weg, der etwas Bleibendes schreibt (Datei, Datenbank,
+  Auslieferung), fragt den Fehlerzähler SELBST ab, bevor er schreibt; sonst ist
+  das Protokoll voller Kreuze und das Ergebnis trotzdem draussen.
 - **Ein vollständig kaputter Ausdruck fällt laut aus, ein halb kaputter
   still.** Wiederholt am 30.08.2026: eine Regex, die gar nichts mehr matcht,
   reißt den Lauf mit einer Ausnahme ab und wird sofort bemerkt; eine, die
   noch die Hälfte trifft, liefert weiter grün. Die gefährlichere Änderung ist
   deshalb die kleine.
+
+## Transaktionen und Sperren
+
+- **Ein UPDATE und sein Audit in EINE Transaktion zu ziehen, erzeugt eine
+  Lock-Reihenfolge, die es unter Autocommit nicht gab.** Gemessen am
+  15.09.2026, und zwar an einer Behebung, die genau richtig war: ein
+  Freigabe-UPDATE und sein `auditAppend` standen getrennt (blankes `db.run`,
+  also Autocommit, danach ein eigener Audit-Vorgang) und wurden zusammengezogen,
+  damit bei null getroffenen Zeilen kein Audit mehr entsteht. Damit hält der
+  Vorgang aber ab sofort die ZEILENSPERREN und verlangt DANACH den
+  studioweiten Advisory-Lock, den `auditAppend` nimmt
+  (`core/integritaet.js:65`, `pg_advisory_xact_lock(studioId)` — auch mit
+  übergebenem `t`, also in der Transaktion des Aufrufers). Ein zweiter
+  Schreibweg auf dieselben Zeilen (dort der Seil-Tagescheck: Audit bei
+  `routes/module.js:2782`, UPDATEs bei `:2911`/`:2951`) nimmt beides in
+  umgekehrter Reihenfolge — ein Kreis, den PostgreSQL mit `deadlock detected`
+  auflöst. Vorher gab es ihn nicht: die Zeilensperre war vor dem Audit schon
+  wieder weg.
+  **Vor jedem solchen Zusammenziehen deshalb zählen, welche ANDEREN
+  Transaktionen dieselben Zeilen anfassen, und in welcher Reihenfolge sie den
+  Audit-Lock nehmen.** Der billige Ausweg ist, den Audit-Lock im neuen Weg
+  ausdrücklich ZUERST zu nehmen (`SELECT pg_advisory_xact_lock($1)` vor dem
+  UPDATE) — Advisory-Locks sind innerhalb derselben Transaktion
+  wiedereintrittsfähig, der spätere Griff in `auditAppend` stört also nicht.
+  Die Begründung gehört als Kommentar daneben, samt der Fundstellen des
+  gegenläufigen Wegs; sonst räumt sie jemand als „doppelt" wieder weg.
+- **Im Bestand steht bereits ein solcher Kreis** (gemessen 15.09.2026, NICHT
+  behoben, eigener Auftrag): der Seil-Tagescheck nimmt
+  `seilkontrolle:<studio>:<tag>` (`routes/module.js:2710`), dann über
+  `auditAppend(…, t)` den Studio-Lock (`:2725`), dann
+  `nachtrag:<studio>:seilkontrolle` (`:2777`). Der eigenständige
+  Beurteilungs-Nachtrag nimmt `nachtrag:…` (`:3140`), dann über
+  `auditAppend(…, t)` den Studio-Lock (`:997`). Folge für die Arbeitsweise:
+  **keine NEUE globale Lock-Klasse einführen, solange diese Ordnung ungelöst
+  ist.** Am selben Tag wurde ein ganzer geplanter Beitrag deshalb GESTRICHEN
+  statt verfeinert — er war für die Richtigkeit nicht nötig, weil ein
+  Schnappschuss-Vergleich innerhalb der Transaktion dasselbe leistete.
+- **`db.q`/`db.run` benutzen den POOL, nicht die Transaktionsverbindung**
+  (`core/db.js:421-432`). Einen Helfer „in die `db.tx()` zu ziehen" macht ihn
+  NICHT transaktional; nur das übergebene `t` schreibt dort. Und `unlinkSync()`
+  lässt sich ohnehin nie zurückrollen — Dateilöschungen gehören NACH den
+  Commit, nicht in die Transaktion.
+- **Wer eine Angabe aus einem Audit-Eintrag entfernt, weil sie zum
+  Audit-Zeitpunkt noch nicht feststeht, braucht einen NACHGELAGERTEN
+  Nachweis — nicht deren Wegfall.** Gemessen am selben Tag: die Zahl der bei
+  einer Freigabe gelöschten Fotos stand nach dem Verschieben der Löschung
+  hinter den Commit nicht mehr fest und flog aus dem Payload. Damit war die
+  Löschung personenbezogener Daten in der gehashten Kette NIRGENDS mehr
+  nachweisbar (weder der Löschhelfer noch der Reaper schreiben ein Audit), und
+  die zugehörige Zusicherung war auf die ABWESENHEIT des früheren Nachweises
+  umgedreht worden.
 
 ## Prüfstand-Regeln
 
