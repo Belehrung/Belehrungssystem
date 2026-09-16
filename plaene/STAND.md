@@ -22,9 +22,10 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Beitrag 2a (Datenmodell und Leser) | gemergt `613a2c9`, Deploy 415, live-check grün |
 | Beitrag 2b-1 (Ausmustern auslösbar) | gemergt `eb276d9`, Deploy 416, live-check grün |
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
-| Rechtsstand-Wächter Stufe 1 | **Executer baut gerade** (Zweig `claude/rechtsstand-normtext-stufe1`) |
+| Rechtsstand-Wächter Stufe 1 | Runde 1 gebaut (`dce20c1`), **Runde 2 im Bau** — 15 Befunde, s. `plaene/auftrag-rechtsstand-stufe1-runde2.md` |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen, s. `plaene/auftrag-geistersperre-nachtrag.md` |
+| Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 
