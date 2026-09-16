@@ -189,7 +189,42 @@ beiden Prüfspuren diesmal in drei von sechs Befunden. Die dortige
 Verallgemeinerung („null Überschneidung, zwei Suchverfahren") beschrieb einen
 Lauf, keine Regel. Die Einzelheiten stehen in `ASTRA-LAEUFE.md`.
 
-### 2b-1 ist gebaut, geprüft, PR offen — CI läuft (16.09.2026, ~12:35 UTC)
+### Runde 6 läuft (16.09.2026, ~12:50 UTC) — die Sperrreihenfolge
+
+**Der Review-Bot am PR hat genau EINEN Befund**, und es ist derselbe, den der
+Ausführende in Runde 2 selbst gemeldet und ich vertagt hatte: die
+Sperrreihenfolge gegen den Nutzungsnachtrag. Damit dreimal unabhängig
+gesichtet (Ausführender, Gegenlesung, Bot) — er wird nicht weiter vertagt.
+
+**ZWEI eigene Fehlaussagen dabei berichtigt, beide nachgelesen:**
+
+1. Ich hatte behauptet, die Sperrreihenfolge des Nachtrags komme aus
+   `ORDER BY erstellt_am, id`. Sie kommt aus der **Reihenfolge der
+   abgeschickten Formularfelder** (`routes/sichtpruefung.js:2222` baut die
+   Liste, `:2234` läuft darüber). Eine Sortierung auf unserer Seite konnte
+   also prinzipiell nie dazu passen.
+2. Ich hatte eine Geschwisterstelle in `routes/module.js` behauptet. Es gibt
+   **keine** — `eingereichteSchluessel` kommt im Repo nur an diesen zwei
+   Zeilen vor.
+
+Das verschiebt die Wurzel: nicht die neue Route ist das Problem, sondern ein
+Mehrzeilen-Schreiber ohne kanonische Reihenfolge. **Zwei gleichzeitige
+Nachträge haben dieselbe Kante schon heute**, ohne Zutun dieses Beitrags. Die
+Behebung sitzt deshalb dort und schliesst beide Fälle.
+
+**Der eigentliche Auftrag der Runde ist nicht die Zeile, sondern die
+Messung:** den `40P01` erstmals wirklich erzeugen. Bisher hat den Kreis
+NIEMAND von uns empirisch hergestellt — weder ich noch der Ausführende noch
+die Gegenlesung. Ohne diese Messung ist auch die Behebung eine Vermutung.
+
+Auch die `.sort()`-Zeile selbst braucht eine Zusicherung: ohne Test ist sie
+ein stiller Schutz, den jemand wegnimmt, ohne dass es auffällt.
+
+**Merkposten zum Verfahren:** der Greptile-CHECK stand auf `success`,
+während sein KOMMENTAR den P1 trug. Genau deshalb verlangt das Ritual, die
+Kommentare VOR dem Häkchen zu lesen. Hier hat es getragen.
+
+### Stand vor Runde 6 (16.09.2026, ~12:35 UTC)
 
 Fünf Bau-Runden, drei Gegenlesungen, eine Review-Spur mit Ausführungsrechten.
 Stand `329200b`. **Mein Ritual auf dem Endstand, selbst gefahren:** Suite
