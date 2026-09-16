@@ -189,7 +189,38 @@ beiden Prüfspuren diesmal in drei von sechs Befunden. Die dortige
 Verallgemeinerung („null Überschneidung, zwei Suchverfahren") beschrieb einen
 Lauf, keine Regel. Die Einzelheiten stehen in `ASTRA-LAEUFE.md`.
 
-### Runde 5 läuft (16.09.2026, ~12:00 UTC) — EIN Punkt, dann PR
+### 2b-1 ist gebaut, geprüft, PR offen — CI läuft (16.09.2026, ~12:35 UTC)
+
+Fünf Bau-Runden, drei Gegenlesungen, eine Review-Spur mit Ausführungsrechten.
+Stand `329200b`. **Mein Ritual auf dem Endstand, selbst gefahren:** Suite
+`SUITE_EXIT=0`, 0 FAIL; `test_feature_ausmusterung_ausloesen.js` 115 PASS /
+0 FAIL; Dateizahl **323 = 323**, `diff` EXIT 0; `npm run lint` EXIT 0;
+Marker-Scan 6; Baum sauber; Zweig nicht hinter master.
+
+Runde 5 hat genau einen Punkt gebaut: der Audit-Eintrag
+`geraet_ausgemustert` hält die Blockherkunft je Mangel-ID fest
+(`mangel_sicher` / `mangel_name_gleich` / `mangel_name_abweichend` statt
+`mangel_ids` und `anzahl`). Vier Gegenproben, beide Richtungen, darunter die
+wichtige: alle drei Listen LEER geschrieben → `110 PASS / 5 FAIL`. Die
+Zusicherung prüft also Inhalt, nicht Feldexistenz.
+
+**Ein Fehler in MEINEM Auftrag, vom Ausführenden gemeldet:** mein wörtliches
+Rezept fürs Dateizahl-Ritual liess die `sed`-Normalisierung weg, mit der die
+`── … ──`-Umrandung aus den Lognamen fällt. So hätte `diff` NIE EXIT 0
+geliefert, unabhängig von den Zahlen. Er hat es ergänzt und ausdrücklich
+nachgefragt, statt es stillschweigend zu tun. Das Rezept im Takt-Prompt
+enthält den Schritt; mein Auftrag hatte ihn verloren.
+
+Ebenfalls von ihm gemeldet statt verschwiegen: sein erster Suite-Versuch lief
+kurz als zwei parallele Läufe gegeneinander. Er hat beide beendet, die
+Wegwerf-DB neu angelegt und genau einen sauberen Lauf gemeldet. Meine eigene
+Suite bestätigt das Ergebnis unabhängig.
+
+**Noch zu tun:** CI abwarten, Kommentare des Review-Bots lesen (nicht nur sein
+Häkchen), `head_sha` gegen den Zweigkopf halten, mergen, Deploy-Lauf prüfen,
+`live-check`.
+
+### Verlauf der früheren Runden
 
 Runde 4 ist gebaut und von mir geprüft (`355776f`): Suite `SUITE_EXIT=0`,
 0 FAIL; **323 = 323**, `diff` EXIT 0; Lint EXIT 0; Marker 6; Baum sauber.
