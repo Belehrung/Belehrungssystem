@@ -22,14 +22,15 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Beitrag 2a (Datenmodell und Leser) | gemergt `613a2c9`, Deploy 415, live-check grün |
 | Beitrag 2b-1 (Ausmustern auslösbar) | gemergt `eb276d9`, Deploy 416, live-check grün |
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
-| Rechtsstand-Wächter Stufe 1 | Plan gegengelesen, Bauauftrag steht, noch nicht gebaut |
+| Rechtsstand-Wächter Stufe 1 | **Executer baut gerade** (Zweig `claude/rechtsstand-normtext-stufe1`) |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | noch nicht geschrieben |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 
-**`/home/user/gymdocu` ist BELEGT** — dort arbeitet ein Executer an der
-Verklemmung. Nicht anfassen, bis seine Benachrichtigung da ist.
+**`/home/user/gymdocu` ist BELEGT** — dort arbeitet ein Executer am
+Rechtsstand-Wächter Stufe 1. Nicht anfassen, bis seine Benachrichtigung da
+ist; eine Benachrichtigung ist verbraucht, sobald ich ihn fortgesetzt habe.
 
 ## Erledigt — Beitrag 1 ist gemergt
 
@@ -282,6 +283,11 @@ richtiger Schlussfolgerung.** Am Thread beantwortet und berichtigt.
    Begründung („wer das `echo` vergisst, wartet auf ein Signal, das nie
    kommt"), und der Umgang mit dem Review-Bot am PR. Wer den Prompt kürzt,
    ohne das zuerst zu verschieben, löscht die einzige Fassung.
+   **ERLEDIGT am 16.09.2026:** beide stehen jetzt in der CLAUDE.md dieses
+   Repos — der Suite-Aufruf in Schritt 4 des Prüf-Rituals, der Review-Bot als
+   eigener Schritt 6b. Damit ist die letzte Sperre gegen das Kürzen weg; der
+   Abgleich, welche übrigen Regeln WIRKLICH doppelt sind, braucht weiterhin
+   den Prompttext und damit die Stunde nach einem Feuern.
 
 ## Erledigt — Orbit4-Recherche (Betreiberfrage 16.09.2026)
 
