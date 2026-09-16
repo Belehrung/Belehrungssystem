@@ -7,6 +7,10 @@ Alles, was ein Nachfolger braucht, liegt jetzt IM REPO — Plan, Arbeitspapier
 und Befunde. Kein Verweis mehr in den Scratchpad: der ist weg, sobald der
 Container neu startet.
 
+**`plaene/ENTSCHIEDEN.md` daneben hält fest, was der Betreiber entschieden
+hat und was nicht neu aufgerollt wird.** Diese Beschlüsse standen bis zum
+16.09.2026 ausschliesslich im Prompt einer Routine.
+
 ## Erledigt — Beitrag 1 ist gemergt
 
 **PR #446, Squash `186c0aa`**, „Eine Freigabe wird nur gemeldet und
@@ -184,10 +188,18 @@ Mängeln. Noch nicht geschrieben. Brauchbare Vorarbeit steht im überholten
 - **Zentrale `DEFECT_PHOTO_DIR`-Umleitung in `test/run.sh`.** 21 bestehende
   Testdateien laden `routes/sichtpruefung.js` ohne diese Variable — Eigenschaft
   der Suite, kein Fehler eines einzelnen Beitrags.
-- **Der stündliche Takt-Prompt ist eine 8k-Token-Kopie der CLAUDE.md** und wird
-  jede Stunde neu gelesen. Er sagt selbst, dass eine Kopie driftet. Nach dem
-  Merge auf die Teile eindampfen, die NICHT in der CLAUDE.md stehen — vorher
-  aber sauber abgleichen, damit keine Regel verlorengeht.
+- **Den stündlichen Takt-Prompt eindampfen — aber ERST, nachdem
+  `plaene/ENTSCHIEDEN.md` im Standardzweig steht.** Meine frühere Notiz hier
+  („eine 8k-Token-Kopie der CLAUDE.md") war FALSCH und hätte zur falschen
+  Handlung verleitet. Gemessen am 16.09.2026 über alle `*.md` BEIDER Repos:
+  von acht Betreiber-Entscheidungen steht KEINE als Entscheidung im Repo,
+  sechs kommen überhaupt nicht vor. Der Prompt war der einzige Träger — und
+  `list_triggers` gibt seinen Text nicht zurück, man sieht ihn nur beim
+  Feuern. Die Listen sind jetzt nach `plaene/ENTSCHIEDEN.md` übertragen;
+  gestrichen wird im Prompt erst danach, sonst ist die einzige Kopie weg,
+  bevor die neue da ist. Der übrige Abgleich (welche Regeln WIRKLICH doppelt
+  sind) steht noch aus und braucht den Prompttext — also die Stunde nach
+  einem Feuern.
 
 
 - Drei weitere Fundstellen derselben Klasse wie Beitrag 1: die
