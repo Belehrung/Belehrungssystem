@@ -290,6 +290,34 @@ richtiger Schlussfolgerung.** Am Thread beantwortet und berichtigt.
    Abgleich, welche übrigen Regeln WIRKLICH doppelt sind, braucht weiterhin
    den Prompttext und damit die Stunde nach einem Feuern.
 
+   **Der Abgleich ist am 16.09.2026 abends gemacht**, beim Feuern um 17:40 UTC.
+   Ergebnis: Was noch AUSSCHLIESSLICH im Prompt steht, ist fast durchweg
+   GymDocu-Arbeitswissen, und es gehört nach der Hausregel „Hausregeln gehören
+   ins Zielrepo" in **`/home/user/gymdocu/CLAUDE.md`**, nicht hierher — der
+   Executer liest die CLAUDE.md des Repos, in dem er arbeitet. Gemessen
+   (Trefferzahl in `CLAUDE.md` / `plaene/ENTSCHIEDEN.md` dieses Repos):
+
+   | Nur im Prompt | CLAUDE.md | ENTSCHIEDEN.md |
+   |---|---|---|
+   | `test/helfer/route-harness.js` (Seiten-HTML ohne Server; `server.js` mountet Router ausserhalb von `routes/admin.js`) | 0 | 0 |
+   | `test/helfer/ueberlauf-messung.js` | 0 | 0 |
+   | `test/helfer/quelltext-scan.js` (`scanneDateien`, eigene Liste `erkennerFehler`, die JEDER Aufrufer selbst zusichert) | 0 | 0 |
+   | `test/helfer/chromium-start.js` | 0 | 0 |
+   | `TEST_ROLE` beim `createdb` (sonst „permission denied for schema public") | 0 | 0 |
+   | Die ausdrückliche Chromium-Liste in `eslint.config.js` (kein Muster, kein `eslint-disable`) | 0 | 0 |
+   | `server.js:161-162` begrenzt URL-encoded und JSON auf 1 MB | 0 | 0 |
+   | Python-Patchskripte für deutschen Text brauchen Dreifachquotes | 0 | 0 |
+
+   Bereits abgedeckt und damit im Prompt streichbar: der Studio-Wächter-Hinweis,
+   die 405-Falle beim Entwurfs-PR, die unterschiedlichen Standardzweignamen und
+   die Berichtigungsliste stehen in `plaene/ENTSCHIEDEN.md`; Suite-Aufruf,
+   Marker-Scan, Review-Bot, Sperren/Transaktionen und die Prüfreihenfolge in
+   der CLAUDE.md dieses Repos.
+
+   **Nächster Schritt, sobald `/home/user/gymdocu` frei ist:** die acht Zeilen
+   oben in die dortige CLAUDE.md übernehmen, DANN erst den Prompt kürzen. Die
+   Reihenfolge ist wichtig — wer zuerst kürzt, löscht die einzige Fassung.
+
 ## Erledigt — Orbit4-Recherche (Betreiberfrage 16.09.2026)
 
 `plaene/wettbewerb-orbit4.md`. Nur die öffentliche Seite erreichbar
