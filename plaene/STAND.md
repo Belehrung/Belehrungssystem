@@ -21,13 +21,15 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Beitrag 1 (Freigabe nur melden, wenn sie stattfand) | gemergt, `186c0aa` |
 | Beitrag 2a (Datenmodell und Leser) | gemergt `613a2c9`, Deploy 415, live-check grün |
 | Beitrag 2b-1 (Ausmustern auslösbar) | gemergt `eb276d9`, Deploy 416, live-check grün |
-| Die sieben BGB-Einträge | gebaut und geprüft, PR offen, CI läuft |
+| Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
 | Rechtsstand-Wächter Stufe 1 | Plan gegengelesen, Bauauftrag steht, noch nicht gebaut |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | noch nicht geschrieben |
-| Doku ins Belehrungssystem-main | PR offen |
+| Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
+| Verklemmung `qr_token` (#233) | Auftrag läuft beim Executer, Zweig `claude/qr-zuordnung-sperrreihenfolge` |
 
-**Kein Arbeitsbaum ist belegt**, es läuft kein Executer.
+**`/home/user/gymdocu` ist BELEGT** — dort arbeitet ein Executer an der
+Verklemmung. Nicht anfassen, bis seine Benachrichtigung da ist.
 
 ## Erledigt — Beitrag 1 ist gemergt
 
