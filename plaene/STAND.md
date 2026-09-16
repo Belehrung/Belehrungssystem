@@ -189,7 +189,44 @@ beiden Prüfspuren diesmal in drei von sechs Befunden. Die dortige
 Verallgemeinerung („null Überschneidung, zwei Suchverfahren") beschrieb einen
 Lauf, keine Regel. Die Einzelheiten stehen in `ASTRA-LAEUFE.md`.
 
-### Runde 3 läuft (16.09.2026, ~09:00 UTC)
+### Runde 3 ist gebaut (16.09.2026, ~10:00 UTC), dritte Gegenlesung läuft
+
+Alle vier A-Punkte und alle drei B-Punkte behoben, Stand `46cf2af`. Eigene
+Ritualzahlen: Suite `SUITE_EXIT=0`, 0 FAIL; 323 = 323, `diff` EXIT 0; Lint
+EXIT 0; Marker 6.
+
+**Selbst nachgemessen:**
+
+- **A1 behoben.** Dieselbe Mutation, die vorher `EXIT 1, „Mutation bleibt
+  UNERKANNT"` lieferte, ergibt jetzt `EXIT 0, 58 PASS / 0 FAIL` — der
+  schluckende catch wird wieder erkannt. Der Vorfilter ist durch eine echte
+  `{}`-Blockanalyse ersetzt.
+- **Der Nachvergleich aus B1 ist UNBEWACHT.** Stillgelegt
+  (`if (false && !diffNachsperren.gleich)`) → `EXIT 0, 105 PASS / 0 FAIL`.
+  Die Mutation liegt im durchlaufenen Pfad, sie hat nur nie etwas zu
+  entscheiden: kein Test erzeugt eine Abweichung im Zwischenfenster, und das
+  Fenster liegt innerhalb EINER Transaktion, ist also ohne Einspritzpunkt
+  kaum herstellbar. **Eingeordnet als Rest, nicht als Blocker** — der
+  Schreibweg fängt eine nebenläufig geschlossene Zeile weiterhin selbst
+  (`AND status = 'offen'` + `RETURNING`-Längenprüfung + `throw`, von mir
+  nachgelesen). Es bleibt: ein Mangel, dessen TEXT sich in diesem
+  Mikrofenster ändert, wird mit leicht veralteter Anzeige geschlossen.
+- **Der Vergleich der Blockzuordnung ist tautologisch** (beide Seiten
+  beziehen sie aus `blockVonId` des ungesperrten Lesens) — trägt aber nichts,
+  weil `geraet_name`, `standort` und `seriennummer` seit Runde 2 mitverglichen
+  werden und eine Blockänderung dort auffällt.
+
+**Von mir selbst behoben** (Bagatelle): der Kopfkommentar von
+`routes/admin/ausmusterung.js` behauptete weiterhin, der Audit-Scanner lese
+nur `routes/admin/geraete.js` — seit Runde 2 falsch. Der Ausführende hat es
+gemeldet, ohne es anzufassen; richtig so, es lag ausserhalb seines Auftrags.
+
+**Warum eine DRITTE Gegenlesung:** nicht wegen der Rundenzahl, sondern weil
+B1 (Pool-Sperre weggenommen, Nachsperrung eingezogen) eine
+verhaltensändernde Umstellung ist, die bisher NIEMAND gegengelesen hat — und
+ich dort schon selbst eine Lücke gefunden habe. Der Diff ist eng (630 Zeilen).
+
+### Vorherige Runde (Verlauf)
 
 Die Nacharbeit hat alle fünf blockierenden Punkte behoben, jeden mit
 Gegenprobe, und der Ausführende hat **eine zweite Verklemmung selbst
