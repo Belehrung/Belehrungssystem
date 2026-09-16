@@ -26,7 +26,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | noch nicht geschrieben |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
-| Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`**, Deploy und live-check stehen noch aus |
+| Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 
 **`/home/user/gymdocu` ist BELEGT** — dort arbeitet ein Executer an der
 Verklemmung. Nicht anfassen, bis seine Benachrichtigung da ist.
