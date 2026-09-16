@@ -247,8 +247,13 @@ richtiger Schlussfolgerung.** Am Thread beantwortet und berichtigt.
    geholte `bgb/xml.zip` (HTTP 200, 467.258 Bytes, ausgelesener Stand
    `zuletzt geändert durch Art. 6 G v. 23.7.2026 I Nr. 226`): mit dem neuen
    Eintrag siebenmal `unveraendert`, mit dem alten siebenmal `geaendert`.
-2. **Rechtsstand-Wächter Stufe 1** — Plan liegt fertig, aber NICHT
-   gegengelesen. Gegenlesung vor dem Bau.
+2. **Rechtsstand-Wächter Stufe 1 bauen.** Der Plan ist am 16.09.2026
+   gegengelesen (sechs Befunde, vier blockierend, alle sechs nach eigener
+   Nachmessung getragen — der Nachtrag steht in
+   `plaene/rechtsstand-kette-plan.md`), und der daraus abgeleitete
+   Bauauftrag liegt als `plaene/auftrag-rechtsstand-stufe1.md` bereit.
+   Startet, sobald der BGB-Beitrag gemergt ist — beide fassen
+   `core/rechtsstand.js` an.
 3. **Beitrag 2b-2** — Rückweg „Offene Mängel abschliessen" für jedes
    anderweitig inaktive Gerät. Macht den in 2b-1 bewusst offengelassenen
    Wettlauf sichtbar.
@@ -549,7 +554,9 @@ selbst, ob eine Gesetzesänderung uns betrifft. Tragende Messung: das XML,
 das er ohnehin lädt, enthält jeden Paragrafen einzeln — die Kettenprüfung
 braucht KEINEN zusätzlichen Abruf. Nebengewinn: der Regelfall („Gesetz
 geändert, unsere Norm unverändert") wird ruhig statt rot.
-**Noch nicht gegengelesen** — der Plan wartet auf den freien Arbeitsbaum.
+**Am 16.09.2026 gegengelesen** — sechs Befunde, vier blockierend, alle sechs
+nach eigener Nachmessung getragen. Der Nachtrag steht im Plan selbst, der
+Bauauftrag daneben als `plaene/auftrag-rechtsstand-stufe1.md`.
 
 Die zweite Meldung (§ 3 UVSV nicht erreichbar) hat sich erledigt: die Quelle
 antwortet wieder (HTTP 200). Der Wächter hat richtig gehandelt — erster
