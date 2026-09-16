@@ -189,6 +189,42 @@ beiden Prüfspuren diesmal in drei von sechs Befunden. Die dortige
 Verallgemeinerung („null Überschneidung, zwei Suchverfahren") beschrieb einen
 Lauf, keine Regel. Die Einzelheiten stehen in `ASTRA-LAEUFE.md`.
 
+### Runde 3 läuft (16.09.2026, ~09:00 UTC)
+
+Die Nacharbeit hat alle fünf blockierenden Punkte behoben, jeden mit
+Gegenprobe, und der Ausführende hat **eine zweite Verklemmung selbst
+gefunden**, die ich nicht hatte. Eigene Ritualzahlen auf diesem Stand:
+Suite `SUITE_EXIT=0`, 0 FAIL; 323 = 323, `diff` EXIT 0; Lint EXIT 0;
+Marker-Scan wieder 6.
+
+Die zweite Gegenlesung sagt trotzdem „noch nicht freigeben". Drei Befunde
+habe ich selbst nachgemessen bzw. am Kontrollfluss bestätigt:
+
+- **Der Audit-Wächter wurde beim Beheben eines ECHTEN Fehlalarms zu grob
+  entschärft.** Gemessen: `void 0;` hinter `try {` im schluckenden Schnipsel
+  → `EXIT 1, 53 PASS / 1 FAIL`, „Mutation bleibt UNERKANNT". Ein schluckender
+  catch wird nicht mehr erkannt, sobald vor dem Aufruf noch eine Anweisung
+  steht.
+- **Der Geistersperren-Riegel hat einen ungesicherten Eintrittspunkt.** Er
+  steht in `if (finalSelection.length === 0)` (Zeile 405), der
+  Ausmusterungszweig beginnt bei 472. Hat das Gerät eine EIGENE aktive Sperre
+  daneben, greift keiner der beiden Riegel — und das Gerät wird ENDGÜLTIG
+  ausgemustert, die namensgleiche Sperre bleibt verwaist. Ein zusätzlicher
+  Mangel macht also eine zuvor verweigerte Deaktivierung wieder möglich.
+- **Keine Gegenprobe erreicht den POST-Riegel** — der Abschnitt fährt nur
+  GETs und gibt die Sperre per direktem UPDATE frei.
+
+**Eingeordnet statt übernommen:** Der gemeldete Verklemmungskreis mit dem
+Nutzungsnachtrag trägt, ist aber **nicht neu** — der bestehende Reparaturweg
+nimmt dieselbe Ordnung (`routes/sichtpruefung.js:3084` → `:3100`). Der Beitrag
+verbreitert die Klasse von einer Defektzeile auf den ganzen unzugeordneten
+Pool. Als „neu eingeführt" wäre es falsch gewesen.
+
+**Eigener Fehler, festgehalten:** „Testabfragen ohne `studio_id`" wurde zum
+DRITTEN Mal gemeldet und fiel zum dritten Mal. Nach dem zweiten Mal steht in
+`ASTRA-LAEUFE.md`, der Vorbehalt gehöre in den Prüfbrief statt in die
+Nachmessung — ich habe es wieder nicht getan. In Runde 3 steht er im Brief.
+
 ## Danach — Beitrag 2b-2
 
 Rückweg „Offene Mängel abschliessen" für jedes inaktive Gerät mit offenen
