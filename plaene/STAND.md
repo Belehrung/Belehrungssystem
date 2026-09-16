@@ -149,6 +149,46 @@ UPDATE` gesperrt, bevor massgeblich gelesen wird. Jeder unerwartete
 `rowCount` muss WERFEN — `db.tx()` committet jeden normal zurückgegebenen
 Wert, ein `return { fehler: … }` ist kein Abbruch.
 
+### Stand der Prüfung (16.09.2026, ~07:00 UTC)
+
+Der Bau ist fertig und gepusht (`a610ec0`, `fbb6f0d`, `963c05b`), **aber
+NICHT mergefähig.** Zwei unabhängige Prüfspuren plus eigene Messungen; die
+Gegenlesung sagt ausdrücklich „nicht freigeben". Eine Nacharbeitsrunde läuft.
+
+Eigene Ritualzahlen am unveränderten Stand: Suite `SUITE_EXIT=0`, 0 FAIL;
+Dateizahl 323 = 323, `diff` EXIT 0; `npm run lint` EXIT 0.
+
+**Selbst gemessen, blockierend:**
+
+- **Verklemmung.** Zwei gleichzeitige Ausmusterungen VERSCHIEDENER Geräte im
+  selben Studio: `40P01 deadlock detected`. `ladeKandidaten()` sperrt in drei
+  getrennten Abfragen, Block 2/3 teilen dieselbe Menge unzugeordneter Mängel
+  je nach GERÄTENAME anders auf. Gegenrichtung ebenfalls gemessen: eine
+  gemeinsame, namen-unabhängige Sperrabfrage löst es. Genau die Lock-Kante,
+  die mein eigener Auftrag verboten hatte.
+- **Die drei neuen `auditAppend()`-Aufrufe sind unbewacht.** Der
+  Kapselungs-Wächter liest nur `routes/admin/geraete.js`. Ein angehängtes
+  `.catch(() => {})` überlebt die VOLLE Suite (`SUITE_EXIT=0, 0 FAIL`);
+  dieselbe Mutation in der bewachten Datei gibt `EXIT 1, 2 FAIL`. Die
+  unwiderrufliche Ausmusterung könnte committen, ohne Eintrag in der
+  gehashten Kette.
+- **Drei Zusicherungen, die nicht rot werden können**, je einzeln gemessen
+  gegen einen Basislauf von 63 PASS / 0 FAIL: Mandantenfilter der
+  Block-2-Abfrage entfernt → **63/0**; Block 3 stillgelegt → **63/0**;
+  Tokenverbrauch wirkungslos → **63/0**.
+
+**Aus den Prüfspuren, von mir nachgelesen und übernommen:** der
+Seil-Rückfallzweig umgeht die Sperr-Prüfung des bestehenden Löschwegs und
+erzeugt die „Geistersperre", vor der dessen Kommentar wörtlich warnt; die
+Oberfläche behauptet „ENDGÜLTIG", wo die Handlung umkehrbar ist; `aktionsart`
+wird nie geprüft, obwohl der Dateikopf es behauptet; Block 2/3 werden ohne
+den erfassten Gerätenamen gerendert. Dazu acht kleinere Punkte.
+
+**Methodisch festgehalten:** Anders als am 13.09.2026 überschnitten sich die
+beiden Prüfspuren diesmal in drei von sechs Befunden. Die dortige
+Verallgemeinerung („null Überschneidung, zwei Suchverfahren") beschrieb einen
+Lauf, keine Regel. Die Einzelheiten stehen in `ASTRA-LAEUFE.md`.
+
 ## Danach — Beitrag 2b-2
 
 Rückweg „Offene Mängel abschliessen" für jedes inaktive Gerät mit offenen
