@@ -26,7 +26,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | noch nicht geschrieben |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
-| Verklemmung `qr_token` (#233) | **Runde 4 läuft.** Produktionsänderung fertig und dreimal ohne Befund gegengelesen (EINE Anweisung, kanonische Ordnung). Drei Bau-Runden gingen an die BEWEISE: beide blockierenden Befunde der zweiten Prüfung selbst gemessen und umgekehrt (alte Fassung → 27 PASS / 2 FAIL; `await`-Mutation → 307 PASS / 2 FAIL nach 20 s statt EXIT 124). Auftrag: `plaene/auftrag-qr-sperrreihenfolge-runde4.md`. **Danach keine Gegenlesung mehr an diesem Beitrag** |
+| Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`**, Deploy und live-check stehen noch aus |
 
 **`/home/user/gymdocu` ist BELEGT** — dort arbeitet ein Executer an der
 Verklemmung. Nicht anfassen, bis seine Benachrichtigung da ist.
