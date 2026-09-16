@@ -227,12 +227,15 @@ Waren" hätte § 309 (Klauselverbote) treffen können. Hat es nicht.
 `Art. 6 G v. 23.7.2026 I Nr. 226` mit `bestaetigt_am: '2026-09-16'`
 nachziehen. Wartet, weil im GymDocu-Baum ein Executer arbeitet.
 
-**Eigener Befund für später, nicht gebaut:** Dass der Wächter drei
-Änderungen als eine meldet, ist kein Fehler — aber eine Lücke. Hätte eine
-der übersprungenen unsere Normen berührt, sähe die Meldung genau gleich aus,
-und ein Bestätigen ohne Kettenprüfung hätte sie zugedeckt. Entweder der
-Wächter verfolgt die Kette selbst, oder die Regel lautet ausdrücklich: vor
-jedem Bestätigen die Präambeln rückwärts bis zum festgehaltenen Stand lesen.
+**Daraus wird ein eigener Beitrag** (Betreiber-Entscheidung 16.09.2026:
+„ja plane es als eigenen schritt"). Der Plan liegt als
+`plaene/rechtsstand-kette-plan.md`. Kern: der Wächter führt zusätzlich einen
+Fingerabdruck des NORMTEXTES des jeweiligen Paragrafen und beantwortet damit
+selbst, ob eine Gesetzesänderung uns betrifft. Tragende Messung: das XML,
+das er ohnehin lädt, enthält jeden Paragrafen einzeln — die Kettenprüfung
+braucht KEINEN zusätzlichen Abruf. Nebengewinn: der Regelfall („Gesetz
+geändert, unsere Norm unverändert") wird ruhig statt rot.
+**Noch nicht gegengelesen** — der Plan wartet auf den freien Arbeitsbaum.
 
 Die zweite Meldung (§ 3 UVSV nicht erreichbar) hat sich erledigt: die Quelle
 antwortet wieder (HTTP 200). Der Wächter hat richtig gehandelt — erster
