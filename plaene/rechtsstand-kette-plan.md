@@ -174,3 +174,151 @@ Beleg stehen, wie die Frage gestellt war.
 Ich empfehle **Stufe 1 allein** und melde Stufe 2 als Rest. Wer widerspricht,
 bekommt beides in einer Runde — dann aber mit der Ansage, dass das Register
 je Gesetz um mehrere tausend Einträge wächst.
+
+---
+
+# NACHTRAG 16.09.2026 — Gegenlesung des Plans, sechs Befunde
+
+Gegengelesen am 16.09.2026 (Kosten 3,64 $, 6 Runden, 12 Suchen, 14 Lesungen).
+**Vier blockierende, zwei „sollte behoben werden" — ich habe JEDEN selbst
+nachgemessen, alle sechs tragen.** Der Plan oben bleibt als Beleg stehen, wie
+er eingereicht wurde; verbindlich für den Bau ist ab hier dieser Nachtrag.
+
+Zwei Bemerkungen der Gegenlesung sind KEINE Befunde, sondern Folgen meines
+eigenen Auftrags: sie fand `plaene/STAND.md` nicht und den Plan nicht im
+Repo — beide liegen im Belehrungssystem-Repo, während ich als Wurzel
+`/home/user/gymdocu` gesetzt hatte. Mein Fehler beim Zuschnitt, nicht ihrer.
+
+## B1 (blockierend) — Zusicherung 5 verschiebt den Selbstnachweis
+
+Präfix und Länge sind kein Sollwert für einen TEXT. Ein falscher Text mit
+richtigem Anfang und gleicher Länge besteht die Prüfung; und die 512 stammt
+aus meiner eigenen Extraktionsmessung, ist also nur von Hand abgeschrieben,
+nicht unabhängig gewonnen. Das ist unsere eigene Klasse „eine Zusicherung
+über eine ZAHL ist keine Zusicherung über eine MENGE".
+
+**Verbindlich:** eingefrorener XML-Ausschnitt UND der vollständige erwartete
+Klartext im Repo, Vergleich auf VOLLSTÄNDIGE Gleichheit. Mutationen am ENDE
+des Textes, am letzten Listenpunkt und eine GLEICH LANGE Wortänderung
+gehören zu den Gegenproben — sonst prüft man nur den Anfang.
+
+## B2 (blockierend) — fehlende Hashes haben keinen Vertrag
+
+GEMESSEN am Bestand: `core/rechtsstand.js:925-930` — ein vorhandener Eintrag
+genügt heute für den Vergleich, `undefined === undefined` wäre „Normtext
+gleich". **Und der Umfang war mir nicht klar: 61 der 72 Quellen sind
+`gii-xml`, verteilt auf 18 Gesetze** (selbst gezählt über `quellen()` und
+`artFuer()`). 61 Hashes müssen also erstmals bestätigt werden.
+
+**Verbindlich:** fehlender oder ungültiger SOLL-Hash → eigene Lage
+„Normtext noch nicht bestätigt", NIE ruhig und NIE unverändert. Fehlender
+IST-Hash oder misslungene Extraktion → Prüfungsfehler. Erst nach dieser
+Gültigkeitsprüfung greifen die vier Vergleichslagen. Ein heute erzeugter
+Hash bekommt sein EIGENES Bestätigungsdatum; er wird nicht unter das alte
+`bestaetigt_am` geschoben, denn für den damaligen Wortlaut haben wir keinen
+Beleg.
+
+## B3 (blockierend) — der Verbraucher verschweigt neue Lagen
+
+**Der teuerste Befund, von mir nachgemessen** an
+`ops/gymdocu-rechtsstand-watch.js:411-417`:
+
+    case 'unbekannt': return 'rot';
+    case 'geaendert': return eintrag.nurPruefsumme ? 'ruhig' : 'rot';
+    case 'nicht_erreichbar': return warVorherNichtErreichbar ? 'rot' : 'unbestaetigt';
+    default: return 'still';
+
+Alle drei neuen Lagen fielen auf `still` — kein Telegram-Alarm, kein
+Exit-Code 1. Der Wächter hätte eine geänderte Norm erkannt und
+geschwiegen. Genau unsere Klasse „leeres Ergebnis ist nicht sauberes
+Ergebnis".
+
+Dazu zwei eigene Messungen: **`klassifiziere` wird in
+`test_feature_rechtsstand.js:43` importiert und in der ganzen Datei NIE
+aufgerufen** (1 Vorkommen insgesamt) — die Funktion ist heute völlig
+unbewacht. Und der Cron startet eine **von Hand installierte Kopie** unter
+`/usr/local/bin/` (`ops/cron.d-gymdocu-rechtsstand:20-28` warnt selbst
+davor, mit Präzedenzfall) — neues Core-Modul plus alte Ops-Kopie ergäbe
+eine Mischversion.
+
+**Verbindlich im Bauumfang:** `klassifiziere`, Meldungstexte,
+Zusammenfassungszähler, Exit-Code-Regel und Statusformat. Nur
+`unveraendert` darf `still` ergeben; eine UNBEKANNTE Lage muss laut
+scheitern statt still durchzugehen. `klassifiziere` bekommt seine erste
+Zusicherung überhaupt. Das `install -m 755` ist ein benannter
+Auslieferungsschritt, kein Nebensatz.
+
+## B4 (blockierend) — Einzelparagraf, Cache und Mehrdeutigkeit
+
+**Die Cache-Falle ist real und wäre ein stilles falsches Grün**, von mir
+nachgelesen an `ops/gymdocu-rechtsstand-watch.js:294-315`: `giiCache` hält
+EIN Abrufergebnis JE GESETZ, das sich alle Paragrafen teilen. Ein
+`normtext_sha256` im Abrufergebnis würde bedeuten, dass alle sieben
+BGB-Fundstellen gegen den Hash des ZUERST angefragten Paragrafen
+vergleichen. **Verbindlich: der Cache trägt das XML bzw. einen Normindex,
+NIE einen Hash.** Eine Fixtur mit mehreren Normen, verschiedenen erwarteten
+Hashes und Änderung nur EINER Norm muss das beweisen.
+
+**Buchstabenzusätze gibt es im Bestand schon:** `core/rechtsstand.js:509`
+trägt `arbst_ttv_2004/__3a.html`. Ein Präfixvergleich auf `§ 3` würde dort
+falsch greifen. Auch „null Treffer" ist nicht der einzige Fehlerfall —
+zwei Treffer, vorhandener `<enbez>` mit leerem Text und weggefallene
+Normen gehören unterschieden.
+
+**Nicht übernommen, weil gemessen gegenstandslos:** mehrere XML-Dateien im
+Archiv sind bereits sicher behandelt (`core/rechtsstand.js:241-244` wirft
+bei `length !== 1`, geprüft in `test_feature_rechtsstand.js:485-492`) — das
+bleibt, wie es ist. Und die geforderte „sichere Parserkonfiguration ohne
+externe Entitäten" zielt auf einen XML-Parser; wir schneiden mit regulären
+Ausdrücken, es gibt keine Entity-Auflösung. Wer das später ändert, holt
+sich die Frage zurück.
+
+## B5 (sollte) — die vier Lagen sind eine Teilmenge
+
+Sie setzen ZWEI gültige Vergleichspaare voraus. **Im Bestand gibt es aber
+Einträge, deren `stand` gar keine Standangabe ist** — vier UVSV-Einträge
+(`core/rechtsstand.js:660-675`) tragen wörtlich „kein
+`<standangabe>`-Element im XML-Metadatenblock". „Stand nicht verfügbar",
+„Hash unbestätigt", „Norm fehlt" und „Extraktion mehrdeutig" passen in
+keine der vier Zeilen.
+
+**Verbindlich:** die vier Zeilen gelten NACH erfolgreicher Gültigkeits-
+prüfung. Und die vierte Lage wird nicht länger als „Selbstprüfung des
+Wächters" beschrieben — sie erkennt eine bestimmte Inkonsistenz, sie macht
+einen gemeinsamen Datenfluss nicht unabhängig. Der Satz im Plan oben war zu
+stark.
+
+## B6 (sollte) — mein Plan verspricht mehr, als er hält
+
+„Die Zwischenänderungen erledigen sich von selbst" und „Stufe 1 schliesst
+die gemeldete Lücke vollständig" widersprechen meinem eigenen Abschnitt
+„Restrisiken", in dem Ändern-und-Zurückändern als unsichtbar steht. Es ist
+ein **Endpunkt-Wortlautvergleich**, keine Kettenprüfung, und so wird es
+genannt — auch in jeder ruhigen Meldung.
+
+Ebenso zu stark war „mittelbare Betroffenheit ausgeschlossen": belegt ist
+„keine mit der Suchform `§ <nr>` gefundenen direkten Verweise".
+Bereichsangaben wie „§§ 434 bis 479" und ausgeschriebene Verweise deckt sie
+nicht. Die Positivkontrolle belegt EINE Schreibweise, nicht alle.
+
+## Bestehende Testschwächen, die dabei aufgefallen sind
+
+Nicht aus diesem Plan, aber am selben Wächter — zwei davon selbst
+nachgelesen und bestätigt:
+
+- `test_feature_rechtsstand.js:179-180` hält `mitEintrag` gegen
+  `alleQuellen.length`; beide Seiten stammen aus derselben Liste. Fiele eine
+  Quelle aus `quellen()` heraus, bliebe die Zusicherung grün.
+- `:667/677-678` prüft die Pausen gegen dieselben importierten
+  Produktionskonstanten (`ABRUF_PAUSE_MS`, `WIEDERHOLUNG_PAUSE_MS`) — 1500→0
+  und 8000→1 blieben grün. Die Relation „zweite länger als erste" trägt
+  immerhin.
+- Weiter gemeldet, noch NICHT selbst nachgemessen: die Kollisions-Gegenprobe
+  bei `:119-145` benutzt eine Kopie der Prüflogik statt des Helfers; die
+  `esc()`-Zusicherung bei `:810-813` genügt sich mit EINEM erreichbaren
+  Aufruf; die Hostliste bei `:858-867` ist eine Kopie der Liste aus
+  `test_feature_lexikon.js:92-103`.
+
+**`klassifiziere` gehört NICHT in diese Liste, sondern in den Bauumfang**
+(B3): Stufe 1 führt Lagen ein, die genau durch diese ungeprüfte Funktion
+laufen.
