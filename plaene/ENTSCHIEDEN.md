@@ -79,6 +79,21 @@ zwei Orten" wieder: hier steht sie, dort nicht mehr.
   zurückgestellt — sie steht als offener Punkt in `plaene/STAND.md`. Nicht
   erneut fragen; wer sie bauen will, holt vorher eine Entscheidung.
 
+- **AUSMUSTERUNG, 16.09.2026: bei Block-2/3-Kandidaten wird KEINE `geraet_id`
+  geschrieben.** Betreiber folgt der Empfehlung. Begründung: eine geschriebene
+  Zuordnung liesse eine nur über den Namen geratene Zeile im Datenmodell
+  genauso „sicher zugeordnet" aussehen wie eine bewiesene — an einer
+  unwiderruflich geschlossenen Zeile. Die drei Blöcke existieren gerade, um
+  diese Unsicherheit auszudrücken.
+  **ABER: die Empfehlung stützte sich auf einen halb falschen Satz von mir**
+  („die Information steht im Audit-Eintrag"). Nachgemessen: der Eintrag
+  `geraet_ausgemustert` trägt `mangel_ids` und `anzahl` — die IDs also, NICHT
+  die Blockherkunft. Damit ist nach der Ausmusterung nirgends mehr feststellbar,
+  welcher geschlossene Mangel sicher zugeordnet war und welcher geraten.
+  **Folge, und sie gehört zur Entscheidung:** das Audit muss die Blockherkunft
+  je ID mitschreiben. Erst dann trifft zu, was die Entscheidung voraussetzt.
+  Kleiner Zusatz, gehört zu Beitrag 2b-1, VOR dem Merge.
+
 ## Berichtigungen — nicht neu aufrollen
 
 1. Zuständigkeit ist auf allen sechs Schreibwegen erzwungen (#14).

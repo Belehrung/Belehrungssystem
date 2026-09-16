@@ -214,6 +214,14 @@ gebaut. Was der Ausführende sonst findet, wird gemeldet und festgehalten,
 nicht gebaut. Das ist keine Vorhersage über das Ergebnis der nächsten
 Prüfung — nur eine Aussage darüber, was ich noch baue.
 
+**Noch VOR dem Merge zu bauen** (Betreiber-Entscheidung 16.09.2026, s.
+`plaene/ENTSCHIEDEN.md`): Der Audit-Eintrag `geraet_ausgemustert` muss die
+BLOCKHERKUNFT je Mangel-ID mitschreiben. Entschieden ist, bei Block-2/3
+KEINE `geraet_id` zu schreiben — das ist richtig, setzt aber voraus, dass die
+Unterscheidung sicher/geraten woanders erhalten bleibt. Nachgemessen: heute
+trägt der Eintrag nur `mangel_ids` und `anzahl`, die Blockherkunft NICHT. Mein
+eigener Empfehlungssatz („steht im Audit-Eintrag") war insoweit falsch.
+
 **Festgehaltene Reste von 2b-1** (nicht gebaut, bewusst):
 
 - Der Nachvergleich aus B1 ist unbewacht (stillgelegt bleibt die Suite grün);
