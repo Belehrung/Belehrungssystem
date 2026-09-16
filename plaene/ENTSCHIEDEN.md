@@ -177,6 +177,9 @@ die vier Vorschläge von dort:
   Mitarbeiter, Ankunft, Abfahrt, Tätigkeit, Servicefallnummer, Unterschrift)
   bereits erfasst wird und nur der Bezug zum Gerät fehlt.
 - **Anbindung an ein fremdes Ticketsystem** — Luxus, wird NICHT gebaut.
+  **Vom Betreiber ausdrücklich entschieden, 16.09.2026, wörtlich: „ok. wir
+  lassen jira weg".** Das ist eine Entscheidung, keine Empfehlung von mir —
+  nicht erneut aufrollen. Die Begründungen unten erklären sie nur.
 
 ### Zur Jira-Frage — meine Behauptung war falsch, gemessen
 
