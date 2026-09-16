@@ -71,6 +71,14 @@ zwei Orten" wieder: hier steht sie, dort nicht mehr.
      gebaut** — die Rückfrage dazu ist NICHT mehr offen (Begründung in
      `plaene/ausmusterung-plan-v4.md`, Abschnitt 0). Nicht erneut fragen.
 
+- **RECHTSSTAND-WÄCHTER, 16.09.2026: Stufe 1 genügt vorerst.** Wörtlich:
+  „stufe 1 sollte erst mal genug sein aber nimm den rest in dein gedächtniss".
+  Gebaut wird also NUR der Normtext-Fingerabdruck je Fundstelle
+  (`plaene/rechtsstand-kette-plan.md`, Stufe 1). Stufe 2 (mittelbare
+  Betroffenheit über Verweisungen) ist NICHT verworfen, sondern
+  zurückgestellt — sie steht als offener Punkt in `plaene/STAND.md`. Nicht
+  erneut fragen; wer sie bauen will, holt vorher eine Entscheidung.
+
 ## Berichtigungen — nicht neu aufrollen
 
 1. Zuständigkeit ist auf allen sechs Schreibwegen erzwungen (#14).

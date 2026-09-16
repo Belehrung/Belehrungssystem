@@ -243,6 +243,27 @@ Ausfall, kein Befund behauptet, Wiederholung beim nächsten Lauf.
 
 ## Notiert, aber ausdrücklich NICHT gebaut
 
+- **Rechtsstand-Wächter, Stufe 2: mittelbare Betroffenheit.** Ein Paragraf
+  kann betroffen sein, ohne dass sein eigener Wortlaut sich ändert — wenn
+  eine Norm, auf die er VERWEIST, geändert wird. Zurückgestellt durch
+  Betreiber-Entscheidung 16.09.2026 (`plaene/ENTSCHIEDEN.md`), nicht
+  verworfen. Stand der Messung: für den BGB-Fall vom 16.09. geprüft und
+  ausgeschlossen — keiner unserer sieben Paragrafen verweist auf eine der
+  dreizehn geänderten Normen, Positivkontrolle der Suchmethode steht.
+  Automatisiert bräuchte es Hashes für ALLE Normen eines Gesetzes statt nur
+  für unsere; beim BGB sind das einige tausend Registereinträge. Wer es
+  baut, baut es als eigene Runde — sonst ist hinterher nicht zu sagen,
+  welcher Teil gewirkt hat.
+- **Drei Restrisiken des Rechtsstand-Wächters, die auch Stufe 1 NICHT
+  löst** (im Plan benannt, hier, damit sie den Plan überleben):
+  (1) Ändern und Zurückändern zwischen zwei Läufen bleibt unsichtbar — gilt
+  heute genauso, der Fingerabdruck beseitigt es nicht.
+  (2) Mittelbare Betroffenheit, s. o.
+  (3) Der Wächter sagt „Wortlaut gleich", nicht „Rechtslage gleich" —
+  Rechtsprechung, Auslegung und aufgehobene Verweisungen sieht er nicht.
+  Das war noch nie anders, gehört aber in die Meldung, damit niemand aus
+  der neuen ruhigen Lage mehr liest als dasteht.
+
 - **Der Marker-Sollwert für dieses Repo ist überholt, und die Zählform taugt
   nicht.** Ich habe „Sollwert 2" weiter mitgeführt; gemessen am 16.09.2026
   trägt schon `HEAD` DREI Fundstellen (zweimal `CLAUDE.md`, einmal

@@ -161,7 +161,15 @@ demselben Sieb, mit dem sie stattfindet.
   war noch nie anders, gehört aber in die Meldung, damit niemand aus der
   ruhigen Lage 2 mehr liest als dasteht.
 
-## Was der Betreiber entscheiden mag
+## ENTSCHIEDEN — 16.09.2026
+
+**Stufe 1 allein wird gebaut.** Betreiber wörtlich: „stufe 1 sollte erst mal
+genug sein aber nimm den rest in dein gedächtniss". Stufe 2 ist
+zurückgestellt, nicht verworfen, und steht als offener Punkt in
+`plaene/STAND.md` samt der drei Restrisiken. Der Abschnitt unten bleibt als
+Beleg stehen, wie die Frage gestellt war.
+
+## Wie die Frage gestellt war
 
 Ich empfehle **Stufe 1 allein** und melde Stufe 2 als Rest. Wer widerspricht,
 bekommt beides in einer Runde — dann aber mit der Ansage, dass das Register
