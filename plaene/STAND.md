@@ -26,7 +26,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | noch nicht geschrieben |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
-| Verklemmung `qr_token` (#233) | **Runde 2 läuft.** Runde 1 gebaut (`0a3ded7`), Suite grün, aber die Beweise tragen nicht: Gegenlesung 5 Befunde, drei davon von mir nachgemessen und alle drei zutreffend, dazu ein eigener (Datei nicht wiederholbar). Auftrag: `plaene/auftrag-qr-sperrreihenfolge-runde2.md` |
+| Verklemmung `qr_token` (#233) | **Runde 4 läuft.** Produktionsänderung fertig und dreimal ohne Befund gegengelesen (EINE Anweisung, kanonische Ordnung). Drei Bau-Runden gingen an die BEWEISE: beide blockierenden Befunde der zweiten Prüfung selbst gemessen und umgekehrt (alte Fassung → 27 PASS / 2 FAIL; `await`-Mutation → 307 PASS / 2 FAIL nach 20 s statt EXIT 124). Auftrag: `plaene/auftrag-qr-sperrreihenfolge-runde4.md`. **Danach keine Gegenlesung mehr an diesem Beitrag** |
 
 **`/home/user/gymdocu` ist BELEGT** — dort arbeitet ein Executer an der
 Verklemmung. Nicht anfassen, bis seine Benachrichtigung da ist.
@@ -575,6 +575,21 @@ antwortet wieder (HTTP 200). Der Wächter hat richtig gehandelt — erster
 Ausfall, kein Befund behauptet, Wiederholung beim nächsten Lauf.
 
 ## Notiert, aber ausdrücklich NICHT gebaut
+
+- **Keine Abfrage-Zeitgrenzen im Repo, und `test/run.sh:865` startet jede
+  Testdatei ohne Laufzeitgrenze** (Gegenlesung 16.09.2026, von mir am
+  Quelltext bestätigt). Ein hängender Test hält damit das Deploy-Gate auf.
+  Die Testdateien dieses Beitrags bekommen deshalb einen eigenen
+  Laufzeitwächter — die WURZEL bleibt offen, denn eine Grenze in
+  `test/run.sh` trifft alle 325 Dateien und gehört in einen eigenen Beitrag
+  mit eigener Prüfung.
+- **Bewusster Abdeckungsverlust:** mit `P1b` ist die Integration ZWEIER
+  echter `beanspruche()`-Aufrufe über überlappende Spannen entfallen. Das war
+  MEIN Zuschnitt („was nicht bindet, fliegt raus"), kein Fehler des
+  Ausführenden — und es steht im Kopfkommentar der Datei, damit der nächste
+  Leser es weiß. **Regel daraus: wer eine Streichung anordnet, lässt auch
+  prüfen, was mitgeflogen ist.**
+
 
 - **Ein harmloser Wettlauf kann `beanspruche()` mit einem 500er abstürzen
   lassen — VORBESTEHEND, gefunden am 16.09.2026.** Das Klassifizierungs-Lesen
