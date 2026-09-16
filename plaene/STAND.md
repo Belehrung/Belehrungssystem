@@ -22,7 +22,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Beitrag 2a (Datenmodell und Leser) | gemergt `613a2c9`, Deploy 415, live-check grün |
 | Beitrag 2b-1 (Ausmustern auslösbar) | gemergt `eb276d9`, Deploy 416, live-check grün |
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
-| Rechtsstand-Wächter Stufe 1 | Runde 1 gebaut (`dce20c1`), **Runde 2 im Bau** — 15 Befunde, s. `plaene/auftrag-rechtsstand-stufe1-runde2.md` |
+| Rechtsstand-Wächter Stufe 1 | Runden 1+2 gebaut (`ad2b447`), **Runde 3 im Bau** — s. `plaene/auftrag-rechtsstand-stufe1-runde3.md` |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen, s. `plaene/auftrag-geistersperre-nachtrag.md` |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
@@ -757,3 +757,50 @@ nicht mehr in den Auftrag: die Reaktivierungssperre steht an der Route
 benanntem Wächter daneben), und die Cardio/Kraft-Liste zeigt ohnehin alle
 Geräte (`:283`, kein Aktivfilter) samt Ausmustern-Verweis bei
 `!g.ausgemustert_am` (`:344`). Die Lücke betrifft allein die Seilkontrolle.
+
+## Rechtsstand-Wächter Stufe 1 — Stand nach Runde 2 (16.09.2026 abends)
+
+`ad2b447` auf `claude/rechtsstand-normtext-stufe1`. Mein Prüfgang war grün:
+Suite `SUITE_EXIT=0`, `test_feature_rechtsstand.js` 147 PASS / 0 FAIL,
+Dateizahl 325 = 325 (`diff` EXIT 0), Lint EXIT 0, Marker 6, Arbeitsbaum sauber.
+
+**Die beiden Hauptbehebungen tragen, selbst nachgemessen** — inklusive
+Positivkontrolle, dass der Vergleich nicht stumpf geworden ist: ein wirklich
+falscher Hash bleibt `widerspruch`, eine echte Textänderung bewegt den Hash.
+Alle sieben überwachten BGB-Paragrafen sind gegen kosmetische Umformatierung
+stabil (vorher 6 von 7), § 309 misst unabhängig bestätigt 8941 Zeichen.
+
+**Trotzdem nicht mergefähig.** Zwei unabhängige Prüfspuren, Überschneidung
+1 von 7 bzw. 1 von 14 — jede fand fast durchweg Anderes. Vier blockierende
+Befunde, alle von mir selbst gemessen:
+
+1. **Die Behebung aus Runde 2 ist selbst unbewacht.** Die eine Zeile durch
+   `void 0;` ersetzt → EXIT 0, 147 PASS / 0 FAIL, während § 3 ArbSchG in
+   Produktion `66e06ad9…` statt `8eb66bab…` ergäbe, also `widerspruch`. Die
+   Gegenprobe vergleicht die Funktion mit sich selbst.
+2. **Bei vielen Prüfungsfehlern kommt gar nichts an:** 61 Quellen → 61
+   Meldungsgruppen → 14.221 Zeichen gegen Telegrams 4096, ohne Aufteilung im
+   Sendeweg.
+3. **Der neue Statusdatei-Test fasst das echte Dateisystem an**
+   (`mkdtempSync`, `rmSync` rekursiv) — in einer Suite, die auf dem
+   Live-Server Deploy-Gate ist.
+4. **Die von Hand installierte Ops-Kopie liefert kein `xmlText`** → gemessen
+   `pruefungsfehler` für jede gii-Quelle, also 61× rot pro Woche zwischen
+   Merge und `install`, mit einer Meldung, die auf die falsche Ursache zeigt.
+
+**Ein Befund ist beim Nachmessen GEFALLEN** und steht als gefallen im
+Auftrag: der Gruppierungsschlüssel ohne `b.lage` ergibt EXIT 1, 144 PASS /
+3 FAIL — er ist sehr wohl bewacht.
+
+**Nach dem Merge zusätzlich nötig** (aus Runde 1, weiterhin gültig):
+`install -m 755 ops/gymdocu-rechtsstand-watch.js /usr/local/bin/gymdocu-rechtsstand-watch.js`
+auf dem Server. Ohne das läuft der neue Kern gegen die alte Kopie — s.
+Befund 4.
+
+**Offen, nicht in diesem Beitrag:** die 11 betrsichv_2015-Fingerabdrücke
+sind über den Stand-Abgleich bestätigt, aber nicht end-to-end über die
+Pipeline (der Executer meldet eine Anomalie: `curl` auf dieselbe URL geht in
+unter einer Sekunde durch, der Node-Abrufpfad scheitert wiederholt mit
+Zeitüberschreitung — bei über 40 anderen Quellen desselben Pfades am selben
+Tag erfolgreich). Dazu die Superadmin-Anzeige im Hauptserver-Repo, die
+`version: 3` und die fünf neuen Lagen nicht kennt.
