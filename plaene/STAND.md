@@ -26,7 +26,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | noch nicht geschrieben |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
-| Verklemmung `qr_token` (#233) | Auftrag läuft beim Executer, Zweig `claude/qr-zuordnung-sperrreihenfolge` |
+| Verklemmung `qr_token` (#233) | **Runde 2 läuft.** Runde 1 gebaut (`0a3ded7`), Suite grün, aber die Beweise tragen nicht: Gegenlesung 5 Befunde, drei davon von mir nachgemessen und alle drei zutreffend, dazu ein eigener (Datei nicht wiederholbar). Auftrag: `plaene/auftrag-qr-sperrreihenfolge-runde2.md` |
 
 **`/home/user/gymdocu` ist BELEGT** — dort arbeitet ein Executer an der
 Verklemmung. Nicht anfassen, bis seine Benachrichtigung da ist.
