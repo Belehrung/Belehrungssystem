@@ -26,6 +26,8 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen, s. `plaene/auftrag-geistersperre-nachtrag.md` |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
+| Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | geplant, `plaene/auftrag-geraetealter.md` — wartet auf einen freien Arbeitsbaum |
+| Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 
