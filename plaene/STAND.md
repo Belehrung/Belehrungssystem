@@ -1,4 +1,4 @@
-# Stand — 16.09.2026, ~00:00 UTC
+# Stand — 16.09.2026, ~01:40 UTC
 
 Diese Datei ist der Übergabepunkt. Der Takt-Prompt ist beim Bau von
 Beitrag 1 stehengeblieben und verweist für den Plan noch auf den
@@ -32,77 +32,56 @@ und deshalb erst in der CI aufflog.
 `deploy.yml`, richtiger `head_sha`, `success`) und
 `bash tools/live-check.sh`.
 
-## Läuft gerade — Beitrag 2 ist GETEILT
+## Erledigt — Beitrag 2a ist gemergt und ausgeliefert
 
-**2a („Ein ausgemusterter Mangel wird überall RICHTIG GELESEN") ist gebaut,
-gepusht und durchgeprüft; die Nacharbeit aus zwei Prüfspuren läuft.**
+**PR #447, Squash `613a2c9`, Deploy 415 `success`, live-check grün.**
+„Ausmusterung mit offenem Mangel (Teil 2a): Datenmodell und alle Leser".
 
-Zweig `claude/ausmusterung-darstellen-und-lesen`, 18 Dateien, +1122/−30:
-Migration 0057 (CHECK-Erweiterung auf `ausgemustert`, sechs neue
-Zeitstempel-Spalten), `core/retention.js` (COALESCE auf beiden
-Fristspalten), `core/wiederholung.js`, `core/pdf-engine.js` (beide Anhänge,
-beide Zeitraumfilter), `routes/admin/geraete.js`, `routes/sichtpruefung.js`
-(„Bereits ausgemustert"-Karte), sechs neue Testdateien, drei bestehende
-Deploy-Gates fachlich umgestellt.
+Migration 0057 (status-CHECK um `ausgemustert` erweitert, eigene Zeitstempel
+je Tabelle, drei Kopplungsregeln), dazu alle Leser: beide PDF-Anhänge, beide
+Zeitraumfilter, Aufbewahrung, Ausfallzeit, Statistik, Reparaturformular,
+Defekt-Mail und Tablet-Hinweis. Sechs neue Testdateien, vier bestehende
+Wächter fachlich umgestellt, ein gemeinsames Textmodul
+`core/ausmusterung-hinweis.js`.
 
-**Eigener Prüfgang durch:** Diff Datei für Datei gelesen; volle Suite zweimal
-`SUITE_EXIT=0`, 0 FAIL; Dateizahl-Ritual 322 = 322, `diff` EXIT 0;
-`npm run lint` EXIT 0; Marker-Scan 6 (Sollwert). Alle fünf Gegenproben des
-Ausführenden nachgesehen — alle substanziell.
+**Drei Bau-Runden, zwei Gegenlesungen, zwei Prüfspuren.** Die drei teuersten
+Funde waren allesamt Zusicherungen, die nicht rot werden konnten — und zwei
+davon fand erst die ZWEITE Gegenlesung, die es nach unserer Rundenregel fast
+nie gibt:
 
-**Zwei eigene Befunde, bereits behoben und gepusht** (Commit f190a3a,
-Einzelheiten in `plaene/2a-eigene-befunde.md`): eine
-Mandantentrennungs-Zusicherung, die nicht rot werden konnte, und die
-Zeitzonenfalle aus #432 in einer neuen Testdatei. Beide in beide Richtungen
-gemessen.
+- Der Migrationstest prüfte den Schema-Umbau gar nicht (`db.init()` stellt sein
+  Ergebnis her, die Migration nimmt den frühen Ausstieg). Gemessen: gesamter
+  Umbau-Block entfernt → beide Schema-Tests grün. Danach prüfte der neue
+  Abschnitt die drei NEUEN Kopplungsregeln immer noch nicht — gemessen: alle
+  drei auf `CHECK (TRUE)` → 30 PASS / 0 FAIL.
+- Eine der neuen Regeln erzwang wegen SQL-NULL nichts (`aktiv` ist nullable,
+  `aktiv = 0` ergibt bei NULL weder wahr noch falsch). Gemessen mit
+  Positivkontrolle. Dieselbe Lücke beim leeren Zeitstempel.
+- Die Mandantentrennungs-Zusicherung der Aufbewahrung war tautologisch und
+  deckte danach nur eine von drei Stufen ab.
 
-**Zwei unabhängige Prüfspuren gefahren** (`/code-review` und Astra, Lauf in
-`ASTRA-LAEUFE.md`): 9 Astra-Befunde (7 getragen, 2 in der Schwere gefallen),
-12 aus der Claude-Spur. Beide fanden unabhängig denselben schwersten Befund —
-der Migrationstest prüft den Schema-Umbau gar nicht, weil `db.init()` sein
-Ergebnis schon hergestellt hat. Selbst gemessen: den GANZEN DO-Block entfernt,
-beide Schema-Tests bleiben grün (13/0 bzw. 34/0).
+**Abschließend selbst gemessen** (neun Proben, neun wie erwartet): beide
+Lücken zu, bestehende Reparatur- und Freigabewege brechen nicht, der für 2b
+geplante Schreibweg geht durch — auch für ein bereits inaktives Gerät.
 
-**Runde 2 (elf Befunde) ist gebaut, geprüft und gepusht** (cd52422): Migrations-
-Pfad-Test gegen eine literal nachgebaute Vor-0057-Fassung, drei neue
-Kopplungs-CHECKs, Fixturen mit unterscheidbaren Zahlen, Mandantentrennung
-auch für Trockenlauf und Löschlauf, Fristbeginn belegt, Zeitzonen über
-`core/datum.js`, ausgemusterte Vorbefunde in Defekt-Mail und Tablet-Hinweis,
-HTML-Kommentar aus dem `.map()`, Anzeigefeld für die Aufbewahrung, gemeinsames
-Textmodul `core/ausmusterung-hinweis.js`. Suite `SUITE_EXIT=0`, 322 = 322,
-Lint 0, Marker 6 — alles von mir selbst gefahren.
+## Als Nächstes — Beitrag 2b
 
-**Zweite Gegenlesung gefahren** (Pflicht, weil Runde 2 VERHALTEN geändert hat):
-6 Befunde, 5 getragen, 0 gefallen. Zwei davon habe ich selbst am echten
-PostgreSQL gemessen:
+Der Auftragsentwurf liegt als `plaene/auftrag-2b-entwurf.md`. **Alle mit
+`@@2a@@` markierten Stellen sind jetzt auflösbar und VOR dem Absenden neu zu
+messen** — Zeilennummern haben sich durch 2a verschoben.
 
-- **Die drei NEUEN Kopplungsregeln sind auf dem Bestandsdatenbank-Pfad
-  unbewacht.** Alle drei CHECK-Ausdrücke NUR in der Migration auf
-  `CHECK (TRUE)`, `core/db.js` unverändert → `test_feature_ausmusterung_migration.js`
-  **EXIT 0, 30 PASS / 0 FAIL**. Dieselbe Verdeckung wie beim Status-Umbau, eine
-  Ebene tiefer.
-- **Eine der Regeln erzwingt wegen SQL-NULL gar nichts.** `geraete_sperren.aktiv`
-  ist nullable; bei `aktiv=NULL` ergibt der CHECK NULL statt FALSE. Gemessen mit
-  Positivkontrolle: `aktiv=NULL` + Zeitstempel **ANGENOMMEN**, `aktiv=1` +
-  Zeitstempel **abgelehnt 23514**. Dieselbe Klasse ein drittes Mal bei
-  `ausgemustert_am = ''` (ebenfalls ANGENOMMEN). Folge: solche Zeilen fallen aus
-  der Aufbewahrung — genau die Halde, die die Migration verhindern soll.
+Was 2b baut: Bestätigungsseite mit drei Blöcken, serverseitiger Schnappschuss
+mit Inhalts-Fingerabdruck, beide Ausmusterungsrouten, Auswahl ⊆ zulässige
+Kandidaten (serverseitig UND in der Transaktion), Reaktivierungssperre an der
+ROUTE, Rückweg „Offene Mängel abschliessen" für JEDES inaktive Gerät mit
+offenen Mängeln, Kopfkommentar `routes/admin/geraete-typen.js`, zwei
+bestehende Deploy-Gates.
 
-**Runde 3 läuft** (`/tmp/claude-0/pruef/auftrag-2a-runde3.md`, Punkte A–G):
-NULL-sichere und nichtleere Kopplungsregeln, die drei Regeln im
-Migrations-Pfad-Test zusichern (mit `e.constraint`-Namen), exakte
-Protokollmenge beim Markieren, Statistik-Zusicherung auf die richtige
-Tabellenzeile isolieren, Verletzerdiagnose-Behauptung messen statt behaupten,
-dazu zwei eigene Kleinbefunde (verfallendes Diagnose-Argument, doppelter Satz
-auf der Ausmusterungs-Karte).
-
-**Danach erst:** PR, CI, Bot-Kommentare VOR den Check-Runs, Merge, Deploy,
-live-check. Regel 6a gilt — keine PR-Nummer an den Betreiber, bevor das
-alles durch ist.
-
-**2b ist noch nicht begonnen.** Der Auftragsentwurf liegt als
-`plaene/auftrag-2b-entwurf.md`; alle von 2a abhängigen Stellen sind dort mit
-`@@2a@@` markiert und vor dem Absenden neu zu messen.
+**Von der Gegenlesung für 2b bestätigt:** die drei neuen Kopplungsregeln
+verbauen den geplanten Weg nicht, solange `status`/`ausgemustert_am` bzw.
+`aktiv=0`/`ausgemustert_am` im SELBEN UPDATE gesetzt werden (CHECKs greifen
+sofort, nicht erst beim Commit) und beide UPDATEs auf derselben
+Transaktionsverbindung laufen.
 
 ## Danach
 
