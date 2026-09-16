@@ -1,4 +1,14 @@
-# Beitrag 2b — Entwurf des Executer-Auftrags
+# Beitrag 2b — Entwurf des Executer-Auftrags (ÜBERHOLT)
+
+> **ÜBERHOLT für 2b-1, 16.09.2026.** Dieser Entwurf entstand, bevor 2b in
+> zwei Beiträge geteilt wurde. Für den Teil „Ausmusterung auslösbar machen"
+> gilt ausschliesslich `plaene/auftrag-2b1-v3.md` — der Entwurf hier enthält
+> drei Vorgaben, die von Planprüfungen als BLOCKIEREND widerlegt wurden
+> (vorausgewählter Namensblock, unwiderrufliche gewöhnliche Deaktivierung,
+> „Studio-Lock zuerst"). Nicht daraus abschreiben.
+>
+> Noch brauchbar ist allein, was den Rückweg für anderweitig inaktive Geräte
+> betrifft — das ist Beitrag 2b-2 und noch nicht geschrieben.
 
 Stand: 15.09.2026, geschrieben WÄHREND 2a noch lief. Alle Stellen, die von
 2a abhängen, sind mit `@@2a@@` markiert und vor dem Absenden nachzumessen —

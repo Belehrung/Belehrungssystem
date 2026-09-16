@@ -1,9 +1,11 @@
-# Stand — 16.09.2026, ~01:40 UTC
+# Stand — 16.09.2026, ~03:53 UTC
 
 Diese Datei ist der Übergabepunkt. Der Takt-Prompt ist beim Bau von
-Beitrag 1 stehengeblieben und verweist für den Plan noch auf den
-Scratchpad — der ist weg, sobald der Container neu startet. **Hier steht,
-was wirklich gilt.**
+Beitrag 1 stehengeblieben. **Hier steht, was wirklich gilt.**
+
+Alles, was ein Nachfolger braucht, liegt jetzt IM REPO — Plan, Arbeitspapier
+und Befunde. Kein Verweis mehr in den Scratchpad: der ist weg, sobald der
+Container neu startet.
 
 ## Erledigt — Beitrag 1 ist gemergt
 
@@ -64,37 +66,103 @@ nie gibt:
 Lücken zu, bestehende Reparatur- und Freigabewege brechen nicht, der für 2b
 geplante Schreibweg geht durch — auch für ein bereits inaktives Gerät.
 
-## Als Nächstes — Beitrag 2b
+## Läuft gerade — Beitrag 2b-1
 
-Der Auftragsentwurf liegt als `plaene/auftrag-2b-entwurf.md`. **Alle mit
-`@@2a@@` markierten Stellen sind jetzt auflösbar und VOR dem Absenden neu zu
-messen** — Zeilennummern haben sich durch 2a verschoben.
+**2b ist geteilt.** 2b-1 macht das Ausmustern auslösbar; 2b-2 baut den Rückweg
+„Offene Mängel abschliessen" für JEDES anderweitig inaktive Gerät mit offenen
+Mängeln. Getrennt, weil 2b-1 allein schon zwei Planprüfungen gebraucht hat.
 
-Was 2b baut: Bestätigungsseite mit drei Blöcken, serverseitiger Schnappschuss
-mit Inhalts-Fingerabdruck, beide Ausmusterungsrouten, Auswahl ⊆ zulässige
-Kandidaten (serverseitig UND in der Transaktion), Reaktivierungssperre an der
-ROUTE, Rückweg „Offene Mängel abschliessen" für JEDES inaktive Gerät mit
-offenen Mängeln, Kopfkommentar `routes/admin/geraete-typen.js`, zwei
-bestehende Deploy-Gates.
+**Das gültige Arbeitspapier ist `plaene/auftrag-2b1-v3.md`** — im Repo, nicht
+im Scratchpad. Der Executer arbeitet damit in `/home/user/gymdocu` auf dem
+Zweig `claude/ausmusterung-ausloesen`, Stand `master` = `613a2c9`. Solange er
+läuft, fasst niemand sonst diesen Baum an.
 
-**Von der Gegenlesung für 2b bestätigt:** die drei neuen Kopplungsregeln
-verbauen den geplanten Weg nicht, solange `status`/`ausgemustert_am` bzw.
-`aktiv=0`/`ausgemustert_am` im SELBEN UPDATE gesetzt werden (CHECKs greifen
-sofort, nicht erst beim Commit) und beide UPDATEs auf derselben
-Transaktionsverbindung laufen.
+### Warum es drei Fassungen brauchte
 
-## Danach
+Der PLAN lag zweimal gegengelesen vor (18 Befunde, alle getragen). Trotzdem
+wurden die Fassungen 1 und 2 des daraus geschriebenen ARBEITSPAPIERS beide
+abgelehnt — je zehn Befunde, zusammen neun blockierende. **Fast alle standen
+in meinem eigenen Auftragstext, nicht im Plan.**
 
-**Beitrag 2 — die Ausmusterung.** Der Plan liegt jetzt im Repo:
-`plaene/ausmusterung-plan-v4.md`, dazu `plaene/ausmusterung-eigene-
-nachtraege.md`. Zweimal gegengelesen, 18 Befunde, alle selbst nachgemessen,
-alle getragen. Nicht neu planen — umsetzen.
+Fassung 1, vier blockierende — alle vier von mir selbst nachgemessen:
 
-Die drei Entscheidungen des Betreibers stehen im Takt-Prompt und in v4.
-Der Bestätigungsschritt wird gebaut; die Rückfrage dazu ist nicht mehr
-offen (Begründung in v4, Abschnitt 0).
+- Der Block mit den nur über den NAMEN zugeordneten Mängeln war
+  VORAUSGEWÄHLT. Gleichnamige Cardio-/Kraftgeräte sind ausdrücklich erlaubt
+  und der Tagescheck schreibt keine `geraet_id` — zwei Geräte „Laufband",
+  ein Klick, beide Mängel unwiderruflich geschlossen. Im Normalbetrieb.
+- Der Weg für „keine Mängel" setzte den Ausmusterungsstempel bei JEDER
+  Deaktivierung und sperrte zugleich die Reaktivierung — die gewöhnliche
+  Deaktivierung wäre unwiderruflich geworden. Die Betreiber-Entscheidung
+  „ausgemustert ist ausgemustert" galt dem Ausmustern, nicht dem Deaktivieren.
+- „Nimm den Studio-Lock zuerst" hätte einen Verklemmungs-Kreis mit dem
+  Reparaturweg erzeugt.
+- Das Token war nur ans Studio gebunden und liess sich von Gerät A auf
+  Gerät B umhängen.
+
+Fassung 2, fünf blockierende — und sie zeigen ein Muster: **fast alle zielen
+auf den EINEN Abschnitt, den ich zwischen den beiden Prüfungen selbst
+hinzugefügt hatte.** Eine Ergänzung nach der Prüfung ist eine ungeprüfte
+Ergänzung, und sie war der schlechteste Teil des Papiers.
+
+### Die Entscheidung: gestrichen statt verfeinert
+
+Der hinzugefügte Abschnitt verlangte, dass JEDER Erzeuger eines Mangels vorher
+das Gerät prüft. Er ist in Fassung 3 **gestrichen**, aus drei selbst
+gemessenen Gründen:
+
+1. Er serialisiert nicht. `db.tx()` beginnt mit einem blanken `BEGIN`; ein
+   gewöhnlicher SELECT des Erzeugers wird vom Geräte-Lock nicht aufgehalten.
+2. Seine naheliegende Absicherung (ein Zeilen-Lock auf das Gerät) erzeugt eine
+   neue gegenläufige Lock-Kante — und eine einheitliche vorhandene Ordnung, zu
+   der sie „passen" könnte, gibt es nicht: der Reparaturweg nimmt erst die
+   Defektzeile, dann den Studio-Lock, die Seil-Freigabe umgekehrt.
+3. Die Wartung benutzt einen anderen ID-Raum (`geraete_sperren.geraet_id`
+   trägt dort eine `wartung_geraete.id`) — die Prüfung hätte auf die falsche
+   Tabelle gezielt.
+
+**Der Wettlauf bleibt damit ein bekannter, festgehaltener Rest:** zwischen
+dem letzten Lesen und dem Commit kann ein neuer Mangel entstehen. Er macht
+nichts unwiderruflich falsch — er hinterlässt einen offenen Mangel an einem
+ausgemusterten Gerät. Sichtbar macht ihn 2b-2. Dasselbe Verfahren hat zwei
+Tage vorher schon einen ganzen geplanten Beitrag gekostet; das ist Absicht,
+nicht Nachlässigkeit.
+
+**Eine DRITTE Planprüfung habe ich bewusst nicht gefahren**: das Muster war
+benannt und die Behebung eine Streichung, keine Verfeinerung. Eine Runde
+kostet zwischen 7 und 16 $.
+
+### Was Fassung 3 sonst ändert
+
+Abschnitt 0 ist jetzt JE TYP formuliert (Cardio/Kraft bleibt gewöhnlich
+reaktivierbar; die Seilkontrolle behält ihren Löschweg und die 404 für den
+früheren Reaktivierungsweg). Abschnitt 1 definiert DREI Mengen — sicher
+zugeordnet (vorausgewählt, nicht abwählbar), angeboten (nie vorausgewählt),
+bestätigt ausgewählt (muss mindestens einen tatsächlich geschlossenen Mangel
+enthalten, sonst ist es eine gewöhnliche Deaktivierung). Das Token bindet
+Studio, Gerät, Typ, Aktion und Schnappschuss und wird vor dem ersten
+Datenbank-`await` exklusiv verbraucht. Die Kandidatenzeilen werden `FOR
+UPDATE` gesperrt, bevor massgeblich gelesen wird. Jeder unerwartete
+`rowCount` muss WERFEN — `db.tx()` committet jeden normal zurückgegebenen
+Wert, ein `return { fehler: … }` ist kein Abbruch.
+
+## Danach — Beitrag 2b-2
+
+Rückweg „Offene Mängel abschliessen" für jedes inaktive Gerät mit offenen
+Mängeln. Noch nicht geschrieben. Brauchbare Vorarbeit steht im überholten
+`plaene/auftrag-2b-entwurf.md`, aber nur dieser Teil davon.
 
 ## Notiert, aber ausdrücklich NICHT gebaut
+
+- **Der Marker-Sollwert für dieses Repo ist überholt, und die Zählform taugt
+  nicht.** Ich habe „Sollwert 2" weiter mitgeführt; gemessen am 16.09.2026
+  trägt schon `HEAD` DREI Fundstellen (zweimal `CLAUDE.md`, einmal
+  `plaene/auftrag-2b-entwurf.md:113`, dort seit dem 15.09.). Der Scan schlägt
+  seither bei JEDEM Lauf an — also genau die Krankheit, vor der die CLAUDE.md
+  warnt: ein Wächter, der immer meckert, wird abgeschaltet statt gelesen.
+  Eine ZAHL ist hier ohnehin die falsche Zusicherung, weil jede berechtigte
+  Erwähnung in der Dokumentation sie erhöht. Richtig wäre: im QUELLTEXT null
+  Fundstellen, in Dokumenten beliebig viele. Eigener Auftrag — bis dahin gilt
+  für dieses Repo 3, und der Scan ist nur noch ein Hinweis.
 
 - **`UPDATE … RETURNING` im Aufbewahrungs-Schreibweg.** Das Markier-/Lösch-
   Protokoll wird aus ALLEN SELECT-Zeilen gefüllt, nicht aus den tatsächlich
