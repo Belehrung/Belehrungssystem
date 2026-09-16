@@ -11,6 +11,24 @@ Container neu startet.
 hat und was nicht neu aufgerollt wird.** Diese Beschlüsse standen bis zum
 16.09.2026 ausschliesslich im Prompt einer Routine.
 
+## Stand JETZT — das gilt, alles Weitere ist Verlauf
+
+Die Abschnitte unter dieser Übersicht beschreiben, WIE es dazu kam. Wo sie
+einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
+
+| Sache | Stand |
+|---|---|
+| Beitrag 1 (Freigabe nur melden, wenn sie stattfand) | gemergt, `186c0aa` |
+| Beitrag 2a (Datenmodell und Leser) | gemergt `613a2c9`, Deploy 415, live-check grün |
+| Beitrag 2b-1 (Ausmustern auslösbar) | gemergt `eb276d9`, Deploy 416, live-check grün |
+| Die sieben BGB-Einträge | gebaut und geprüft, PR offen, CI läuft |
+| Rechtsstand-Wächter Stufe 1 | Plan gegengelesen, Bauauftrag steht, noch nicht gebaut |
+| Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
+| Beitrag 2b-2 (Rückweg) | noch nicht geschrieben |
+| Doku ins Belehrungssystem-main | PR offen |
+
+**Kein Arbeitsbaum ist belegt**, es läuft kein Executer.
+
 ## Erledigt — Beitrag 1 ist gemergt
 
 **PR #446, Squash `186c0aa`**, „Eine Freigabe wird nur gemeldet und
@@ -70,7 +88,7 @@ nie gibt:
 Lücken zu, bestehende Reparatur- und Freigabewege brechen nicht, der für 2b
 geplante Schreibweg geht durch — auch für ein bereits inaktives Gerät.
 
-## Läuft gerade — Beitrag 2b-1
+## Verlauf — Beitrag 2b-1 (inzwischen gemergt und ausgeliefert)
 
 **2b ist geteilt.** 2b-1 macht das Ausmustern auslösbar; 2b-2 baut den Rückweg
 „Offene Mängel abschliessen" für JEDES anderweitig inaktive Gerät mit offenen
@@ -234,7 +252,18 @@ richtiger Schlussfolgerung.** Am Thread beantwortet und berichtigt.
 3. **Beitrag 2b-2** — Rückweg „Offene Mängel abschliessen" für jedes
    anderweitig inaktive Gerät. Macht den in 2b-1 bewusst offengelassenen
    Wettlauf sichtbar.
-4. **Takt-Prompt eindampfen**, sobald `plaene/ENTSCHIEDEN.md` im
+4. **Der `qr_token`-Verklemmung an die Wurzel** (Karte #233). Am 16.09.2026
+   ZUM DRITTEN MAL eingetreten und diesmal an einem eigenen PR: CI-Lauf 1136,
+   `test_feature_qr_zuordnung.js` Fall (e1), `40P01` auf demselben Statement
+   wie am 13.09. Zweimal davor hat es einen Deploy angehalten (Läufe 180 und
+   390 auf `skipped`). **Es ist dieselbe Klasse, die 2b-1 heute geschlossen
+   hat:** ein Mehrzeilen-Schreiber ohne kanonische Sperrreihenfolge —
+   `beanspruche()` (`core/qr-zuordnung.js:440`) schreibt mit EINEM UPDATE über
+   eine Nummernspanne und überlässt die Sperrreihenfolge dem Planer. Die
+   Behebung ist naheliegend (erst `ORDER BY nummer FOR UPDATE`, dann
+   schreiben), aber NICHT gebaut und NICHT gemessen; die Gegenprobe muss den
+   `40P01` erst wirklich erzeugen. Kein Wiederholen bei `40P01`.
+5. **Takt-Prompt eindampfen**, sobald `plaene/ENTSCHIEDEN.md` im
    Standardzweig steht.
 
 ## Erledigt — Orbit4-Recherche (Betreiberfrage 16.09.2026)
@@ -508,9 +537,9 @@ wirklich „nicht berührt".
 Nr. 212 war der einzige ernsthafte Kandidat — „Förderung der Reparatur von
 Waren" hätte § 309 (Klauselverbote) treffen können. Hat es nicht.
 
-**Offen:** die sieben BGB-Einträge in `core/rechtsstand.js` auf
-`Art. 6 G v. 23.7.2026 I Nr. 226` mit `bestaetigt_am: '2026-09-16'`
-nachziehen. Wartet, weil im GymDocu-Baum ein Executer arbeitet.
+**Erledigt:** die sieben BGB-Einträge in `core/rechtsstand.js` tragen
+`Art. 6 G v. 23.7.2026 I Nr. 226` und `bestaetigt_am: '2026-09-16'`; Zweig
+`claude/rechtsstand-bgb-nr226`, geprüft, PR offen.
 
 **Daraus wird ein eigener Beitrag** (Betreiber-Entscheidung 16.09.2026:
 „ja plane es als eigenen schritt"). Der Plan liegt als

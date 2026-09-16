@@ -12,8 +12,11 @@ Prüfung nach; alle zehn selbst am Quelltext nachgemessen, alle zehn tragen
 2. **Mittlerer Weg:** eigener Grund „ausgemustert", ausdrücklich KEINE
    Reparatur. Es darf nirgends als Reparatur erscheinen.
 3. **Keine Reaktivierung** danach.
-4. **ANNAHME, nicht beantwortet:** ein Bestätigungsschritt. Beide
-   Prüfrunden haben ihn ausdrücklich als tragend bezeichnet.
+4. **Ein Bestätigungsschritt — ENTSCHIEDEN am 16.09.2026, nicht mehr offen.**
+   Hier stand bis dahin „ANNAHME, nicht beantwortet"; beide Prüfrunden hatten
+   ihn ausdrücklich als tragend bezeichnet, und der Betreiber hat ihn danach
+   entschieden (`plaene/ENTSCHIEDEN.md`). Er wird gebaut, die Rückfrage dazu
+   wird nicht erneut gestellt.
 
 ## Was gestrichen wurde und warum
 
