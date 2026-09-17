@@ -24,7 +24,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
 | Rechtsstand-Wächter Stufe 1 | **gemergt `c1b052f`, Deploy 419 `success`, live-check grün** — `install` der Ops-Kopie am 17.09.2026 vom Betreiber erledigt und belegt (`grep -c "lieferung: 'xml'"` -> 2). **ACHTUNG: der Sammelbeitrag ändert die ops-Datei erneut** — nach seinem Merge muss der `install` WIEDERHOLT werden, sonst meldet der Riegel eine Versionsabweichung, die es gibt |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
-| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–4 gebaut und von mir abgenommen (`eddd42d`, Suite grün, 74/0, fünf eigene Gegenproben). ZWEITE Gegenlesung durch: Astra 3 + Claude-Review 11 Befunde, **null Überschneidung**. **Runde 5 abgenommen** (`9c1a894`, Suite grün, 87/0, vier eigene Gegenproben). Gegenlesung fand die **VIERTE** Blindstelle in vier Runden (ein Leerzeichen im SQL). **Runde 6 abgenommen** (`a392bd6`, Suite grün, 88/0, drei eigene Gegenproben). Zweite Prüfspur fand die **FÜNFTE** Blindstelle, dreifach am Inventar (`pg_try_…`, GROSSSCHREIBUNG, `/*`-Präfix) plus Pfeilfunktion am Fenster — alle vier selbst gemessen, alle 88/0. **Runde 7 im Bau: synthetische Fixtur für die Stufe ERKENNEN.** Noch KEIN PR |
+| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–4 gebaut und von mir abgenommen (`eddd42d`, Suite grün, 74/0, fünf eigene Gegenproben). ZWEITE Gegenlesung durch: Astra 3 + Claude-Review 11 Befunde, **null Überschneidung**. **Runde 5 abgenommen** (`9c1a894`, Suite grün, 87/0, vier eigene Gegenproben). Gegenlesung fand die **VIERTE** Blindstelle in vier Runden (ein Leerzeichen im SQL). **Runde 6 abgenommen** (`a392bd6`, Suite grün, 88/0, drei eigene Gegenproben). Zweite Prüfspur fand die **FÜNFTE** Blindstelle, dreifach am Inventar (`pg_try_…`, GROSSSCHREIBUNG, `/*`-Präfix) plus Pfeilfunktion am Fenster — alle vier selbst gemessen, alle 88/0. **Runde 7 abgenommen** (`4a0862b`, Suite grün, 138/0, fünf eigene Gegenproben). Der Ausführende ordnet selbst ein: die Fixtur VERSCHIEBT die Klasse, sie schliesst sie nicht (D16) — das nehme ich an, **keine weitere Verfeinerung**. Gegenlesung fand vier gemessene Fehler, **Runde 8 behebt sie, dann raus**. Noch KEIN PR |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
@@ -1817,3 +1817,61 @@ dass auch die Fixtur die Klasse nur verschiebt, hören wir mit dem Verfeinern au
 und schreiben die Grenze hin, statt eine achte Runde zu drehen.
 
 Auftrag: `plaene/auftrag-geistersperre-runde7.md`.
+
+## Geistersperre: Runde 7 abgenommen, Verfeinerung BEENDET, Runde 8 räumt vier Fehler ab (17.09.2026, ~19:00 UTC)
+
+Stand `4a0862b`. Eigene Abnahme: Suite `SUITE_EXIT=0`, 0 FAIL-Zeilen,
+**327 = 327**, eigene Datei **138 PASS / 0 FAIL**, Lint EXIT 0, Marker 6,
+Zweig nicht hinter master.
+
+Meine Gegenproben — die drei Fälle, die in Runde 6 noch blind waren, sind jetzt
+alle rot:
+
+    fünfter Nehmer als `pg_try_advisory_xact_lock`    135 PASS / 3 FAIL  (war 88/0)
+    derselbe in GROSSSCHREIBUNG                       135 PASS / 3 FAIL  (war 88/0)
+    derselbe mit `/* … */`-Präfixzeile                135 PASS / 3 FAIL  (war 88/0)
+    Nachbar als Pfeilfunktion                         137 PASS / 1 FAIL  (war 88/0)
+    `i`-Flag aus dem Erkenner entfernt                136 PASS / 2 FAIL
+
+Die letzte ist die wichtigste: die **Fixtur zeigt namentlich** auf
+„grossschreibung" und „gemischte-schreibung". Sie ist eine echte
+Positivkontrolle, keine Dekoration.
+
+### Die Verfeinerung ist beendet — und zwar auf Ansage des Ausführenden
+
+Er hat die Erlaubnis genutzt, die im Auftrag stand, und schreibt als D16 hin:
+**K1 verschiebt die Klasse, es schliesst sie nicht.** Fixtur und Erkenner haben
+denselben Autor; sie prüft den Katalog, nicht seine Vollständigkeit. Die
+verbleibende Lücke in die gefährliche Richtung nennt er selbst (die
+Regex-Heuristik kann Treffer verschlucken). Er schlägt **keine weitere
+Verfeinerung** vor. Das nehme ich an.
+
+Die einzige echte Referenz von aussen für das ERKENNEN wäre die Datenbank
+(Anweisungsprotokoll während der Suite gegen das Inventar, D15) — als Vorschlag
+notiert, **nicht gebaut, nicht zugesagt**.
+
+Er hat mir zudem wieder mit einer Messung widersprochen: mein K2-Vorschlag
+(„Treffer nur, wenn der Bezeichner in einem String steht", zeilenweise gezählt)
+hatte an der Fixtur **3 Abweichungen von 47 — eine in die gefährliche
+Richtung**. Nicht übernommen; die Zeichenmaske hat 0.
+
+### Runde 8: vier gemessene Fehler, drei davon Einzeiler
+
+Die Gegenlesung zu Runde 7 (5,00 $, der billigste Lauf bisher, vier von vier
+Befunden tragen) fand:
+
+    Regex-Zweig des Maskierers GANZ abgeschaltet   138 PASS / 0 FAIL — der
+      Fixturfall dafür enthält gar keinen zusammenhängenden Bezeichner
+    `\` + CRLF-Fortsetzung im String               0 Treffer (mit LF: 1)
+    `//`-Kommentar durch U+2028 beendet            0 Treffer
+    `t.q({text:…})` gegen `db.q({text:…})`         DERSELBE Inventareintrag —
+      die Bindung Transaktion gegen POOL ist für diese Form weg
+
+Alle vier von mir nachgemessen, zwei davon direkt am Helfer ohne Datenbank —
+eine ausgelagerte Funktion in Produktionsform macht nicht nur den Test wertvoll,
+sondern auch die Nachprüfung eines Befunds billig.
+
+**Runde 8 behebt diese vier und behauptet ausdrücklich NICHT, dass die Klasse
+danach geschlossen ist.** D16 bleibt stehen. Danach: PR.
+
+Auftrag: `plaene/auftrag-geistersperre-runde8.md`.
