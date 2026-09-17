@@ -175,10 +175,32 @@ den Server verlässt, nicht ein Einbruch in den laufenden Betrieb.
    BEVOR die Daten den Speicher erreichen, und hängen nicht an einer Zusage
    des Hosters.
 
-   **Noch offen und hier NICHT geprüft:** ob zu dem Cloud-Server-Vertrag ein
-   IONOS-Backup gebucht und aktiv ist. Wäre es das, läge dort eine weitere
-   Kopie personenbezogener Daten beim Hoster — und Stufe A beträfe nicht nur
-   die eigenen Sicherungen.
+   **BEANTWORTET am 17.09.2026 (Betreiber): das IONOS-Backup-Paket ist GEBUCHT
+   UND AKTIV.** Damit ändert sich die Einschätzung von Stufe A erheblich, und
+   zwar zum Besseren: Nach der Dokumentation des Anbieters werden die
+   Sicherungen dort standardmäßig **serverseitig mit AES-256** verschlüsselt
+   und in deutschen, nach ISO 27001 zertifizierten Rechenzentren gespeichert;
+   zusätzlich lässt sich eine **clientseitige** AES-256-Verschlüsselung mit
+   eigenem Passwort aktivieren.
+
+   Was daraus folgt — und was NICHT:
+
+   - Die Kopie, die den Server verlässt, ist also **nicht** ungeschützt. Der
+     schlimmste Fall aus Stufe A (eine abhandengekommene Sicherung liegt im
+     Klartext) ist damit weitgehend abgedeckt.
+   - **Es bleibt trotzdem etwas übrig, und zwar zweierlei:** die eigenen
+     Datenbank-Auszüge und das fortlaufende Archiv liegen daneben
+     UNVERSCHLÜSSELT auf der Platte (gemessen: kein Verschlüsselungsschritt in
+     `ops/`), ebenso die PDF-Dateien. Solange die Plattenverschlüsselung
+     ungeklärt ist, ist das die verbliebene Lücke — nicht die Sicherung.
+   - **Nicht gemessen, sondern Anbieterangabe.** Ob die clientseitige
+     Verschlüsselung eingeschaltet ist, und was genau im Sicherungsumfang
+     liegt, steht in der Verwaltung des Vertrags, nicht im Code. Das gehört
+     nachgesehen, bevor es jemand als Zusage weitergibt.
+
+   Die Empfehlungsreihenfolge unten ändert sich dadurch: Stufe A verliert ihre
+   Dringlichkeit für die AUSGELAGERTE Sicherung und behält sie für die
+   LOKALEN Kopien.
 
 ## Empfehlung
 
