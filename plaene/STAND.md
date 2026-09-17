@@ -24,7 +24,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
 | Rechtsstand-Wächter Stufe 1 | **gemergt `c1b052f`, Deploy 419 `success`, live-check grün** — `install` der Ops-Kopie am 17.09.2026 vom Betreiber erledigt und belegt (`grep -c "lieferung: 'xml'"` -> 2). **ACHTUNG: der Sammelbeitrag ändert die ops-Datei erneut** — nach seinem Merge muss der `install` WIEDERHOLT werden, sonst meldet der Riegel eine Versionsabweichung, die es gibt |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
-| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–3 gebaut und abgenommen (`d7e3176`), Gegenlesung durch (4 Befunde), **Runde 4 im Bau**. Noch KEIN PR |
+| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–4 gebaut und von mir abgenommen (`eddd42d`, Suite grün, 74/0, fünf eigene Gegenproben). ZWEITE Gegenlesung durch: Astra 3 + Claude-Review 11 Befunde, **null Überschneidung**. **Runde 5 im Bau** (7 Bauten, 8 Dokumentationen). Noch KEIN PR |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
@@ -1613,3 +1613,77 @@ findet → dritter Weg zur selben Geistersperre. Wird in Runde 4 gebaut.
 **Auflage an Runde 4:** kein Kommentar und kein Testkopf darf behaupten, die
 Geistersperre sei erledigt. Was gilt: drei Eintrittspunkte geschlossen, zwei
 Restwege benannt und datiert.
+
+## Geistersperre: Runde 4 abgenommen, zwei Prüfspuren, NULL Überschneidung — Runde 5 im Bau (17.09.2026, ~15:20 UTC)
+
+Zweig `claude/geistersperre-rennen`, Stand `eddd42d`. Runde 4 schliesst den
+DRITTEN Eintrittspunkt (die Nachprüfung warf die frische Gerätezeile weg, der
+INSERT schrieb den Namen aus der Vorprüfung) und macht den statischen Anker
+auf `ausmusterung.js` an die BEDINGUNG gebunden.
+
+**Eigene Abnahme, jede Zahl selbst gemessen:**
+
+    volle Suite            SUITE_EXIT=0, keine FAIL-Zeile
+    Dateizahl-Ritual       327 = 327, diff EXIT 0
+    eigene Datei           74 PASS / 0 FAIL, EXIT 0
+    npm run lint           EXIT 0
+    Marker                 nur docs/offene-befunde-31-08-2026.md
+    Rücknahmen             md5 dreimal identisch, git status leer
+
+    A  find->some + alter Name          70 PASS /  4 FAIL   (echte Löschroute
+                                                             löscht dann wirklich)
+    B  SEILKONTROLLE -> CARDIO          72 PASS /  2 FAIL   (Runde-3-Fassung: 58/0)
+    C  derselbe Block nur umformatiert  74 PASS /  0 FAIL   (Gegenrichtung)
+    D  $1::bigint vor dem Tagesschlüssel
+       in der LÖSCHroute                73 PASS /  1 FAIL
+
+D ist mein eigener Zusatz an einer Route, die der Ausführende nicht gemessen
+hat: dort sieht NUR die statische Spur die Umgehung, die dynamische deckt
+diese Route nicht ab. Damit ist Abschnitt 7 nicht bloss Redundanz.
+
+### Zwei Prüfspuren, null Überschneidung — zum zweiten Mal gemessen
+
+Astra (nur lesend, 11,04 $) drei Befunde, die Claude-Review (ausführend) elf.
+**Kein einziger kam in beiden vor** — genauso wie am 13.09.2026. Die Ursache
+ist dieselbe und sie ist die eigentliche Auskunft: Astras Befunde lauten
+„diese Zusicherung prüft einen anderen Geltungsbereich, als ihr Text
+verspricht", Claudes lauten „ich habe mutiert, es blieb grün".
+
+**Die zwei, die weh tun, weil sie unsere eigene Arbeit aus Runde 4 treffen —
+beide von mir selbst nachgemessen:**
+
+    fünfter Nehmer in routes/module.js, Studio-Lock ZUERST (also der
+    40P01-Kreis), nur mit EINFACHEN Anführungszeichen   ->  74 PASS / 0 FAIL
+    ':umbenennen' am Schlüssel der echten Umbenennen-Route -> 74 PASS / 0 FAIL
+
+Die erste Zusicherung sagt wörtlich „in keiner Schreibweise" und sieht genau
+eine. Runde 5 baut deshalb ein INVENTAR aller `pg_advisory_xact_lock`-Aufrufe
+in `routes/` gegen eine literal hingeschriebene Erwartung, statt ein besseres
+Muster zu suchen — ein Muster kann man immer noch einmal umschreiben.
+
+Dazu gemessen: das verankerte „Seil-Zweig"-Fenster ist **847 Zeilen** lang und
+enthält fünf fremde Funktionen; `const jetzt = jetztISO();` steht **4×** in der
+Datei und wird über die GANZE Datei geprüft. Ein Handler-Fenster (4392–4815,
+424 Zeilen) enthält jede der sechs verankerten Zeichenketten genau einmal.
+
+### Eine Schwere zurückgewiesen, mit Zahl
+
+Astra stufte `app.listen(0)` (bindet gemessen an `0.0.0.0`) samt erfundener
+Admin-Sitzung als „blockierend für den Einsatz als Live-Deploy-Gate" ein. Die
+Tatsache stimmt, die Einstufung für DIESEN Beitrag nicht: **411 Fundstellen in
+132 Dateien**, mindestens zehn Testdateien mounten `routes/admin`. Der Beitrag
+fügt eine Instanz zu 411 hinzu. Seine eigenen zwei werden gebunden, die Klasse
+bleibt datiert offen.
+
+### Der gewichtigste Befund geht NICHT in diesen Beitrag
+
+Der Seil-Tagescheck (`routes/module.js`) hat DIESELBE check-then-act-Lücke,
+die dieser Beitrag für den Nachtrag schliesst: `ladeAktiveSeilGeraete()` bei
+:2628 ausserhalb der Transaktion, Tx ab :2859, INSERT bei :2982 mit Geräte-Id
+UND Gerätename aus jener Vorlesung, keine Nachprüfung. Vierter Eintrittspunkt,
+vorbestehend. Selbst am Quelltext nachgelesen, nicht dynamisch gemessen.
+Folge für den Text: unser eigener Kommentar bei `sichtpruefung.js:4630` ist zu
+weit gefasst — der Tagesschlüssel serialisiert die SCHREIBER, nicht den
+Lesezeitpunkt.
+
+Auftrag für Runde 5: `plaene/auftrag-geistersperre-runde5.md`.
