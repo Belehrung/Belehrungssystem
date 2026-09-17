@@ -1035,3 +1035,45 @@ Mutationsskript hängt `// GEGENPROBE-DEFEKT` an — mitten in einem
 SQL-Template-Literal ist das kein Kommentar, PostgreSQL kennt `//` nicht.
 `node --check` merkt nichts, weil der JS-String gültig bleibt. Marker dort
 als `--`-Kommentar setzen.
+
+### Gerätealter — Runde 4 abgenommen, PR offen, Runde 5 wegen eines P1 (17.09.2026, ~06:05 UTC)
+
+Runde 4: Suite **SUITE_EXIT=0**, 137 PASS / 0 FAIL, Dateizahl **326 = 326**,
+Lint EXIT 0, Marker 6. Beide Gegenproben selbst nachgefahren:
+
+    studio_id aus der namensgleich-Abfrage entfernt
+        VOR  Runde 4:  EXIT 0, 117 PASS / 0 FAIL   (blind)
+        NACH Runde 4:  EXIT 1, 136 PASS / 1 FAIL   (Diagnose druckt die Fremdzeile mit)
+    inbetriebnahme_am aus dem Fingerabdruck entfernt
+                       EXIT 1, 135 PASS / 2 FAIL
+
+Vier von fünf CI-Prüfungen grün. **Der Review-Bot meldet 4/5 mit einem P1
+und dem Satz „should not merge"** — und er trifft genau den Punkt, den ich
+in Runde 3 ausgesondert hatte.
+
+**Meine Aussonderung stand auf einer ungemessenen Tatsachenbehauptung.** Ich
+hatte geschrieben: „die Sperren eines ANDEREN Geräts sind nicht die Mängel
+dieses Geräts." Nachgemessen trägt das nicht:
+
+- `routes/admin/geraete.js:563-571` misst Sperren mit demselben Namen und
+  anderer `geraet_id` ausdrücklich als vorbestehende Inkonsistenz, im
+  Kommentar steht der Betreiberauftrag „will ich wissen, ob es sie gibt".
+- `core/seilgeraete.js#aktiveNamensSperre` verknüpft für die Seilkontrolle
+  über den NAMEN, nicht über die ID.
+- Ein Seilgerät lässt sich löschen (`POST /geraete/loeschen/:id`) und unter
+  demselben Namen neu anlegen; die Sperrzeilen zeigen dann auf eine ID, die
+  es nicht mehr gibt.
+
+Runde 5 baut deshalb die namensgleich-Gruppe auch für die Seilkontrolle
+(`geraet_name` gleich, `geraet_id <> $2`) und **vereinheitlicht den
+Nullsatz für beide Typen** auf „keine Mängel gefunden (gesucht über
+Gerätekennung und Gerätenamen)". Die Sonderbehandlung der Seilkontrolle
+entfällt samt ihrer widerlegten Begründung; der offene Punkt in
+`docs/offene-befunde-31-08-2026.md` bekommt einen Nachtrag „doch gebaut,
+Begründung war falsch" statt gelöscht zu werden.
+
+**Der zweite Bot-Befund (P2) trifft zu, sein Patch nicht:** ein Audit-Eintrag
+entsteht auch, wenn derselbe Wert erneut gespeichert wird. Sein Vorschlag
+liefert bei Gleichheit `{ treffer: false }` — das ist im Aufrufer der Zweig
+„Gerät nicht gefunden", der Benutzer bekäme eine Fehlerseite für eine
+erfolgreiche Speicherung. Übernommen wird der Befund, nicht der Patch.
