@@ -28,7 +28,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
-| Rechtsstand-Sammelbeitrag (7 offene Punkte) | Runde 4 abgenommen (`72d5635`), zweite Gegenlesung ohne blockierenden Befund, **Suite läuft über meine letzten zwei Änderungen**. Noch KEIN PR |
+| Rechtsstand-Sammelbeitrag (7 offene Punkte) | **gemergt `17026a1` (#453), Deploy 421 `success`, live-check grün** — OFFEN beim Betreiber: `install` der Ops-Kopie, Gegenprobe `grep -c fuelleUnbestaetigtZeilen` (0 vorher, 7 nachher) |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 
@@ -1450,3 +1450,45 @@ auch bestätigen kann.
 Bot-Kommentare VOR den Checks, CI, Merge, Deploy, live-check. Danach der
 `install` der Ops-Kopie mit der Gegenprobe auf `fuelleUnbestaetigtZeilen`
 (0 vorher, 7 nachher) — s. Abschnitt darüber.
+
+## Sammelbeitrag AUSGELIEFERT (17.09.2026, ~12:30 UTC)
+
+Gemergt als `17026a1` (#453), **Deploy-Lauf 421 `success`** mit dem richtigen
+`head_sha`, `live-check` grün (die zwei ℹ sind die bekannten, aus dieser
+Umgebung nicht messbaren Punkte: Zertifikatslaufzeit und interner
+Health-Endpunkt). Merge-Botschaft zurückgelesen, sie endet auf der
+Schlusszeile — kein Markup hineingeraten.
+
+Der Bot ging nach dem zweiten Cross-Check von **4/5 auf 5/5**. Beide seiner
+Befunde waren vorher schon von den eigenen Prüfspuren gefunden; einer wurde
+gebaut, einer mit Messung und Begründung beantwortet.
+
+**OFFEN BEIM BETREIBER — Ops-Kopie neu installieren.** Der Befehl und die
+tragfähige Gegenprobe stehen im Abschnitt „Entschieden und vorbereitet"
+weiter oben: maßgeblich ist `grep -c fuelleUnbestaetigtZeilen` auf der
+installierten Datei, **0 vorher, 7 nachher**. Die alte Prüfung auf
+`lieferung: 'xml'` taugt NICHT mehr (2 Treffer auf beiden Ständen) und hätte
+den Erfolg auch ohne install bestätigt.
+
+### Was dieser Beitrag über die Arbeitsweise sagt
+
+Vier Bau-Runden, und die ersten drei brachten je einen eigenen blockierenden
+Fehler mit — zweimal steckte er in MEINER Vorgabe, nicht in der Umsetzung:
+
+- Runde 1 baute Punkt 6 (gemeinsame Konstante) genau so, wie ich ihn
+  beauftragt hatte. Er hätte den Versionsriegel umgekehrt.
+- Runde 2 behob die Budget-Verdrängung in der Richtung, die ich gemessen
+  hatte — und spiegelte sie in der Gegenrichtung, die im Auftrag nicht stand.
+- Runde 3 stützte sich auf eine Herleitung von mir („der zweite Zug liefert
+  eine Obermenge"), die der Ausführende als falsch nachgewiesen hat.
+
+Die Lehre ist nicht „mehr Runden", sondern: **die Gegenrichtung gehört in den
+Auftrag.** Wer nur die gemessene Richtung beauftragt, bekommt eine Behebung,
+die genau dort aufhört.
+
+Zweitens: der teuerste Fund des ganzen Beitrags kam in Runde 4 und war
+STILL — `<standtyp lang="de">` liess `standAusXml()` den falschen Block
+liefern, ohne Fehler, direkt in den Änderungsvergleich. Die drei lauten
+Geschwister waren in Runde 2 gefunden worden. **Nach jeder Härtung eines
+Musters gehören die Geschwistermuster derselben Funktion mitgezählt**, nicht
+erst wenn eine Prüfspur darauf zeigt.
