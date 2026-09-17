@@ -26,14 +26,16 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen, s. `plaene/auftrag-geistersperre-nachtrag.md` |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
-| Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | geplant, `plaene/auftrag-geraetealter.md` — wartet auf einen freien Arbeitsbaum |
+| Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **im Bau** seit 17.09.2026 ~02:05 UTC, Zweig `claude/geraetealter` |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 
-**`/home/user/gymdocu` ist FREI** — der Executer am Rechtsstand-Wächter hat
-Runde 5 gemeldet (17.09.2026, `764d0ba`) und wurde seither nicht fortgesetzt.
-Nächster Auftrag dort: `plaene/auftrag-geraetealter.md`.
+**`/home/user/gymdocu` ist BELEGT** — seit 17.09.2026 ~02:05 UTC arbeitet
+dort ein Executer am Gerätealter (`plaene/auftrag-geraetealter.md`, Zweig
+`claude/geraetealter`, Basis `c1b052f`). Nicht anfassen, bis seine
+Benachrichtigung da ist; eine Benachrichtigung ist verbraucht, sobald ich ihn
+fortgesetzt habe.
 
 ## Erledigt — Beitrag 1 ist gemergt
 
