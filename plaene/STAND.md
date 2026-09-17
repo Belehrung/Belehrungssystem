@@ -24,7 +24,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
 | Rechtsstand-Wächter Stufe 1 | **gemergt `c1b052f`, Deploy 419 `success`, live-check grün** — `install` der Ops-Kopie am 17.09.2026 vom Betreiber erledigt und belegt (`grep -c "lieferung: 'xml'"` -> 2). **ACHTUNG: der Sammelbeitrag ändert die ops-Datei erneut** — nach seinem Merge muss der `install` WIEDERHOLT werden, sonst meldet der Riegel eine Versionsabweichung, die es gibt |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
-| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen, s. `plaene/auftrag-geistersperre-nachtrag.md` |
+| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runde 1 gebaut und abgenommen (`e169480`), **Runde 2 im Bau**: zweiter Eintrittspunkt, s. unten. Noch KEIN PR |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
@@ -1492,3 +1492,65 @@ liefern, ohne Fehler, direkt in den Änderungsvergleich. Die drei lauten
 Geschwister waren in Runde 2 gefunden worden. **Nach jeder Härtung eines
 Musters gehören die Geschwistermuster derselben Funktion mitgezählt**, nicht
 erst wenn eine Prüfspur darauf zeigt.
+
+## Geistersperre-Rennen: Runde 1 abgenommen, Runde 2 im Bau (17.09.2026, ~13:45 UTC)
+
+Zweig `claude/geistersperre-rennen` (`e169480`, Basis `17026a1`). Gebaut: der
+Advisory-Lock als erste Anweisung der Seil-Transaktion im Mangel-Nachtrag plus
+eine Nachprüfung des Aktivzustands INNERHALB der Transaktion. Kein Rückweg,
+keine Anzeigeänderung — wie beauftragt.
+
+**Der Ausführende hat meinem Auftrag an einem tragenden Punkt WIDERSPROCHEN,
+und er hatte recht.** Ich hatte vorgegeben: sind die Schlüssel der drei
+bestehenden Lock-Nehmer identisch, zieh die Bildung in einen Helfer. Selbst
+nachgelesen:
+
+    routes/admin/geraete.js (Löschen :354, Umbenennen :475)
+        heute = Serverdatum Europe/Berlin, jetzt.slice(0, 10)
+    routes/module.js (Tagescheck :2870)
+        heute = Serverdatum — ABER wird durch das CLIENT-Datum ersetzt,
+        sobald client_erstellt_am im Fenster -3h … +24h liegt (:2563-2569)
+
+Ein Helfer hätte drei Stellen vereinheitlicht, die verschiedene Dinge
+berechnen. Er hat gemessen statt befolgt.
+
+**Meine eigenen Nachmessungen** (Einzeldatei gegen frische `gymdocu_test`):
+
+    Basislauf:            29 PASS /  0 FAIL, EXIT 0
+    ohne Lock:            20 PASS /  9 FAIL, EXIT 1   (7 KERNFALL-Zusicherungen)
+    ohne Nachprüfung:     23 PASS /  6 FAIL, EXIT 1   (Blockade 1/1b/1c GRÜN)
+    Rücknahme:            md5 identisch, diff EXIT 0, Marker 6, git status leer
+
+Alle drei decken sich mit seinem Bericht. Dass bei „ohne Nachprüfung" nur die
+Ergebnis-Zusicherungen fallen und die Blockade-Zusicherungen stehen bleiben,
+belegt sauber getrennt: Lock und Nachprüfung tragen unabhängig voneinander.
+
+Volle Suite: `SUITE_EXIT=0`, neue Datei 29 PASS / 0 FAIL, Dateizahl-Ritual
+**327 = 327** (`diff` EXIT 0), Lint EXIT 0.
+
+Ebenfalls selbst gemessen: `jetztISO()` (`core/datum.js:62`) ist buchstäblich
+derselbe Ausdruck wie in `geraete.js`, im selben Prozess zeichengleich. Der
+Lock greift also wirklich.
+
+**Warum noch kein PR — die Klasse ist NICHT zu.** Der Ausführende hat einen
+ZWEITEN Eintrittspunkt gefunden und benannt: der Seil-Rückfallzweig der
+Ausmusterung (`routes/admin/ausmusterung.js`, „GEWÖHNLICHE Deaktivierung")
+nimmt nur den Studio-Lock, nicht den Tagesschlüssel. Über ihn entsteht
+dieselbe Geistersperre weiter. Nach meinem Auftrag hat er ihn korrekt nur
+benannt; nach der Hausregel („Wer EINEN Eintrittspunkt absichert, hat nicht
+die Eintrittspunkte abgesichert") bleibt der Beitrag damit hinter seinem
+eigenen Zweck. Runde 2 baut seinen eigenen Vorschlag — Studio-Lock ausdrücklich
+nach dem Tagesschlüssel und vor der Nachprüfung — **mit der Auflage, die
+Sperrreihenfolge zu MESSEN statt herzuleiten**, einschliesslich der Frage, ob
+eine Verklemmung entstehen kann.
+
+### Zwei Befunde, die NICHT in diesen Beitrag gehören
+
+1. **Offline-Nachzügler des Tagesschecks.** Kommt eine Seilkontrolle mit
+   gestrigem `client_erstellt_am` nach, sperrt sie auf
+   `seilkontrolle:<studio>:<gestern>` und serialisiert sich gegen NIEMANDEN
+   auf `<heute>`. Das ist ein Loch in der Behebung vom 22.08.2026 auf der
+   Tagescheck-Seite, nicht in diesem Beitrag. Geht als datierter offener
+   Befund nach `docs/offene-befunde-31-08-2026.md`.
+2. **`routes/wartung.js:1305`** (eigener Lock `wartung-sperre:<studio>:<id>`)
+   ist nicht untersucht. Wird ebenda festgehalten statt offen gelassen.
