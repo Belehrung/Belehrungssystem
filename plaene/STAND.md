@@ -24,7 +24,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
 | Rechtsstand-Wächter Stufe 1 | **gemergt `c1b052f`, Deploy 419 `success`, live-check grün** — `install` der Ops-Kopie am 17.09.2026 vom Betreiber erledigt und belegt (`grep -c "lieferung: 'xml'"` -> 2). **ACHTUNG: der Sammelbeitrag ändert die ops-Datei erneut** — nach seinem Merge muss der `install` WIEDERHOLT werden, sonst meldet der Riegel eine Versionsabweichung, die es gibt |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
-| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–4 gebaut und von mir abgenommen (`eddd42d`, Suite grün, 74/0, fünf eigene Gegenproben). ZWEITE Gegenlesung durch: Astra 3 + Claude-Review 11 Befunde, **null Überschneidung**. **Runde 5 abgenommen** (`9c1a894`, Suite grün, 87/0, vier eigene Gegenproben). Gegenlesung fand die **VIERTE** Blindstelle in vier Runden (ein Leerzeichen im SQL). **Runde 6 gebaut** (`a392bd6`, „Inventar am Bezeichner, Produktivbaum, Fenstergrenze gebunden"), seine Abschlusspruefung laeuft — meine Abnahme steht aus. Noch KEIN PR |
+| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–4 gebaut und von mir abgenommen (`eddd42d`, Suite grün, 74/0, fünf eigene Gegenproben). ZWEITE Gegenlesung durch: Astra 3 + Claude-Review 11 Befunde, **null Überschneidung**. **Runde 5 abgenommen** (`9c1a894`, Suite grün, 87/0, vier eigene Gegenproben). Gegenlesung fand die **VIERTE** Blindstelle in vier Runden (ein Leerzeichen im SQL). **Runde 6 abgenommen** (`a392bd6`, Suite grün, 88/0, drei eigene Gegenproben). Zweite Prüfspur fand die **FÜNFTE** Blindstelle, dreifach am Inventar (`pg_try_…`, GROSSSCHREIBUNG, `/*`-Präfix) plus Pfeilfunktion am Fenster — alle vier selbst gemessen, alle 88/0. **Runde 7 im Bau: synthetische Fixtur für die Stufe ERKENNEN.** Noch KEIN PR |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
@@ -1767,3 +1767,53 @@ Danach meine Abnahme, und dabei besonders die drei Gegenproben, die ich auf
 Dazu die Gegenrichtung (unveränderter Baum grün) und die Frage, ob die
 Ausweitung auf den Produktivbaum das Inventar unpflegbar gross macht — dafür
 hatte ich eine ZAHL verlangt, keine stille Entscheidung.
+
+## Geistersperre: Runde 6 abgenommen — FÜNFTE Blindstelle, und die Diagnose, die zählt (17.09.2026, ~18:10 UTC)
+
+Stand `a392bd6`. Eigene Abnahme grün: Suite `SUITE_EXIT=0`, 0 FAIL-Zeilen,
+**327 = 327**, eigene Datei **88 PASS / 0 FAIL**, Lint EXIT 0, Marker 6,
+vier Rücknahmen md5-identisch. Die drei Runde-6-Gegenproben tragen alle
+(85/3, 85/3, 87/1) — sie waren auf `9c1a894` noch 87/0 blind.
+
+Der Executer hat mir dabei zweimal widersprochen, beide Male zu Recht: es sind
+**neun** Lock-Stellen ausserhalb `routes/`, nicht acht (`generateMonthlyPDFs.js`
+fehlte in meiner Zählung), und der naheliegende gierige Blockkommentar-Abzug
+frisst Code (18 statt 24 Einträge, sechs Locks verschluckt) — er hat
+stattdessen zeilenbasiert abgezogen.
+
+### Die Reihe, vollständig — und warum sie nicht abreisst
+
+    Runde 3  Anker band Anzahl/Position statt der BEDINGUNG      58 / 0
+    Runde 4  Muster suchte DOPPELTE Anführungszeichen            74 / 0
+    Runde 4  Umbenennen-Schlüssel nirgends verankert             74 / 0
+    Runde 5  Inventar suchte `pg_advisory_xact_lock(` WÖRTLICH   87 / 0
+    Runde 6  `pg_try_advisory_xact_lock` (andere Familie)        88 / 0
+    Runde 6  GROSSSCHREIBUNG (SQL ist case-insensitiv)           88 / 0
+    Runde 6  Lock-Zeile mit `/* … */`-Präfix                     88 / 0
+    Runde 6  Nachbar als PFEILFUNKTION (Fenster 429 -> 527)      88 / 0
+
+Alle acht von mir selbst gemessen. Nebenbei gezählt: derselbe Kommentarabzug
+wirft heute schon **20 echte CSS-Codezeilen** aus dem Produktivbaum.
+
+### Die Diagnose
+
+    auflisten/lesen   git ls-files + gescannte Menge    Referenz von AUSSEN  ✓
+    sammeln           literale 24er-Liste               Referenz von AUSSEN  ✓
+    ERKENNEN          Regex + Kommentarabzug + Fenster  KEINE Referenz       ✗
+
+Jede der fünf Blindstellen sitzt auf der Stufe ERKENNEN. Solange dort nur
+handgeführte Einzelmutationen stehen, verschiebt jede Runde die Lücke eine
+Ebene tiefer, statt die Klasse zu schliessen — genau das Muster, das die
+CLAUDE.md für den Scanner-Regress beschreibt.
+
+Runde 7 gibt dem ERKENNEN eine Referenz von aussen: eine **synthetische Fixtur**
+ausserhalb des gescannten Baums, Katalog von Schreibweisen, unabhängig von Hand
+geschriebene Erwartung, Positiv- UND Negativfälle; der Erkenner wird ausgelagert
+und in der PRODUKTIONSFORM aufgerufen. `_shared` bekommt damit die
+Positivkontrolle, die es heute nirgends hat.
+
+**Ausdrücklich erlaubtes Ergebnis:** wenn der Ausführende zu dem Schluss kommt,
+dass auch die Fixtur die Klasse nur verschiebt, hören wir mit dem Verfeinern auf
+und schreiben die Grenze hin, statt eine achte Runde zu drehen.
+
+Auftrag: `plaene/auftrag-geistersperre-runde7.md`.
