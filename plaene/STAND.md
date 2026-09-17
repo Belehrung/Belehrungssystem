@@ -24,7 +24,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
 | Rechtsstand-Wächter Stufe 1 | **gemergt `c1b052f`, Deploy 419 `success`, live-check grün** — `install` der Ops-Kopie am 17.09.2026 vom Betreiber erledigt und belegt (`grep -c "lieferung: 'xml'"` -> 2). **ACHTUNG: der Sammelbeitrag ändert die ops-Datei erneut** — nach seinem Merge muss der `install` WIEDERHOLT werden, sonst meldet der Riegel eine Versionsabweichung, die es gibt |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
-| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–4 gebaut und von mir abgenommen (`eddd42d`, Suite grün, 74/0, fünf eigene Gegenproben). ZWEITE Gegenlesung durch: Astra 3 + Claude-Review 11 Befunde, **null Überschneidung**. **Runde 5 abgenommen** (`9c1a894`, Suite grün, 87/0, vier eigene Gegenproben). Gegenlesung fand die **VIERTE** Blindstelle in vier Runden (ein Leerzeichen im SQL). **Runde 6 abgenommen** (`a392bd6`, Suite grün, 88/0, drei eigene Gegenproben). Zweite Prüfspur fand die **FÜNFTE** Blindstelle, dreifach am Inventar (`pg_try_…`, GROSSSCHREIBUNG, `/*`-Präfix) plus Pfeilfunktion am Fenster — alle vier selbst gemessen, alle 88/0. **Runde 7 abgenommen** (`4a0862b`, Suite grün, 138/0, fünf eigene Gegenproben). Der Ausführende ordnet selbst ein: die Fixtur VERSCHIEBT die Klasse, sie schliesst sie nicht (D16) — das nehme ich an, **keine weitere Verfeinerung**. Gegenlesung fand vier gemessene Fehler, **Runde 8 behebt sie, dann raus**. Noch KEIN PR |
+| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–4 gebaut und von mir abgenommen (`eddd42d`, Suite grün, 74/0, fünf eigene Gegenproben). ZWEITE Gegenlesung durch: Astra 3 + Claude-Review 11 Befunde, **null Überschneidung**. **Runde 5 abgenommen** (`9c1a894`, Suite grün, 87/0, vier eigene Gegenproben). Gegenlesung fand die **VIERTE** Blindstelle in vier Runden (ein Leerzeichen im SQL). **Runde 6 abgenommen** (`a392bd6`, Suite grün, 88/0, drei eigene Gegenproben). Zweite Prüfspur fand die **FÜNFTE** Blindstelle, dreifach am Inventar (`pg_try_…`, GROSSSCHREIBUNG, `/*`-Präfix) plus Pfeilfunktion am Fenster — alle vier selbst gemessen, alle 88/0. **Runde 7 abgenommen** (`4a0862b`, Suite grün, 138/0, fünf eigene Gegenproben). Der Ausführende ordnet selbst ein: die Fixtur VERSCHIEBT die Klasse, sie schliesst sie nicht (D16) — das nehme ich an, **keine weitere Verfeinerung**. Runde 8 (vier gemessene Fehler) abgenommen: Suite grün, **145/0**, 327 = 327, Lint 0. **PR steht, CI laeuft** — noch nicht gemeldet (Regel 6a) |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
@@ -1875,3 +1875,40 @@ sondern auch die Nachprüfung eines Befunds billig.
 danach geschlossen ist.** D16 bleibt stehen. Danach: PR.
 
 Auftrag: `plaene/auftrag-geistersperre-runde8.md`.
+
+## Geistersperre: Runde 8 abgenommen, PR offen, CI läuft (17.09.2026, ~19:20 UTC)
+
+Stand `4332055`. Eigene Abnahme: Suite `SUITE_EXIT=0`, 0 FAIL-Zeilen,
+**327 = 327**, eigene Datei **145 PASS / 0 FAIL**, Lint EXIT 0, Marker 6,
+Zweig nicht hinter master, Baum sauber.
+
+Die drei Helfer-Fehler direkt nachgemessen, ohne Datenbank:
+
+    `\` + CRLF-Fortsetzung im String      1 Treffer  (vorher 0)
+    `//`-Kommentar durch U+2028 beendet   1 Treffer  (vorher 0)
+    `t.q({text:…})` gegen `db.q({text:…})` UNTERSCHEIDBAR (vorher gleich)
+
+### Der Ausführende hat mir ein viertes Mal widersprochen — und wieder zu Recht
+
+Mein F1-Vorschlag war, den wirkungslosen Regex-Negativfall auf
+`/pg_advisory_xact_lock/g` umzustellen. Er hat gemessen, dass das NICHT trägt:
+mit abgeschaltetem Regex-Zweig ist der Bezeichner dann Code-maskiert, und Code
+zählt nie — der Fall bliebe grün. Empfindlich ist erst ein Anführungszeichen
+VOR dem Bezeichner (`/['"]pg_advisory_xact_lock/g`), weil es ohne den Zweig
+einen Pseudo-String öffnet.
+
+Selbst nachgemessen, beide Richtungen:
+
+    mit Regex-Zweig     meine Form 0, seine Form 0
+    ohne Regex-Zweig    meine Form 0 (unempfindlich), seine Form 1 (faengt ihn)
+
+Er hat beide eingetragen — meinen als ehrlich unempfindlichen Negativfall,
+seinen als den, der den Zweig bewacht.
+
+Ebenfalls von ihm gemessen, bevor er irgendeine Liste anfasste: die neue
+Klammertiefen-Logik lässt die 26 Inventareinträge **zeichengleich** (26 = 26,
+`diff` EXIT 0). Die Nebenwirkung, mit der ich gerechnet hatte, trat nicht ein.
+
+**Nächste Schritte:** Bot-Kommentare (bisher leer), CI-Checks gegen den
+aktuellen Zweigkopf, Merge, Deploy-Lauf, live-check. Erst danach Meldung an den
+Betreiber (Regel 6a).
