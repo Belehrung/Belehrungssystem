@@ -2081,3 +2081,22 @@ Nicht gemessen und deshalb nicht behauptet: `npm audit` und die Upload-Wege
 
 Sequenziell arbeiten, nicht parallel: die Suite sperrt global
 (`/tmp/gymdocu-suite.lock`) und alle Läufe teilen sich dieselbe Datenbank.
+
+### Takt 17.09.2026, 21:40 UTC — nichts getan ausser Stand nachziehen
+
+Der Executer zu `plaene/auftrag-verschluesselung-stufe0.md` läuft noch; keine
+Benachrichtigung. Fortschritt ohne Eingriff geprüft (nur Metadaten gelesen, NICHT
+im Arbeitsbaum gearbeitet): Zweig `claude/verschluesselung-stufe0` existiert,
+zuletzt `eded15d` „neue Testdateien registrieren und Waechter nachziehen",
+Arbeitsbaum sauber. Er ist also über die Zusicherungen hinaus und beim
+Registrieren in `test/run.sh`.
+
+Zur Einordnung für den, der hier nach einem Neustart weiterliest: die
+Transkriptdatei des Agenten (`tasks/<id>.output`) hatte um 21:40 noch die
+Größe vom Start (127 Bytes) — **das ist KEIN Zeichen für einen toten Agenten.**
+Sie wird offenbar erst am Ende geschrieben. Wer daraus auf Stillstand schliesst,
+bricht einen laufenden Auftrag ab. Der belastbare Beleg ist der Zweigstand,
+nicht die Transkriptdatei — und sie wird ohnehin nicht gelesen.
+
+Nächster Schritt unverändert: Prüf-Ritual über den Diff, dann
+`plaene/auftrag-haertung-p1-p2.md`.
