@@ -26,7 +26,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen, s. `plaene/auftrag-geistersperre-nachtrag.md` |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
-| Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | Runde 4 abgenommen, PR offen, **Runde 5 im Bau** — P1 des Review-Bots (»should not merge«), s. unten |
+| Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | Runde 5 gebaut (`e3f0887`), Bot jetzt **5/5**, CI durch — **meine Abnahme läuft** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
 | Rechtsstand-Sammelbeitrag (7 offene Punkte) | Auftrag geschrieben, `plaene/auftrag-rechtsstand-sammelbeitrag.md` — wartet auf einen freien Arbeitsbaum |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
@@ -1077,3 +1077,29 @@ entsteht auch, wenn derselbe Wert erneut gespeichert wird. Sein Vorschlag
 liefert bei Gleichheit `{ treffer: false }` — das ist im Aufrufer der Zweig
 „Gerät nicht gefunden", der Benutzer bekäme eine Fehlerseite für eine
 erfolgreiche Speicherung. Übernommen wird der Befund, nicht der Patch.
+
+### Gerätealter — Runde 5 gebaut, Bot 5/5 (17.09.2026, ~06:45 UTC)
+
+Der Ausführende hat die Geistersperren-Gruppe für die Seilkontrolle gebaut
+und den Nullsatz für beide Typen vereinheitlicht. Der Kopfkommentar
+widerruft dabei ausdrücklich meine eigene, ungemessene Begründung aus
+Runde 3 — mit drei gemessenen Belegen, darunter einem, den ich nicht
+genannt hatte: `core/seilgeraete.js#seilNamenskollision` erlaubt einen
+Namen erneut, sobald das alte Gerät nicht mehr aktiv ist. Ein Seilgerät
+kann also unter demselben Namen mit frischer ID neu entstehen.
+
+**Er hat meiner Vorgabe mit einer Messung widersprochen, und der
+Widerspruch trägt** (selbst nachgelesen): Ich hatte verlangt, die Seite
+müsse bei einer Geistersperre die namensgleichen beziffern. Für eine
+AKTIVE Geistersperre stimmt das nicht — `routes/admin/ausmusterung.js:306`
+weist diesen Fall schon vorher mit 409 ab (A2-Prüfung aus Beitrag 2b-1),
+die Mängelzeile wird nie gerendert. Erst bei einer FREIGEGEBENEN Sperre
+(`aktiv = 0`, genau der Fall aus dem Bot-Befund „Nach Freigabe einer
+solchen Sperre") greift der bestehende Riegel nicht mehr, und dort
+schliesst die neue Gruppe die Lücke. Er hat beide Zustände getrennt
+geprüft, statt meinen angenommenen einen zu bauen.
+
+Der Review-Bot steht jetzt auf **5/5** („no actionable new defect or
+outstanding previous finding remains"). Meine eigene Suite und die Messung
+des freigegebenen Falls am gerenderten HTML laufen noch — erst danach wird
+gemergt.
