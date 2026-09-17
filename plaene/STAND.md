@@ -1361,3 +1361,38 @@ auf `pm2`, `nginx`, `/var/www`.
 von `baueMeldung()` in der Testdatei (ein vierter Umbau wäre riskanter als der
 Befund) und ein zu streichender Punkt: „unquotierter Attributwert mit `/` am
 Ende" ist gar kein gültiges XML.
+
+## Entschieden und vorbereitet (17.09.2026, ~11:15 UTC)
+
+**Betreiber-Entscheidung: `ruhig` bekommt KEINEN garantierten Platz in der
+Telegram-Meldung.** Wörtlich „so lassen". Die Messreihe (ruhige Einträge
+verschwinden namentlich, sobald rote Funde da sind) bleibt als festgehaltener
+Befund stehen; die Meldung nennt Anzahl und Art in der Übersicht und darunter
+„0 von N ausführlich gezeigt". Nicht erneut fragen, nicht nachträglich bauen.
+
+**Nach dem Merge des Sammelbeitrags fällig — Ops-Kopie auf dem Server neu
+installieren.** Der Befehl ist derselbe wie am Vormittag (Quelle ist der
+ausgelieferte Produktions-Arbeitsbaum, Ziel `/usr/local/bin/`); er steht
+wörtlich in `ops/gymdocu-rechtsstand-watch.js` im Kopfkommentar und wird dem
+Betreiber am Ende noch einmal in den Chat gegeben.
+
+Erst NACH erfolgreichem Deploy ausführen, sonst installiert man den alten
+Stand ein zweites Mal.
+
+**Die Gegenprobe dazu ist eine ANDERE als beim letzten Mal, und das ist der
+Punkt.** Am Vormittag hat `grep -c "lieferung: 'xml'"` den Stufe-1-Stand
+belegt. Für diesen Beitrag taugt dieselbe Zeile NICHT mehr — gemessen:
+
+    master (= was heute auf dem Server liegt):  lieferung: 'xml'          -> 2
+    Zweig 9905887:                              lieferung: 'xml'          -> 2
+    master:                                     fuelleUnbestaetigtZeilen  -> 0
+    Zweig 9905887:                              fuelleUnbestaetigtZeilen  -> 7
+
+Der alte Marker steht auf BEIDEN Ständen und kann den install deshalb nicht
+mehr bestätigen — eine Prüfung, die nicht fehlschlagen kann. Maßgeblich ist:
+
+    grep -c fuelleUnbestaetigtZeilen /usr/local/bin/gymdocu-rechtsstand-watch.js
+
+Erwartet: **0 vor dem install, 7 danach.** Die 0 vorher ist die
+Positivkontrolle — kommt dort schon eine Zahl > 0, war der install entweder
+schon gelaufen oder man misst die falsche Datei.
