@@ -28,7 +28,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
-| Rechtsstand-Sammelbeitrag (7 offene Punkte) | Runde 3 gebaut (`bc448d9`) + eigene Korrektur (`9905887`), Suite grün, **Prüfspuren laufen** — noch KEIN PR |
+| Rechtsstand-Sammelbeitrag (7 offene Punkte) | Beide Prüfspuren durch (15 Befunde), **Runde 4 im Bau** — fünf blockierende, alle selbst nachgemessen, s. unten. Noch KEIN PR |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 
@@ -1304,3 +1304,60 @@ fehlten. Gleichheit hielt, das Sieb war falsch. Mit dem vorgeschriebenen
 Muster sind es 326.
 
 **Offen:** Gegenlesung läuft, danach `/code-review`, dann erst PR.
+
+## Beide Prüfspuren durch, Runde 4 im Bau (17.09.2026, ~10:40 UTC)
+
+Gegenlesung (3 Befunde, 2 getragen, 1 gefallen — Zeile in `ASTRA-LAEUFE.md`)
+und `/code-review` (12 Befunde) gelaufen. **Die Überschneidungsfrage ist für
+diesen Lauf NICHT auswertbar, und zwar durch meinen eigenen Fehler:** ich habe
+der Claude-Spur drei Befunde im Auftrag ausdrücklich ausgeschlossen („bereits
+gemessen, nicht erneut melden"). Damit liefen die Spuren nicht unabhängig. Die
+Reihe 1/7 → 5/7 → 0/6 bekommt keinen vierten Datenpunkt.
+
+**Fünf blockierende Befunde, alle von mir selbst nachgemessen:**
+
+1. `standAusXml()` härtet `<metadaten>` gegen Attribute, die beiden INNEREN
+   Muster derselben Funktion bleiben ungeschützt:
+
+       <standkommentar lang="de">                  -> null
+       <standtyp lang="de">, zwei <standangabe>    -> "ALTER HINWEIS"
+       (je ohne Attribut, Kontrolle)               -> "NEUGEFASST 2026"
+
+   Der erste Fall trifft ALLE gii-xml-Quellen auf einmal, der zweite ist STILL
+   und geht direkt in den geaendert/unveraendert-Vergleich.
+
+2. Den Bereichsriegel VOLLSTÄNDIG entfernen (`const bereich = String(xmlText)`)
+   lässt **EXIT 0, 295 PASS / 0 FAIL** stehen — die Blockierend-3-Fixtur
+   bewacht nicht, wofür sie gebaut wurde. Beide Fixturen tragen im ersten Block
+   eine `standtyp='Stand'`-Angabe, der Unterschied tritt gar nicht auf.
+
+3. `continue` -> `break` in `fuelleUnbestaetigtZeilen()` (ops:878): **EXIT 0,
+   295 PASS / 0 FAIL**. Alle Unerreichbar-Fixturen haben gleich lange Zeilen,
+   die beiden Fassungen sind für sie beobachtungsgleich.
+
+4. **Mein eigener Kommentar ist falsch.** Er sagt, der Zwei-Zug lasse keine
+   Kategorie verdrängen. Gemessen:
+
+       rot=15 ruhig= 5 unb= 3 | ruhig 0/5 | 3960/4096
+       rot=15 ruhig= 5 unb= 0 | ruhig 0/5 | 4025/4096
+       rot= 6 ruhig= 5 unb=55 | ruhig 0/5 | 4019/4096
+       rot=10 ruhig=10 unb=10 | ruhig 0/10| 3672/4096   <- 424 Zeichen frei
+       rot= 0 ruhig= 5 unb= 3 | ruhig 5/5 | 2229/4096
+
+   `ruhig` hat keinen Boden. Eine Reservierung dafür wird AUSDRÜCKLICH NICHT
+   gebaut — ob die Kategorie „kein Handlungsbedarf" einen garantierten Platz
+   braucht, entscheidet der Betreiber, nicht ich.
+
+5. Ein Wurf im Argument von `ok()` (`test_feature_rechtsstand.js:2539`) reisst
+   die ganze Datei ab, statt EIN FAIL zu melden — aus „ein Fehler" wird
+   „unbekannt". Die Nachbarzusicherung acht Zeilen tiefer macht es richtig.
+
+**Ein Befund trägt NICHT und wird nicht gebaut:** drei `fs.readFileSync` auf
+eigenen Repo-Quelltext als angeblicher Verstoss gegen „Tests fassen kein echtes
+Dateisystem an". Gemessen: **92 der 326 Testdateien** tun das; die Regel zielt
+auf `pm2`, `nginx`, `/var/www`.
+
+**Vier weitere festgehalten statt gebaut**, darunter die doppelte Nachbildung
+von `baueMeldung()` in der Testdatei (ein vierter Umbau wäre riskanter als der
+Befund) und ein zu streichender Punkt: „unquotierter Attributwert mit `/` am
+Ende" ist gar kein gültiges XML.
