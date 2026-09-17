@@ -28,6 +28,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | Runde 1 gebaut (`1f97954`), **ein blockierender Befund** — Runde 2 im Bau, s. unten |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
+| Rechtsstand-Sammelbeitrag (7 offene Punkte) | Auftrag geschrieben, `plaene/auftrag-rechtsstand-sammelbeitrag.md` — wartet auf einen freien Arbeitsbaum |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 
