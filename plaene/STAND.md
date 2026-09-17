@@ -24,7 +24,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
 | Rechtsstand-Wächter Stufe 1 | **gemergt `c1b052f`, Deploy 419 `success`, live-check grün** — `install` der Ops-Kopie am 17.09.2026 vom Betreiber erledigt und belegt (`grep -c "lieferung: 'xml'"` -> 2). **ACHTUNG: der Sammelbeitrag ändert die ops-Datei erneut** — nach seinem Merge muss der `install` WIEDERHOLT werden, sonst meldet der Riegel eine Versionsabweichung, die es gibt |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
-| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–4 gebaut und von mir abgenommen (`eddd42d`, Suite grün, 74/0, fünf eigene Gegenproben). ZWEITE Gegenlesung durch: Astra 3 + Claude-Review 11 Befunde, **null Überschneidung**. **Runde 5 gebaut** (`d4eb9ba`, 7 Bauten + 8 Dokumentationen), seine Abschluss-Suite laeuft — meine eigene Abnahme steht noch aus. Noch KEIN PR |
+| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–4 gebaut und von mir abgenommen (`eddd42d`, Suite grün, 74/0, fünf eigene Gegenproben). ZWEITE Gegenlesung durch: Astra 3 + Claude-Review 11 Befunde, **null Überschneidung**. **Runde 5 abgenommen** (`9c1a894`, Suite grün, 87/0, vier eigene Gegenproben). Gegenlesung fand die **VIERTE** Blindstelle in vier Runden (ein Leerzeichen im SQL). **Runde 6 im Bau** (A1–A3). Noch KEIN PR |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
@@ -1706,3 +1706,46 @@ ein VPS Linux L+ (dort die gymdocu-Domains) und ein Cloud Server. Die
 dokumentierte Verschlüsselung ruhender Daten bei IONOS gilt für eine ANDERE
 Produktlinie (IONOS CLOUD Block Storage) — die Frage bleibt offen, jetzt mit
 dem genauen Wortlaut für die Rückfrage im Verschlüsselungspapier.
+
+## Geistersperre: Runde 5 abgenommen — und die VIERTE Blindstelle in vier Runden (17.09.2026, ~16:20 UTC)
+
+Stand `9c1a894`. Meine eigene Abnahme: Suite `SUITE_EXIT=0`, 0 FAIL-Zeilen,
+Dateizahl-Ritual **327 = 327**, eigene Datei **87 PASS / 0 FAIL**, Lint EXIT 0,
+Marker 6, vier Rücknahmen md5-identisch.
+
+Meine vier Gegenproben zu Runde 5, je einzeln — alle vier tragen:
+
+    fünfter Nehmer, EINFACHE Anführungszeichen   84 PASS / 3 FAIL  (Runde 4: 74/0)
+    ':umbenennen' am Umbenennen-Schlüssel        85 PASS / 2 FAIL  (Runde 4: 74/0)
+    jetztISO() NUR im Handler durch UTC ersetzt  86 PASS / 1 FAIL
+    Scan-Verzeichnis auf routes/admin verengt    81 PASS / 6 FAIL
+
+### Die Reihe, die diesen Beitrag eigentlich beschreibt
+
+    Runde 3   Anker band Anzahl und Position, nicht die BEDINGUNG   58 / 0
+    Runde 4   Muster suchte DOPPELTE Anführungszeichen              74 / 0
+    Runde 4   Umbenennen-Schlüssel nirgends verankert               74 / 0
+    Runde 5   Inventar sucht `pg_advisory_xact_lock(` WÖRTLICH      87 / 0
+
+Der Brief an die Gegenlesung hat diesmal nicht „prüfe den Diff" gefragt,
+sondern die eigene Fehlergeschichte als Frage formuliert: *ist er zum VIERTEN
+Mal blind, nur eine Ebene tiefer?* Die Antwort war ja, und sie ist von mir
+nachgemessen:
+
+- **A1 (blockierend):** ein fünfter Lock-Nehmer in der verklemmenden Ordnung,
+  geschrieben als `pg_advisory_xact_lock (hashtext($1))` — EIN Leerzeichen
+  mehr, gültiges SQL — ergibt **87 PASS / 0 FAIL**. Das „Inventar statt
+  Mustersuche" fängt selbst mit einer Mustersuche an.
+- **A3:** EIN führendes Leerzeichen vor `async function ladeOffeneHinweise(`
+  verschiebt die Fenstergrenze des Handler-Ankers um 97 Zeilen in eine fremde
+  Funktion — **87 PASS / 0 FAIL**. Behebung braucht keinen Parser: das rohe
+  Fenster hat heute gemessen GENAU EINEN Funktionskopf.
+- **A2:** das Inventar deckt `routes/`, der Produktivkommentar behauptet „kein
+  Bestandsweg". Ausserhalb liegen **acht** Lock-Stellen, darunter
+  `core/integritaet.js:65` — die dieser Beitrag selbst aufruft.
+
+Runde 6 baut A1–A3, dokumentiert D9–D12. Auftrag:
+`plaene/auftrag-geistersperre-runde6.md`.
+
+**Keine Abbruchvorhersage.** Was ich zusage, ist WAS ich noch baue — nur
+blockierende Blindstellen —, nicht dass nichts mehr kommt.
