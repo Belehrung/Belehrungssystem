@@ -26,7 +26,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen, s. `plaene/auftrag-geistersperre-nachtrag.md` |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
-| Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | Runde 2 abgenommen (`b5fca2f`), **Runde 3 im Bau** — zweiter blockierender Befund derselben Klasse, s. unten |
+| Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | Runde 3 abgenommen (`39abb48`), **Runde 4 im Bau — die letzte**, zwei blockierende Befunde aus der Gegenlesung, s. unten |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
 | Rechtsstand-Sammelbeitrag (7 offene Punkte) | Auftrag geschrieben, `plaene/auftrag-rechtsstand-sammelbeitrag.md` — wartet auf einen freien Arbeitsbaum |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
@@ -992,3 +992,46 @@ mit gleichem Namen und anderer `geraet_id`, `routes/admin/geraete.js:568`)
 — aber die Sperren eines ANDEREN Geräts sind nicht die Mängel dieses
 Geräts. Ein namensbasierter Zweitzweig für Seilkontrolle wäre ein eigener
 Beitrag; festgehalten statt gebaut.
+
+### Gerätealter — Runde 3 abgenommen, Gegenlesung gelaufen, Runde 4 ist die letzte (17.09.2026, ~05:45 UTC)
+
+Runde 3 (`39abb48`): Suite **SUITE_EXIT=0**, 117 PASS / 0 FAIL, Dateizahl
+**326 = 326**, Lint EXIT 0, Marker 6. Eigene Messungen am gerenderten HTML:
+offener Mitglieds-Hinweis wird bei Cardio UND Seilkontrolle genannt,
+Positivkontrolle ohne Hinweis sagt weiter „keine Mängel gefunden"; `1e3` →
+400, `2015-02-31` → 400, `2016-02-29` → 302. Kalenderprüfung fünfzehn Fälle,
+FEHLER=0.
+
+**Die Gegenlesung (10,30 $) fand SECHS Befunde, Überschneidung mit der
+Claude-Spur NULL von 6** — die Zeile steht fertig in `ASTRA-LAEUFE.md`.
+Bemerkenswert im Vergleich: beim Rechtsstand-Wächter am selben Tag lag die
+Überschneidung bei 5 von 7. Dieselbe Methode, gegensätzliches Ergebnis; die
+These „jede Spur findet Anderes" hängt am Material, nicht am Prüfer.
+
+Zwei davon blockierend, beide von mir selbst nachgemessen:
+
+- **Falsche Sicherheitszusicherung.** Die Zusicherung verspricht wörtlich
+  „studio_id-Filter wirkt wirklich, beide Gruppen" — die Fremddaten in
+  Studio B tragen aber alle eine gesetzte `geraet_id`, während die
+  namensgleich-Gruppe `geraet_id IS NULL` verlangt. Gemessen, beide
+  Richtungen: `studio_id` aus der Abfrage entfernt → **Suite EXIT 0, 117
+  PASS / 0 FAIL**, während ein eigens angelegter Freitext-Mangel aus Studio
+  B bei Studio A mitgezählt wird (`LECK=true`); zurückgenommen `LECK=false`.
+- **Die neuen Anzeigewerte umgehen den Änderungsriegel.** `baueAnsicht()`
+  nimmt nur `{id, typ, name, standort, seriennummer}`, der POST-SELECT lädt
+  `inbetriebnahme_am` gar nicht, `vergleicheAnsichten()` vergleicht drei
+  Gerätefelder. Korrigiert jemand die Inbetriebnahme, während ein zweiter
+  das Formular offen hat, schweigt der Riegel — bei einer UNWIDERRUFLICHEN
+  Entscheidung.
+
+**Ausdrücklich NICHT in den Fingerabdruck aufgenommen: die drei Mängel- und
+Hinweiszahlen.** Sie sind lebendig; ein neu eintreffender Mitglieds-Hinweis
+würde die Ausmusterung blockieren — gegen die Betreiber-Entscheidung vom
+15.09.2026, dass ein Gerät AUCH MIT offenem Mangel ausgemustert werden
+können muss.
+
+**Eigener Fehler bei der Gegenprobe, gemessen statt übersehen:** das
+Mutationsskript hängt `// GEGENPROBE-DEFEKT` an — mitten in einem
+SQL-Template-Literal ist das kein Kommentar, PostgreSQL kennt `//` nicht.
+`node --check` merkt nichts, weil der JS-String gültig bleibt. Marker dort
+als `--`-Kommentar setzen.
