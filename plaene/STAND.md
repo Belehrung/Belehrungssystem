@@ -2152,7 +2152,12 @@ genügt kein Codelesen — die sind gemessen worden und wollen gemessen
 zurückkommen. Die Gegenprobe zu B2 liegt als Rezept im Nacharbeitsauftrag
 (Verzeichnis-Symlink nach aussen, scharfer Lauf, Datei ausserhalb muss bleiben).
 
-### 18.09.2026, 00:30 UTC — Nacharbeit geliefert, eigene Prüfung läuft
+### 17.09.2026, 23:2x UTC — Nacharbeit geliefert, eigene Prüfung läuft
+
+(Diese Überschrift trug zuerst das Datum 18.09.2026, 00:30 UTC — falsch, der
+Eintrag entstand am 17.09. vor Mitternacht. Berichtigt, statt stehengelassen:
+in einer Datei, deren ganzer Zweck die zeitliche Einordnung ist, ist ein
+falsches Datum kein Schönheitsfehler.)
 
 Executer hat die Nacharbeit abgeschlossen (`d3c9e57`, gepusht). Alle fünf
 blockierenden und zwölf kleineren Punkte bearbeitet. **Noch nicht freigegeben.**
@@ -2195,3 +2200,13 @@ Läuft gerade: eigene volle Suite, und eine ZWEITE Gegenlesung — die Regel
 verlangt sie, weil diese Behebungen VERHALTEN geändert haben statt nur
 Zusicherungen zu ergänzen. Ihr Brief fragt gezielt: wirken zwei Behebungen
 gegeneinander?
+
+### Takt 17.09.2026, 23:40 UTC — nichts getan ausser Stand nachziehen
+
+Eigene volle Suite läuft (101 von 330 Marken), zweite Gegenlesung läuft.
+Kein Eingriff in den Arbeitsbaum.
+
+Offen und schon entschieden, sobald beides zurück ist: eine letzte kleine Runde
+an den Executer mit (a) meinem Wechselwirkungs-Befund (Zufallsname trifft weder
+Aufräum-Muster noch Retention-Resolver) und (b) allem, was die zweite
+Gegenlesung nachgemessen beibringt. Erst danach PR und CI.
