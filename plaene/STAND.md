@@ -2210,3 +2210,44 @@ Offen und schon entschieden, sobald beides zurück ist: eine letzte kleine Runde
 an den Executer mit (a) meinem Wechselwirkungs-Befund (Zufallsname trifft weder
 Aufräum-Muster noch Retention-Resolver) und (b) allem, was die zweite
 Gegenlesung nachgemessen beibringt. Erst danach PR und CI.
+
+### 17.09.2026, 23:5x UTC — eigene Prüfung durch, Runde 3 beauftragt
+
+**Eigene Messungen am Stand `d3c9e57`, alle grün:** volle Suite SUITE_EXIT=0,
+0 FAIL-Zeilen; Dateizahl-Ritual als MENGENvergleich 330 = 330, `diff` EXIT 0;
+`npm run lint` EXIT 0 ohne jede Ausgabe; Marker-Scan 6; `git status` leer.
+
+**Trotzdem nicht freigegeben.** Die zweite Gegenlesung brachte acht Befunde,
+vier blockierend, alle acht nach eigener Nachmessung tragend. Sie hängen
+AUSNAHMSLOS an den drei Verhaltensänderungen der Nacharbeit — keiner an den
+reinen Zusicherungsergänzungen. Das ist der Beleg für die Hausregel, eine
+zweite Runde genau dann zu fahren, wenn eine Behebung Verhalten ändert.
+
+Der wichtigste Punkt betrifft MICH: Mein eigener Behebungsvorschlag zum
+Wechselwirkungs-Befund („Aufräum-Muster einfach erweitern") ist widerlegt —
+er hätte während laufender Downloads gelöscht und die Kollision aus B5 eine
+Ebene tiefer wieder eingeführt. Der Auftrag für Runde 3 geht deshalb über das
+Dateialter: fester Name = Altbestand, ohne Altersbedingung löschen;
+Zufallsform = möglicherweise aktiv, nur oberhalb einer hergeleiteten
+Altersschwelle. Das löst F5 und F6 mit EINEM Mechanismus.
+
+Zwei weitere blockierende Befunde gehen auf zu lasche Formulierungen in meinem
+Auftrag von Runde 2 zurück: „genau die Attrappe gesehen" wurde als
+Zahlenvergleich gebaut (drei fremde Dateien bestehen das Tor ebenfalls),
+„innerhalb des Test-Temp-Verzeichnisses" als ganz `/tmp`.
+
+Neu und selbst nachgemessen: **F7 — der Zufallsname lässt eine prozessweite Map
+unbegrenzt wachsen.** `core/pdf-engine.js:404` schreibt je erfolgreicher
+Erzeugung einen Eintrag; geleert wird nur über `consumeVerifyCode()`, und der
+einzige Verbraucher ist `generateMonthlyPDFs.js:235`. Beim FESTEN Namen
+überschrieb jeder Abruf denselben Schlüssel, beim Zufallsnamen kommt bei jedem
+Abruf einer dazu — in einem Prozess, der wochenlang läuft.
+
+Bewusst NICHT in Runde 3, als offener Punkt festzuhalten (D19): das
+Verbandbuch-PDF gar nicht erst unter PDF_ROOT erzeugen. Das wäre die Behebung,
+die die ganze Klasse auflöst, verlangt aber einen Eingriff in `createDocument()`,
+das viele Aufrufer teilt.
+
+Auftrag: `plaene/auftrag-verschluesselung-stufe0-runde3.md`, an denselben
+Executer. Mit ausdrücklicher Abbruchregel am eigenen Verhalten: gebaut wird,
+was dort steht; Neues und nicht Blockierendes wird datierter offener Punkt.
