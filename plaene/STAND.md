@@ -2100,3 +2100,41 @@ nicht die Transkriptdatei — und sie wird ohnehin nicht gelesen.
 
 Nächster Schritt unverändert: Prüf-Ritual über den Diff, dann
 `plaene/auftrag-haertung-p1-p2.md`.
+
+### 17.09.2026, 22:15 UTC — Stufe 0+1 geprüft, Nacharbeit läuft
+
+Executer hat geliefert (`claude/verschluesselung-stufe0`, 12 Dateien, +808/−7,
+Suite EXIT 0, Dateizahl-Ritual 330 = 330). **Nicht gemergt** — das Prüf-Ritual
+hat fünf blockierende Befunde ergeben.
+
+Drei Prüfspuren, und die Trennung war diesmal so scharf wie noch nie:
+Claude-Review 15 Befunde, Astra 8 (4 blockierend), **null Überschneidung bei
+den blockierenden**. Der teuerste Befund kam aus KEINER der beiden, sondern
+aus einer eigenen stumpfen Messung.
+
+**Selbst gemessen, nicht gelesen:**
+- Der Aufräum-Test löscht bei gebrochener PDF_ROOT-Umleitung ECHTE Dateien.
+  Nachgestellt: Umleitung entfernt, Attrappen-„Produktions"-PDF_ROOT angelegt —
+  die Zusicherungen davor fielen (`✗ FAIL: Exit ungleich 0`), **und der scharfe
+  Lauf lief trotzdem und vernichtete die Datei** (`total 0`). `ok()` erhöht nur
+  einen Zähler. Dieselbe Suite ist auf dem Live-Server Deploy-Gate.
+- Das Aufräumskript folgt einem Verzeichnis-Symlink: `1 gefunden, 1 gelöscht,
+  0 Fehler` — die Datei ausserhalb von PDF_ROOT war weg.
+- `hatSchluessel()` kostet bei Passphrase-Schlüssel 222 ms auf fünf Aufrufe
+  (Hex: 0 ms), synchron, ungecacht — und hängt jetzt an jeder Health-Anfrage.
+
+Nacharbeit: `plaene/auftrag-verschluesselung-stufe0-nacharbeit.md`, an DENSELBEN
+Executer (Fortsetzung). Fünf blockierende plus zwölf kleinere Punkte.
+
+**Bewusst NICHT in dieser Runde**, als datierter offener Punkt festzuhalten:
+`findeLoeschWurzel` aus `core/retention.js` in ein eigenes kleines Modul
+herauslösen. Architektonisch richtig (der Import zieht heute die ganze
+Retention-Maschinerie samt DB-Pool in zwei Verbraucher, die nur eine
+Pfadprüfung brauchen), aber es fasst ein Kernmodul an, an dem mehrere Wächter
+hängen — eigener Beitrag.
+
+Zwei Funde des Executers ÜBER den Auftragswortlaut hinaus waren richtig und
+nötig, von beiden Gegenlesungen bestätigt: `absolutAusDateipfad()` statt der
+Annahme `PDF_ROOT == <repo>/pdf`, und eine eigene Fehlerantwort im
+`res.download`-Callback (mit drittem Parameter sendet Express sonst gar
+nichts mehr — die Anfrage hing unbegrenzt).
