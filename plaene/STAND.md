@@ -1912,3 +1912,27 @@ Klammertiefen-Logik lässt die 26 Inventareinträge **zeichengleich** (26 = 26,
 **Nächste Schritte:** Bot-Kommentare (bisher leer), CI-Checks gegen den
 aktuellen Zweigkopf, Merge, Deploy-Lauf, live-check. Erst danach Meldung an den
 Betreiber (Regel 6a).
+
+### Bot-Befunde am PR beantwortet (17.09.2026, ~19:20 UTC)
+
+Zwei Befunde, beide selbst nachgemessen:
+
+**P1 „Midnight bypasses the lock" — Tatsache richtig, Einstufung nicht.**
+Das ist unser dokumentierter offener Punkt 3 (Tagesgrenze). Entscheidend ist
+die Messung, die ich dazu gemacht habe: auf `master` nimmt
+`postMangelNachtragHandler` **gar keinen** Advisory-Lock (0 Treffer für
+`pg_advisory` im Handler-Fenster), auf dem Zweig sind es drei. Das Rennen war
+vorher rund um die Uhr offen, jetzt nur noch über die Tagesgrenze. Den Beitrag
+deshalb nicht zu mergen würde das Loch VERGRÖSSERN. Am PR so geantwortet,
+Befund bleibt offen und benannt.
+
+**P2 „Inventory claim is incomplete" — trifft, behoben in `fa641cf`.**
+Der Bot nennt es „non-blocking test-quality"; bei uns ist es die teuerste
+Klasse. Die Beschriftung sagte „das Inventar ALLER Advisory-Lock-Aufrufe" und
+„in welcher Schreibweise auch immer" — nicht erfasst sind SQL aus Variablen
+oder Stücken und der Aufruf über eine Konstante (dort zählt nur die
+Deklaration). Das stand in D14/D15, aber nicht dort, wo man es liest. Die
+Grenze steht jetzt IN der Beschriftung.
+
+Nach dem Fix: Einzeldatei **145 PASS / 0 FAIL**, volle Suite `SUITE_EXIT=0`,
+**327 = 327**, Lint EXIT 0, Marker 6. CI läuft auf `fa641cf`.
