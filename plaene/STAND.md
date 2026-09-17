@@ -26,7 +26,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen, s. `plaene/auftrag-geistersperre-nachtrag.md` |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
-| Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | Runde 5 gebaut (`e3f0887`), Bot jetzt **5/5**, CI durch — **meine Abnahme läuft** |
+| Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
 | Rechtsstand-Sammelbeitrag (7 offene Punkte) | Auftrag geschrieben, `plaene/auftrag-rechtsstand-sammelbeitrag.md` — wartet auf einen freien Arbeitsbaum |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
@@ -1103,3 +1103,34 @@ Der Review-Bot steht jetzt auf **5/5** („no actionable new defect or
 outstanding previous finding remains"). Meine eigene Suite und die Messung
 des freigegebenen Falls am gerenderten HTML laufen noch — erst danach wird
 gemergt.
+
+### Gerätealter — gemergt und ausgeliefert (17.09.2026, ~06:55 UTC)
+
+`922d1ed`, alle fünf Prüfungen grün, Review-Bot 5/5, Deploy-Lauf **420**
+mit dem richtigen `head_sha` auf `success`, `tools/live-check.sh` grün
+(zwei Punkte wie immer ℹ statt ✓).
+
+Eigene Abnahme vor dem Merge: Suite **SUITE_EXIT=0**, 151 PASS / 0 FAIL in
+der neuen Datei, Dateizahl **326 = 326**, Lint EXIT 0, Marker 6. Der Fall
+aus dem P1 des Bots am gerenderten HTML selbst gemessen:
+
+    Freigegebene Geistersperre (aktiv=0, gleicher Name, andere ID):
+       Entwarnung: false  |  beziffert: true
+    Positivkontrolle (sauberes Gerät):
+       Entwarnung: true   |  beziffert: false
+
+**Was dieser Beitrag über die Arbeitsweise sagt — fünf Runden, und DREI
+davon gingen gegen denselben Fehler in drei verschiedenen Tabellen:** die
+Seite behauptete „keine Mängel", während die Wahrheit anderswo stand — bei
+den Freitext-Mängeln ohne `geraet_id` (Runde 2), bei den offenen
+Mitglieds-Hinweisen (Runde 3) und bei den Geistersperren der Seilkontrolle
+(Runde 5). Jedes Mal war die Ursache dieselbe Denkfigur: eine Zusicherung
+über Vollständigkeit, die auf EINER Verknüpfung beruht, während das System
+mehrere kennt.
+
+**Und dreimal lag der Fehler in MEINER Vorgabe, nicht in der Umsetzung:**
+„zähle über `geraet_id`, nicht über den Namen" (Runde 1), die ungemessene
+Aussonderung der Geistersperren (Runde 3) und die Annahme, eine
+Geistersperre werde auf der Seite überhaupt gerendert (Runde 5 — der
+Ausführende hat gemessen, dass der bestehende A2-Riegel den aktiven Fall
+schon mit 409 abweist, und BEIDE Zustände getrennt geprüft).
