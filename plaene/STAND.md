@@ -2056,3 +2056,28 @@ der einzige Nutzer im Bestand ist `core/defekt_mailer.js:193-226` (Fotos);
 **Nächste Aufträge in dieser Reihenfolge:** Offboarding-ZIP verschlüsseln
 (Passwort, getrennt übergeben) → Feldverschlüsselung der sieben Spalten →
 danach erst die bleibenden Nachweise, wenn der Betreiber den Aufwand will.
+
+### Nachtrag 17.09.2026, 21:00 UTC — Härtungsprogramm beauftragt
+
+**Betreiber-Vorgabe:** „alle erwähnten punkte sollen sicher behoben werden. das
+system soll einen pentest bestehen können."
+
+Programm in `plaene/pentest-haertung-programm.md`, sechs Punkte, Reihenfolge
+nach „was ein Pentest findet". Heute nachgemessen und deshalb NICHT auf der
+Liste: Anmelde-Sperre (`routes/auth.js:49`, `LOGIN_MAX=5`, DB-gestützt),
+`helmet` (`server.js:35`), und die OWASP-Härtung vom 12.09.2026 (exec→execFile,
+Host-Header, PIN-Reset-Anti-Spam) — die beiden Erstgriffe eines Pentests sind
+also schon zu.
+
+Reihenfolge: 1) vier GET-Routen, die schreiben + CSRF-Ausnahmen bewachen
+(Auftrag liegt fertig als `plaene/auftrag-haertung-p1-p2.md`, wartet auf den
+freien Arbeitsbaum) → 2) API-Härtung (Ratelimit, Schema, Protokoll) →
+3) Offboarding-ZIP verschlüsseln → 4) Feldverschlüsselung der sieben Spalten
+(PLAN vorher gegenlesen lassen — folgenschwer) → 5) Monats-PDFs in die
+Job-Queue (Verfügbarkeit, zuletzt).
+
+Nicht gemessen und deshalb nicht behauptet: `npm audit` und die Upload-Wege
+(Dateityp/Größe). Beides nachholen, sobald der Arbeitsbaum frei ist.
+
+Sequenziell arbeiten, nicht parallel: die Suite sperrt global
+(`/tmp/gymdocu-suite.lock`) und alle Läufe teilen sich dieselbe Datenbank.
