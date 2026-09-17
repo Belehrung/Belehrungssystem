@@ -22,7 +22,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Beitrag 2a (Datenmodell und Leser) | gemergt `613a2c9`, Deploy 415, live-check grün |
 | Beitrag 2b-1 (Ausmustern auslösbar) | gemergt `eb276d9`, Deploy 416, live-check grün |
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
-| Rechtsstand-Wächter Stufe 1 | Runden 1–4 gebaut (`a855bfc`), **Runde 5 im Bau** (die letzte) — s. `plaene/auftrag-rechtsstand-stufe1-runde5.md` |
+| Rechtsstand-Wächter Stufe 1 | Runden 1–5 gebaut (`764d0ba`), **abgenommen** — Suite grün, Registerabgleich 57/0, Review nachgemessen; PR und CI laufen |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen, s. `plaene/auftrag-geistersperre-nachtrag.md` |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
@@ -31,9 +31,9 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 
-**`/home/user/gymdocu` ist BELEGT** — dort arbeitet ein Executer am
-Rechtsstand-Wächter Stufe 1. Nicht anfassen, bis seine Benachrichtigung da
-ist; eine Benachrichtigung ist verbraucht, sobald ich ihn fortgesetzt habe.
+**`/home/user/gymdocu` ist FREI** — der Executer am Rechtsstand-Wächter hat
+Runde 5 gemeldet (17.09.2026, `764d0ba`) und wurde seither nicht fortgesetzt.
+Nächster Auftrag dort: `plaene/auftrag-geraetealter.md`.
 
 ## Erledigt — Beitrag 1 ist gemergt
 
@@ -850,3 +850,48 @@ der Statusdatei.
 auf dem Server — sonst läuft der neue Kern gegen die alte Kopie. Seit Runde 4
 meldet der Wächter das in dem Fall selbst und laut (auch unter der alten
 Kopie, ab dem zweiten Lauf).
+
+## Rechtsstand-Wächter Stufe 1 — Runde 5 abgenommen (17.09.2026)
+
+Fünf Bau-Runden, sechs unabhängige Prüfgänge (drei `/code-review`, zwei
+Astra, eine Abnahme-Review). **Jede Runde fand einen Fehler, den die
+Behebung der VORIGEN Runde eingebaut hatte** — das ist der eigentliche
+Befund dieser Reihe, nicht eine einzelne Lücke:
+
+- Runde 2: eine Zusicherung, die ihren Sollwert aus dem Prüfling zog.
+- Runde 3: mein eigener Auftrag mass gegen den NEUEN Klassifizierer, während
+  die installierte ALTE Kopie alle sechs neuen Lagen auf `still` abbildet —
+  also stilles falsches Grün statt der behaupteten „61× rot pro Woche".
+- Runde 4: `<fussnoten\b[^>]*>` liess das selbstschliessende `<fussnoten/>`
+  als Öffner durch und frass echten Normtext — schlimmer als die Lücke, die
+  dieselbe Zeile schliessen sollte.
+- Runde 5: die eigene Behebung der Meldung verlor genau das, was sie retten
+  sollte (der Ausführende hat das SELBST gefunden, vor der Auslieferung).
+
+**Eigene Messungen zur Abnahme** (nicht der Bericht des Ausführenden):
+
+- Fussnoten-Fix über sieben Varianten, dazu die Positivkontrolle über den
+  mutierten Runde-4-Ausdruck: genau die drei selbstschliessenden Fälle fallen.
+- Registerabgleich gegen die echten Quellen: **57 stimmen, 0 Abweichungen,
+  4 nicht prüfbar** (UVSV, strukturell). Kein Fingerabdruck hat sich bewegt.
+- Härteprüfung der Meldung (40 Funde mit 300-Zeichen-Gründen, 25
+  Unerreichbare mit langen URLs, Sonderzeichen): überall ≤ 4096 Zeichen,
+  `<b>`-Tags ausgeglichen, Übersicht und Unerreichbar-Liste erhalten.
+- Vier eigene Mutationen, je einzeln: `lieferung`-Riegel zurückgedreht →
+  **EXIT 1, 2 FAIL**; Budget-Reservierung entfernt → **EXIT 1, 2 FAIL**;
+  null gezeigte Einträge → **EXIT 1, 3 FAIL**; Höchstzahl 15→1 →
+  **EXIT 1, 1 FAIL**. Jede gegen eine unabhängige Kopie zurückgenommen
+  (`diff` EXIT 0).
+- Suite **SUITE_EXIT=0**, `test_feature_rechtsstand.js` 251 PASS / 0 FAIL,
+  Dateizahl-Ritual **325 = 325**, Lint EXIT 0, Marker **6 = 6**.
+
+**Von den 13 Befunden der Abnahme-Review sind vier GEFALLEN** (alle vier
+behaupteten stilles Grün, das es nicht gibt — je einzeln mutiert und
+gemessen). Die sieben echten sind keiner blockierend und stehen datiert in
+`docs/offene-befunde-31-08-2026.md` im GymDocu-Repo.
+
+**Nach dem Merge bleibt EIN Schritt beim Betreiber**, den ich nicht tun kann
+(kein SSH): `sudo install -m 755 ops/gymdocu-rechtsstand-watch.js
+/usr/local/bin/gymdocu-rechtsstand-watch.js` auf dem Server. Ohne ihn läuft
+die alte Kopie weiter — sie liefert kein XML mit, und der neue Code meldet
+das ab Runde 4 ausdrücklich als Versionsabweichung mit genau diesem Befehl.
