@@ -24,7 +24,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
 | Rechtsstand-Wächter Stufe 1 | **gemergt `c1b052f`, Deploy 419 `success`, live-check grün** — `install` der Ops-Kopie am 17.09.2026 vom Betreiber erledigt und belegt (`grep -c "lieferung: 'xml'"` -> 2). **ACHTUNG: der Sammelbeitrag ändert die ops-Datei erneut** — nach seinem Merge muss der `install` WIEDERHOLT werden, sonst meldet der Riegel eine Versionsabweichung, die es gibt |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
-| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–4 gebaut und von mir abgenommen (`eddd42d`, Suite grün, 74/0, fünf eigene Gegenproben). ZWEITE Gegenlesung durch: Astra 3 + Claude-Review 11 Befunde, **null Überschneidung**. **Runde 5 im Bau** (7 Bauten, 8 Dokumentationen). Noch KEIN PR |
+| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–4 gebaut und von mir abgenommen (`eddd42d`, Suite grün, 74/0, fünf eigene Gegenproben). ZWEITE Gegenlesung durch: Astra 3 + Claude-Review 11 Befunde, **null Überschneidung**. **Runde 5 gebaut** (`d4eb9ba`, 7 Bauten + 8 Dokumentationen), seine Abschluss-Suite laeuft — meine eigene Abnahme steht noch aus. Noch KEIN PR |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
@@ -1687,3 +1687,22 @@ weit gefasst — der Tagesschlüssel serialisiert die SCHREIBER, nicht den
 Lesezeitpunkt.
 
 Auftrag für Runde 5: `plaene/auftrag-geistersperre-runde5.md`.
+
+### Takt 15:40 UTC — nur Stand nachgezogen
+
+Runde 5 ist als `d4eb9ba` gebaut („Inventar statt Muster, Anker dicht, ein Ort
+fuer Offenes"), die Abschluss-Suite des Ausführenden läuft. Nach der Regel beim
+Takt-Feuern während eines laufenden Agenten: nichts angefasst.
+
+Was danach ansteht, in dieser Reihenfolge: Diff selbst lesen; die fünf
+Gegenproben aus dem Auftrag SELBST nachmessen (die beiden wichtigsten sind der
+fünfte Lock-Nehmer mit einfachen Anführungszeichen und das `:umbenennen`-Suffix
+— beide lieferten auf `eddd42d` noch 74 PASS / 0 FAIL); volle Suite;
+Dateizahl-Ritual; Lint wörtlich melden; Marker-Scan; dann PR (nicht als
+Entwurf), Bot-KOMMENTARE vor den Checks, CI, Merge, Deploy, live-check.
+
+Nebenbei beantwortet (Betreiber): keine Managed Nextcloud im Einsatz, sondern
+ein VPS Linux L+ (dort die gymdocu-Domains) und ein Cloud Server. Die
+dokumentierte Verschlüsselung ruhender Daten bei IONOS gilt für eine ANDERE
+Produktlinie (IONOS CLOUD Block Storage) — die Frage bleibt offen, jetzt mit
+dem genauen Wortlaut für die Rückfrage im Verschlüsselungspapier.
