@@ -1134,3 +1134,32 @@ Aussonderung der Geistersperren (Runde 3) und die Annahme, eine
 Geistersperre werde auf der Seite überhaupt gerendert (Runde 5 — der
 Ausführende hat gemessen, dass der bestehende A2-Riegel den aktiven Fall
 schon mit 409 abweist, und BEIDE Zustände getrennt geprüft).
+
+### Betreiber-Befund 17.09.2026: festes Studio-Kürzel im Einrichtungs-Test
+
+Gemeldet: `test_feature_einrichtung_seite.js` legt sein Studio ohne
+Zufallssuffix an, deshalb ist der zweite Lauf gegen dieselbe Datenbank rot.
+**Der Befund stimmt, ist aber seit `cab4d5c` (12.09.2026) behoben** — der
+Melder arbeitete auf einem älteren Stand (seine Zeilennummern 209/317 gegen
+heute 229/353, seine „11" Einrichtungspunkte gegen heute 12).
+
+Selbst gemessen statt geglaubt:
+
+- Mechanismus: fester Slug → `id=1` und `id=1` (dieselbe Zeile),
+  Zufallssuffix → `id=3` und `id=4`. Ursache ist `core/db.js#createStudio`
+  mit `ON CONFLICT (subdomain) DO NOTHING` und Rückfall auf `SELECT id`.
+- Dreimal hintereinander gegen dieselbe Wegwerf-DB: **EXIT 0 / 0 / 0**,
+  je 59 PASS / 0 FAIL.
+- Die Klasse war grösser als diese Datei: die Messung vom 12.09. (im Kopf
+  von `test/helfer/studio-kuerzel.js`) fand **48 von 306** Dateien, die im
+  zweiten Lauf rot wurden — und ein Kürzel je Datei genügte nicht.
+- Ein Wächter verhindert den Rückfall:
+  `test_feature_keine_festen_studio_kuerzel_static.js` (registriert in
+  `test/run.sh:576`). **Positivkontrolle mit der gemeldeten Zeile selbst:**
+  `createStudio('einrichtung-seite', …)` in eine neue Testdatei gelegt →
+  **EXIT 1, 23 PASS / 1 FAIL**, mit Datei, Zeile und Literal benannt. Probe
+  gelöscht, Baum sauber.
+
+**Nichts gebaut.** `/workspace/gymdocu` existiert weder in diesem Container
+noch auf dem Server — der Pfad in der CLAUDE.md zeigt ins Leere und gehört
+bei Gelegenheit berichtigt.
