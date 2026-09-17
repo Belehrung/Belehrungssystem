@@ -26,7 +26,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen, s. `plaene/auftrag-geistersperre-nachtrag.md` |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
-| Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | Runde 1 gebaut (`1f97954`), **ein blockierender Befund** — Runde 2 im Bau, s. unten |
+| Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | Runde 2 abgenommen (`b5fca2f`), **Runde 3 im Bau** — zweiter blockierender Befund derselben Klasse, s. unten |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
 | Rechtsstand-Sammelbeitrag (7 offene Punkte) | Auftrag geschrieben, `plaene/auftrag-rechtsstand-sammelbeitrag.md` — wartet auf einen freien Arbeitsbaum |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
@@ -950,3 +950,45 @@ Treffern für Cardio/Kraft der Satz „keine Mängel gefunden (gesucht über
 Gerätekennung und Gerätenamen)", also eine Aussage über die SUCHE statt über
 die Welt; für Seilkontrolle bleibt es bei „keine Mängel erfasst" (dort ist
 `geraete_sperren.geraet_id` NOT NULL, die Zählung ist vollständig).
+
+### Gerätealter — Runde 2 abgenommen, Runde 3 im Bau (17.09.2026, ~04:30 UTC)
+
+Runde 2 (`b5fca2f`) behebt den Widerspruch: zwei getrennte Gruppen, nie zu
+einer Summe verschmolzen. **Eigene Nachmessung am gerenderten HTML:**
+`WIDERSPRUCH_AUF_EINER_SEITE=false`, `BEZIFFERT_STATT_VERSCHWIEGEN=true`,
+Suite **SUITE_EXIT=0**, 81 PASS / 0 FAIL, Dateizahl **326 = 326**, Lint
+EXIT 0, Marker 6. Der Ausführende hat dabei eine Lücke meiner Vorgabe
+selbst geschlossen („keine sicher zugeordneten Mängel" für sicher=0 bei
+namensgleich>0) — richtig, übernommen.
+
+**Die unabhängige Review lieferte 15 Befunde. Neun gehen in Runde 3, fünf
+werden festgehalten, einer ist ausgesondert.** Selbst nachgemessen:
+
+- **BLOCKIEREND, dieselbe Klasse eine Tabelle weiter:** offene
+  Mitglieds-Hinweise (`geraete_hinweise`) kommen auf der Ausmusterungsseite
+  NICHT vor (`grep -c`: 0 in `routes/admin/ausmusterung.js` und
+  `core/ausmusterung.js`), während der SCHWÄCHERE Weg — das blosse
+  Deaktivieren — ausdrücklich warnt (`geraete-typen.js:319`, „Zu diesem
+  Gerät liegt 1 offener Hinweis vor"). Die unwiderrufliche Entscheidung
+  bekommt eine Entwarnung, die rückholbare eine Warnung.
+- `pruefeInbetriebnahme('2015-02-31')` → `{ok:true}`, ebenso `2019-04-31`,
+  `2015-02-30`, `0000`, `9999-12-31`. Die Rundlaufprobe dafür hat das Repo
+  schon (`core/audit-filter.js#datumWert`). Die DB-CHECK bleibt bewusst
+  gröber — ein Regex kann keinen Rundlauf, und `to_date` rollt den 31.02.
+  still weiter.
+- Die Mandantentrennungs-Zusicherung zur ROUTE kann nicht rot werden: die
+  Route antwortet 404 (`ausmusterung.js:242`), bevor die geprüfte Funktion
+  (`:258`) überhaupt gerufen wird.
+- Das Aufräumen von `qr_charge` steht nicht in einem `finally`;
+  `test_feature_qr_token.js` läuft danach (run.sh 645 gegen 817) und
+  verlangt eine leere Tabelle.
+- Ausmustern lässt `geraet_id` auf NULL (`ausmusterung.js:742-745`) —
+  geschlossene Mängel bleiben dauerhaft in der namensgleich-Menge jedes
+  gleichnamigen Geräts, und die Anzeige nennt dort keine Offen-Zahl.
+
+**Ausgesondert, mit Begründung:** dass „keine Mängel erfasst" bei der
+Seilkontrolle strukturell vollständig sei, ist überzogen (es gibt Sperren
+mit gleichem Namen und anderer `geraet_id`, `routes/admin/geraete.js:568`)
+— aber die Sperren eines ANDEREN Geräts sind nicht die Mängel dieses
+Geräts. Ein namensbasierter Zweitzweig für Seilkontrolle wäre ein eigener
+Beitrag; festgehalten statt gebaut.
