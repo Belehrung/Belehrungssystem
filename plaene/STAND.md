@@ -28,7 +28,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
-| Rechtsstand-Sammelbeitrag (7 offene Punkte) | Auftrag geschrieben, `plaene/auftrag-rechtsstand-sammelbeitrag.md` — wartet auf einen freien Arbeitsbaum |
+| Rechtsstand-Sammelbeitrag (7 offene Punkte) | Runde 1 gebaut (`abbb30a`, 6 von 7), **Runde 2 im Bau** — drei blockierende Befunde, s. unten |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 
@@ -1163,3 +1163,50 @@ Selbst gemessen statt geglaubt:
 **Nichts gebaut.** `/workspace/gymdocu` existiert weder in diesem Container
 noch auf dem Server — der Pfad in der CLAUDE.md zeigt ins Leere und gehört
 bei Gelegenheit berichtigt.
+
+### Rechtsstand-Sammelbeitrag — Runde 1 gebaut, drei blockierende Befunde (17.09.2026)
+
+Zweig `claude/rechtsstand-sammelbeitrag`, Commit `abbb30a`, Basis `922d1ed`.
+Sechs der sieben Punkte gebaut; Punkt 7 (doppelte Längenrechnung) hat der
+Ausführende bewusst ausgelassen, weil `baueMeldung()` in diesem Beitrag
+schon zweimal umgebaut wurde — richtig entschieden, bleibt so.
+
+Eigene Abnahme von Runde 1: Suite **SUITE_EXIT=0**, `test_feature_rechtsstand.js`
+**281 PASS / 0 FAIL**, Dateizahl **326 = 326**, Lint EXIT 0, Marker 6.
+Registerabgleich: mein Skript meldete zweimal 46/0/15 — die Lücke waren 11
+BetrSichV-Paragrafen mit Zeitüberschreitung, gezielt mit 120-Sekunden-Limit
+nachgeholt: **11 von 11 stimmen, 0 Abweichungen**. Vollbild 57/0/4.
+
+Eigene Messungen zu Runde 1 (alle gehalten): Schleifenabbruch weg (1147
+Zeichen, „5 von 6 ausführlich gezeigt", Reihenfolge egal), Unerreichbar-Liste
+beziffert („54 von 60"), `<enbez/>` verschluckt nichts mehr.
+
+**Die unabhängige Review lieferte 15 Befunde; drei davon habe ich selbst
+gemessen und sie sind blockierend:**
+
+1. **Punkt 6 kehrt den Riegel um, den er schützen soll.** Gemessen gegen den
+   echten Vor-Commit-Kern (`git archive 922d1ed`): die neue Ops-Kopie gegen
+   den alten Kern ergibt `lieferung: undefined` →
+   `{lage:'nicht_erreichbar', opsKopieVeraltet:true}` für alle 61 Quellen,
+   also das GEGENTEIL der Wahrheit samt eines bereits ausgeführten
+   `install`-Befehls. Vorher war die Ops-Datei in dieser Richtung immun.
+   **Wird zurückgebaut** — die Doppelung des Literals bleibt bewusst stehen:
+   der Riegel darf nicht über genau die Datei laufen, deren Abweichung er
+   erkennen soll.
+2. **Punkt 4 wirft die Unerreichbar-Liste ganz raus, wo Platz gewesen wäre.**
+   Gemessen (15 rot mit 200-Zeichen-Grund + 3 unerreichbar): 4039 von 4096
+   Zeichen, **0 von 3 namentlich genannt**, 57 Zeichen ungenutzt. Die Zahl
+   bleibt („0 von 3 ausführlich gezeigt"), die Namen nicht. Behebung: die
+   Unerreichbar-Zeilen bekommen ihr Budget VOR den roten Einzelheiten.
+3. **`<metadaten>` verträgt kein Attribut und fällt STILL auf das ganze
+   Dokument zurück.** Gemessen: `<metadaten builddate="…">` liefert die
+   Standangabe des ZWEITEN Paragrafen statt des ersten, ohne Fehler — ein
+   falscher, plausibler Wert direkt im geaendert/unveraendert-Vergleich.
+   Bestandscode, aber dieselbe Attribut-Klasse und die einzige davon, die
+   nicht laut scheitert.
+
+Dazu drei Zusicherungen, die ihren eigenen Fehler nicht sehen (die
+Positivkontrolle zu Punkt 1 misst eine nachgebaute Schleife; beide
+`<textdaten/>`-Zusicherungen sind mit UND ohne Behebung grün; die
+Runde-5-Zusicherung zur Unerreichbar-Liste kann den Rückfall nicht fangen),
+und drei Kommentare, die jetzt falsch dastehen.
