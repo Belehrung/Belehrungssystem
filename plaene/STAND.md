@@ -22,7 +22,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Beitrag 2a (Datenmodell und Leser) | gemergt `613a2c9`, Deploy 415, live-check grün |
 | Beitrag 2b-1 (Ausmustern auslösbar) | gemergt `eb276d9`, Deploy 416, live-check grün |
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
-| Rechtsstand-Wächter Stufe 1 | Runden 1+2 gebaut (`ad2b447`), **Runde 3 im Bau** — s. `plaene/auftrag-rechtsstand-stufe1-runde3.md` |
+| Rechtsstand-Wächter Stufe 1 | Runden 1–4 gebaut (`a855bfc`), **Runde 5 im Bau** (die letzte) — s. `plaene/auftrag-rechtsstand-stufe1-runde5.md` |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen, s. `plaene/auftrag-geistersperre-nachtrag.md` |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
@@ -804,3 +804,49 @@ unter einer Sekunde durch, der Node-Abrufpfad scheitert wiederholt mit
 Zeitüberschreitung — bei über 40 anderen Quellen desselben Pfades am selben
 Tag erfolgreich). Dazu die Superadmin-Anzeige im Hauptserver-Repo, die
 `version: 3` und die fünf neuen Lagen nicht kennt.
+
+## Rechtsstand-Wächter — Stand nach Runde 4 (17.09.2026 nachts)
+
+`a855bfc`. Mein Prüfgang grün: Suite `SUITE_EXIT=0`, 218 PASS / 0 FAIL,
+Dateizahl 325 = 325, Lint EXIT 0, Marker 6. Alle vier beauftragten Punkte
+tragen, selbst gemessen — inklusive Positivkontrolle, dass eine ECHTE
+Netzstörung weiterhin die Gnadenfrist bekommt und nur der Versionsfall sie
+überspringt.
+
+**Das Muster dieses Beitrags, und der Grund für die Grenze:** Jede Runde hat
+einen Fehler gefunden, den die VORHERIGE Behebung eingebaut hat.
+
+- Runde 2 behob die Normalisierung — und ihre Gegenprobe verglich die
+  Funktion mit sich selbst.
+- Runde 3 machte die Versionsabweichung „laut" — gemessen gegen die falsche
+  (neue) Klassifizierung; die installierte alte macht daraus Stille.
+- Runde 4 schloss die Fussnoten-Lücke mit `<fussnoten\b[^>]*>` — und das
+  matcht nun auch das selbstschliessende `<fussnoten/>`, frisst also alles
+  bis zur nächsten schliessenden Fussnote, **echten Normtext inklusive**.
+  Selbst gemessen; schlimmer als ein falscher Hash, weil das Register von
+  derselben Funktion erzeugt wird.
+
+**Entwarnung, ebenfalls selbst gemessen:** Der Bestand ist NICHT betroffen —
+mit dem Code aus Runde 4 gegen die echten Quellen **46 von 61 geprüft,
+0 Abweichungen**, 15 netzbedingt nicht erreichbar. Kein bestätigter
+Fingerabdruck hat sich bewegt; die Lücke ist latent.
+
+**Grenze am eigenen Verhalten (17.09.2026):** Nach Runde 5 wird nur noch
+gebaut, was BLOCKIEREND ist. Alles andere wird datiert in
+`docs/offene-befunde-31-08-2026.md` festgehalten und ist ein eigener
+Beitrag. Das ist keine Vorhersage, dass nichts mehr gefunden wird — es ist
+eine Festlegung darauf, was ich damit tue.
+
+**Offen festgehalten, nicht gebaut:** der Cache hält jetzt das entpackte XML
+aller 18 Gesetze gleichzeitig (vorher ein paar hundert Byte je Gesetz) —
+Grösse messen, bevor jemand baut; `normtextAusXml()` zerlegt das ganze Gesetz
+je Paragraf neu; `enbezAusUrl()` akzeptiert nur `__<Zahl>[<Buchstabe>].html`;
+die doppelte Höflichkeitspause im Werkzeug; die Superadmin-Anzeige im
+Hauptserver-Repo kennt `version: 3` nicht; der Abbruch bei einem Schreibfehler
+der Statusdatei.
+
+**Nach dem Merge zusätzlich nötig:**
+`install -m 755 ops/gymdocu-rechtsstand-watch.js /usr/local/bin/gymdocu-rechtsstand-watch.js`
+auf dem Server — sonst läuft der neue Kern gegen die alte Kopie. Seit Runde 4
+meldet der Wächter das in dem Fall selbst und laut (auch unter der alten
+Kopie, ab dem zweiten Lauf).
