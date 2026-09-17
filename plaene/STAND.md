@@ -28,15 +28,14 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
-| Rechtsstand-Sammelbeitrag (7 offene Punkte) | Runde 1 gebaut (`abbb30a`, 6 von 7), **Runde 2 im Bau** — drei blockierende Befunde, s. unten |
+| Rechtsstand-Sammelbeitrag (7 offene Punkte) | Runde 2 gebaut (`2e40bc2`), **Runde 3 im Bau** — ein blockierender Befund aus meiner eigenen Nachmessung, s. unten |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 
-**`/home/user/gymdocu` ist BELEGT** — seit 17.09.2026 ~02:05 UTC arbeitet
-dort ein Executer am Gerätealter (`plaene/auftrag-geraetealter.md`, Zweig
-`claude/geraetealter`, Basis `c1b052f`). Nicht anfassen, bis seine
-Benachrichtigung da ist; eine Benachrichtigung ist verbraucht, sobald ich ihn
-fortgesetzt habe.
+**`/home/user/gymdocu` ist BELEGT** — seit 17.09.2026 arbeitet dort ein
+Executer am Rechtsstand-Sammelbeitrag (Zweig `claude/rechtsstand-sammelbeitrag`,
+Basis `922d1ed`, Runde 3). Nicht anfassen, bis seine Benachrichtigung da ist;
+eine Benachrichtigung ist verbraucht, sobald ich ihn fortgesetzt habe.
 
 ## Erledigt — Beitrag 1 ist gemergt
 
@@ -1210,3 +1209,57 @@ Positivkontrolle zu Punkt 1 misst eine nachgebaute Schleife; beide
 `<textdaten/>`-Zusicherungen sind mit UND ohne Behebung grün; die
 Runde-5-Zusicherung zur Unerreichbar-Liste kann den Rückfall nicht fangen),
 und drei Kommentare, die jetzt falsch dastehen.
+
+## Rechtsstand-Sammelbeitrag, Runde 2 abgenommen — ein eigener blockierender Befund (17.09.2026, ~10:00 UTC)
+
+Runde 2 (`2e40bc2`) hat die drei blockierenden Befunde aus Runde 1 behoben:
+Punkt 6 (gemeinsame Konstante `GII_LIEFERUNG_XML`) vollständig ZURÜCKGEBAUT,
+die `<metadaten>`-Attributlücke in `standAusXml()` geschlossen, die
+Budget-Reihenfolge in `baueMeldung()` umgestellt. Abnahme des Ausführenden:
+SUITE_EXIT=0, 288 PASS / 0 FAIL in `test_feature_rechtsstand.js`,
+Dateizahl-Ritual 326 = 326, Lint EXIT 0, Registerabgleich 57/0/4.
+
+**Beim eigenen Nachmessen der dritten Behebung fiel auf, dass sie den Fehler
+GESPIEGELT statt behoben hat.** Die Umstellung gibt der Unerreichbar-Liste
+das Budget ZUERST und VOLLSTÄNDIG. Gemessen an `baueMeldung()` direkt,
+rote Einträge mit 200-Zeichen-Grund:
+
+    rot= 6 unb=55 | Laenge 3801/4096 | rot namentlich 0/6  | unerreichbar 55/55
+    rot= 1 unb=60 | Laenge 4031/4096 | rot namentlich 0/1  | unerreichbar 57/60
+    rot=11 unb=50 | Laenge 3849/4096 | rot namentlich 1/11 | unerreichbar 50/50
+
+Bei einem grossflächigen Quellenausfall verschwinden also die ROTEN Funde
+namentlich vollständig. Das ist kein Papierfall: der Registerabgleich vom
+selben Vormittag meldete zweimal hintereinander 15 von 61 Quellen
+NICHT_PRUEFBAR, beide Male HTTP 503 von gesetze-im-internet.de.
+
+Dazu trägt die Begründung im neuen Kommentar nicht — „eine nicht geprüfte
+Quelle lässt sich nicht nachlesen" ist falsch: `schreibeStand()` schreibt
+`quellenObjekt[b.url] = { ...b }` für JEDE Bewertung, die unerreichbaren
+stehen in der Statusdatei so vollständig wie die roten.
+
+**Behebungsentwurf, an einer Kopie durchgemessen (Zwei-Zug):** unbestätigt
+darf im ersten Zug höchstens `Math.floor(budget / 2)` binden; was rot/ruhig
+danach nicht gebraucht haben, bekommt sie im zweiten Zug zurück. Gemessen,
+gegen `2e40bc2`:
+
+    Fall                   heute                 Zwei-Zug
+    rot=15 unb= 3          rot  9/15, unb  3/3   rot  9/15, unb  3/3   (unverändert)
+    rot=15 unb= 0          rot 10/15             rot 10/15             (unverändert)
+    rot= 0 unb=30          unb 30/30             unb 30/30             (unverändert)
+    rot= 0 unb=60          unb 59/60             unb 59/60             (unverändert)
+    rot= 6 unb=55          rot  0/6,  unb 55/55  rot  5/6,  unb 29/55
+    rot= 1 unb=60          rot  0/1,  unb 57/60  rot  1/1,  unb 52/60
+    rot=11 unb=50          rot  1/11, unb 50/50  rot  5/11, unb 29/50
+    rot= 6 ruhig=5 unb=55  rot  0/6              rot  4/6,  unb 31/55
+
+In keinem gemessenen Fall schlechter, in vier Fällen entscheidend besser;
+längste Meldung 4063 von 4096. Auftrag liegt als Runde 3 beim selben
+Ausführenden, samt der Forderung nach einer Gegenprobe (Ein-Zug nachbauen,
+0 von 6 roten Quellen namentlich zusichern) — ohne sie wäre die neue
+Zusicherung nicht von einer zu unterscheiden, die ohnehin immer grün ist.
+
+Zwei Kommentare hängen daran und werden mitkorrigiert: der Satz
+„Reihenfolge des Budgets bleibt Schweregrad-basiert: rot vor ruhig vor
+unbestätigt" steht seit `2e40bc2` sechs Zeilen über dem Code, der ihn
+widerlegt; und die widerlegte Statusdatei-Begründung.
