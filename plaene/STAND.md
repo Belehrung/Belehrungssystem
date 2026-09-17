@@ -2008,3 +2008,51 @@ Deploy-Gate daran.
 Danach offen, in dieser Reihenfolge: Feldverschlüsselung der acht
 Gesundheitsspalten (Entscheidung zu `person_name` steht beim Betreiber),
 Offboarding-ZIP, eigene Datenbank-Auszüge.
+
+### Nachtrag 17.09.2026, 20:40 UTC — Entscheidung und Dateibestand
+
+**Entschieden vom Betreiber:** `person_name` bleibt im Klartext, die sieben
+Gesundheitsspalten werden verschlüsselt (`hergang`, `beschreibung`, `zeugen`,
+`eh_freitext`, `verletzungsarten_json`, `koerperschema_json`,
+`eh_massnahmen_json`; dazu `geschlecht` — keine davon wird irgendwo gefiltert
+oder sortiert). Begründung: Art. 9 schützt die Gesundheitsinformation, nicht
+den Namen; die Namenssuche in der Verbandbuch-Liste bleibt damit vollständig
+erhalten. Nicht erneut fragen.
+
+**Dateibestand durchgemessen (master 549a5ee), vier Klassen:**
+
+1. *Schon sauber:* Monats-ZIP (`routes/admin/einstellungen.js:365`, `rmSync`
+   im download-Callback) und Archiv-ZIP (`routes/archiv.js:840-845`,
+   `aufraeumen`) löschen sich nach der Auslieferung selbst, ebenso die
+   qpdf-Variante des Verbandbuch-PDF. Das Verbandbuch-Einzel-PDF war die
+   AUSNAHME, nicht die Regel — läuft als Stufe 0.
+2. *Nicht sauber:* **Das Offboarding-ZIP.** `core/export-studio.js:237`
+   schreibt `<EXPORT_DIR>/<sub>-<stamp>.zip`, gibt den Pfad zurück
+   (`server.js:657`) — und NIEMAND löscht es. Vollständiger Datenbestand eines
+   ausscheidenden Studios (alle Tabellen als CSV plus Dokumente, Uploads,
+   Fotos), unverschlüsselt, dauerhaft. Dichteste Ansammlung im System.
+3. *Nachweise, die bleiben müssen:* `DOKUMENTE_DIR` (signierte Belehrungen),
+   `EINWEISUNG_NACHWEIS_DIR`, `PRUEFBERICHT_DIR`, `pdf_archiv`. Nur
+   Verschlüsselung hilft. Teuer, weil `server.js:730` `/pdf` per
+   `express.static` ausliefert — verschlüsselt fällt dieser Weg weg und rund
+   fünfzehn Lesestellen müssen einzeln entschlüsseln. Eigener Beitrag.
+   Zwei Punkte dazu: die ZWEITKOPIE ist bereits verschlüsselt
+   (`core/storage-replica.js`, `GYMDOCU_REPLICA_KEY`), nur die primäre nicht —
+   und der ORDNERNAME trägt den Personennamen
+   (`Dokumente/<mitarbeiterId>_<safeName>/`, `routes/belehrungen.js:860-869`).
+   Verschlüsselte Inhalte ändern daran nichts; eigener kleiner Punkt.
+4. *Ohne Personenbezug:* `lageplan-uploads/`, `belehrung-vorlagen/`.
+   Defekt-Fotos sind ein Grenzfall, haben aber bereits `core/foto-reaper.js`.
+
+**Gemessen zur Rückfrage „kann ein Admin den Monatsbericht dann noch öffnen":**
+Ja, uneingeschränkt. Verschlüsselung im Ruhezustand wird beim Ausliefern
+aufgelöst; der Admin merkt nichts. Ein Passwort braucht nur, was das System
+endgültig verlässt — das Offboarding-ZIP. Und: **Monatsberichte werden gar
+nicht per Mail verschickt.** `core/mailer.js:92` kennt zwar `attachments`, aber
+der einzige Nutzer im Bestand ist `core/defekt_mailer.js:193-226` (Fotos);
+`nachweise_mailer`, `verbandbuch_mailer`, `wartung_mailer` und
+`jahrescheck_mailer` verschicken reine Benachrichtigungen.
+
+**Nächste Aufträge in dieser Reihenfolge:** Offboarding-ZIP verschlüsseln
+(Passwort, getrennt übergeben) → Feldverschlüsselung der sieben Spalten →
+danach erst die bleibenden Nachweise, wenn der Betreiber den Aufwand will.
