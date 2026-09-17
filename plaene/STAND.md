@@ -2151,3 +2151,47 @@ Wenn er sich meldet: dieselbe Prüfung wie beim ersten Mal. Bei B1, B2 und B5
 genügt kein Codelesen — die sind gemessen worden und wollen gemessen
 zurückkommen. Die Gegenprobe zu B2 liegt als Rezept im Nacharbeitsauftrag
 (Verzeichnis-Symlink nach aussen, scharfer Lauf, Datei ausserhalb muss bleiben).
+
+### 18.09.2026, 00:30 UTC — Nacharbeit geliefert, eigene Prüfung läuft
+
+Executer hat die Nacharbeit abgeschlossen (`d3c9e57`, gepusht). Alle fünf
+blockierenden und zwölf kleineren Punkte bearbeitet. **Noch nicht freigegeben.**
+
+**Selbst nachgemessen, nicht aus dem Bericht übernommen:**
+- **Dateizahl-Ritual als MENGENvergleich**, nicht als Zahl: registriert 330 =
+  gelaufen 330, `diff` EXIT 0. Der Executer meldete „329 = 329" — eine andere
+  Zählweise, KEIN übersprungener Lauf. Master hat 327, der Zweig 330; die
+  Differenz sind exakt die drei neuen Testdateien.
+- **B2 (Symlink) in eigener Hand gegengemessen**: vorher „1 gefunden, 1
+  gelöscht, 0 Fehler" und die Datei ausserhalb von PDF_ROOT war weg — jetzt
+  „0 gefunden, 0 gelöscht, **1 Fehler**", Datei unangetastet, Exit 1 statt
+  stillem Erfolg.
+- **S2-Cache ist für die Rotation unschädlich**: `hatSchluessel()` wird
+  ausschliesslich von `server.js:118` und `routes/health-intern.js` gerufen;
+  `ops/schluessel-rotieren.js` benutzt `schluessel()`/`altSchluessel()` direkt,
+  die ungecacht bleiben. Behauptung des Executers geprüft, sie trägt.
+- **S6 wurde richtig gelöst.** Mein Auftragspunkt S6 war selbst fehlerhaft: er
+  verlangte, das Skript solle `process.env.PDF_ROOT` lesen — genau das verbietet
+  `test_feature_pdf_root_lesezugriff_static.js` allen ausser `core/pdf-root.js`.
+  Der Executer hat NICHT die Ausnahmeliste aufgeweicht, sondern ein Flag
+  `PDF_ROOT_EXPLIZIT_GESETZT` dort exportiert, wo der Rohwert gelesen werden
+  darf. Das ist der Weg, den ich unabhängig als richtigen ermittelt hatte.
+
+**EIGENER NEUER BEFUND — Wechselwirkung zweier für sich richtiger Behebungen:**
+B5 vergibt dem erzeugten PDF jetzt einen Zufallsnamen
+(`Verbandbuch_Eintrag_<id>_<hex>.pdf`), S7 engt das Aufräumskript auf
+`/^Verbandbuch_Eintrag_\d+\.pdf$/` ein, und der Retention-Resolver
+(`core/retention.js:321`) löst weiterhin den ALTEN festen Namen auf.
+Gemessen: der Zufallsname trifft das Muster NICHT (`false`).
+Folge: Bleibt eine Datei liegen — Prozessabsturz oder pm2-Neustart zwischen
+Erzeugung und Auslieferung, oder ein fehlgeschlagenes `unlinkSync` — findet sie
+**weder** das Aufräumskript **noch** die Retention. Und `dateiFehltErwartet`
+sorgt dafür, dass es niemandem auffällt. Genau die Art.-9-Datei, um die es in
+diesem Beitrag geht, bekäme damit einen unsichtbaren Ansammlungspfad.
+Behebung ist billig (Muster auf die optionale Zufallskomponente erweitern),
+geht aber mit Gegenprobe zurück an den Executer.
+
+Läuft gerade: eigene volle Suite, und eine ZWEITE Gegenlesung — die Regel
+verlangt sie, weil diese Behebungen VERHALTEN geändert haben statt nur
+Zusicherungen zu ergänzen. Ihr Brief fragt gezielt: wirken zwei Behebungen
+gegeneinander?
