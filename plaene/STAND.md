@@ -24,7 +24,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
 | Rechtsstand-Wächter Stufe 1 | **gemergt `c1b052f`, Deploy 419 `success`, live-check grün** — `install` der Ops-Kopie am 17.09.2026 vom Betreiber erledigt und belegt (`grep -c "lieferung: 'xml'"` -> 2). **ACHTUNG: der Sammelbeitrag ändert die ops-Datei erneut** — nach seinem Merge muss der `install` WIEDERHOLT werden, sonst meldet der Riegel eine Versionsabweichung, die es gibt |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
-| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–4 gebaut und von mir abgenommen (`eddd42d`, Suite grün, 74/0, fünf eigene Gegenproben). ZWEITE Gegenlesung durch: Astra 3 + Claude-Review 11 Befunde, **null Überschneidung**. **Runde 5 abgenommen** (`9c1a894`, Suite grün, 87/0, vier eigene Gegenproben). Gegenlesung fand die **VIERTE** Blindstelle in vier Runden (ein Leerzeichen im SQL). **Runde 6 abgenommen** (`a392bd6`, Suite grün, 88/0, drei eigene Gegenproben). Zweite Prüfspur fand die **FÜNFTE** Blindstelle, dreifach am Inventar (`pg_try_…`, GROSSSCHREIBUNG, `/*`-Präfix) plus Pfeilfunktion am Fenster — alle vier selbst gemessen, alle 88/0. **Runde 7 abgenommen** (`4a0862b`, Suite grün, 138/0, fünf eigene Gegenproben). Der Ausführende ordnet selbst ein: die Fixtur VERSCHIEBT die Klasse, sie schliesst sie nicht (D16) — das nehme ich an, **keine weitere Verfeinerung**. Runde 8 (vier gemessene Fehler) abgenommen: Suite grün, **145/0**, 327 = 327, Lint 0. **PR steht, CI laeuft** — noch nicht gemeldet (Regel 6a) |
+| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–4 gebaut und von mir abgenommen (`eddd42d`, Suite grün, 74/0, fünf eigene Gegenproben). ZWEITE Gegenlesung durch: Astra 3 + Claude-Review 11 Befunde, **null Überschneidung**. **Runde 5 abgenommen** (`9c1a894`, Suite grün, 87/0, vier eigene Gegenproben). Gegenlesung fand die **VIERTE** Blindstelle in vier Runden (ein Leerzeichen im SQL). **Runde 6 abgenommen** (`a392bd6`, Suite grün, 88/0, drei eigene Gegenproben). Zweite Prüfspur fand die **FÜNFTE** Blindstelle, dreifach am Inventar (`pg_try_…`, GROSSSCHREIBUNG, `/*`-Präfix) plus Pfeilfunktion am Fenster — alle vier selbst gemessen, alle 88/0. **Runde 7 abgenommen** (`4a0862b`, Suite grün, 138/0, fünf eigene Gegenproben). Der Ausführende ordnet selbst ein: die Fixtur VERSCHIEBT die Klasse, sie schliesst sie nicht (D16) — das nehme ich an, **keine weitere Verfeinerung**. Runde 8 (vier gemessene Fehler) abgenommen: Suite grün, **145/0**, 327 = 327, Lint 0. **AUSGELIEFERT** (`549a5ee`, Deploy 422 success, live-check grün). Vier Restwege datiert offen |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
@@ -1936,3 +1936,47 @@ Grenze steht jetzt IN der Beschriftung.
 
 Nach dem Fix: Einzeldatei **145 PASS / 0 FAIL**, volle Suite `SUITE_EXIT=0`,
 **327 = 327**, Lint EXIT 0, Marker 6. CI läuft auf `fa641cf`.
+
+## Geistersperre AUSGELIEFERT (17.09.2026, 19:40 UTC)
+
+`549a5ee` auf master, Squash von 13 Commits, acht Bau-Runden.
+
+    alle fünf Checks         success auf dem geprueften Kopf fa641cf
+    Merge-Botschaft          zurueckgelesen, endet exakt auf der Schlusszeile
+    Master-CI                success (19:38:48)
+    Deploy-Lauf 422          success, richtiger head_sha
+    live-check               EXIT 0, Landingpage/Echtheit/Abweisung/Handbuch gruen
+                             2 Punkte ehrlich ℹ (Zertifikat und Health-Endpunkt
+                             sind von hier nicht messbar, das ist erwartet)
+
+**Was das NICHT heisst:** dass die Änderung in der Datenbank richtig wirkt. Der
+live-check sagt „der Betrieb läuft und ist aktuell", nicht mehr.
+
+### Offen und datiert — nicht neu aufrollen, aber auch nicht vergessen
+
+1. **Seil-Tagescheck mit derselben check-then-act-Lücke** (D1) — VIERTER
+   Eintrittspunkt, vorbestehend. Behebung ist dieselbe wie im Nachtrag
+   (Nachprüfung in der Tx, Name aus der frischen Zeile). Eigene Runde.
+2. **Tagesgrenzen-Rennen** — vom Review-Bot als P1 gemeldet, Tatsache
+   zutreffend. War auf master rund um die Uhr offen, jetzt nur am Tageswechsel.
+3. **Offline-Nachzügler des Tagesschecks** (Client-Datum im Tagesschlüssel).
+4. **Demo-Daten-Löscher** (hartes DELETE ohne Sperrprüfung).
+5. **`nachtrag:`-Verklemmungskreis** (D13) — im Bestand, dokumentiert, ungelöst.
+6. **D14–D16:** Aufruf aus einer Konstante, Textscan-Grenzen, und die ehrliche
+   Einordnung, dass die Fixtur die Klasse verschiebt statt sie zu schliessen.
+
+### Was der Tag methodisch gezeigt hat
+
+Acht Runden, fünf davon wegen eines blinden Wächters. Jede Blindstelle wurde
+von einer der beiden Prüfspuren gefunden, **keine vom Ausführenden selbst** —
+und keine von der jeweils anderen Spur. Zweimal null Überschneidung, jetzt
+dreimal.
+
+Der Ausführende hat mir an **fünf** Stellen mit einer Messung widersprochen
+und jedes Mal recht gehabt: `$1::bigint`, meine Zählung (neun statt acht),
+der gierige Kommentarabzug, die Nebenwirkungsfrage zur Klammertiefe, und mein
+unempfindlicher Regex-Negativfall. Das ist der wertvollste Teil des Verfahrens.
+
+**Nächster Punkt laut Betreiber:** Dokumente für die IT. Bereit liegen die
+Verschlüsselungs-Analyse (mit der offenen Frage an IONOS) und die
+Sticker-it-Bewertung.
