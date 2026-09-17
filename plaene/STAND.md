@@ -28,7 +28,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
-| Rechtsstand-Sammelbeitrag (7 offene Punkte) | Beide Prüfspuren durch (15 Befunde), **Runde 4 im Bau** — fünf blockierende, alle selbst nachgemessen, s. unten. Noch KEIN PR |
+| Rechtsstand-Sammelbeitrag (7 offene Punkte) | Runde 4 abgenommen (`72d5635`), zweite Gegenlesung ohne blockierenden Befund, **Suite läuft über meine letzten zwei Änderungen**. Noch KEIN PR |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 
@@ -1396,3 +1396,57 @@ mehr bestätigen — eine Prüfung, die nicht fehlschlagen kann. Maßgeblich ist
 Erwartet: **0 vor dem install, 7 danach.** Die 0 vorher ist die
 Positivkontrolle — kommt dort schon eine Zahl > 0, war der install entweder
 schon gelaufen oder man misst die falsche Datei.
+
+## Runde 4 abgenommen, zweite Gegenlesung durch (17.09.2026, ~11:45 UTC)
+
+Runde 4 (`72d5635`) hat die fünf blockierenden Befunde behoben. Bemerkenswert
+am Bericht des Ausführenden: er hat einen Fehler in seinem EIGENEN
+Fixtur-Entwurf gemessen und gemeldet, bevor er abgab — seine erste Fassung
+(3000-Zeichen-Name) erreichte den kritischen Zweig gar nicht, `continue` und
+`break` blieben auch dort beobachtungsgleich. Korrigiert auf 4200 Zeichen mit
+einer Positivkontrolle, dass die lange Quelle selbst nicht mehr passt.
+
+**Meine eigene Abnahme** (nicht seine Zahlen): SUITE_EXIT=0,
+`test_feature_rechtsstand.js` **316 PASS / 0 FAIL**, Dateizahl-Ritual
+**326 = 326** (`diff` EXIT 0), Lint EXIT 0, Marker 6.
+
+**Die drei Mutationen, die vor Runde 4 nachweislich wirkungslos waren,
+greifen jetzt — je einzeln von mir gemessen:**
+
+    Mutation                          | vor Runde 4     | jetzt
+    continue -> break (ops:878)       | EXIT 0, 295/0   | EXIT 1, 314/2
+    Bereichsriegel ganz entfernt      | EXIT 0, 295/0   | EXIT 1, 315/1
+    <standtyp>-Haertung zurueckgedreht| —               | EXIT 1, 315/1
+
+Jedes Mal fallen genau die dafür gebauten Zusicherungen. Alle Mutationen über
+frisch gezogene `cp`-Kopien zurückgenommen, `diff` EXIT 0, Marker wieder 6.
+
+**Zweite Gegenlesung (Hausregel: fällig, weil Runde 4 VERHALTEN geändert hat):
+kein blockierender Befund.** Ihr Wert lag im gezielten Ausschluss statt im
+Fund — der neue `sicher()`-Wrapper über rund 24 Aufrufstellen verwandelt an
+keiner Stelle einen gefangenen Fehler in eine bestandene Zusicherung, jede
+Weiterverwendung einzeln nachgesehen. Das war mein Hauptverdacht. Zeile in
+`ASTRA-LAEUFE.md`; das ist der erste Datenpunkt dafür, dass eine zweite Runde
+auch bestätigen kann.
+
+**Zwei Befunde daraus, beide selbst nachgemessen, beide getragen:**
+
+1. Die Abschlusszeilen-Zusicherung baute ihren Ausdruck zusammen und prüfte
+   damit einen TEILSTRING statt einer Zahl — gemessen matcht
+   `"5 von 6 ausführlich gezeigt"` auch in `"15 von 6 ausführlich gezeigt"`.
+   Selbst behoben (Bagatellgrenze, eine Zusicherung), in beide Richtungen
+   gemessen mit einem eingebauten Zählerfehler (`gezeigt + 10`):
+
+       mit der neuen Zusicherung:  EXIT 1, 311 PASS / 5 FAIL  (sie faellt)
+       mit der alten Zusicherung:  EXIT 1, 312 PASS / 4 FAIL  (sie faellt NICHT)
+
+2. Ein quotiertes `>` INNERHALB eines Attributwerts bricht die gehärteten
+   Muster: `<standkommentar quelle="a>b">NEU</…>` liefert gemessen `b">NEU`
+   statt `NEU`. **Dokumentiert, NICHT behoben** — kein echtes gii-Dokument
+   trägt das, die Klasse ist laut statt still, und ein quotierungsbewusster
+   Erkenner wäre der fünfte Umbau derselben Funktion.
+
+**Offen:** volle Suite über meine zwei Änderungen läuft, danach Commit, PR,
+Bot-Kommentare VOR den Checks, CI, Merge, Deploy, live-check. Danach der
+`install` der Ops-Kopie mit der Gegenprobe auf `fuelleUnbestaetigtZeilen`
+(0 vorher, 7 nachher) — s. Abschnitt darüber.
