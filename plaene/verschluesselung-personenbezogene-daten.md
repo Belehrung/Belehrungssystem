@@ -120,6 +120,33 @@ den Server verlässt, nicht ein Einbruch in den laufenden Betrieb.
 2. **Ist das IONOS-Volume verschlüsselt?** Das ändert die Einschätzung von A
    erheblich. Beim Hoster erfragen.
 
+   **Teilantwort vom 17.09.2026 (Betreiber, IONOS-Hilfeartikel zu Managed
+   Nextcloud).** Der Artikel betrifft ein ANDERES Produkt als den Server, auf
+   dem GymDocu läuft — er sagt also nichts darüber, ob dessen Volume
+   verschlüsselt ist. Er sagt aber etwas über die HALTUNG des Hosters, und die
+   trägt weiter:
+
+   - IONOS begründet dort, serverseitige Verschlüsselung sei *nicht
+     erforderlich*, weil der Speicherbereich exklusiv und nicht mit anderen
+     Nutzern geteilt sei. Das ist ein Argument über ZUGRIFFSTRENNUNG, nicht
+     über Verschlüsselung. Gegen eine abhandengekommene Sicherung, einen
+     weitergegebenen Auszug oder den Zugriff auf die Platte hilft
+     „exklusiver Bereich" nicht — genau die drei Wege, gegen die Stufe A und C
+     hier antreten.
+   - IONOS empfiehlt für erhöhten Bedarf ausdrücklich, **lokal zu
+     verschlüsseln und nur die verschlüsselten Objekte abzulegen**. Das ist
+     wörtlich die Reihenfolge dieses Papiers: verschlüsseln, BEVOR die Daten
+     den Speicher erreichen.
+   - Zusatz für den Betrieb: die serverseitige Verschlüsselung von Nextcloud
+     ist dort ausdrücklich als Falle beschrieben — sie erzeugt Fehler und
+     lässt sich nur noch durch den Kundenservice rückgängig machen. Falls
+     irgendwo eine Managed Nextcloud im Spiel ist: **nicht einschalten.**
+
+   Was weiterhin OFFEN bleibt: ob die Platte unter GymDocu verschlüsselt ist.
+   Nach dieser Haltung ist die vorsichtige Annahme **nein**, solange es
+   niemand schriftlich bestätigt — und die Empfehlungsreihenfolge unten ändert
+   sich dadurch nicht, sie wird nur dringlicher.
+
 ## Empfehlung
 
 In dieser Reihenfolge, jede Stufe für sich nützlich:
