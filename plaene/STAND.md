@@ -22,7 +22,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Beitrag 2a (Datenmodell und Leser) | gemergt `613a2c9`, Deploy 415, live-check grün |
 | Beitrag 2b-1 (Ausmustern auslösbar) | gemergt `eb276d9`, Deploy 416, live-check grün |
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
-| Rechtsstand-Wächter Stufe 1 | Runden 1–5 gebaut (`764d0ba`), **abgenommen** — Suite grün, Registerabgleich 57/0, Review nachgemessen; PR und CI laufen |
+| Rechtsstand-Wächter Stufe 1 | **gemergt `c1b052f`, Deploy 419 `success`, live-check grün** — OFFEN beim Betreiber: `install` der Ops-Kopie auf dem Server |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen, s. `plaene/auftrag-geistersperre-nachtrag.md` |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
@@ -895,3 +895,21 @@ gemessen). Die sieben echten sind keiner blockierend und stehen datiert in
 /usr/local/bin/gymdocu-rechtsstand-watch.js` auf dem Server. Ohne ihn läuft
 die alte Kopie weiter — sie liefert kein XML mit, und der neue Code meldet
 das ab Runde 4 ausdrücklich als Versionsabweichung mit genau diesem Befehl.
+
+### Nachtrag 17.09.2026, 02:00 UTC — gemergt und ausgeliefert
+
+`c1b052f`, alle fünf Prüfungen grün, Review-Bot 4/5 „safe to merge" mit
+genau zwei Befunden — beide waren vorher selbst gemessen und stehen als
+datierte offene Punkte in `docs/offene-befunde-31-08-2026.md`; sie wurden
+bewusst nicht mitgebaut und im PR mit Begründung beantwortet. Deploy-Lauf
+419 mit dem richtigen `head_sha` auf `success`, `tools/live-check.sh` grün
+(zwei Punkte wie immer ℹ statt ✓: Zertifikat und Health-Endpunkt sind aus
+dieser Umgebung nicht messbar).
+
+**Der nächste Beitrag ist der Sammelbeitrag aus diesen sieben Punkten** —
+Schleifenabbruch (`break` → `continue`), `<enbez/>`/`<textdaten/>` mit dem
+ordnungsunabhängigen Ausdruck, `esc()` auf den Lagen-Bezeichner, eine
+„N von M"-Zeile für die Unerreichbar-Liste, der Abruf-Vertragskommentar,
+eine gemeinsame Konstante für `lieferung: 'xml'`, die doppelte
+Längenrechnung. Keiner davon ist blockierend; zusammen sind sie ein
+sauberer eigener Beitrag statt einer sechsten Bau-Runde.
