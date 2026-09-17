@@ -1980,3 +1980,31 @@ unempfindlicher Regex-Negativfall. Das ist der wertvollste Teil des Verfahrens.
 **Nächster Punkt laut Betreiber:** Dokumente für die IT. Bereit liegen die
 Verschlüsselungs-Analyse (mit der offenen Frage an IONOS) und die
 Sticker-it-Bewertung.
+
+## 17.09.2026, abends — Verschlüsselung der personenbezogenen Daten
+
+Dokumente für die IT sind FERTIG gebaut (`scratchpad/dok/fertig/`, fünf PDFs),
+liegen aber auf Wunsch des Betreibers unverschickt. Nicht neu bauen.
+
+Neue Messung am Quelltext (master 549a5ee), die das Verschlüsselungspapier
+ergänzt: Das Verbandbuch-Einzel-PDF mit den Art.-9-Gesundheitsdaten wird bei
+JEDEM Abruf neu erzeugt und bleibt danach DAUERHAFT unter
+`<PDF_ROOT>/<studio>/Verbandbuch/` liegen — gelöscht wird es erst nach fünf
+Jahren durch `core/retention.js:319-321`. Niemand liest die Datei je wieder
+(einzige Erzeuger: `routes/verbandbuch-admin.js:447` und `:462`, beide liefern
+sie direkt aus). Sie ist also ein reines Nebenprodukt des Downloads.
+
+Daraus Stufe 0 vor allen Verschlüsselungsstufen: die Datei gar nicht erst
+liegenlassen. Kein Schlüssel, keine Leseweg-Änderung, keine Migration.
+
+Laufender Auftrag: `plaene/auftrag-verschluesselung-stufe0.md`, Zweig
+`claude/verschluesselung-stufe0` in `/home/user/gymdocu`. Inhalt: A) PDF nach
+dem Download löschen, in allen Ausgängen beider Routen. B) Retention-Report
+darf davon nicht dauerhaft gelb werden. C) Aufräumskript für den Altbestand
+(Probelauf ist Standard). D) Health-Endpunkt meldet als reine Auskunft, ob
+`APP_ENC_KEY`/`TOTP_ENC_KEY` gesetzt ist — NICHT in `degraded`, sonst hinge das
+Deploy-Gate daran.
+
+Danach offen, in dieser Reihenfolge: Feldverschlüsselung der acht
+Gesundheitsspalten (Entscheidung zu `person_name` steht beim Betreiber),
+Offboarding-ZIP, eigene Datenbank-Auszüge.
