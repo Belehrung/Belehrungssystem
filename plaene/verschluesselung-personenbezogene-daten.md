@@ -147,6 +147,39 @@ den Server verlässt, nicht ein Einbruch in den laufenden Betrieb.
    niemand schriftlich bestätigt — und die Empfehlungsreihenfolge unten ändert
    sich dadurch nicht, sie wird nur dringlicher.
 
+   **Nachgesehen am 17.09.2026, und es beantwortet die Frage NICHT.** Im
+   Einsatz sind (Betreiber-Auskunft, Screenshot der IONOS-Verwaltung) zwei
+   Verträge der klassischen Hosting-Linie: ein **VPS Linux L+** (dort hängen
+   die gymdocu-Domains) und ein **Cloud Server** aus der Kategorie „Cloud &
+   Dedicated Server & Backup". Eine Managed Nextcloud gibt es nicht.
+
+   IONOS dokumentiert Verschlüsselung ruhender Daten (AES-XTS 256, je Volume
+   ein eigener Schlüssel, automatisch für alle nach Einführung angelegten
+   Volumes) — aber ausdrücklich für **IONOS CLOUD Block Storage**
+   (docs.ionos.com/cloud/…/block-storage/overview/data-security). Das ist eine
+   ANDERE Produktlinie als die beiden obigen Verträge; VPS und Cloud Server der
+   klassischen Linie werden auf dieser Seite nicht erwähnt. Wer daraus „unsere
+   Platte ist verschlüsselt" macht, überträgt eine Zusage von einem Produkt auf
+   ein anderes — genau die Art Schluss, die dieses Papier sonst als ungemessen
+   kennzeichnet.
+
+   Die Frage an IONOS lautet deshalb, je Vertrag getrennt und schriftlich:
+   *Sind die Datenträger dieses Produkts im Ruhezustand verschlüsselt, und
+   wenn ja, mit welchem Verfahren und wer hält den Schlüssel?*
+
+   Praktisch bleibt es ohnehin bei der Reihenfolge unten: eine
+   Vollverschlüsselung der Platte, die der Betreiber SELBST einrichtet, ist
+   auf einem VPS kaum brauchbar — nach jedem Neustart müsste jemand die
+   Passphrase eingeben, sonst liegt sie auf derselben Maschine. Genau deshalb
+   stehen A (Sicherung) und C (PDFs) vor allem anderen: sie verschlüsseln,
+   BEVOR die Daten den Speicher erreichen, und hängen nicht an einer Zusage
+   des Hosters.
+
+   **Noch offen und hier NICHT geprüft:** ob zu dem Cloud-Server-Vertrag ein
+   IONOS-Backup gebucht und aktiv ist. Wäre es das, läge dort eine weitere
+   Kopie personenbezogener Daten beim Hoster — und Stufe A beträfe nicht nur
+   die eigenen Sicherungen.
+
 ## Empfehlung
 
 In dieser Reihenfolge, jede Stufe für sich nützlich:
