@@ -2138,3 +2138,16 @@ nötig, von beiden Gegenlesungen bestätigt: `absolutAusDateipfad()` statt der
 Annahme `PDF_ROOT == <repo>/pdf`, und eine eigene Fehlerantwort im
 `res.download`-Callback (mit drittem Parameter sendet Express sonst gar
 nichts mehr — die Anfrage hing unbegrenzt).
+
+### Takt 17.09.2026, 22:40 UTC — nichts getan ausser Stand nachziehen
+
+Executer arbeitet an der Nacharbeit; keine Benachrichtigung. Fortschritt nur
+über Git-Metadaten geprüft, NICHT im Arbeitsbaum gearbeitet: `ed39bc8`
+„Nacharbeit: B1, B2, S1, S5-S9 aus zwei Gegenlesungen behoben" — die beiden
+gemessenen Löschwege (B1 Schreibweg trotz gefallener Zusicherung, B2 Symlink)
+sind also angefasst, B3 bis B5 stehen noch aus.
+
+Wenn er sich meldet: dieselbe Prüfung wie beim ersten Mal. Bei B1, B2 und B5
+genügt kein Codelesen — die sind gemessen worden und wollen gemessen
+zurückkommen. Die Gegenprobe zu B2 liegt als Rezept im Nacharbeitsauftrag
+(Verzeichnis-Symlink nach aussen, scharfer Lauf, Datei ausserhalb muss bleiben).
