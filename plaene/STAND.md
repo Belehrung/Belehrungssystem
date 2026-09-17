@@ -28,7 +28,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
-| Rechtsstand-Sammelbeitrag (7 offene Punkte) | Runde 2 gebaut (`2e40bc2`), **Runde 3 im Bau** — ein blockierender Befund aus meiner eigenen Nachmessung, s. unten |
+| Rechtsstand-Sammelbeitrag (7 offene Punkte) | Runde 3 gebaut (`bc448d9`) + eigene Korrektur (`9905887`), Suite grün, **Prüfspuren laufen** — noch KEIN PR |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 
@@ -1263,3 +1263,44 @@ Zwei Kommentare hängen daran und werden mitkorrigiert: der Satz
 „Reihenfolge des Budgets bleibt Schweregrad-basiert: rot vor ruhig vor
 unbestätigt" steht seit `2e40bc2` sechs Zeilen über dem Code, der ihn
 widerlegt; und die widerlegte Statusdatei-Begründung.
+
+## Runde 3 gebaut und eigene Korrektur nachgezogen (17.09.2026, ~10:20 UTC)
+
+Der Zwei-Zug ist gebaut (`bc448d9`). Gegen meinen eigenen Auftrag hat der
+Ausführende dabei einen Fehler in MEINER Beweisführung gefunden und gemeldet
+statt ihn zu übernehmen: die Behauptung „der zweite Zug liefert immer eine
+OBERMENGE des ersten" folgt NICHT aus der Budget-Ungleichung.
+`fuelleUnbestaetigtZeilen()` überspringt zu grosse Einträge (`continue`) und
+ist deshalb nicht monoton in der Budgetgrösse.
+
+Selbst nachgemessen, und zwar in beide Richtungen:
+
+    Fixtur: ein 3000-Zeichen-Eintrag vor 50 kurzen
+    Stand           | nur 50 kleine | Riese ZUERST + 50 kleine
+    abbb30a (R1)    | 50 von 50     | 20 von 50, Riese drin
+    2e40bc2 (R2)    | 50 von 50     | 20 von 50, Riese drin
+    bc448d9 (R3)    | 50 von 50     | 20 von 50, Riese drin
+
+Damit steht zweierlei fest: die Eigenschaft ist echt, und sie ist **kein
+Regress dieses Beitrags** — sie steckt in der Füllfunktion selbst. Mit dem
+ECHTEN Register ist sie ausserdem unerreichbar: 72 Quellen ergeben 29
+Gruppen, die längste daraus baubare Zeile misst **255 Zeichen** (§ 12
+BetrSichV mit elf gruppierten Paragrafen), nötig wären rund 2000. Vollausfall
+aller 29 Gruppen: 3546 von 4096 Zeichen, **29 von 29 namentlich**.
+
+Korrektur `9905887` (von mir selbst geschrieben, Bagatellgrenze — reine
+Prosa): die widerlegte Herleitung ist aus dem Kommentar und aus dem
+Zusicherungsnamen raus, an ihre Stelle treten die Messungen oben. Der
+Zusicherungsname nennt jetzt „diese fünf Fälle" statt einer Garantie.
+
+**Abnahme `9905887`:** SUITE_EXIT=0, `test_feature_rechtsstand.js` 295 PASS /
+0 FAIL, Dateizahl-Ritual 326 = 326 (breites Sieb auf BEIDEN Seiten, `diff`
+EXIT 0), Lint EXIT 0, Marker 6.
+
+Dabei eine eigene Berichtigung: mein erstes Dateizahl-Ritual meldete
+„322 = 322" — beide Seiten mit `\.js` gesiebt, wodurch `ops/boot-smoke.js`
+und die drei `test_feature_audit2_batch[ABC]_static.js` auf BEIDEN Seiten
+fehlten. Gleichheit hielt, das Sieb war falsch. Mit dem vorgeschriebenen
+Muster sind es 326.
+
+**Offen:** Gegenlesung läuft, danach `/code-review`, dann erst PR.
