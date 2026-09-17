@@ -24,7 +24,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
 | Rechtsstand-Wächter Stufe 1 | **gemergt `c1b052f`, Deploy 419 `success`, live-check grün** — `install` der Ops-Kopie am 17.09.2026 vom Betreiber erledigt und belegt (`grep -c "lieferung: 'xml'"` -> 2). **ACHTUNG: der Sammelbeitrag ändert die ops-Datei erneut** — nach seinem Merge muss der `install` WIEDERHOLT werden, sonst meldet der Riegel eine Versionsabweichung, die es gibt |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
-| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runde 1 gebaut und abgenommen (`e169480`), **Runde 2 im Bau**: zweiter Eintrittspunkt, s. unten. Noch KEIN PR |
+| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–3 gebaut und abgenommen (`d7e3176`), Gegenlesung durch (4 Befunde), **Runde 4 im Bau**. Noch KEIN PR |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
@@ -1554,3 +1554,62 @@ eine Verklemmung entstehen kann.
    Befund nach `docs/offene-befunde-31-08-2026.md`.
 2. **`routes/wartung.js:1305`** (eigener Lock `wartung-sperre:<studio>:<id>`)
    ist nicht untersucht. Wird ebenda festgehalten statt offen gelassen.
+
+## Geistersperre: Runden 2 und 3 abgenommen, Gegenlesung, Runde 4 im Bau (17.09.2026, ~14:45 UTC)
+
+Zweig `claude/geistersperre-rennen`, Stand `d7e3176`. Gebaut sind bisher: der
+Tagesschlüssel plus Nachprüfung in der Transaktion (Runde 1), der Studio-Lock
+für den zweiten Eintrittspunkt (Runde 2), ein statischer Anker auf
+`ausmusterung.js` (Runde 3).
+
+**Eigene Abnahme:** `SUITE_EXIT=0`, Datei **58 PASS / 0 FAIL**, Dateizahl-Ritual
+**327 = 327**, Lint EXIT 0, Marker 6.
+
+**Eigene Gegenproben, je einzeln gemessen und zurückgenommen (md5 identisch):**
+
+    ohne Tagesschlüssel:        20 PASS /  9 FAIL   (Szenario A fällt)
+    ohne Nachprüfung:           23 PASS /  6 FAIL   (Blockade GRÜN, Ergebnis rot)
+    ohne den neuen Studio-Lock: 47 PASS /  7 FAIL   (nur Szenario B fällt)
+
+Die Verklemmungsfrage ist GEMESSEN statt hergeleitet (Szenario G, zwei
+Verbindungen gegenläufig): genau eine Seite bekommt `40P01 deadlock detected`.
+Die Ordnung Tagesschlüssel → Studio ist damit tragend, nicht Geschmack.
+
+### Die Gegenlesung hat die eigene Arbeit derselben Stunde getroffen
+
+Vier Befunde, drei davon selbst nachgemessen und tragend (Zeile in
+`ASTRA-LAEUFE.md`, 11,23 $).
+
+**Der schwerste:** der statische Anker aus Runde 3 — extra gebaut, damit ein
+künftiger Verlust des Studio-Locks auffällt — sieht genau diesen Verlust NICHT.
+Gemessen an der ECHTEN `routes/admin/ausmusterung.js`, Bedingung von
+`SEILKONTROLLE` auf `CARDIO` verbogen (damit läuft der Lock im Seil-Zweig gar
+nicht mehr): **58 PASS / 0 FAIL, EXIT 0, null gefallene Zusicherungen.** Er
+bindet Anzahl und Textpositionen, nicht die BEDINGUNG. Wird in Runde 4 dicht
+gemacht.
+
+**Der zweite:** die Nachprüfung liest die frische Gerätezeile und wirft sie mit
+`.some(...)` weg; der INSERT nimmt weiter `geraet.name` aus der VORprüfung,
+während die Löschprüfung am AKTUELLEN Namen bindet (`core/seilgeraete.js:156-160`).
+Umbenennen zwischendrin → Sperre trägt einen Namen, unter dem sie niemand mehr
+findet → dritter Weg zur selben Geistersperre. Wird in Runde 4 gebaut.
+
+### Zwei Befunde ausdrücklich NICHT in diesem Beitrag
+
+1. **Rennen über die Berliner Tagesgrenze.** Selbst nachgelesen und tragend:
+   die Löschroute nimmt in ihrer Transaktion NUR den Tagesschlüssel, ihr
+   `auditAppend` läuft erst NACH dem Commit — sie hält den Studio-Lock nie.
+   Löschen um 23:59:59 auf Tag D, Nachtrag um 00:00:00 auf D+1: keine
+   gemeinsame Sperre, der neue Studio-Lock greift ins Leere. Die Behebung
+   (Seil-Schlüssel an allen vier Nehmern datumslos) ändert die Granularität an
+   drei weiteren Routen und berührt den dokumentierten Bestandskreis — eigene
+   gemessene Runde, kein Anhängsel.
+2. **Der Demo-Daten-Löscher** (`core/demo_daten.js`, POST
+   `/demo-daten/entfernen`) entfernt Seilgeräte hart, ohne Sperrprüfung und
+   ohne einen der beiden Locks. Andere Klasse (Zeile verschwindet ganz statt
+   `aktiv = 0`), vorbestehend. **Von mir NICHT nachgemessen** — deshalb in
+   `ASTRA-LAEUFE.md` nicht als getragen gezählt.
+
+**Auflage an Runde 4:** kein Kommentar und kein Testkopf darf behaupten, die
+Geistersperre sei erledigt. Was gilt: drei Eintrittspunkte geschlossen, zwei
+Restwege benannt und datiert.
