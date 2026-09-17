@@ -24,7 +24,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Die sieben BGB-Einträge | gemergt `7abea9f`, Deploy 417 `success`, live-check grün |
 | Rechtsstand-Wächter Stufe 1 | **gemergt `c1b052f`, Deploy 419 `success`, live-check grün** — `install` der Ops-Kopie am 17.09.2026 vom Betreiber erledigt und belegt (`grep -c "lieferung: 'xml'"` -> 2). **ACHTUNG: der Sammelbeitrag ändert die ops-Datei erneut** — nach seinem Merge muss der `install` WIEDERHOLT werden, sonst meldet der Riegel eine Versionsabweichung, die es gibt |
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
-| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–4 gebaut und von mir abgenommen (`eddd42d`, Suite grün, 74/0, fünf eigene Gegenproben). ZWEITE Gegenlesung durch: Astra 3 + Claude-Review 11 Befunde, **null Überschneidung**. **Runde 5 abgenommen** (`9c1a894`, Suite grün, 87/0, vier eigene Gegenproben). Gegenlesung fand die **VIERTE** Blindstelle in vier Runden (ein Leerzeichen im SQL). **Runde 6 im Bau** (A1–A3). Noch KEIN PR |
+| Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen. Runden 1–4 gebaut und von mir abgenommen (`eddd42d`, Suite grün, 74/0, fünf eigene Gegenproben). ZWEITE Gegenlesung durch: Astra 3 + Claude-Review 11 Befunde, **null Überschneidung**. **Runde 5 abgenommen** (`9c1a894`, Suite grün, 87/0, vier eigene Gegenproben). Gegenlesung fand die **VIERTE** Blindstelle in vier Runden (ein Leerzeichen im SQL). **Runde 6 gebaut** (`a392bd6`, „Inventar am Bezeichner, Produktivbaum, Fenstergrenze gebunden"), seine Abschlusspruefung laeuft — meine Abnahme steht aus. Noch KEIN PR |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
 | Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **gemergt `922d1ed`, Deploy 420 `success`, live-check grün** |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
@@ -1749,3 +1749,21 @@ Runde 6 baut A1–A3, dokumentiert D9–D12. Auftrag:
 
 **Keine Abbruchvorhersage.** Was ich zusage, ist WAS ich noch baue — nur
 blockierende Blindstellen —, nicht dass nichts mehr kommt.
+
+### Takt 16:40 UTC — nur Stand nachgezogen
+
+Runde 6 ist als `a392bd6` gebaut und gepusht („Inventar am Bezeichner,
+Produktivbaum, Fenstergrenze gebunden"), der Ausführende ist noch in seiner
+Abschlussprüfung. Nach der Regel beim Takt-Feuern während eines laufenden
+Agenten: nichts angefasst.
+
+Danach meine Abnahme, und dabei besonders die drei Gegenproben, die ich auf
+`9c1a894` selbst gemessen habe und die JETZT rot werden müssen:
+
+    pg_advisory_xact_lock (hashtext($1))  — ein Leerzeichen   war 87 / 0
+    ein Leerzeichen vor `async function ladeOffeneHinweise(`  war 87 / 0
+    Tagesschlüssel-Lock hinter core/integritaet.js:65         war unsichtbar
+
+Dazu die Gegenrichtung (unveränderter Baum grün) und die Frage, ob die
+Ausweitung auf den Produktivbaum das Inventar unpflegbar gross macht — dafür
+hatte ich eine ZAHL verlangt, keine stille Entscheidung.
