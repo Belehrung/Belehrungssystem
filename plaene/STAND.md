@@ -26,7 +26,7 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Orbit4-Recherche | erledigt, `plaene/wettbewerb-orbit4.md` |
 | Beitrag 2b-2 (Rückweg) | **umgedeutet** — der Kern ist ein offenes Rennen, s. `plaene/auftrag-geistersperre-nachtrag.md` |
 | Doku-Stand ins Belehrungssystem-main | gemergt `254959c` (Bot 5/5, ein Befund behoben) |
-| Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | **im Bau** seit 17.09.2026 ~02:05 UTC, Zweig `claude/geraetealter` |
+| Gerätealter an der Ausmusterung (Orbit4, Punkt 1) | Runde 1 gebaut (`1f97954`), **ein blockierender Befund** — Runde 2 im Bau, s. unten |
 | Jira-Anbindung | **vom Betreiber verworfen** 16.09.2026, s. `plaene/ENTSCHIEDEN.md` |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
@@ -915,3 +915,37 @@ ordnungsunabhängigen Ausdruck, `esc()` auf den Lagen-Bezeichner, eine
 eine gemeinsame Konstante für `lieferung: 'xml'`, die doppelte
 Längenrechnung. Keiner davon ist blockierend; zusammen sind sie ein
 sauberer eigener Beitrag statt einer sechsten Bau-Runde.
+
+### Gerätealter — Runde 1 abgenommen mit EINEM blockierenden Befund (17.09.2026)
+
+Zweig `claude/geraetealter`, Commits `9150669` + `1f97954`, Basis `c1b052f`.
+Suite **SUITE_EXIT=0**, `test_feature_geraete_alter.js` 70 PASS / 0 FAIL,
+Dateizahl **326 = 326**, Lint EXIT 0 — und trotzdem nicht auslieferbar.
+
+**Der Befund (vom Ausführenden gemeldet, von mir am gerenderten HTML
+nachgemessen):** Die neue Zeile „Mängel: keine Mängel erfasst" kann auf
+DERSELBEN Seite stehen wie die offenen Mängel dieses Geräts zum Ankreuzen.
+Ursache: die tägliche Sammelprüfung — der Hauptweg — trägt `geraet_id` gar
+nicht in ihrer INSERT-Spaltenliste (`routes/sichtpruefung.js:2543-2547`,
+gemessen), während die Blöcke 2/3 derselben Seite über den NAMEN zuordnen
+(`core/ausmusterung.js:118-120`). Eigene Messung, zwei Mängel mit der
+echten Produktions-Spaltenliste geschrieben:
+
+    ladeMaengelHistorie -> {"gesamt":0,"offen":0,"letzter":null}
+    ladeKandidaten      -> block1: 0  block2: 2  block3: 0
+    Seite sagt "keine Mängel erfasst": true
+    Seite zeigt beide Mängel:          true
+    WIDERSPRUCH_AUF_EINER_SEITE=true
+
+**Die Ursache stand in MEINEM Auftrag** („zähle über `geraet_id`, nicht über
+den Namen"). Die Vorgabe war richtig gegen Umbenennen und Namensvetter, aber
+sie macht aus einer Deckungslücke einen falschen Satz auf der Seite, auf der
+über das Verschrotten entschieden wird.
+
+**Nachbesserung beauftragt** (Runde 2, derselbe Ausführende): zwei GETRENNTE
+Gruppen — sicher zugeordnet (`geraet_id`) und namensgleich (`geraet_id IS
+NULL AND geraet_name = …`) —, nie zu einer Summe verschmolzen; bei null
+Treffern für Cardio/Kraft der Satz „keine Mängel gefunden (gesucht über
+Gerätekennung und Gerätenamen)", also eine Aussage über die SUCHE statt über
+die Welt; für Seilkontrolle bleibt es bei „keine Mängel erfasst" (dort ist
+`geraete_sperren.geraet_id` NOT NULL, die Zählung ist vollständig).
