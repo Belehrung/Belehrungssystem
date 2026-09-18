@@ -2946,3 +2946,98 @@ unbelegten Behauptung, `memoryStorage` sei nicht betroffen.
 erwartungsgemäss, er ist eine Kopie und driftet. Die Abweichung ist additiv
 (neue Regeln fehlen, nichts widerspricht), und der Prompt sagt selbst, dass
 das Repo recht hat. Kein Handlungsbedarf, nur vermerkt.
+
+### 18.09.2026, ~09:3x UTC — Runde 5 geliefert, und ICH lag falsch
+
+Kopf `27241c1`, drei Commits, gepusht. 13 Dateien, +600/−91.
+
+**Der wichtigste Punkt zuerst: mein Befund R1 war FALSCH, und der Ausführende
+hat mir das mit einer Messung widersprochen.**
+
+Ich hatte gemeldet, `routes/sichtpruefung.js` würde in Produktion eine
+TypeError werfen, weil `req.body` in Express 5 `undefined` ist, sobald kein
+Parser gegriffen hat. Meine Minimal-App bildete `server.js:161-162` nach —
+die beiden Body-Parser. **Sie liess `server.js:164-168` aus:**
+
+    // ── 2b) Body-Härtung (WICHTIG – nicht entfernen!) ──────────────
+    app.use((req, res, next) => {
+        if (req.body == null || typeof req.body !== 'object') req.body = {};
+        next();
+    });
+
+**Selbst nachgemessen, mit dieser dritten Middleware:** roh ohne
+Content-Type → `200 {"ok":true,"ids":""}`, multipart → `200`. Keine
+TypeError. Die Produktions-App war nie betroffen.
+
+Das ist genau die Klasse, vor der unsere eigene Regel warnt: ich habe eine
+TATSACHENBEHAUPTUNG über die Middleware-Kette aufgestellt, nachdem ich zwei
+von drei Gliedern gemessen hatte — und sie als Befund in einen Auftrag
+geschrieben. Hätte der Ausführende sie übernommen statt nachzumessen, stünde
+jetzt eine erfundene Regression in der Historie.
+
+**Wo die Fehlerklasse ECHT ist** (von ihm gemessen, von mir am Harness
+nachgesehen): in jedem Aufbau OHNE die Body-Härtung — `test/helfer/route-
+harness.js` hat sie nicht. Dort liefert der alte Stand tatsächlich
+`500 TypeError`.
+
+**Entscheidung: die Behebung bleibt drin** (`req.body || {}`, eine Zeile,
+macht die Route unabhängig von der Kette), **aber der eigentliche Befund ist
+ein anderer und wird gebaut:** `server.js:165` trägt die Warnung „WICHTIG –
+nicht entfernen!" und ist von NICHTS bewacht, während 206 `req.body.x`-Zugriffe
+in `routes/` sich darauf verlassen (nur 12 tragen selbst `|| {}`). Das ist
+dieselbe Klasse wie R2, die wir gerade geschlossen haben.
+
+### Selbst nachgemessen an Runde 5
+
+Wegwerf-DB `abnahme_r5_test`, Rücknahme je über `cp`-Kopie mit `diff` EXIT 0,
+Marker danach 6:
+
+| Messung | Ergebnis |
+|---|---|
+| Wächter, sauberer Baum | `EXIT 0`, **97 PASS / 0 FAIL** (vorher 71) |
+| `server.js:173` (CSRF-Mount) entfernt — der schwerste Befund der Review | `EXIT 1`, **94 / 3**: „genau einmal eingehängt" **und** „nach beiden Parsern" **und** „vor JEDER zu schützenden Registrierung (30 geprüft)" fallen einzeln |
+| `app.purge("/intern/eigenprobe", …)` | `EXIT 1`, **96 / 1**, `{"nurGefunden":["PURGE /intern/eigenprobe"]}` — vorher unsichtbar |
+| Body-Härtung in der Minimal-App ergänzt | `200`, keine TypeError — **widerlegt meinen eigenen Befund R1** |
+
+Die Verbenliste kommt jetzt aus `http.METHODS` (35) statt aus acht
+handgeschriebenen — und wird gegen eine ZWEITE, aus dem Routenverhalten
+hergeleitete Menge gehalten. Damit hängt sie nicht mehr an einer Liste, die
+jemand pflegen muss.
+
+### Zwei weitere Widersprüche des Ausführenden, beide angenommen
+
+- **R5 trägt nicht:** die Verbandbuch-Datei bleibt auch ohne Lesen des
+  Antwortrumpfs NICHT liegen — er hat es mit einer Sonde gemessen (4.367
+  Bytes passen in den Socket-Puffer, der Lösch-Callback feuert unabhängig vom
+  Client). `await rPost.arrayBuffer()` ist trotzdem drin, aber als Hygiene
+  gekennzeichnet, nicht als Beweis. Er hat zusätzlich vermerkt, dass der
+  BESTEHENDE Kommentar in der Schwesterdatei dieselbe unbewiesene Behauptung
+  trägt.
+- **R12 hatte eine Lücke, die er selbst fand:** `require('express').Router()`
+  war für den `core/`-Scan unsichtbar — in der ALTEN und der NEUEN Fassung.
+  Gefunden über seine eigene Gegenprobe, Muster erweitert, beide Formen jetzt
+  rot. **Angenommen.**
+
+### Runde 6 — und ihre Grenze
+
+Gebaut wird **NUR** die fehlende Zusicherung für die Body-Härtung
+(`server.js:165`). Alles Weitere aus Runde 5 wird als datierter offener Punkt
+festgehalten, nicht gebaut:
+
+- E2E-Nachspiel des gerenderten Formulars (R4 deckt den Feldwert, nicht den
+  Weg Seite → POST → Mail),
+- Rückfalltext der Wartungsmail ohne `basis_url`,
+- bleibender Unit-Test für `pruefePdfRootSicher` (bisher nur eine einmalige
+  Äquivalenzprobe über 245 Tripel).
+
+Die Grenze zieht sich am eigenen Verhalten, nicht am Befund des anderen: ich
+sage, WAS ich noch baue — nicht, dass nichts mehr kommt.
+
+**Abweichung von der neuen Planprüfungs-Regel, mit Begründung (so verlangt es
+die Regel selbst):** Für Runde 6 geht KEIN Plan an den Gegenleser. Es ist eine
+einzige Zusicherung, deren Prämisse ich soeben selbst gemessen habe (die
+Body-Härtung existiert, der Harness hat sie nicht) — der Plan wäre länger als
+der Bau.
+
+Läuft: meine eigene volle Suite, und die erste Planprüfung nach der neuen
+Regel (`plaene/plan-upload-haertung.md`).
