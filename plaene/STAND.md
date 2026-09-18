@@ -31,10 +31,13 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Rechtsstand-Sammelbeitrag (7 offene Punkte) | **gemergt `17026a1` (#453), Deploy 421 `success`, live-check grün** — OFFEN beim Betreiber: `install` der Ops-Kopie, Gegenprobe `grep -c fuelleUnbestaetigtZeilen` (0 vorher, 7 nachher) |
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
+| Härtung P1+P2 (CSRF-Ausnahmen-Wächter, Body-Härtung) | **gemergt `903247b` (#456), Deploy 424 `success`, live-check `EXIT 0`** — sechs Bau-Runden plus Nacharbeit, Regex→Syntaxbaum |
+| IT-Unterlagen (fünf Dokumente) | **überarbeitet und gepusht** (`fffbb92` + `996078f`), PDFs geliefert. Nicht gemergt — eigener Zweig |
 
-**`/home/user/gymdocu` ist BELEGT** — seit 17.09.2026 arbeitet dort ein
-Executer am Rechtsstand-Sammelbeitrag (Zweig `claude/rechtsstand-sammelbeitrag`,
-Basis `922d1ed`, Runde 3). Nicht anfassen, bis seine Benachrichtigung da ist;
+**`/home/user/gymdocu` ist FREI** (Stand 18.09.2026, ~11:50 UTC). Der Baum
+steht auf dem gemergten Zweig `claude/haertung-p1-p2`, sauber, keine
+uncommittete Änderung. Vor der nächsten Arbeit dort auf `master` zurückholen.
+Die Regel bleibt: nie im selben Baum arbeiten wie ein laufender Subagent, und
 eine Benachrichtigung ist verbraucht, sobald ich ihn fortgesetzt habe.
 
 ## Erledigt — Beitrag 1 ist gemergt
@@ -3253,3 +3256,100 @@ Body-Härtung), meine Nebenzahlen, und die Prämissen des Upload-Plans.
 
 Offen bis zur Meldung an den Betreiber (Regel 6a): Master-CI, Deploy-Lauf mit
 dem richtigen `head_sha`, `tools/live-check.sh`.
+
+### 18.09.2026, ~10:50 UTC — Härtung P1+P2 AUSGELIEFERT
+
+Damit ist Regel 6a für diesen Beitrag erfüllt; vorher war nur „gemergt".
+
+- **Master-CI auf `903247b`:** grün.
+- **Deploy-Lauf 424 auf genau diesem `head_sha`: `success`.** Der `head_sha`
+  wurde geprüft, nicht der Zeitstempel — ein Lauf, der kurz danach startet,
+  kann ein anderer sein.
+- **`tools/live-check.sh`: `EXIT 0`.** Zwei Punkte stehen ehrlich auf ℹ statt
+  grün und zählen als UNGEPRÜFT: die Zertifikatslaufzeit (der Egress-Proxy
+  signiert jede TLS-Verbindung aus dieser Umgebung neu, gemessen würde dessen
+  Zertifikat) und der interne Health-Endpunkt (kein `GYMDOCU_HEALTH_TOKEN`).
+  Die Laufzeit beantwortet der Wochenreport, der auf dem Server misst.
+
+### 18.09.2026, ~11:30 UTC — IT-Unterlagen überarbeitet
+
+Betreiber-Auftrag: „alle Nebenkommentare raus, nur das Wesentliche; alle
+Dokumente auf aktuellen Stand bringen."
+
+Fünf Dokumente unter `dokumente/it-unterlagen/`, gebaut vom Ausführenden
+(`fffbb92`), Diff von mir gelesen, zwei Stellen selbst nachgebessert
+(`996078f`):
+
+- **`02-Sicherheit-und-Datenschutz.html`:** Der neue Absatz zur Härtung hing
+  unter der Mandantentrennung, wo er sachlich nicht hingehört. Er hat jetzt
+  eine eigene Überschrift „Aktionen, die von außen ausgelöst werden".
+- **`05-Dokumentenuebersicht.html`:** Dort stand „vier Dokumente ohne
+  Überschneidung". Das ist falsch — die Dokumente 2 und 3 decken dieselben
+  Punkte für zwei Leserschaften ab. Der Satz ist durch eine ehrliche Angabe
+  ersetzt: es IST eine Doppelung, sie trägt genau das Risiko, vor dem der
+  Absatz davor warnt, und sie wird beim nächsten Schnitt aufgelöst. Eine
+  Dokumentenübersicht, die über sich selbst falsche Angaben macht, ist
+  schlimmer als gar keine.
+
+HTML-Ausgewogenheit beider Dateien mit Pythons `html.parser` geprüft (kein
+offenes Tag). PDFs neu gebaut (`node bauen.js`): 01 72 KB, 02 113 KB, 03
+88 KB, 04 97 KB, 05 70 KB. **`dokumente/it-unterlagen/*.pdf` steht jetzt in
+`.gitignore`** — erzeugte Artefakte gehören nicht in die Versionierung, sonst
+driften Quelle und Ausgabe auseinander und niemand weiß, welche gilt.
+
+Von sechs Rückfragen des Ausführenden habe ich fünf entschieden; die sechste
+(die Doppelung 2/3) ist nicht behoben, sondern dokumentiert — sie zu beheben
+hieße, eines der beiden Dokumente umzuschreiben, und das war nicht der
+Auftrag.
+
+### 18.09.2026, ~11:50 UTC — Container-Neustart, Bäume geprüft
+
+Der Container ist neu gestartet; der SessionStart-Hook hat den
+PostgreSQL-Cluster hochgefahren und es selbst gemeldet
+(`SessionStart:resume hook success: PostgreSQL-Cluster 16/main gestartet
+(war down)`). Nach der Regel „nach einem Neustart zuerst prüfen, ob eine
+Gegenprobe halb zurückgenommen ist":
+
+- **`git status` in beiden Bäumen: sauber**, keine uncommittete Änderung.
+- **Marker-Scan GymDocu: 4 Treffer, alle in `docs/offene-befunde-31-08-2026.md`**
+  — Prosa, kein ausführbarer Code, also der Sollzustand.
+- **Marker-Scan Belehrungssystem: 6 Dateien, alle `.md`** (STAND, drei
+  Auftragspapiere, CLAUDE.md, ASTRA-LAEUFE.md). Hier gilt seit 16.09.2026
+  keine Zahl mehr als Sollwert, sondern die Bedingung „jeder Treffer ist
+  Prosa" — sie ist erfüllt.
+
+### Was als Nächstes ansteht
+
+1. **Upload-Härtung** nach `plaene/plan-upload-haertung.md` **Fassung 2**.
+   Zuerst die dort benannten Nachmessungen — elf Multipart-POST-Pfade samt
+   Aufrufern, drei Nicht-multer-Eingänge (darunter der eigene
+   CSV-Commit-Eingang), vier Fehlerbehandlungsstellen —, dann erst ein
+   Bauauftrag. Fassung 1 hatte sechs falsche Prämissen; sie sind von der
+   Planprüfung gefunden worden, bevor eine Zeile gebaut war.
+2. **`nodemailer` auf 10.x** als eigener PR, `npm diff` zuerst.
+   `qs` 6.16.0, sobald Express es mitliefert.
+3. **Pentest-Programm** nach `plaene/pentest-vorschlag.md`: API-Härtung
+   (Ratenbegrenzung, Schemaprüfung, Zugriffsprotokoll), Verschlüsselung des
+   Offboarding-ZIP, Feldverschlüsselung der sieben Gesundheitsspalten (Plan
+   ZUERST prüfen lassen — unwiderruflich, Migration über alle Studios),
+   Monats-PDFs in die Auftragswarteschlange.
+4. **Staging für den Pentest vorbereiten:** zwei Studios mit unterscheidbaren
+   Daten, erfundene Art.-9-Gesundheitsdaten, ein eingeübter Rücksetzweg, ein
+   Weg die Kontosperre zurückzusetzen ohne sie abzuschalten, ein
+   Zugriffsprotokoll.
+
+### Datiert offene Befunde aus der Härtung P1+P2
+
+Bewusst NICHT gebaut, weil sie den Beitrag gesprengt hätten:
+
+- **E2E-Wiedergabe des gerenderten Formulars** — die Tests schicken heute
+  konstruierte Anfragen, nicht das, was der Browser aus dem ausgelieferten
+  HTML wirklich absendet.
+- **Der Rückfalltext der Wartungsmail ohne `basis_url`** — `basis_url` wird
+  in der ganzen Anwendung nirgends geschrieben, der Verweis „siehe
+  Einstellungen" zeigt also in eine Sackgasse.
+- **Ein bleibender Einzeltest für `pruefePdfRootSicher`** — die Funktion ist
+  jetzt an einer Stelle statt an vieren, aber ihre eigene Zusicherung fehlt.
+- **`routes/belehrungen.js:2001`** — ein später Fehlschlag löscht eine Datei,
+  auf die die Datenbank schon verweist. Bestand, nicht von diesem Beitrag
+  eingeschleppt.
