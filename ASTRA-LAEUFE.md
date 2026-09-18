@@ -104,6 +104,9 @@ sondern falsch.
 | 18.09.2026 | **CODE-Pruefung** Upload-Haertung Beitrag 1 vor dem Merge (Astra; **die Beschriftung „effort `xhigh`“ war FALSCH** — gemessen 18.09.2026 setzt `tools/gegenleser-repo.js` gar kein `reasoning`, der Lauf lief auf der Voreinstellung) | Diff 1104 Zeilen, Suchen 73, Lesungen 49, Token rein 1795110, Token raus 16628, Runden 22 | 9 (4 als blockierend gemeldet) | **bisher 6 selbst nachgemessen, 5 getragen** | **1 ganz, 1 in der Schwere** — 3 noch offen | **Der erste Lauf, bei dem die SUITE SCHON GRUEN war** (`SUITE_EXIT=0`, 0 Fehlschlaege, Dateizahl 337=337, Lint 0) — der Brief fragte deshalb nicht „laeuft es", sondern „ist es gruen aus dem RICHTIGEN Grund". GETRAGEN: **F1 (blockierend, und der teuerste):** die Zusicherung „alle SIEBEN Konfigurationen erreicht" addiert HANDGESCHRIEBENE Literale aus der `MODULE`-Liste und zaehlt damit nur, ob sechs Module geladen haben — nicht, ob sieben multer-Konstruktoren liefen. Wer `FOTOS_AKTIV` in `routes/sichtpruefung.js` abschaltet, laedt das Modul weiterhin, konstruiert aber KEINE Konfiguration, und der Test zaehlt trotzdem `anzahl: 1` und bleibt bei 7. Beide Seiten des Vergleichs stammen aus derselben Quelle — genau die Abdeckungsluege, die dieser Test verhindern sollte. **F2:** `seiteExe.text.includes("ui-banner--error")` ist IMMER wahr, weil die Zeichenkette als CSS-Regel in `core/ui-feedback.js:71` steht und ueber `UI_FEEDBACK_CSS` in jede Lageplan-Seite eingebettet wird (`routes/lageplan.js:1342`); ein `tone: "success"` statt `"error"` fiele nicht auf. Der Titel-Teil derselben UND-Verknuepfung bewacht dagegen etwas. **F4:** Isolations-Inkonsistenz INNERHALB des Beitrags — `test_feature_multer_2_4_bestandsschutz.js` leitet FUENF Verzeichnisse um (inkl. `EINWEISUNG_NACHWEIS_DIR`, `DEFECT_PHOTO_DIR`), `test_feature_upload_fehlerbehandlung.js` nur DREI; derselbe Ausfuehrende hat es einmal vollstaendig gemacht und einmal vergessen. **F5 (Schwere zu hoch):** die `pdftoppm`-Attrappe ist in der Sache wirklich ein echter Kindprozess (PATH-Attrappe, gestartet wird node statt poppler) — aber sie ist vollstaendig kontrolliert und schreibt nur nach `os.tmpdir()`; der Zweck der Regel (keine Live-Eingriffe) ist gewahrt. Was traegt, ist der KOMMENTAR, der mehr Isolation behauptet als besteht. **GEFALLEN (1 ganz): F9** — „drei neue SELECTs ohne `studio_id`", als BLOCKIEREND gemeldet. Gemessen: allein die acht haeufigsten Varianten von `SELECT … FROM … WHERE id=$1` ohne `studio_id` ergeben **133 Vorkommen** im Testbestand; es sind Fixture-Lesezugriffe auf selbst eingefuegte IDs, und die Regel zielt auf PRODUKTIVE Abfragen. Astra raeumt die Eindeutigkeit sogar selbst ein und stuft trotzdem blockierend ein. **Das ist das ZWEITE Mal, dass genau diese Einstufung faellt** (nach dem 16.09.) — zusammen mit der Testisolations-Klasse der zweite systematische blinde Fleck. NOCH OFFEN, nicht nachgemessen: F3 (Aufraeumen/Dateiintegritaet unbewacht), F6/F7/F8 (alle als VORBESTEHEND gekennzeichnet, gehoeren in die offenen Punkte, nicht in diesen Beitrag). **Zur Stufe:** `xhigh` kostete hier **23,69 $** gegen 12,67 $ bei `high` am selben Tag — der Aufpreis ist real und gehoert bei der naechsten Wahl mitgedacht | **23,69 $** |
 | 18.09.2026 | Planpruefung Upload-Haertung 2, RUNDE 2 (neuer Entwurf: Markierung an der Quelle) | Diff 235 Zeilen, Suchen 30, Lesungen 40, Token rein 909495, Token raus 9012, Runden 13 | 7 (3 blockierend) | **3 bisher, alle 3** | 0 (4 noch nicht nachgemessen) | 12,04 $ |
 | 18.09.2026 | SICHERHEIT: Fremd-ID ohne Zugehoerigkeitspruefung, systematische Suche in routes/ | Diff 2853 Zeilen, Suchen 86, Lesungen 95, Token rein 3646637, Token raus 14871, Runden 26 | 3 (F1 bekannt, **F2 neu**, F3 Anmerkung) | **3, alle** | 0 | 46,70 $ |
+| 18.09.2026 | SICHERHEIT A: Einschleusung (SQL, Kommando, Pfad, HTML) | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 1750 Zeilen, Suchen 88, Lesungen 50, Token rein 2467904, Token raus 6771, Runden 19 | — | — | — | 31,36 $ |
+| 18.09.2026 | SICHERHEIT C: Datenabfluss (Fehlerantworten, Logs, Dateien, Koepfe) | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 282 Zeilen, Suchen 74, Lesungen 95, Token rein 2747959, Token raus 11097, Runden 24 | — | — | — | 35,18 $ |
+| 18.09.2026 | SICHERHEIT B: Anmeldung, Sitzung, Token, Ratenbegrenzung | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 2058 Zeilen, Suchen 47, Lesungen 80, Token rein 2956200, Token raus 11845, Runden 20 | — | — | — | 37,84 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -1298,3 +1301,38 @@ jedem Befund ausdrücklich, was der Angreifer NICHT erreicht). Nachgemessen
 gilt: keine der drei erlaubt das LESEN fremder Daten, und bei F2 ist
 `studio_id` Teil des Konfliktschlüssels, also gibt es kein Schreiben in fremde
 Zeilen. Es bleibt Datenintegrität, kein Datenabfluss.
+
+## 18.09.2026 — DREI Läufe am selben Deckel gescheitert, alle ohne Bericht
+
+Drei Sicherheitsläufe über den BESTAND (Einschleusung, Anmeldung/Sitzung,
+Datenabfluss) brachen **alle drei** mit derselben Meldung ab:
+
+    ABBRUCH: Gesamtausgabemenge ueber 614400 Bytes (620900 / 615640 / 616114)
+    — der Bericht ist UNVOLLSTAENDIG.
+
+**Nach unserer Hausregel haben sie NICHTS geliefert, nicht „keine Befunde".**
+Die Kosten sind trotzdem angefallen; die Zeilen oben tragen deshalb Striche,
+keine Null.
+
+**Die Ursache ist zweiteilig, und der zweite Teil ist meiner:**
+
+1. **Das Werkzeug ist für DIFFS gebaut.** `MAX_AUSGABE_BYTES` deckelt die
+   Summe aller gelesenen Ausschnitte auf 600 KiB — für einen Diff reichlich,
+   für eine Bestandssuche über 500 Dateien zu knapp. Der Prüfer las 36+
+   Dateien und war noch nicht fertig. Jetzt über
+   `GEGENLESER_MAX_AUSGABE_BYTES` hebbar, Voreinstellung unverändert
+   (Gegenprobe: mit Variable 2.500.000, ohne 614.400).
+2. **Mein Auftrag war zu breit.** Lauf A sollte VIER Klassen auf einmal prüfen
+   (SQL, Kommandos, Pfade, HTML-Ausgabe). Das ist dieselbe Krankheit wie ein
+   überladenes Bündel: er verausgabt sich, bevor er berichten kann. Aufgeteilt
+   in A1 (SQL + Kommandos) und A2 (Pfade + HTML).
+
+**Was die Fehlläufe trotzdem gezeigt haben** — als Hinweis, nicht als
+Ergebnis: Lauf C hatte die beiden bekannten Pfad-Lecks (`routes/wartung.js`,
+`routes/admin/geraete.js`) bereits erwähnt, bevor er abbrach. Die
+Positivkontrolle im Auftrag trägt also. Lauf B hatte die Anmelde-Sperre zum
+Abbruchzeitpunkt NICHT erwähnt — dort ist offen, ob der Auftrag trägt.
+
+**Lehre für den nächsten Bestandslauf:** EINE Klasse je Lauf, Deckel vorher
+heben, und die Positivkontrolle in den Auftrag schreiben — sonst ist ein
+Abbruch nicht von einem sauberen Ergebnis zu unterscheiden.
