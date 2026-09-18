@@ -117,6 +117,7 @@ sondern falsch.
 | 18.09.2026 | **PLANPRUEFUNG** Zusicherung Shell/qpdf/stiller catch, vor der ersten Bau-Runde | Diff 3289 Zeilen, Suchen 31, Lesungen 56, Token rein 1606111, Token raus 24732, Runden 13 | 5 (2 blockierend) | **5** | 0 | 21,93 $ |
 | 18.09.2026 | **CODEPRUEFUNG** Upload-Haertung 2a vor dem Merge | Diff 2018 Zeilen, Suchen 26, Lesungen 38, Token rein 766614, Token raus 25127, Runden 10 | 6 (1 blockierend, 1 Regress) | **6** | 0 | 11,47 $ |
 | 18.09.2026 | **PLANPRUEFUNG** Gate-Endungsausnahme, Symbol-XSS, doppelte Dekodierung | Diff 3673 Zeilen, Suchen 62, Lesungen 82, Token rein 2822763, Token raus 22255, Runden 20 | 6 (2 blockierend) | **6** | 0 | 36,95 $ |
+| 18.09.2026 | **PLANPRUEFUNG** Fotoloeschung an Identitaet binden, vor der ersten Bau-Runde | Diff 1748 Zeilen, Suchen 56, Lesungen 66, Token rein 1860326, Token raus 22688, Runden 18 | 6 (1 blockierend) | **6** | 0 | 24,96 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -1504,3 +1505,39 @@ das war Glueck, nicht Methode.
 **Und ein Befund war wortwoertlich fatal:** „die Regex-Zeile entfernen" haette
 ein haengendes `||` hinterlassen — Syntaxfehler. Eine Anweisung, die man
 woertlich befolgen soll, muss woertlich stimmen.
+
+
+## Nachtrag zum 18.09.2026 — der Lauf, der eine MELDUNG an den Betreiber widerlegt hat
+
+Die Planprüfung zur Fotolöschung ist der fünfte Lauf des Abends und bringt
+die Bilanz auf **29 Befunde, 29 getragen, keiner gefallen.** Sie ist aber aus
+einem anderen Grund die wichtigste.
+
+**Sie hat nicht nur meinen Plan berichtigt, sondern eine Aussage, die beim
+Betreiber schon angekommen war.** Ich hatte ihm gemeldet: ein Studio ohne
+freigeschaltetes Tablet könne nach der Änderung vom Tablet aus nicht mehr
+löschen. Der Schluss kam aus einer richtigen Beobachtung
+(`routes/tablet-sperre.js:497-499` füllt die Mitarbeiterliste nur mit
+freigeschaltetem Gerät) und einer falschen Verallgemeinerung: **keine Liste
+ist nicht keine Anmeldung.** Gemessen steht dort eine Selbstfreischaltung mit
+Namensfeld und PIN (`:262-285`, `:650`, `:697-699`).
+
+Zwei Dinge folgen daraus, und beide sind allgemeiner als dieser Fall:
+
+1. **Eine Aussage über eine ABWESENHEIT („kommt nicht zu einer Identität")
+   braucht die Suche nach dem ALTERNATIVEN Weg, nicht nur den Beleg für die
+   fehlende Variante.** Ich hatte vier Messungen gemacht und mich davon so
+   gut abgesichert gefühlt, dass ich die fünfte nicht mehr für nötig hielt.
+   Genau dort lag sie.
+2. **Was beim Betreiber angekommen ist, gehört ausdrücklich zurückgenommen,
+   nicht still im Papier korrigiert.** Ein Auftragspapier liest er nicht; die
+   Meldung hat er gelesen. Die Berichtigung ist deshalb in derselben Form
+   herausgegangen wie der Fehler.
+
+**Der blockierende Befund desselben Laufs** ist eine andere Klasse und gehört
+zu den teuersten, die wir kennen: Mein Satz „jede erfolgreiche Löschung
+schreibt ein Audit" nahm „erfolgreich" als gegeben an. Das DELETE wertet sein
+Ergebnis heute nicht aus — zwei gleichzeitige Anfragen hätten ZWEI
+Audit-Einträge für EINE Löschung erzeugt, dauerhaft und gehasht. Ein
+Protokoll, das eine Handlung beurkundet, die nicht stattgefunden hat, ist
+schlimmer als gar keines.
