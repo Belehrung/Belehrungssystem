@@ -3506,3 +3506,69 @@ da und war der teuerste Satz im Papier.
 
 **Auftragspapier Fassung 2 steht**, Teil A ist ersetzt statt nachgebessert.
 Der Bau läuft.
+
+### 18.09.2026, ~13:45 UTC — Astra-Spur über Fassung 2, sieben Befunde, NULL Überschneidung
+
+Der Betreiber hat Guthaben nachgelegt; selbst gemessen statt geglaubt (Testaufruf
+**HTTP 200**, 133 Token). Damit lief die Astra-Spur nach — nicht als
+Wiederholung, sondern weil Teil A in Fassung 2 **ersetzt** und nicht
+nachgebessert war und Astra dieses Material nie gesehen hatte.
+
+**Zwei Dinge bewusst anders gemacht:**
+
+1. **Eigener Lesebaum.** Der Executer schreibt in `/home/user/gymdocu`. Astra
+   liest stattdessen `/workspace/gymdocu-lese` — ein `git worktree --detach` auf
+   `903247b`, den Stand, den das Auftragspapier beschreibt. Sonst hätte er einen
+   Baum beurteilt, der sich unter ihm verändert. Der Executer-Zweig wurde vorher
+   und nachher geprüft: unberührt. **Der Worktree steht noch; wer ihn nicht mehr
+   braucht, räumt ihn mit `git worktree remove` ab.**
+2. **Anderer Brief.** Nicht dieselben Fragen wie die Claude-Spur, sondern die,
+   die durch Denken statt Messen erreichbar sind: welcher Zustand wird nie
+   hergestellt, was folgt für den Betrieb, welcher Satz ist hergeleitet statt
+   gemessen. Die bereits gefundenen dreizehn habe ich ihm ausdrücklich als
+   erledigt benannt.
+
+**Ergebnis: sieben Befunde, NULL Überschneidung mit der Claude-Spur.** Sechs
+selbst nachgemessen und getragen, einer in der Schwere gefallen. Kosten 12,67 $.
+
+**Die Trennung der BRIEFE hat die Trennung der BEFUNDE erzeugt.** Das ist der
+bisher klarste Beleg für „beide Spuren statt einer" — und zugleich die Lehre,
+dass zwei Spuren mit demselben Auftrag zweimal dieselbe Klasse bezahlen.
+
+**Die zwei schwersten, beide selbst gemessen:**
+
+- **Mein B3.2 war falsch.** Ich schrieb, `LIMIT_FILE_SIZE` bekomme im globalen
+  Behandler „eine eigene 413-Seite", und ordnete an, diesen Weg **unverändert zu
+  lassen**. Gemessen: `new MulterError("LIMIT_FILE_SIZE")` hat weder `type` noch
+  `status`; die Bedingung `err.type === 'entity.too.large' || err.status === 413`
+  trifft nicht zu. Eine zu grosse Lageplan-Datei bekommt **heute schon 500 plus
+  Telegram-Alarm**. Ich hätte also genau den Alarm-Auslöser ausdrücklich
+  geschützt, den ich zwei Absätze weiter beseitige.
+- **Der Lageplan verliert bei einem Teilfehlschlag den vorhandenen Grundriss.**
+  Die alte Datei wird gelöscht, **bevor** die neue geschrieben und das UPDATE
+  ausgeführt ist. Scheitert eines davon, ist der Grundriss weg und die Datenbank
+  zeigt ins Leere; der Benutzer liest „konnte nicht verarbeitet werden".
+  **Wird behoben** — es ist eine Umordnung, keine Architekturfrage, und die
+  CLAUDE.md verlangt sie wörtlich („Dateilöschungen gehören NACH den Commit").
+  Das ist ausdrücklich NICHT der im Schnitt ausgeschnittene Integritätsfehler;
+  jener bräuchte ein Phasenmodell, dieser nicht.
+
+Dazu: ein neuer `feedback`-Code allein zeigt dem Benutzer **gar nichts** (die
+Textliste kennt ihn nicht, `core/ui-feedback.js` liefert `""`) — alle meine
+B3-Zusicherungen wären dabei grün gewesen. Der PDF-Erfolgsfall startet
+`execFileSync("pdftoppm")`, einen **echten Prozess** in einer Suite, die
+Deploy-Gate ist. Und „`melde` wurde nicht gerufen" braucht eine
+Positivkontrolle, weil die Test-Apps den globalen Behandler gar nicht haben.
+
+**GEFALLEN (1), in der Schwere:** „`EINWEISUNG_NACHWEIS_DIR`/`DEFECT_PHOTO_DIR`
+werden in `test/run.sh` nicht umgeleitet" — als blockierend gemeldet. Die
+Tatsache stimmt, die Schwere nicht: **27** bestehende Testdateien laden
+`routes/sichtpruefung.js`, **14** laden `routes/belehrungen.js`, und wer das
+Verzeichnis braucht, setzt die Variable lokal (je fünf tun das).
+**Das ist das DRITTE Mal, dass Astra genau diese Einstufung macht und sie
+fällt** — ein systematischer blinder Fleck, kein Zufall. Wer den nächsten Lauf
+fährt, rechnet damit.
+
+**Auftragspapier ist auf Fassung 3.** Der Executer hat alle sieben Punkte
+während seines Laufs per Nachricht bekommen; seine Benachrichtigung ist damit
+verbraucht, der Baum bleibt belegt bis zur NÄCHSTEN Meldung.
