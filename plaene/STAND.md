@@ -3120,3 +3120,58 @@ und sie hat sich am ersten Tag bezahlt gemacht.
    Formulars, Rückfalltext der Wartungsmail ohne `basis_url`, Unit-Test für
    `pruefePdfRootSicher`, und der Integritätsfehler in
    `routes/belehrungen.js:2001`.
+
+### Takt 18.09.2026, 09:40 UTC + Runde 6 abgenommen
+
+**Betreiber-Vorgaben 18.09.2026, wörtlich:** „mergen wenn grün. zu den pdf:
+alle nebenkomnetare raus nur das wesentliche. alle dolumente auf aktuellen
+stand bringen. vorschlag zum pantest machen und gymdocu darauf vorbereiten."
+
+Umgesetzt bzw. angelegt:
+- **`plaene/pentest-vorschlag.md`** — Entscheidungsvorlage. Empfehlung: erst
+  die IT des Interessenten (steht schon als Angebot im Kundendokument), danach
+  extern. Fünf Punkte vor den Test (multer-CVE, Upload-Inhaltsprüfung,
+  API-Rate-Limit und Schema, CSP in den Sperrmodus, Offboarding-ZIP); die
+  Feldverschlüsselung ausdrücklich NICHT. Abschnitt 5 nennt, was GymDocu für
+  den Test braucht — vor allem **zwei Studios mit unterscheidbaren Daten**,
+  sonst ist die Mandantentrennung gar nicht prüfbar.
+- **`plaene/auftrag-it-dokumente-ueberarbeitung.md`** — geschrieben, noch
+  NICHT losgeschickt: erst mergen, damit die Dokumente einen ausgelieferten
+  Stand beschreiben. Der Auftrag sagt ausdrücklich, was NICHT gekürzt werden
+  darf (jede benannte Grenze, jeder offene Punkt, jede
+  Entscheidungsbegründung).
+
+### Runde 6 — selbst nachgemessen
+
+Kopf `93e1553`, 82 Zeilen in EINER Datei, sonst nichts.
+
+Der Ausführende hat den Erkennungsweg gemessen statt geraten: `server.js` hat
+**fünf** pfadlose `app.use(fn)` mit Funktionsliteral, und die Handliste wirft
+alle fünf in denselben Topf — sie unterscheidet sie nicht. Erkannt wird
+deshalb über die GESTALT des Rumpfs (drei Parameter, nicht async, ein `if`
+ohne `else`, dessen Bedingung `req.body` liest und dessen Zweig genau
+`req.body = {}` setzt). Die Grenze steht ehrlich im Kommentar: eine
+Frühausstieg-Variante würde nicht erkannt.
+
+| Messung | Ergebnis |
+|---|---|
+| sauberer Baum | `EXIT 0`, **101 PASS / 0 FAIL** |
+| Body-Härtung entfernt | `EXIT 1`, **97 / 4** — alle vier Zusicherungen fallen und benennen es |
+| **Bedingung umformuliert** (`!req.body` statt `== null`) | `EXIT 0`, **101 / 0** — bleibt GRÜN, genau wie verlangt |
+| **eigene Probe:** Härtung NACH `csrfSchutz` verschoben | `EXIT 1`, **100 / 1** — nur die eine zuständige Zusicherung fällt |
+
+Die dritte Zeile war meine Bedingung für den Auftrag: eine Zusicherung, die
+bei jeder harmlosen Umformulierung rot wird, wird abgeschaltet statt gelesen.
+Sie tut es nicht.
+
+**Zwei Meldungen des Ausführenden, beide angenommen:**
+- **Meine Nebenzahlen stimmen nicht.** Ich hatte „206 `req.body`-Zugriffe, 12
+  mit `|| {}`" geschrieben; er misst 204 bzw. 260 (je nach Muster) und **6**
+  statt 12. Betrifft nur die Begründung im Kommentar, keine Zusicherung — aber
+  es war meine Zahl und sie war falsch.
+- **Er hat einen eigenen Regelverstoss gemeldet**: Suite vor dem Commit
+  gefahren statt danach. Ohne Schaden, aber er nennt es selbst.
+
+Läuft: meine eigene volle Suite. Danach PR, Bot-Kommentare VOR den Checks,
+CI am aktuellen Kopf, Merge, Deploy, live-check — und erst dann die
+Dokumenten-Überarbeitung.
