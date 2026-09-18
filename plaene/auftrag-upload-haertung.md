@@ -1,217 +1,323 @@
-# Auftragspapier — Upload-Härtung, Beitrag 1: Versionssprung mit Nachweis
+# Auftragspapier — Upload-Härtung, Beitrag 1 (Fassung 2)
 
 **Repo:** `/home/user/gymdocu`, Zweig von `master` (`903247b`).
-**Grundlage:** `plaene/plan-upload-haertung.md` Fassung 3 (im
-Belehrungssystem-Repo). Der Bestand dort ist vollständig gemessen; dieses
-Papier enthält die Auszüge, die zum Bauen nötig sind.
+**Grundlage:** `plaene/plan-upload-haertung.md` Fassung 3.
+
+**Fassung 1 ist ERSETZT, nicht danebengelegt.** Sie ging am 18.09.2026 vor der
+ersten Bau-Runde an die Planprüfung: **dreizehn Befunde, alle dreizehn von mir
+selbst nachgemessen, alle dreizehn getragen — keiner gefallen.** Zwei davon
+blockierend, und beide trafen den Kern:
+
+- **Fassung 1 benannte den falschen Code als CVE-Fix.** Sie schrieb, der Fix
+  sitze in `storage/disk.js` (`flushingFiles`-WeakMap). Das trifft nicht zu:
+  jene WeakMap wird ausschliesslich unter `if (that.flush)` befüllt, `opts.flush`
+  ist ein **neues Feature** in 2.4.0, und **wir setzen es nirgends**
+  (nachgemessen: `flush` kommt in 2.3.0s `storage/disk.js` 0-mal vor; im Repo
+  gibt es keine multer-`flush`-Option). Der echte Fix ist `abortCleanupDone` /
+  `abortRemovedFiles` in `lib/make-middleware.js` — nachgemessen:
+  `grep -c abortCleanupDone` liefert **0** in 2.3.0 und **3** in 2.4.0.
+- **Der beauftragte Abbruch-Test hätte den Fehler nicht finden KÖNNEN.** Er
+  sollte `_removeFile` selbst aufrufen — der Fehler besteht aber gerade darin,
+  dass `_removeFile` NICHT gerufen wird. Ein Test, der den fehlenden Aufruf
+  selbst nachholt, prüft einen Zweig, den es im verwundbaren Fall nicht gibt.
+
+Der Lehrsatz daraus steht in der CLAUDE.md schon, nur an anderer Stelle: **ein
+Satz der Form „X ist so, weil Y" ist eine Tatsachenbehauptung über Y** — auch
+mitten in einem Auftragspapier. Fassung 1 hatte genau eine Behauptung
+ausdrücklich als „meine Messung, miss sie nach" gekennzeichnet; **diese eine
+trug.** Die ungekennzeichneten trugen nicht.
 
 ## Schnitt — was in diesem Beitrag NICHT gebaut wird
 
-Der Plan deckt mehr ab, als hier gebaut wird. Was ausgeschnitten ist und warum:
-
-- **Der Upload-Inventar-Wächter** (jeder Weg trägt eine Grenze, keine neue
-  Route ohne Eintrag). Eigener Beitrag, eigenes Auftragspapier. Grund: Der
-  CSRF-Ausnahmen-Wächter hat sechs Bau-Runden gebraucht und trug in DREI
-  davon eine falsche Zusicherung von Abdeckung. Ein erreichbarer CVE soll
-  nicht hinter so einem Bau warten.
-- **Die fünf Unterschrift-Wege ohne Inhaltsprüfung** (`routes/module.js:3392`,
-  `:3532`, `:3603`, `:3717`, `routes/getraenkeanlage.js:361`). Fünf Routen in
-  zwei Dateien, dazu die ungeklärte Frage, was mit Bestandszeilen geschieht.
-- **Der Integritätsfehler `routes/belehrungen.js:2002`** — ein später
-  Fehlschlag löscht eine Datei, auf die die DB schon zeigt. Vorbestehend.
-  Er ist zugleich der Grund, warum in diesem Beitrag **keine neue Aufräum-
-  oder Inhaltsprüflogik** in diesen Weg eingebaut wird: ohne Phasenmodell
-  verschlimmerte das genau den Fehler, den der Beitrag nicht anfasst.
+- **Der Upload-Inventar-Wächter.** Eigener Beitrag. Der CSRF-Wächter brauchte
+  sechs Bau-Runden und trug in DREI davon eine falsche Zusicherung von
+  Abdeckung.
+- **Die Unterschrift-Wege ohne Inhaltsprüfung.** Es sind **mindestens sechs**,
+  nicht fünf: `routes/module.js` (vier Stellen), `routes/getraenkeanlage.js`
+  und — von der Planprüfung gefunden, von mir bestätigt —
+  `routes/wartung.js:1050`, wo nur auf Vorhandensein geprüft wird. Die Liste
+  ist damit ausdrücklich **nicht abschliessend**; der Folgebeitrag ermittelt
+  sie neu, statt diese abzuarbeiten.
+- **Der Integritätsfehler** im gemeinsamen Fehlerausstieg von
+  `adminRouter.post('/neue-version/:id')` — ein später Fehlschlag löscht eine
+  Datei, auf die die DB schon zeigt. Vorbestehend. **B1 setzt dort den
+  Statuscode; das `fs.unlink` bleibt unverändert stehen.** Der Schnitt heisst
+  nicht „diese Zeile nicht anfassen", sondern „diesen Fehler nicht beheben".
 
 ## A — multer 2.3.0 → 2.4.0 (CVE-2026-88932)
 
-### A1 Reihenfolge, und sie ist nicht verhandelbar
+### A1 Der Versionssprung kommt OHNE eigenen CVE-Nachweis. Das ist eine Entscheidung, keine Nachlässigkeit.
 
-**Der Test wird VOR dem Versionssprung geschrieben und gegen 2.3.0 gemessen.**
-Ein Test, der erst nach dem Sprung entsteht, kann nicht zeigen, dass der alte
-Stand verwundbar war — er zeigt nur, dass der neue es nicht ist, und das ist
-etwas anderes.
+Fassung 1 verlangte: Test schreiben, gegen 2.3.0 ROT messen, dann anheben.
+**Das ist gestrichen.** Zwei unabhängige Messreihen haben keinen
+Ausgangsbefund herstellen können:
 
-1. Test schreiben, gegen das installierte **2.3.0** laufen lassen. Erwartet:
-   **ROT**, mit wörtlich gemeldeter Ausgabe.
-2. `npm install multer@2.4.0`, `package-lock.json` mit.
-3. **Denselben Test** unverändert erneut laufen lassen. Erwartet: **GRÜN**.
-4. Beide Ausgaben wörtlich in den Bericht.
+- Die Planprüfung: acht Läufe (Engine-Ebene mit und ohne `flush`,
+  Middleware-Ebene mit synchroner und verzögerter Engine), alle grün.
+- Ich selbst: acht Läufe gegen das installierte 2.3.0, alle grün — **und die
+  Positivkontrolle fiel durch.** Eine Spur zeigte, dass `_handleFile` nie
+  gerufen wurde; eine reine In-Prozess-`Readable`-Attrappe bekam selbst ein
+  vollständiges, gültiges Multipart nicht durch multer hindurch. Die acht Grün
+  bedeuteten also „nichts gemessen", nicht „nicht verwundbar".
 
-**Wenn Schritt 1 GRÜN ist, ist der CVE-Nachweis ungedeckt.** Dann wird der
-Test NICHT als „Abbruch abgedeckt" beschriftet, sondern der Punkt als
-ungedeckt geführt und gemeldet. Ein Test, der gegen die verwundbare Version
-grün ist, misst etwas anderes als das, was er behauptet — **das ist ein
-Abbruchgrund, kein Schönheitsfehler.** Lieber mit dieser Meldung abbrechen als
-eine Zusicherung liefern, die nichts zusichert.
+**Genau das ist der Grund für die Streichung.** Wäre nach Fassung 1 gebaut
+worden, stünde am Ende ein grüner Test mit der Aufschrift „Abbruch abgedeckt" —
+unsere teuerste Fehlerklasse, eine falsche Zusicherung von Abdeckung.
 
-### A2 Was der Fehler ist (aus `npm diff` gelesen, nicht aus einer Meldung)
+**Der Beitrag wird deshalb ehrlich beschriftet:** Versionssprung auf 2.4.0 als
+Bestandsschutz. Beleg ist der OSV-Datensatz (selbst geholt über die Kennung,
+nicht über die Versionsabfrage — die liefert für `multer@2.3.0` 0 Treffer,
+obwohl der Datensatz existiert) und der Upstream-Regressionstest. **In keinem
+Kommentar, keiner Commit-Botschaft und keinem Testnamen steht, dass wir den
+CVE selbst nachgewiesen hätten.**
 
-`storage/disk.js` in 2.4.0 führt eine `flushingFiles`-WeakMap ein. `_removeFile`
-wartet damit, bis ein nach dem Schliessen des Schreibstroms nachgezogener
-Flush-Deskriptor zu ist, bevor es entlinkt. In 2.3.0 entlinkt `_removeFile`
-sofort, wenn `openStreams` den Eintrag nicht mehr hat — und dann bleibt bei
-einem abgebrochenen Upload die Datei liegen.
+Wer trotzdem einen eigenen Nachweis will, zielt auf `lib/make-middleware.js`
+statt auf die Engine und misst ROT/GRÜN **zuerst als Machbarkeitsprobe im
+Scratchpad**. Nicht im Auftrag versprechen, was niemand hergestellt hat.
 
-Betroffen sind die **vier `diskStorage`-Konfigurationen**:
+### A2 Was der Fehler wirklich ist
 
-    core/pruefbericht.js:23      fileSize 10 MiB, fieldSize 25 MiB, fileFilter
-    routes/belehrungen.js:131    fileSize 10 MiB, fileFilter
-    routes/belehrungen.js:1005   fileSize 10 MiB, fileFilter
-    routes/verify.js:21          fileSize  8 MiB, files 1, KEIN fileFilter
+Aus dem OSV-Text (wörtlich): *„when a request using disk storage is aborted
+mid-upload, **file writes that complete after multer has already run its abort
+cleanup** are not removed"*.
 
-Die drei `memoryStorage`-Konfigurationen sind nicht betroffen.
+Im Quelltext 2.3.0: `handleRequestFailure` ruft `busboy.destroy(err)` und dann
+`abortWithError(err, true)` — `skipPendingWait` ist gesetzt, `finishAbort()`
+läuft also **sofort**, ohne auf `pendingWrites` zu warten. Es sammelt
+`uploadedFiles.concat(pendingFiles.filter(f => f.path))` und leert
+`pendingFiles`. Ruft `_handleFile` seinen Rückruf **danach**, landet die Datei
+in `uploadedFiles` — und `finishAbort` läuft nicht noch einmal. Sie bleibt
+liegen.
 
-### A3 Der Abbruch-Test
+2.4.0 merkt sich das in `abortCleanupDone` und ruft `_removeFile` in diesem
+Fall direkt. Der Kommentar dort nennt die betroffene Klasse: *„engines slower
+than the abort: multer-s3, GridFS, async filename"*.
 
-Er misst die Speicher-Engine, nicht eine Route — der kürzeste Weg zu einer
-Aussage über genau den geänderten Code.
+**Betroffen sind unsere vier `diskStorage`-Konfigurationen** —
+`core/pruefbericht.js`, `routes/belehrungen.js` (zwei) und `routes/verify.js`.
+Die drei `memoryStorage`-Konfigurationen nicht.
 
-- **Echte `multer.diskStorage`**, echtes `_handleFile`/`_removeFile`, Ziel ein
-  Wegwerf-Verzeichnis unter `os.tmpdir()`.
-- **Schreibfortschritt muss NACHGEWIESEN sein, bevor abgebrochen wird:** die
-  Zieldatei existiert UND hat mehr als null Bytes (`fs.statSync().size > 0`).
-  Dass `destination` oder `filename` gerufen wurde, genügt NICHT — das ist
-  genau die Verwechslung „eine Zahl statt einer Menge".
-- **Eine Zeitüberschreitung ist ein FEHLER, kein Erfolg.** Wer auf ein Ereignis
-  wartet, das nie kommt, und danach „sauber" meldet, hat nicht gemessen.
-- Zusicherung: nach `_removeFile` existiert im Zielverzeichnis **keine** Datei.
-  Die Menge der Einträge wird verglichen, nicht ihre Anzahl.
-- **Kein echter Prozess, kein echter Dienst, kein Pfad ausserhalb von
-  `os.tmpdir()`.** Dieselbe Suite ist auf dem Live-Server Deploy-Gate.
+**Eine Einordnung, die in den Kommentar gehört, aber NICHT als Entwarnung:**
+Alle vier haben synchrone `destination`- und `filename`-Rückrufe, gehören also
+zu keiner der drei im Fix-Kommentar genannten Klassen. Das verkleinert das
+Fenster, **schliesst es aber nicht nachweislich** — niemand hat das gemessen,
+und die Schreibphase (`pipeline`) ist in jedem Fall asynchron. Schreib das so
+hin, nicht schärfer.
 
-### A4 Was 2.4.0 sonst ändert — drei Stellen, die brechen können
+### A3 Was stattdessen zugesichert wird — Bestandsschutz, und so beschriftet
 
-**`lib/validate-limits.js` ist neu und WIRFT** einen `TypeError`, sobald ein
-Limit weder nicht-negative Ganzzahl noch `Infinity` ist. Ich habe alle sieben
-Konfigurationen nachgesehen: sämtliche Limits sind Literale oder Produkte von
-Literalen, **keines kommt aus `process.env`**. Es sollte also nichts brechen.
-**Das ist meine Messung, nicht deine — miss sie nach**, und zwar so, dass ein
-Fehlschlag sichtbar wird: alle sieben Module laden und prüfen, dass keines
-wirft. Eine Zusicherung, die nur „hat geladen" sagt, ohne dass ein
-konstruierter ungültiger Wert sie auch rot machen KANN, ist Dekoration —
-schreib die Positivkontrolle dazu.
+`lib/validate-limits.js` ist neu in 2.4.0 und **wirft** einen `TypeError`,
+sobald ein Limit weder nicht-negative Ganzzahl noch `Infinity` ist. Es läuft
+im `Multer`-Konstruktor, also **beim Modulladen** — ein Fehlschlag verhindert
+den Serverstart.
 
-**`MulterError` bekommt ein drittes Argument** (`file.originalname`). Prüfe
-jede bestehende Zusicherung, die auf einen multer-Fehlertext oder
-`err.message` prüft. Fundstellen mindestens in `routes/belehrungen.js:1974`
-(`err.message === 'Nur PDFs erlaubt'`) und `routes/verify.js:32`
-(`err.code === "LIMIT_FILE_SIZE"`).
+Ich habe nachgesehen: alle sieben Limits sind Literale oder Produkte von
+Literalen, keines kommt aus `process.env`. Die Planprüfung hat das bestätigt.
+**Miss es trotzdem selbst**, und zwar so, dass es fallen KANN:
 
-**`wrappedFileFilter` reserviert den Zählplatz jetzt synchron** und gibt ihn
-bei Ablehnung zurück. Das trifft `upload.array('fotos', MAX_FOTOS_PRO_UPLOAD)`
-in `routes/sichtpruefung.js:3259` — die einzige `.array`-Stelle im Bestand.
-Miss, dass ein Upload mit mehr als acht Dateien weiterhin abgelehnt wird und
-einer mit genau acht weiterhin durchgeht. **Beide Richtungen**, sonst ist
-unklar, ob die Grenze noch etwas tut.
+- alle sieben Module laden, keines wirft;
+- **Positivkontrolle:** eine multer-Konfiguration mit einem konstruierten
+  ungültigen Limit (etwa `fileSize: 1.5` oder `files: -1`) muss werfen. Ohne
+  diesen Nachweis sagt „hat geladen" nichts.
 
-## B — Drei Fehlerbehandlungsstellen, die die falsche Aussage bestätigen
+Dazu, ausdrücklich als **Bestandsschutz** beschriftet (sie belegen keine neue
+Härtung und erst recht nicht den CVE-Fix):
 
-Alle drei von mir am Quelltext nachgemessen.
+- Alle elf Multipart-Wege funktionieren nach dem Sprung unverändert. Elf, nicht
+  zehn: die elfte entsteht aus der Schleife über `TYP_CONFIG` in
+  `routes/sichtpruefung.js` (zwei Einträge, `cardio` und `kraft`).
+- Die Grössengrenzen greifen weiterhin.
 
-### B1 `routes/belehrungen.js` antwortet Uploadfehler mit HTTP 200
+### A4 Drei Änderungen in 2.4.0, die man beim Diff-Lesen kennen muss
 
-Drei Stellen im Weg `POST /admin/belehrungen/neue-version/:id`:
+**(1) `LIMIT_UNEXPECTED_FILE` heisst jetzt `'Unexpected file field'`** (vorher
+`'Unexpected field'`). Das ist die **einzige** Textänderung, und sie wird bei
+uns an den Benutzer durchgereicht: vier Stellen bauen `let msg = err.message ||
+'Upload-Fehler'` (in `routes/belehrungen.js` zwei, `routes/wartung.js`,
+`routes/admin/geraete.js`). Entscheide und schreib die Entscheidung dazu: reicht
+die englische Bibliotheksmeldung, oder gehört dort ein deutscher Text hin?
 
-- **`:1976`** — der Uploadfehler-Zweig:
-  `return res.send(await adminLayout(req.studioId, 'Fehler', ...))`
-- **`:1988`** — „Keine Datei hochgeladen": ebenfalls `res.send` ohne Status.
-- **`:2002`** — der `catch`: ebenfalls.
+Fassung 1 hatte hier das dritte `MulterError`-Argument genannt — das setzt nur
+zusätzlich `filename` und ändert keine Meldung. Und die Klasse, die Fassung 1
+prüfen liess, ist leer: im ganzen Testbestand gibt es **null** Zusicherungen auf
+einen multer-Fehlertext.
 
-Der Weg `POST /admin/belehrungen/upload` (`:2008`) hat dieselbe Struktur —
-**sieh ihn nach und behandle ihn gleich**, wenn er es auch hat.
+**(2) `wrappedFileFilter` gibt den Zählplatz bei Ablehnung ZURÜCK.** Fassung 1
+schrieb, er reserviere ihn „jetzt synchron" — das tut 2.3.0 bereits
+(`filesLeft[...] -= 1` steht dort schon vor `fileFilter(...)`). Neu ist die
+Rückgabe plus ein `settled`-Riegel.
 
-Setz die Statuscodes: **400** für einen Eingabefehler (Uploadfehler, keine
-Datei, falscher Typ), **500** für den `catch`. Der Antworttext bleibt wie er
-ist — es geht um den Status, nicht um den Text.
+**Bei uns folgenlos:** die einzige `.array`-Stelle
+(`routes/sichtpruefung.js`) hat **keinen `fileFilter`**, es wird also nie eine
+Datei abgelehnt und nie ein Platz zurückgegeben. Die neunte Datei löst ohnehin
+schon busboys `filesLimit` aus. Eine Messung „mehr als acht abgelehnt, genau
+acht durch" ist auf beiden Versionen grün — **nimm sie auf, aber beschrifte sie
+als Bestandsschutz**, nicht als Absicherung einer Verhaltensänderung.
 
-**Miss beide Richtungen:** ein Test, der nur „Status ist 400" prüft, war
-vorher bei 200 rot und ist jetzt grün — das ist noch keine Zusicherung, dass
-der ERFOLGSweg weiterhin 200 liefert. Sichere beides zu.
+**(3) `storage/memory.js` ist umgeschrieben** — `file.stream.pipe(concat(...))`
+wird durch manuelles Sammeln über `.on('data')`/`.on('end')` ersetzt, und die
+Abhängigkeit **`concat-stream` entfällt**. `npm install` entfernt sie samt
+ihrem genesteten `readable-stream` und `typedarray` aus `package-lock.json` —
+das ist erwartet, kein Versehen, und gehört in die Commit-Botschaft.
 
-### B2 `routes/lageplan.js:607` leitet bei Fehler UND Erfolg weiter
+Durch genau diesen Code laufen die grössten Uploads des Bestands (25 MiB
+Lageplan, 8 × 15 MiB Sichtprüfungsfotos, 8 MiB Seilfoto). Der Wechsel von
+`pipe` auf Flow-Modus nimmt die Gegendruck-Kopplung heraus; begrenzt bleibt es
+durch `fileSize`. **Miss einen grossen Upload je memoryStorage-Weg** und melde
+die Zahlen — nicht, weil ein Fehler erwartet wird, sondern weil es niemand
+gemessen hat.
 
-Erfolg: `res.redirect('/admin/lageplan?etage=<id>&feedback=grundriss_gespeichert')`.
-Fehler: dieselbe Route, nur `feedback=upload_fehlt`, `feedback=pdf_fehler`
-oder `feedback=verarbeitung_fehler`.
+## B — Fehlerbehandlung
 
-**Hier wird NICHTS am Verhalten geändert.** Ein Umbau auf Statuscodes bräche
-den Weiterleitungsfluss der Oberfläche, und der ist nicht Gegenstand dieses
-Beitrags. Was gebaut wird, ist eine **Zusicherung mit echtem Vertrag**: der
-Test prüft den `feedback`-Wert im `Location`-Header wörtlich, **nicht**, dass
-weitergeleitet wurde. „Wurde weitergeleitet" ist bei dieser Route wahr, egal
-was passiert ist — eine Zusicherung darauf kann nicht rot werden.
+**Zu den Fundstellen: Fassung 1 nannte Zeilennummern, und fünf von sechs waren
+um eins verschoben.** Unten stehen deshalb **Muster**, keine Nummern. Für
+Mutationsskripte gilt ohnehin: bei ungleich einer Fundstelle abbrechen.
 
-### B3 `routes/lageplan.js:68` verwirft einen falschen Typ lautlos
+### B1 Uploadfehler werden mit HTTP 200 beantwortet
 
-    cb(null, false);
+In `routes/belehrungen.js`, im Weg `adminRouter.post('/neue-version/:id', …)`,
+drei Stellen — der Uploadfehler-Zweig, „Keine Datei hochgeladen" und der
+`catch` —, alle in der Form
 
-Multer überspringt die Datei dann still, `req.file` bleibt `undefined`, und die
-Route landet bei `:609` in `feedback=upload_fehlt` — **ununterscheidbar davon,
-dass gar keine Datei gewählt wurde.** Wer eine `.exe` hochlädt, liest „Upload
-fehlt".
+    return res.send(await adminLayout(req.studioId, 'Fehler', …))
 
-Ändere `cb(null, false)` in einen geworfenen Fehler mit eigener, deutscher
-Meldung (Muster: `routes/belehrungen.js:150`, `cb(new Error('Nur PDFs
-erlaubt'), false)`), und gib der Route einen eigenen `feedback`-Wert für
-„falscher Dateityp".
+also ohne Status, also HTTP 200. Der Weg `adminRouter.post('/upload', …)` hat
+dieselbe Struktur an vier Stellen.
 
-**Das ändert Verhalten** — miss deshalb ausdrücklich, dass der Erfolgsweg
-(PNG, JPEG, WEBP, PDF, je einzeln) unverändert durchgeht. Vier Typen, vier
-Messungen; eine Stichprobe mit einem Typ belegt die anderen drei nicht.
+Setz die Codes: **400** für Eingabefehler, **500** für den `catch`.
+
+**Der Erfolgsweg liefert 302, nicht 200.** Beide Wege enden auf
+`res.redirect('/admin/belehrungen?feedback=…')` (`version_ersetzt` bzw.
+`belehrung_hochgeladen`). Fassung 1 behauptete 200 — eine Zusicherung darauf
+wäre von Anfang an rot gewesen oder hätte dazu verleitet, den Redirect zu
+„reparieren". **Der Vertrag lautet: Erfolgsweg weiterhin 302 mit dem wörtlichen
+`feedback`-Wert im `Location`-Header.**
+
+**Und der Schnitt gehört dazu:** `routes/belehrungen.js` hat **17** Stellen
+dieser Form. Dieser Beitrag fasst die sieben der beiden Upload-Wege an, die
+übrigen zehn nicht. Schreib das in den Kommentar und in die Commit-Botschaft —
+sonst heisst der Beitrag hinterher „Uploadfehler antworten jetzt mit
+Fehlerstatus", und das wäre falsch.
+
+### B2 Der Lageplan-Weg leitet bei Fehler UND Erfolg weiter
+
+`adminRouter.post("/etage/:id/grundriss", …)` endet in allen vier Fällen auf
+`res.redirect`, unterschieden nur durch `feedback=` (`upload_fehlt`,
+`pdf_fehler`, `grundriss_gespeichert`, `verarbeitung_fehler`).
+
+**Hier wird nichts am Verhalten geändert.** Gebaut wird eine Zusicherung mit
+echtem Vertrag: der Test prüft den `feedback`-Wert im `Location`-Header
+wörtlich, **nicht** „wurde weitergeleitet". Letzteres ist bei dieser Route
+immer wahr und kann nicht rot werden.
+
+### B3 Ein falscher Dateityp ist von „gar keine Datei" nicht zu unterscheiden
+
+Der `fileFilter` verwirft mit `cb(null, false)`. Multer überspringt die Datei
+still, `req.file` bleibt `undefined`, und die Route landet bei
+`feedback=upload_fehlt`. Wer eine `.exe` hochlädt, liest „Upload fehlt".
+
+**Achtung, und das ist der Grund für diese ganze Fassung: ein blosser Tausch
+auf `cb(new Error(...), false)` ist hier NICHT umsetzbar und macht die Sache
+schlimmer.** `routes/lageplan.js` ist die **einzige** der zehn
+Middleware-Aufrufstellen, die die Middleware direkt als Routen-Argument hängt
+
+    adminRouter.post("/etage/:id/grundriss", upload.single("grundriss"), async (req, res) => {
+
+— alle neun anderen umschliessen sie mit einem eigenen Fehlerrückruf
+`(req, res, next) => { mw(req, res, (err) => …) }`. Ein geworfener Fehler geht
+deshalb an `next(err)`, der Routen-Handler läuft nie, und der Fehler landet im
+globalen Behandler in `server.js`. Der ruft `errorTracker.melde(err, req)`, und
+das ruft `telegram(...)`. **Jede falsche Dateiwahl löste damit einen
+Telegram-Alarm beim Betreiber aus** und zeigte dem Benutzer eine generische
+500-Seite. Selbst nachgemessen: die neun Wrapper-Stellen, die eine
+Direkt-Stelle, und der Pfad `melde → telegram`.
+
+Bau deshalb so:
+
+1. **Die Route auf das Wrapper-Muster der anderen neun umstellen**, damit der
+   Fehler im Handler ankommt und dieser `feedback=falscher_dateityp` setzen
+   kann.
+2. **`LIMIT_FILE_SIZE` ausdrücklich unverändert lassen.** Es fällt heute
+   ebenfalls in den globalen Behandler und bekommt dort eine eigene 413-Seite.
+   Der Wrapper darf das nicht nebenbei mitändern — und wenn es sich nicht
+   vermeiden lässt, wird es als gewollt benannt und gemessen, nicht
+   stillschweigend geändert.
+3. **Gemessen wird der ABLEHNUNGSweg**, nicht nur der Erfolgsweg: `.exe` hoch →
+   `Location` enthält `feedback=falscher_dateityp`, **kein** 500, und
+   **`errorTracker.melde` wurde NICHT gerufen** (Attrappe — dieselbe Suite ist
+   auf dem Live-Server Deploy-Gate, ein echter Telegram-Aufruf aus einem Test
+   ist eine Waffe).
+4. Zusätzlich der Erfolgsweg, **vier Typen einzeln** (PNG, JPEG, WEBP, PDF).
+   Eine Stichprobe mit einem Typ belegt die anderen drei nicht.
+
+Fassung 1 verlangte nur die vier Erfolgsmessungen — also ausgerechnet nicht den
+Weg, um dessentwillen die Änderung stattfindet.
 
 ## C — Ein Kommentar, der auf einen Zustand zeigt, den es nicht mehr gibt
 
-`core/pruefbericht.js:52-62` begründet `fieldSize: 25 * 1024 * 1024` so:
+In `core/pruefbericht.js` begründet der Kommentar über `fieldSize: 25 * 1024 *
+1024` diesen Wert mit einem 25-MB-Limit des urlencoded-/JSON-Parsers in
+`server.js` und zitiert den damaligen Wortlaut. **Dieses Limit gibt es seit dem
+03.09.2026 nicht mehr:** `server.js` steht auf `1mb`,
+`routes/upload-limit-waechter.js` hebt für `/module`, `/getraenkeanlage` und
+`/belehrungen` auf **4 MB**, mit eigener Messreihe im Kopf der Datei.
 
-> fieldSize auf 25 MB angehoben (Betreiber-Fund 16.08.2026) — deckungsgleich
-> mit dem 25-MB-Limit des urlencoded-/JSON-Parsers in server.js. Dort steht
-> wörtlich der Grund: "Das 25-MB-Limit (HiDPI-Canvas-Unterschriften vom iPad
-> Pro: dPR 2-3 → 5-10 MB Base64) gilt NUR für die drei Upload-/Signatur-
-> Prefixe UND NUR für bereits angemeldete Sessions."
+Schreib den Kommentar auf den heutigen Stand um:
 
-**Dieses 25-MB-Limit gibt es seit dem 03.09.2026 nicht mehr.** `server.js:161-162`
-stehen auf `1mb`; `routes/upload-limit-waechter.js:66` hebt für `/module`,
-`/getraenkeanlage` und `/belehrungen` auf **4 MB** — mit einer eigenen
-Messreihe im Kopf der Datei (realistischer Worst Case 650,7 KiB).
+- Verweis auf `routes/upload-limit-waechter.js` statt auf ein nicht mehr
+  existierendes Limit;
+- **der Wert 25 MiB ist damit unbegründet.** Er bleibt stehen — ihn zu senken
+  wäre eine Verhaltensänderung ohne Messung —, aber der Kommentar sagt ehrlich,
+  dass seine ursprüngliche Begründung entfallen ist und der Wert nachgemessen
+  gehört. **Erfinde keine neue Begründung.**
 
-Schreib den Kommentar auf den heutigen Stand um. Zwei Dinge gehören hinein:
+## D — Den Multipart-Helfer herauslösen
 
-- der Verweis zeigt auf `routes/upload-limit-waechter.js`, nicht mehr auf ein
-  nicht existierendes Limit in `server.js`;
-- **der Wert 25 MiB ist damit unbegründet.** Er bleibt in diesem Beitrag
-  stehen — ihn zu senken wäre eine Verhaltensänderung ohne Messung —, aber der
-  Kommentar sagt ehrlich, dass seine ursprüngliche Begründung entfallen ist
-  und der Wert nachgemessen gehört. Schreib **keine** neue Begründung hin, die
-  du nicht gemessen hast.
+In `test_feature_pruefbericht.js` stehen **zwei** fest verdrahtete
+Multipart-Helfer (`postMultipart` und `postAdminBericht`), jeder mit eigener
+fester URL und festem Feldnamen. Die Hausregel „dieselbe Aussage an zwei Orten"
+ist dort also schon verletzt.
 
-## D — `postMultipart` herauslösen
+Lös **einen** Helfer nach `test/helfer/` heraus, der **Pfad und Feldname als
+Argumente** nimmt. `test_feature_pruefbericht.js` bekommt zwei dünne Adapter,
+die beide darauf zeigen.
 
-Der Helfer steht datei-lokal in `test_feature_pruefbericht.js:147`. Für die
-Tests aus A und B wird er gebraucht. **Eine zweite Kopie ist ausgeschlossen**
-(Hausregel „dieselbe Aussage an zwei Orten").
+Fassung 1 verlangte hier, den Helfer „in derselben Form aufzurufen wie die
+Produktion". Das war bei einem Helfer mit fester URL per Konstruktion
+unerfüllbar. Die Auflage lautet jetzt: **beide Adapter rufen den
+herausgelösten Helfer mit denselben Argumenten, die die Tests benutzen** — es
+gibt keinen Aufrufweg, den nur der Test kennt.
 
-Lös ihn nach `test/helfer/` heraus und lass `test_feature_pruefbericht.js` ihn
-von dort beziehen. **Die Herauslösung darf keine Abdeckung kosten:** lauf
-`test_feature_pruefbericht.js` vorher und nachher und melde beide Zahlen
-wörtlich — gleiche Zahl PASS, gleiche Zahl FAIL, sonst ist etwas verloren
-gegangen.
+**Abnahme der Herauslösung:** `test_feature_pruefbericht.js` vorher und
+nachher laufen lassen, beide Zahlen wörtlich melden. Gleiche PASS, gleiche
+FAIL — sonst ist Abdeckung verloren gegangen.
 
-Und die Regel, die genau hier greift: **eine Funktion auszulagern macht sie
-prüfbar, nicht geprüft.** Ruf den Helfer in den neuen Tests in **derselben
-Form** auf wie die Produktion ihn benutzt — dieselben Argumente, dieselben
-Typen. Ein Test, der ihn anders aufruft, prüft einen Zweig, den es sonst nicht
-gibt.
+Nebenbei: Teil A braucht diesen Helfer **nicht** (dort wird keine Route
+angefahren). Nur B braucht ihn.
+
+## Fürs Inventar des Folgebeitrags, nicht für diesen
+
+Die Planprüfung hat einen Datei-Eingang gefunden, den weder Plan noch Fassung 1
+kannten, weil er durch alle vier Suchmuster fiel — kein multer, kein
+`FileReader`, kein Base64: in `routes/lageplan.js` nimmt eine JSON-Route
+`req.body.modell`, erzeugt daraus ein SVG, rendert es mit `sharp` und schreibt
+**eine neue Bilddatei in dasselbe Verzeichnis** wie der multer-Weg. Sie hat
+eine eigene Grenze (`json.length > 300000`). Selbst nachgemessen; ebenso ein
+zweiter Schreibweg im Zuschneide-Pfad.
+
+**Hier nicht anfassen.** Aber ohne sie wäre der Satz „Upload-Wege geprüft"
+unvollständig, und genau deshalb steht sie hier.
 
 ## Abnahme
 
 - **Volle Suite:** `bash test/run.sh > <logdatei> 2>&1; echo "SUITE_EXIT=$?"`.
   Ohne Pipe, ohne äusseres `flock` (sie sperrt selbst), `echo` in EIGENER Zeile.
-- **Dateizahl-Ritual:** die im Log gelaufenen Dateien gegen die in
-  `test/run.sh` registrierten, `diff` EXIT 0. Zum Normalisieren
-  `sed 's/^[[:space:]]*//'`, **nie** `tr -d '[:space:]'`.
-- **`npm run lint`** EXIT 0.
-- **Neue Testdateien in `test/run.sh` registrieren.**
+- **Dateizahl-Ritual:** gelaufene gegen registrierte Dateien, `diff` EXIT 0.
+  Normalisieren mit `sed 's/^[[:space:]]*//'`, **nie** `tr -d '[:space:]'`.
+- **`npm run lint`** EXIT 0. Neue Testdateien in `test/run.sh` registrieren.
+- **`npm install multer@2.4.0`** — `package.json` steht auf `^2.1.1`, also
+  nicht gepinnt; die CI fährt `npm ci`, der Lock regiert. Wenn du exakt pinnen
+  willst, `--save-exact`, und schreib die Entscheidung dazu.
 - **Gegenprobe zu JEDER neuen Zusicherung:** Defekt herstellen, ROT messen,
   zurücknehmen, GRÜN messen — beide Ausgaben wörtlich. Mutationsskripte nehmen
   den Zielpfad als **Argument**, brechen bei ungleich einer Fundstelle ab,
@@ -223,9 +329,13 @@ gibt.
 
 ## Was ich selbst nachmessen werde
 
-Damit klar ist, worauf du dich NICHT verlassen sollst: Ich lese den Diff Datei
-für Datei, fahre die volle Suite selbst, und mache mindestens diese
-Gegenproben selbst — den Abbruch-Test gegen 2.3.0, die vier Lageplan-Typen
-einzeln, und den Erfolgsweg von `neue-version` auf HTTP 200. Meine Angabe „alle
-sieben Limits sind Literale" ist eine Behauptung von mir; wenn deine Messung
-ihr widerspricht, gilt deine.
+Ich lese den Diff Datei für Datei, fahre die volle Suite selbst, und mache
+mindestens diese Gegenproben selbst: die Positivkontrolle von `validate-limits`
+mit einem konstruierten ungültigen Limit; den Ablehnungsweg des Lageplans mit
+einer `.exe` einschliesslich der Zusicherung, dass `melde` NICHT gerufen wurde;
+und den Erfolgsweg beider Belehrungs-Wege auf 302 mit wörtlichem `feedback`.
+
+**Jede Tatsachenbehauptung in diesem Papier ist meine Messung, nicht deine.
+Widerspricht deine Messung ihr, gilt deine — und sag es, statt sie zu
+umgehen.** Fassung 1 hat genau eine Behauptung so gekennzeichnet; sie war die
+einzige, die trug.
