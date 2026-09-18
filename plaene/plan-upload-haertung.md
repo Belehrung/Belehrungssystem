@@ -1,6 +1,11 @@
-# Plan — Upload-Wege härten (Fassung 2, nach der ersten Planprüfung)
+# Plan — Upload-Wege härten (Fassung 3, Nachmessungen durch)
 
-**Status: PLAN, noch kein Bauauftrag.**
+**Status: Bestand vollständig gemessen. Der Bauauftrag steht in
+`plaene/auftrag-upload-haertung.md`.**
+
+Die Messergebnisse stehen unten im Abschnitt „Nachgemessen 18.09.2026". Sie
+ersetzen den früheren Abschnitt „Was noch nachzumessen ist" — der ist gestrichen,
+nicht danebengelegt.
 
 **Fassung 1 ist ersetzt, nicht danebengelegt** (Hausregel „dieselbe Aussage an
 zwei Orten"). Sie ging am 18.09.2026 als erste Planprüfung nach der neuen Regel
@@ -159,14 +164,97 @@ der Grund, warum eine neue Inhaltsprüfung oder eine verallgemeinerte
 Aufräumlogik hier **nicht ohne Phasenmodell** eingebaut werden darf — sonst
 verschlimmert dieser Beitrag genau den Fehler, den er nicht anfasst.
 
-## Was noch nachzumessen ist, bevor der Bauauftrag geht
+## Nachgemessen 18.09.2026 — alles selbst, nichts übernommen
 
-Vom Prüfer gemeldet, von mir NICHT nachgemessen — als FUNDORTE zu behandeln,
-nicht als Befunde:
+### Was der Prüfer richtig hatte
 
-- die elf Multipart-POST-Wege und ihre Verwender,
-- die drei Nicht-multer-Eingänge samt separatem CSV-Commit-Eingang,
-- die vier Fehlerbehandlungs-Fundstellen aus S4.
+- **Sieben multer-Konfigurationen.** Bestätigt, einschliesslich der beiden, die
+  ein `grep "= multer("` nicht findet: `routes/module.js:1138` (`seilUpload`,
+  Alias hinter einem Funktionsschalter) und `routes/sichtpruefung.js:148`
+  (Ternär hinter `FOTOS_AKTIV`).
+- **Elf Multipart-POST-Wege.** Die Zahl trägt, aber nicht so, wie ich sie
+  gesucht hätte: es gibt nur ZEHN Middleware-Aufrufstellen. Die elfte Route
+  entsteht, weil `routes/sichtpruefung.js:5508` in einer Schleife über
+  `Object.keys(TYP_CONFIG)` registriert wird und `TYP_CONFIG` zwei Einträge hat
+  (`cardio` → `/module/cardio-check/defekt/:id/foto`, `kraft` →
+  `/module/kraft-check/defekt/:id/foto`). **Wer Aufrufstellen zählt, zählt
+  nicht Wege** — genau die Klasse, vor der S1 warnt.
+- **Alle drei Fehlerbehandlungsstellen aus S4.** `routes/belehrungen.js:1976`
+  antwortet einen Uploadfehler mit `res.send(...)` ohne Statuscode, also
+  HTTP 200; ebenso `:1988` („Keine Datei hochgeladen") und der `catch` bei
+  `:2002`. `routes/lageplan.js:607` leitet bei Fehler UND Erfolg weiter, nur
+  der `feedback=`-Parameter unterscheidet. `routes/lageplan.js:68` verwirft
+  einen falschen Typ mit `cb(null, false)` — der Weg endet dann bei
+  `feedback=upload_fehlt`, also **ununterscheidbar davon, dass gar keine Datei
+  gewählt wurde**.
 
-Erst danach geht ein Bauauftrag raus. **Die Zeilennummern oben sind vom
-18.09.2026 und werden vor dem Bau neu gemessen.**
+### Was mein eigener Plan falsch oder unvollständig hatte
+
+1. **`routes/upload-limit-waechter.js` kommt im ganzen Plan nicht vor** — dabei
+   ist er die einzige Grössengrenze SÄMTLICHER Nicht-multer-Wege. Er hängt vor
+   den Body-Parsern (`server.js:160`), schaltet für `/module`,
+   `/getraenkeanlage` und `/belehrungen` von 1 MB auf 4 MB hoch, aber nur für
+   eine ECHTE Identität (Nicht-Tablet-Rolle oder PIN-entsperrtes Tablet), und
+   fällt bei einem DB-Fehler geschlossen zurück. Seine 4 MB sind mit echtem
+   Chromium nachgemessen (realistischer Worst Case 650,7 KiB). **Ein Plan, der
+   „Grenzen nachrüsten" sagt, ohne die vorhandene Grenze zu kennen, hätte
+   entweder doppelt gebaut oder sie gelockert.**
+2. **Die CSV-Eingänge sind je ZWEI, nicht einer** — Vorschau und Commit:
+   `routes/admin/geraete.js:5731` und `:5812`,
+   `routes/admin/mitarbeiter.js:519` und `:584`. Also vier statt zwei.
+3. **Das Signaturbild ist NICHT ein Eingang, sondern ELF** über sechs Dateien:
+   `routes/module.js:1343`, `:2550`, `:3392`, `:3532`, `:3603`, `:3717`,
+   `routes/spuelplan.js:261`, `routes/getraenkeanlage.js:361`,
+   `routes/sichtpruefung.js:2292`, `:3163`, `routes/belehrungen.js:739`.
+   Alle elf liegen unter `/module`, `/getraenkeanlage` oder `/belehrungen` —
+   **einzeln nachgesehen**, auch `/module/spuelplan` und der Tablet-Mount
+   `/getraenkeanlage` (nicht `/admin/getraenkeanlage`, wo der Wächter NICHT
+   griffe). Der Wächter deckt sie also ab.
+4. **„Die vier Fehlerbehandlungs-Fundstellen aus S4"** — S4 nennt drei. Eigene
+   Ungenauigkeit, keine verlorene Fundstelle.
+
+### Neu gefunden, stand in keiner Fassung
+
+- **Fünf der elf Unterschrift-Wege prüfen den Inhalt überhaupt nicht.**
+  `routes/module.js:3392`, `:3532`, `:3603`, `:3717` und
+  `routes/getraenkeanlage.js:361` prüfen nur auf Vorhandensein und schreiben
+  den Rohwert in die DB. `routes/module.js:1343` und `routes/spuelplan.js:261`
+  prüfen wenigstens `startsWith("data:image")`. Damit kann eine angemeldete
+  Identität bis zu 4 MB beliebigen Text in eine Unterschriftsspalte schreiben.
+  **Eigener Beitrag, nicht dieser** — es sind fünf Routen in zwei Dateien und
+  die Frage, was mit Bestandszeilen geschieht, ist nicht nebenbei zu klären.
+- **`core/pruefbericht.js:52-62` begründet `fieldSize: 25 MB` mit einem
+  25-MB-Limit des urlencoded-/JSON-Parsers in `server.js` — das es seit dem
+  03.09.2026 nicht mehr gibt.** Der Kommentar zitiert den damaligen
+  `server.js`-Kommentar sogar wörtlich. Heute stehen dort 1 MB, und der
+  Wächter hebt auf 4 MB. Lehrbuchfall „dieselbe Aussage an zwei Orten": die
+  eine wurde korrigiert, die andere nicht. Der WERT mag vertretbar sein, seine
+  BEGRÜNDUNG ist es nicht mehr.
+
+### multer 2.3.0 → 2.4.0, aus `npm diff` gelesen
+
+Geänderte Dateien: `storage/disk.js`, `index.js`, `lib/make-middleware.js`,
+`storage/memory.js`, `lib/multer-error.js`, `lib/validate-limits.js` (NEU),
+`package.json`, `README.md`.
+
+- **Der CVE-Fix sitzt in `storage/disk.js`:** eine neue `flushingFiles`-WeakMap
+  lässt `_removeFile` warten, bis ein nachgezogener Flush-Deskriptor zu ist,
+  bevor es entlinkt. Ohne das bleibt bei einem Abbruch eine Datei liegen.
+- **`lib/validate-limits.js` WIRFT** einen `TypeError`, sobald ein Limit weder
+  nicht-negative Ganzzahl noch `Infinity` ist. **Alle sieben Konfigurationen
+  bestehen das** — nachgesehen: sämtliche Limits sind Literale oder Produkte
+  von Literalen (`MAX_FOTO_BYTES = 15 * 1024 * 1024`,
+  `MAX_FOTOS_PRO_UPLOAD = 8`), **kein einziges kommt aus `process.env`.** Das
+  war der Bruchfall, den es zu messen galt: ein `parseInt(process.env.X)` auf
+  `NaN` hätte den Serverstart geworfen.
+- **`MulterError` bekommt ein drittes Argument** (`file.originalname`).
+  Zusicherungen, die auf den Fehlertext prüfen, können sich daran stossen.
+- **`wrappedFileFilter` reserviert den Zählplatz jetzt synchron** und gibt ihn
+  bei Ablehnung zurück. Für `upload.array("fotos", 8)` in
+  `routes/sichtpruefung.js` ist das eine echte Verhaltensänderung.
+
+### Prüfstand
+
+`postMultipart` gibt es bereits, aber **datei-lokal** in
+`test_feature_pruefbericht.js:147`. Eine zweite Kopie verbietet sich; der
+Helfer wird herausgelöst.
