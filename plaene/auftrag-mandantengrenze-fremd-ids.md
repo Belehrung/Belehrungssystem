@@ -351,3 +351,142 @@ festgehalten — nicht als „sauber" gemeldet.
 - Keine Umgestaltung der beiden Routen im Übrigen.
 - Keine weiteren Fundstellen ohne eigene Messung: eine Fundstellenliste ist
   ein Hinweis, kein Befund.
+
+---
+
+# NACHARBEIT (Fassung 3) — nach der Codeprüfung des fertigen Diffs
+
+Der Beitrag ist gebaut (`claude/mandantengrenze-fremd-ids`, Commit `55ccf32`).
+**Meine eigenen Prüfungen sind alle durch:** Suite selbst gefahren
+(`SUITE_EXIT=0`, 12.280 PASS / 0 FAIL, unsere Datei 20/0), Dateizahl-Ritual
+338 = 338 mit `diff` EXIT 0, `npm run lint` EXIT 0, Marker-Scan 6 (Sollwert),
+Arbeitsbaum sauber, Zweig nicht hinter master.
+
+**Die unabhängige Codeprüfung hat trotzdem vier Befunde geliefert, alle selbst
+nachgemessen, alle zutreffend.** Drei davon sind DIESELBE Klasse, und es ist
+unsere eigene Hausregel: *eine Zusicherung über eine ZAHL ist keine
+Zusicherung über eine MENGE.* Die Testdatei zählt Zeilen und prüft nie,
+WELCHE IDs gespeichert wurden.
+
+Die Produktivbehebung selbst ist NICHT beanstandet — sie schliesst die
+Schreibwege. Beanstandet ist ihre ABSICHERUNG.
+
+## N1 — Die Matrix prüft nur Zeichenketten aus Formular-POSTs
+
+`test_feature_mandantengrenze_fremd_ids.js` schickt M2 ausschliesslich über
+`post()` aus `test/helfer/route-harness.js`, und der setzt
+`Content-Type: application/x-www-form-urlencoded`. Damit kommt selbst die
+numerische `maB` als ZEICHENKETTE an. Die Produktion nimmt aber auch JSON
+(`server.js:161-167`, `express.json()` global).
+
+**Die Mutation, die alle 20 Zusicherungen grün lässt:**
+
+```js
+const ma = typeof mitarbeiter_id === 'number' ? { id: mitarbeiter_id } : await db.one("SELECT id FROM mitarbeiter WHERE studio_id = $1 AND id = $2", [req.studioId, mitarbeiter_id]);
+```
+
+Beide Mitarbeiter-Negativfälle (`fremd/eigen`, `fremd/fremd`) bestehen
+weiterhin — sie schicken ja Zeichenketten. Ein JSON-POST mit numerischer
+fremder Mitarbeiter-ID schreibt die Fremdreferenz.
+
+**Zu bauen:** Die Matrix zusätzlich als JSON fahren, mit ZAHL und mit
+ZEICHENKETTE. Dazu als Negativfälle: Array, Objekt, `null`, fehlender Wert.
+**Und ausdrücklich die Gegenrichtung zusichern:** eine EIGENE numerische ID
+muss weiterhin FUNKTIONIEREN — sonst bliebe der umgekehrte Fehler (JSON-Zahlen
+pauschal abweisen) ebenfalls grün.
+
+## N2 — Die gespeicherte Zeile wird nie angesehen
+
+**Die Mutation, die alle 20 Zusicherungen grün lässt** — `bel.id` durch
+`ma.id` ersetzen:
+
+```js
+`, [req.studioId, ma.id, ma.id, grund || null]);
+```
+
+Der Positivfall erzeugt weiterhin GENAU EINE Zeile, die Negativfälle werden
+weiterhin vorher abgewiesen. Gespeichert wird aber eine Mitarbeiter-ID in der
+Belehrungs-Spalte. Die beiden ID-Räume sind unabhängig, und das Schema hat
+dort keinen Fremdschlüssel (`core/db.js:1738-1746`) — die Zahl kann eine
+fremde oder gar keine Belehrung bezeichnen.
+
+**Zu bauen:** Nach dem Positivfall die geschriebene Zeile LESEN und
+`mitarbeiter_id`, `belehrung_id` UND `grund` gegen die erwarteten Werte
+halten. Für M1 dasselbe: die entstandene Position lesen und ihre `etage_id`
+prüfen.
+
+## N3 — Das Verhalten bei erneuter Freischaltung ist ungeprüft
+
+**Die Mutation, die alle 20 Zusicherungen grün lässt** — `DO UPDATE` durch
+`DO NOTHING` ersetzen. Der einzige erlaubte Aufruf im Test trifft noch keinen
+Konflikt, also fällt nichts auf. Ein regulärer ZWEITER Aufruf würde danach
+weder `grund` noch `freigeschaltet_am` aktualisieren und trotzdem Erfolg
+melden.
+
+**Zu bauen:** Denselben erlaubten Aufruf ein zweites Mal fahren, mit ANDEREM
+`grund`, und zusichern: Zeilenzahl unverändert (ON CONFLICT greift), aber
+`grund` aktualisiert und `freigeschaltet_am` neuer als vorher.
+
+## N4 — Die Begründung des Antwortcodes ist nicht zugesichert
+
+**Von ZWEI unabhängigen Spuren gefunden** (der Prüfung und mir selbst).
+
+Der Beitrag begründet 404 statt 403 ausdrücklich damit, dass „fremd" und
+„nicht vorhanden" ununterscheidbar bleiben sollen. Geprüft wird nur der
+FREMDE Fall. **Die Mutation, die grün bleibt:**
+
+```js
+if (!etage) return res.status(404).json({ error: (await db.one("SELECT id FROM etagen WHERE id=$1", [eId])) ? "fremd" : "nicht vorhanden" });
+```
+
+Damit verrät die Antwort genau das, was 404 verbergen sollte — und kein Test
+fällt.
+
+**Zu bauen:** Beide Fälle prüfen — fremde existierende Etage UND eine ID, die
+es NIRGENDS gibt — und zusichern, dass Statuscode UND Antwortrumpf
+identisch sind. Für M2 entsprechend: beide Ablehnungen führen auf dasselbe
+Ziel.
+
+## N5 — Ein Kommentar der Testdatei stimmt nicht
+
+Die Datei schreibt bei M2, die Zeilenzahl sei die tragende Zusicherung und
+das Redirect-Ziel nur Diagnose. **Die Prüfung hat das widerlegt**, und zwar
+an ihrem eigenen Befund: bei einer Mutation, die eine bestehende Zeile per
+`ON CONFLICT DO UPDATE` verändert statt eine neue anzulegen, bleibt die
+ZEILENZAHL grün und fällt das REDIRECT-ZIEL. Hier trägt also genau umgekehrt.
+
+**Zu bauen:** Den Kommentar berichtigen. Beide sind tragend, keines ist bloss
+Diagnose — und das ist der Grund, warum N2 überhaupt nötig ist.
+
+## N6 — Die Browser-Ergänzung ist ungeprüft und unvollständig
+
+`bindPlace()` wertet jetzt `!res.httpOk` aus. Zwei Lücken bleiben:
+
+- **Netzfehler:** `api()` verwirft sein Promise, der asynchrone Klickhandler
+  hat kein `catch`. Der neue Hinweis wird nie erreicht.
+- **2xx ohne `id`:** `httpOk` ist wahr, `res.id` fehlt → weiterhin stilles
+  Überspringen, also genau der ursprüngliche Befund. Das ist kein erfundener
+  Fall: `api()` setzt keinen JSON-`Accept`-Header und folgt Weiterleitungen;
+  eine Umleitung auf `/login` liefert mit 200 eine HTML-Seite
+  (`routes/auth.js:938-963`).
+
+**Die Mutation, die alle 20 Zusicherungen grün lässt:** `if (false && !res.httpOk) {`
+— die gesamte neue Meldung abgeschaltet, kein Test fällt. Die Testdatei sagt
+selbst, sie prüfe nur die Serverseite.
+
+**Zu bauen:** Netzfehler abfangen; eine Erfolgsantwort ohne `id` ausdrücklich
+als Fehlschlag behandeln; und beides mit eingespeistem `fetch`/`alert`
+zusichern — **ohne echte Dienste, ohne echten Browserstart.** Bei unklarem
+Ausgang NICHT automatisch wiederholen: die Position kann serverseitig bereits
+angelegt sein.
+
+## Gegenproben
+
+Für JEDE der sechs Nachbesserungen die zugehörige, oben wörtlich genannte
+Mutation fahren: ROT messen (`EXIT`-Code und `PASS/FAIL`), zurücknehmen, GRÜN
+messen. Beide Zahlen wörtlich melden. Die Mutationen sind vorgegeben — nimm
+genau diese, sie sind der Beleg, dass die Lücke wirklich geschlossen ist.
+
+Marker `GEGENPROBE-` + `DEFEKT`, Zielpfad als ARGUMENT, Abbruch bei ≠ 1
+Fundstelle, `node --check`, Rücknahme gegen eine unabhängig angelegte
+`cp`-Kopie mit `diff` EXIT 0 — nie `git checkout`, nie `git stash`.
