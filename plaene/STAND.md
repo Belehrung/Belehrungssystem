@@ -64,6 +64,25 @@ Punkt 4 ist die Lehre des Tages: Die Upload-Spur war sachlich richtig (sie
 hat ein echtes Informationsleck gefunden), aber sie ist ohne Entscheidung an
 das Programm vorbeigewachsen, und gemerkt hat es der Betreiber, nicht ich.
 
+## LÄUFT GERADE (18.09.2026, 19:45 UTC) — nicht anfassen
+
+| Was | Wo | Arbeitsbaum |
+|---|---|---|
+| **Executer: Upload-Härtung 2a** (vier Wrapper vereinheitlichen) | Zweig `claude/upload-haertung-2a` | **`/home/user/gymdocu` — BELEGT** |
+| Gegenleser **A1**: SQL- und Kommando-Einschleusung | `/tmp/claude-0/s2/lauf-a1.log` | `/workspace/gymdocu-sicher` (nur lesend) |
+| Gegenleser **B**: Anmeldung, Sitzung, Token (Wiederholung) | `/tmp/claude-0/s2/lauf-b2.log` | dito |
+| Gegenleser **C**: Datenabfluss (Wiederholung) | `/tmp/claude-0/s2/lauf-c2.log` | dito |
+
+**Noch zu starten:** Gegenleser **A2** (Pfade und HTML-Ausgabe), Brief liegt
+fertig in `/tmp/claude-0/s2/brief-a2.txt`.
+
+**`/workspace/gymdocu-sicher`** ist ein reiner LESE-Arbeitsbaum auf `03f0c3c`,
+damit die Gegenleser dem Executer nicht in die Quere kommen. Nach Abschluss
+mit `git worktree remove` abräumen.
+
+**Drei Mandantenbefunde warten auf den freien Arbeitsbaum** (F1–F3, s. oben
+unter „Daraus folgt verbindlich", Punkt 2). Alle drei selbst nachgemessen.
+
 ## Stand JETZT — das gilt, alles Weitere ist Verlauf
 
 Die Abschnitte unter dieser Übersicht beschreiben, WIE es dazu kam. Wo sie
