@@ -1,6 +1,14 @@
 # Auftrag: Die PIN-Sperre, die eine Dateiendung aushebelt — und zwei Ausgabelecks
 
-Fassung 1 — 18.09.2026, abends. Verfasser: Haupt-Agent.
+Fassung 2 — 18.09.2026, nach der Planprüfung. Verfasser: Haupt-Agent.
+
+**Der Gegenleser hat diesen Plan gesehen.** Urteil: „Fassung 1 ist noch nicht
+baureif. Die drei Grundbefunde sind bestätigt … bei G1 ist das Entfernen der
+Endungs-Ausnahme ebenfalls die richtige Sicherheitsrichtung — aber die
+behauptete vollständige Folgenlosigkeit ist nicht belegt und teilweise
+widerlegt." Sechs Befunde, alle selbst nachgemessen, **alle sechs getragen**,
+zwei blockierend. Die BEFUNDE bleiben unverändert; geändert haben sich die
+BEGRÜNDUNG und der Umfang.
 
 Drei Befunde aus zwei getrennten Gegenleser-Läufen (A2 „Pfade und
 HTML-Ausgabe", C „Datenabfluss"), **jeder einzeln von mir am Quelltext
@@ -91,22 +99,110 @@ beantwortet, bevor das Gate überhaupt läuft. Die Endungs-Ausnahme kann
 folglich NUR noch für Pfade greifen, die KEINE statische Datei sind — genau
 die Angriffsfläche.
 
-**Gegenprobe zu dieser Behauptung, ebenfalls gemessen:** Ich habe alle Routen
-in `routes/` und `server.js` gesucht, deren Pfad auf eine dieser Endungen
-endet — **null Treffer**. Es gibt also keine dynamische Route, die die
-Ausnahme bräuchte. `/sw.js` kommt aus `routes/offline.js:45` und ist bei
-Zeile 738 gemountet, also vor dem Gate.
+**BERICHTIGT — meine Gegenprobe war falsch gestellt (Planprüfung, selbst
+nachgemessen).** Fassung 1 behauptete: „Ich habe alle Routen gesucht, deren
+Pfad auf eine dieser Endungen endet — null Treffer." Gesucht habe ich nach
+Routen-LITERALEN. Es gibt aber sehr wohl eine dynamische Route, die echte
+Dateien mit Asset-Endung liefert — die Endung steckt im PARAMETER:
 
-**Zu bauen:** Die Regex-Zeile aus der Freipass-Liste in `server.js` ENTFERNEN.
-Der Kommentar daneben nennt den Grund und die vier Mount-Zeilen, damit sie
-niemand als „die hat doch sicher jemand gebraucht" wieder einsetzt.
+```js
+app.use("/module/lageplan", lageplanRoutes.tablet);        // server.js:1428 — NACH dem Gate
+tabletRouter.get("/grundriss/:datei", async (req, res) => { // routes/lageplan.js:408
+    const datei = path.basename(req.params.datei);
+    … res.sendFile(p);
+```
 
-**Wenn sich beim Bauen herausstellt, dass doch etwas sie braucht** — etwa weil
-eine Anfrage an eine nicht existierende statische Datei heute absichtlich
-stumm durchfällt statt auf dem Sperrbildschirm zu landen —, dann NICHT
-heimlich wieder einsetzen, sondern melden. Der Ersatz wäre dann ein Freipass
-auf PRÄFIXE (`/public/`, `/brand/`, `/sw.js`) statt auf Endungen; das ist
-eine andere Entscheidung und braucht eine eigene Runde.
+Die Dateien heißen `etage_<id>_<uuid>.jpg`. Das ist genau der Fehler, vor dem
+unsere eigene Regel warnt: **erst das Muster an einer bekannten Fundstelle
+lernen, dann damit suchen.** Ich habe es umgekehrt gemacht.
+
+**Was daraus folgt, habe ich selbst nachgemessen — und es kehrt die Sache um:**
+Die Seiten, die ein Grundrissbild einbinden, sind `/module/lageplan` und
+`/module/lageplan/markieren` (`routes/lageplan.js:1551`, `:2408`, `:2533`).
+Beide haben KEINE Endung, werden vom Gate also ohnehin abgefangen. Ein
+gesperrtes Tablet kann die Seite gar nicht laden — es bekommt das Bild heute
+aber trotzdem, wenn es die URL direkt aufruft. **Die Ausnahme ist dort kein
+Arbeitsweg, sondern ein zweites Leck.** Das Löschen schliesst es mit.
+
+Diese Entscheidung steht damit ausdrücklich im Papier, statt als unbemerkte
+Nebenwirkung einzutreten: *Ein gesperrtes Tablet bekommt ab jetzt auch keine
+Grundrissbilder mehr. Das ist gewollt.*
+
+**Ein zweiter Static-Mount liegt ebenfalls NACH dem Gate** und war mir
+entgangen: `app.use("/verbandbuch", express.static(…))` (`server.js:1436`).
+Für die normalen URLs ist er redundant — der Wurzel-Mount in Zeile 739
+beantwortet sie schon. Eine Abweichung bleibt bei der Gross-/Kleinschreibung
+(Express-Mounts sind hier nicht case-sensitiv, das Dateisystem schon), also
+etwa `/VERBANDBUCH/koerper_hinten.png`. Eine solche URL erzeugt die Oberfläche
+nicht; das ist eine benannte Randbedingung, kein Befund.
+
+**Zu bauen:** Den Operanden aus der Freipass-Liste in `server.js` entfernen —
+**einschliesslich seines verbindenden `||`**. Nur die Regex-Zeile zu löschen
+lässt ein `||` vor der schliessenden Klammer stehen und erzeugt einen
+SYNTAXFEHLER (`server.js:766-767`). Das klingt banal und ist der zweite
+blockierende Befund der Prüfung: „eine Zeile löschen" war als Anweisung
+wörtlich falsch.
+
+Der Kommentar daneben nennt den Grund, die vier Mount-Zeilen und die
+Grundriss-Entscheidung, damit niemand die Ausnahme als „die hat doch sicher
+jemand gebraucht" wieder einsetzt.
+
+### G1 betrifft auch einen SCHREIBWEG — das erhöht die Schwere
+
+Fassung 1 nannte nur Lesewege. Nachgemessen gilt die Kette auch für:
+
+```js
+router.post("/seil-foto/:sperreId", …            // routes/module.js:1143
+    const sperreId = parseInt(req.params.sperreId, 10);   // :1148
+    … seilFs.writeFileSync(seilPath.join(SEIL_FOTO_DIR, dateiname), jpg);
+    … await db.one("INSERT INTO seil_defekt_fotos …
+```
+
+`POST /module/seil-foto/123.jpg` passt auf die Ausnahme. Damit ist nicht nur
+Lesen, sondern **Datei- und Datenbankschreiben ohne PIN** betroffen. Eine
+Mitarbeiteridentität verlangt der Handler nicht; der Urheber fällt auf
+`"Tablet"` zurück. **Der CSRF-Schutz ist hier kein Ersatz:**
+`core/csrf-schutz.js` vergleicht Origin/Referer mit dem Host — ein eigener
+HTTP-Client sendet die passende Herkunft einfach mit.
+
+**Folge für die Zusicherung:** Der Wächter muss einen SCHREIBWEG mitbewachen
+und im Sperrfall **null Schreibaufrufe** verlangen — nicht nur einen
+Statuscode. Ein 401 beweist nicht, dass nichts geschrieben wurde.
+
+**Was NICHT dazugehört:** Die anderen `parseInt`-Routen hinter dem Gate
+(`…/defekt/:id/reparatur`, `…/defekt/:id/foto`, `…/foto/:fotoId/loeschen`,
+`/geraete-hinweise/:id/uebernehmen`) sind über G1 NICHT erreichbar: dort ist
+das LETZTE Segment fest, eine Endung am mittleren ID-Segment lässt den Pfad
+nicht auf `.jpg` enden, und eine Endung am festen Segment verhindert das
+Routenmatching. Sie gehören nicht in den Befund und nicht in den Wächter.
+
+### Eine REGRESSION, die das Löschen einführt — und die mitgebaut wird
+
+Ohne Gegenmassnahme verschlechtert das Löschen die Anmeldung, und zwar
+messbar aus dem Code:
+
+```js
+if (req.method === 'GET') { req.session.returnTo = req.originalUrl; }   // server.js:806-808
+return res.redirect('/tablet/sperre');
+```
+
+Heute fällt ein fehlendes Favicon, Bild oder `.map` wegen seiner Endung durch
+das Gate und endet in der normalen 404. **Nach dem Löschen** bekommt es
+stattdessen den Redirect auf den Sperrbildschirm — **und überschreibt dabei
+`session.returnTo`**. Nach der PIN landet der Benutzer dann auf der fehlenden
+Ressource statt auf seiner Seite. Dass Browser solche Nebenanfragen von sich
+aus stellen, steht im Repo bereits dokumentiert (`routes/auth.js:966-969`,
+Favicon und apple-touch-icon beim Laden der Login-Seite).
+
+**Zu bauen:** `returnTo` nur noch für NAVIGATIONS-Anfragen setzen, nicht für
+Unteranfragen. Brauchbares Merkmal ist der `Accept`-Kopf (`text/html`) bzw.
+`Sec-Fetch-Mode: navigate`; **welches davon verlässlich ist, gehört gemessen,
+nicht geraten** — miss es und melde, was du genommen hast. Für JSON/XHR ist
+der Fall bereits richtig gelöst (`server.js:783-788` antwortet 401 OHNE
+`returnTo` zu setzen); das ist das Vorbild.
+
+Zusicherung dazu: eine Bildanfrage im Sperrfall verändert `session.returnTo`
+NICHT, eine Seitenanfrage schon.
 
 ### Zusicherung für G1
 
@@ -157,9 +253,16 @@ Der Wert stammt an der dritten Stelle aus `core/monatskontrollen.js`
 (`symbol: g.symbol || "🛠️"`, gelesen als `k.symbol` aus `wartung_kategorien`)
 — also dieselbe vom Admin schreibbare Spalte.
 
-**Alle übrigen 15 Ausgabestellen maskieren korrekt** (`auditEsc` bzw.
+**Die übrigen Ausgabestellen maskieren korrekt** (`auditEsc` bzw.
 `escapeHtml`) — das ist die Positivkontrolle, und sie zeigt zugleich, dass
 hier nicht eine Regel fehlt, sondern drei Stellen sie brechen.
+
+**PRÄZISIERT (Planprüfung):** Fassung 1 schrieb „alle übrigen 15". Die Zahl
+stammt aus einem `grep` nach `.symbol` und ist als INVENTUR nicht belastbar —
+sie zählt auch Zuweisungen und Abfragen mit, nicht nur Ausgaben. Die Aussage
+lautet deshalb: drei rohe Ausgaben gemessen, die übrigen gefundenen Ausgaben
+maskiert. Wer eine belastbare Zahl braucht, erstellt die Inventur als Teil
+des Wächters (unten), nicht als Behauptung im Fliesstext.
 
 **Wirkung:** Ein Studio-Admin (2FA vorausgesetzt) kann Skript in den Browser
 JEDES Benutzers desselben Studios legen. **Kein mandantenübergreifender
@@ -227,10 +330,22 @@ dekodierten Wert direkt maskieren. Zusicherung: `?ok=%25` liefert HTTP 200 und
 zeigt das Prozentzeichen; `errorTracker.melde()` wird dabei NICHT gerufen (über
 den vorhandenen Stub zählbar).
 
-**Vor dem Bauen prüfen, ob dieselbe Form woanders steht.** Ein
-`decodeURIComponent(req.query...)` oder `decodeURIComponent(req.params...)`
-irgendwo sonst hat denselben Fehler. Such danach und melde, was du findest —
-auch wenn du es in diesem Beitrag nicht mitänderst.
+**Die Form steht NICHT nur an diesen zwei Stellen — gemessen sind es ZWÖLF**
+(Planprüfung, Liste selbst nachzuprüfen): die beiden in `routes/archiv.js`,
+dazu acht in `routes/auth.js` (`:1450`, `:1635`, `:1706`, `:1808`, `:1894`,
+`:1895`, `:1912`, `:1978`), eine in `routes/betriebszeiten.js:434` und eine
+in `routes/mitarbeiter-auth.js:256`. Eine zweite Dekodierung von `req.params`
+gibt es nirgends.
+
+**Alle zwölf werden in DIESEM Beitrag behoben** — es ist dieselbe Zeile in
+zwölf Verkleidungen, und zwei davon zu reparieren hiesse, die Klasse offen zu
+lassen und sich für erledigt zu halten. Jede einzelne vorher SELBST
+nachlesen; eine gelieferte Liste ist ein Hinweis, kein Befund.
+
+**Nicht mitändern** (andere Sache, sieht nur ähnlich aus):
+`routes/pdf-waechter.js:83` dekodiert das rohe `req.path` und beantwortet
+Dekodierfehler bereits mit 400; `core/wartung-middleware.js:92` dekodiert
+einen Cookie-Wert MIT Fehlerbehandlung.
 
 ## Reihenfolge und Abgrenzung
 
