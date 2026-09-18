@@ -80,6 +80,11 @@ const { execFileSync } = require('node:child_process');
 const { pruefeGeheimnisse, entferneGeheimnisse, zeileEntferntMarker } = require('./geheimnis-riegel');
 
 const ENDPUNKT = 'https://api.openai.com/v1/responses';
+// Pruefstufe. gpt-6-astra kann low|medium|high|xhigh|max (gemessen
+// 18.09.2026, kein none/minimal). Die CLAUDE.md verlangt xhigh fuer
+// Pruefláufe; max bleibt dem besonders Folgenschweren vorbehalten und
+// wird dann ueber die Umgebungsvariable gesetzt.
+const EFFORT = process.env.GEGENLESER_EFFORT || 'xhigh';
 // Bis 10.09.2026 stand hier /v1/chat/completions mit gpt-5.5 als Vorgabe --
 // GEMESSEN als Sackgasse fuer die staerkeren Stufen: gpt-5.6-sol und
 // gpt-6-astra melden ueber /v1/chat/completions mit "tools" im Request
@@ -513,6 +518,26 @@ function anfragen(schluessel, modell, verlauf, mitWerkzeugen = true) {
         input: verlauf,
         ...(mitWerkzeugen ? { tools: WERKZEUGE } : {}),
         max_output_tokens: MAX_ANTWORT_TOKEN,
+        // ZIELKONFIGURATION (CLAUDE.md, "Aufrufmuster"). Sie stand dort seit
+        // dem 12.09.2026 und war hier NIE gesetzt — gemessen am 18.09.2026:
+        // der Request trug genau vier Felder.
+        //
+        // store:false ist der schwerwiegende Teil, nicht effort. GEMESSEN mit
+        // Gegenprobe in beide Richtungen: OHNE das Feld ist eine Antwort
+        // hinterher ueber GET /v1/responses/<id> ABRUFBAR — die Voreinstellung
+        // ist true, die Anfrage wird aufbewahrt; MIT store:false liefert
+        // derselbe Abruf "Response with id ... not found". Jeder Lauf ueber
+        // dieses Werkzeug lag damit auf fremden Servern, und zwar ausgerechnet
+        // der materialreichste: der Pruefer holt sich hier selbst Quelltext
+        // aus dem Repo (ein Lauf am 18.09. las 3,6 Mio. Token).
+        store: false,
+        // effort: die CLAUDE.md verlangt seit 18.09.2026 xhigh fuer Pruefungen
+        // ("high war die MITTE, nicht das Maximum" — gemessen ueber elf
+        // Modelle). Ohne dieses Feld lief jeder Lauf auf der Voreinstellung.
+        reasoning: { effort: EFFORT },
+        // laut scheitern statt still kuerzen — unsere Regel "leeres Ergebnis
+        // ist nicht sauberes Ergebnis".
+        truncation: 'disabled',
     });
     return new Promise((erfuellen, ablehnen) => {
         const anfrage = https.request(ENDPUNKT, {

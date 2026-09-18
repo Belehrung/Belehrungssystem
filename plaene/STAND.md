@@ -32,15 +32,31 @@ Ziel nicht aus den Augen."** Anlass war seine Frage, warum der ganze Tag in
 die Upload-Härtung ging — die auf KEINEM der sechs Punkte steht. Sie kam aus
 dem Abhängigkeits-Audit (multer-CVE), also aus einer eigenen Spur.
 
+**Betreiber-Freigabe 18.09.2026, ~19:40 UTC, wörtlich:** „das system muss
+maximal sicher und gehärtet sein. aufwand und kosten egal."
+
+Das ändert die Abwägung, nicht das Ziel. Wo bisher wegen der Kosten abgewogen
+wurde — mehrere Gegenleser-Läufe statt einem, mehrere Runden, breitere
+Bündel — wird ab jetzt zugunsten der Gründlichkeit entschieden. **„Kosten
+egal" heisst NICHT „Messlatte egal":** jeder Befund wird weiterhin selbst
+nachgemessen, bevor er ein Auftrag wird, und ein Lauf ohne Positivkontrolle
+zählt weiterhin nicht. Der teuerste Lauf des Tages (3,6 Mio. Token) hat genau
+deshalb getragen, weil seine drei Befunde einzeln nachgeprüft wurden.
+
 **Daraus folgt verbindlich:**
 
 1. **Beitrag 2a wird fertiggestellt** (läuft beim Executer) — eine halb
    geschlossene Klasse ist die schlechteste Lage.
-2. **Danach Punkt 3 des Programms**, NICHT 2b/2c. Die Abbruch-Markierung und
+2. **Danach die drei Mandantenbefunde F1–F3 als EIN Beitrag** (Freigabe
+   18.09.2026): `POST /api/position` (`etage_id` ungeprüft),
+   `POST /admin/belehrungen/freischalten/:belehrungId` (BEIDE Fremd-IDs
+   ungeprüft, Tabelle ohne Fremdschlüssel), und der Ausmusterungs-Token, der
+   vor der Studio-Prüfung verbraucht wird. Dieselbe Klasse, ein Beitrag.
+3. **Danach Punkt 3 des Programms**, NICHT 2b/2c. Die Abbruch-Markierung und
    die Löschreihenfolge sind Betriebsqualität, kein Pentest-Thema.
-3. **2b und 2c sind ZURÜCKGESTELLT**, nicht gestrichen. Das Auftragspapier
+4. **2b und 2c sind ZURÜCKGESTELLT**, nicht gestrichen. Das Auftragspapier
    Fassung 3 bleibt gültig und liegt bereit.
-4. Wer hier eine neue Spur aufmacht, die nicht auf einen der sechs Punkte
+5. Wer hier eine neue Spur aufmacht, die nicht auf einen der sechs Punkte
    einzahlt, schreibt in EINEN Satz dazu, warum sie vorgeht — in denselben
    Zwischenstand, in dem die Suite-Zahlen stehen.
 
