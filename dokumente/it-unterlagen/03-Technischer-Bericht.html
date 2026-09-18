@@ -4,7 +4,7 @@
 <div class="titel">
   <h1>Technischer Bericht</h1>
   <p class="unter">Aufbau, Betrieb und Nachweise — für Architekten und technische Entscheider</p>
-  <p class="stand">Stand 17. September 2026</p>
+  <p class="stand">Stand 18. September 2026</p>
 </div>
 
 <h2>Kurzfassung</h2>
@@ -136,21 +136,20 @@ Wiederherstellbarkeit getestet wird.</p>
 <h2>Qualitätssicherung</h2>
 
 <p>Vor jeder Auslieferung müssen vier Tore passiert werden: formale Prüfung, Trennungstest, Test im
-echten Browser, Prüfung der Fremdbausteine auf bekannte Schwachstellen. Ausgeliefert wird nur, was
-zusammengeführt und grün geprüft ist; danach prüft der Server selbst, ob er gesund hochgekommen ist.</p>
+echten Browser, automatische Prüfung der Fremdbausteine auf bekannte Schwachstellen ab
+Schweregrad „hoch". Ausgeliefert wird nur, was zusammengeführt und grün geprüft ist; danach prüft
+der Server selbst, ob er gesund hochgekommen ist.</p>
 
-<p>Derzeit laufen dabei <span class="zahl">327</span> Testdateien.</p>
+<p>Diese automatische Prüfung ist keine vollständige Quelle. Deshalb kommt zusätzlich eine manuelle
+Prüfung gegen die exakt installierten Versionen mit zwei unabhängigen Quellen dazu.</p>
+
+<p>Derzeit laufen dabei <span class="zahl">335</span> Testdateien.</p>
 
 <div class="kasten">
   <div class="kopf">Gegenproben</div>
   <p>Ein Test, der nicht fehlschlagen kann, erzeugt Vertrauen, das er nicht trägt. Deshalb baue ich
   zu jeder neuen Prüfung den Fehler absichtlich ein und messe, dass sie anschlägt. Erst dann
   zählt sie.</p>
-  <p>Am 17.09.2026 hat genau das einen Fall aufgedeckt, der mir sonst entgangen wäre: Eine Prüfung
-  gegen ein Nebenläufigkeitsproblem war <strong>fünfmal hintereinander blind</strong>, jedes Mal
-  aus einem anderen Grund — zuletzt genügte ein einzelnes Leerzeichen im Datenbankbefehl, damit sie
-  einen echten Fehler übersah. Der Riegel selbst hat die ganze Zeit funktioniert; blind war die
-  Prüfung darüber. Gefunden wurde es durch acht Runden Nachmessen, nicht durch Nachdenken.</p>
 </div>
 
 <h2>Wie Änderungen zustande kommen</h2>
@@ -181,11 +180,13 @@ ich beide, obwohl eine billiger wäre.</p>
 <table class="schmal">
   <tr><td><strong>Eigene Sicherungsdateien auf der Platte</strong></td>
       <td>Die Sicherung des Rechenzentrums ist verschlüsselt (Backup-Paket gebucht und aktiv, nach
-          Anbieterangabe AES-256); meine eigenen Auszüge liegen daneben unverschlüsselt. Nächster
-          Schritt, reine Betriebsmaßnahme.</td></tr>
+          Anbieterangabe AES-256); meine eigenen Auszüge liegen daneben unverschlüsselt — eine reine
+          Betriebsmaßnahme.</td></tr>
   <tr><td><strong>PDF-Dateien auf der Platte</strong></td>
-      <td>Unverschlüsselt; der Baustein dafür ist vorhanden und wird an anderer Stelle bereits
-          eingesetzt.</td></tr>
+      <td>Das Verbandbuch-Einzeldokument wird seit 18.09.2026 flüchtig erzeugt, ausgeliefert und
+          sofort gelöscht und liegt nicht mehr dauerhaft auf der Platte. Die übrigen PDF-Dateien
+          (Prüfprotokolle, Monatsberichte) sind weiterhin unverschlüsselt; der Baustein dafür ist
+          vorhanden und wird an anderer Stelle bereits eingesetzt.</td></tr>
   <tr><td><strong>Festplatte des Servers</strong></td>
       <td>Nicht verschlüsselt — bewusste Abwägung zugunsten der Verfügbarkeit, begründet im
           Sicherheitsdokument.</td></tr>
@@ -193,9 +194,11 @@ ich beide, obwohl eine billiger wäre.</p>
       <td>Läuft im Beobachtungsmodus, Umstellung auf Blockieren nach Auswertung.</td></tr>
   <tr><td><strong>Vier Restwege eines Nebenläufigkeitsproblems</strong></td>
       <td>Beschrieben und datiert. Der Hauptweg ist geschlossen und abgesichert; die Restwege sind
-          benannt, nicht verschwiegen.</td></tr>
+          benannt.</td></tr>
+  <tr><td><strong>Bestätigter Befund in einer Upload-Bibliothek</strong></td>
+      <td>Über die zusätzliche manuelle Prüfung erkannt; wird behoben.</td></tr>
 </table>
 
-<p class="schluss">Stand 17. September 2026.</p>
+<p class="schluss">Stand 18. September 2026.</p>
 
 </body></html>

@@ -4,7 +4,7 @@
 <div class="titel">
   <h1>Sicherheit und Datenschutz</h1>
   <p class="unter">Für Ihre IT und Ihren Datenschutzbeauftragten — ohne Fachchinesisch, aber vollständig</p>
-  <p class="stand">Stand 17. September 2026</p>
+  <p class="stand">Stand 18. September 2026</p>
 </div>
 
 <h2>Wer kommt an die Daten heran</h2>
@@ -13,8 +13,7 @@
 <p>Anmeldung mit E-Mail und Passwort, dazu ein <strong>zweiter Faktor</strong> aus einer
 Authenticator-App. Ohne den zweiten Faktor kommt niemand hinein, auch nicht mit richtigem Passwort.
 Für den Fall, dass das Telefon verloren geht, gibt es einmalig verwendbare Wiederherstellungscodes.
-Auch der Download von Monatsberichten verlangt diesen zweiten Faktor — das ist der Punkt, an dem
-viele Systeme eine Hintertür offen lassen.</p>
+Auch der Download von Monatsberichten verlangt diesen zweiten Faktor.</p>
 
 <p>Nach mehreren falschen Anmeldeversuchen wird das Konto gesperrt. Diese Sperre ist gegen den Trick
 abgesichert, viele Versuche gleichzeitig zu schicken, um am Zähler vorbeizukommen.</p>
@@ -31,6 +30,12 @@ wichtigste Punkt des ganzen Systems, und deshalb ist es auch der einzige, den ic
 und stellt sicher, dass keines die Daten des anderen sieht. Schlägt er fehl, geht die Änderung
 nicht auf den Server.</p>
 
+<p>Vier Aktionen, die Dokumente erzeugen oder eine Mail auslösen, liefen bisher über einen
+einfachen Seitenaufruf und damit am Schutz vor Anfragen von fremden Seiten vorbei; sie laufen
+jetzt als Formularabsendung durch ihn hindurch. Ein automatischer Wächter hält fest, welche Wege
+bewusst ausgenommen sind, weil sie eine eigene Anmeldung tragen — kommt ein neuer schreibender
+Weg dazu, wird die Auslieferung rot, bis die Ausnahme ausdrücklich bestätigt ist.</p>
+
 <h2>Gesundheitsdaten aus dem Verbandbuch</h2>
 
 <p>Unfall- und Verletzungsdaten sind rechtlich besonders geschützt (Artikel 9 DSGVO). Bei mir heißt
@@ -42,6 +47,8 @@ das konkret:</p>
       bekommt sie also nicht zu sehen, auch nicht versehentlich.</li>
   <li>Kein anonymer Zugriff, auf keinem Weg.</li>
   <li>Automatische Löschung nach Ablauf der gesetzlichen Aufbewahrungsfrist.</li>
+  <li>Als PDF verlässt das Verbandbuch-Einzeldokument die Datenbank nur für den Moment der
+      Auslieferung — flüchtig erzeugt, ausgeliefert, sofort gelöscht.</li>
 </ul>
 
 <h2>Dass nachträglich nichts verändert wird</h2>
@@ -73,16 +80,21 @@ ohne mich fragen zu müssen.</p>
   <tr><td>Zweitkopie wichtiger PDF-Dateien</td>
       <td><strong>Verschlüsselt</strong> (AES-256-GCM).</td></tr>
   <tr><td>Zwei-Faktor-Geheimnisse</td>
-      <td>Der Baustein zur Verschlüsselung ist vorhanden und in Benutzung; ob der Schlüssel auf dem
-          Produktionsserver gesetzt ist, ziehe ich gerade nach (siehe unten).</td></tr>
-  <tr><td>PDF-Dateien auf der Festplatte</td>
+      <td>Der Baustein zur Verschlüsselung ist vorhanden und in Benutzung. Ob der Schlüssel auf dem
+          Produktionsserver gesetzt ist, lässt sich seit 18.09.2026 über den internen
+          Gesundheitsendpunkt jederzeit nachprüfen.</td></tr>
+  <tr><td>Verbandbuch-Einzeldokument (PDF)</td>
+      <td><strong>Nicht mehr dauerhaft gespeichert.</strong> Wird bei jedem Abruf flüchtig erzeugt,
+          ausgeliefert und sofort gelöscht; ein täglicher Aufräumlauf entfernt Altbestand.</td></tr>
+  <tr><td>Übrige PDF-Dateien auf der Festplatte<br>
+          <span class="klein">(Prüfprotokolle, Monatsberichte)</span></td>
       <td><strong>Unverschlüsselt.</strong> Steht auf meiner Liste, siehe unten.</td></tr>
   <tr><td>Sicherung — mein eigener Weg auf dem Server<br>
           <span class="klein">(Datenbank-Auszüge und fortlaufendes Archiv)</span></td>
-      <td><strong>Ohne eigenen Verschlüsselungsschritt.</strong> Das ist der Punkt, den ich zuerst
-          angehe. Diese Auszüge sind kein Doppel des Rechenzentrums-Backups, sondern notwendig:
-          jenes sichert die Maschine als Dateien, meines sichert die Datenbank punktgenau und
-          wird monatlich auf Wiederherstellbarkeit getestet.</td></tr>
+      <td><strong>Ohne eigenen Verschlüsselungsschritt.</strong> Diese Auszüge sind kein Doppel des
+          Rechenzentrums-Backups, sondern notwendig: jenes sichert die Maschine als Dateien, meines
+          sichert die Datenbank punktgenau und wird monatlich auf Wiederherstellbarkeit
+          getestet.</td></tr>
   <tr><td>Sicherung — Backup-Paket des Rechenzentrums<br>
           <span class="klein">(gebucht und aktiv)</span></td>
       <td><strong>Verschlüsselt</strong> nach Dokumentation des Anbieters (AES-256, standardmäßig
@@ -90,8 +102,7 @@ ohne mich fragen zu müssen.</p>
           Speicherort ist zwischen Europa und den USA <em>wählbar</em> — ich weise die
           Europa-Einstellung nach, bevor ich sie hier behaupte.</td></tr>
   <tr><td>Festplatte des Servers</td>
-      <td><strong>Nicht verschlüsselt.</strong> Bewusste Entscheidung — Begründung im nächsten
-          Abschnitt.</td></tr>
+      <td><strong>Nicht verschlüsselt.</strong> Bewusste Entscheidung.</td></tr>
 </table>
 
 <h3>Warum die Festplatte nicht verschlüsselt ist</h3>
@@ -122,9 +133,9 @@ Fälle abdeckt, ohne den Betrieb zu gefährden.</p>
   <p>Der wahrscheinlichste Weg, auf dem solche Daten abhandenkommen, ist nicht ein Einbruch in das
   laufende System — es ist eine <em>Kopie</em>, die den Server verlässt: eine verlorene Sicherung,
   ein weitergegebener Auszug, ein Zugriff auf die Platte. Die Sicherung des Rechenzentrums ist
-  verschlüsselt; offen bleiben meine eigenen Auszüge auf der Platte und die PDF-Dateien. Genau dort
-  setze ich als nächstes an — und nicht bei der Verschlüsselung einzelner Datenfelder, die gegen
-  eine Kopie ohnehin nicht hilft, wenn der Schlüssel auf derselben Maschine liegt.</p>
+  verschlüsselt; offen bleiben meine eigenen Auszüge auf der Platte und die übrigen PDF-Dateien —
+  das wiegt schwerer als die Verschlüsselung einzelner Datenfelder, die gegen eine Kopie ohnehin
+  nicht hilft, wenn der Schlüssel auf derselben Maschine liegt.</p>
 </div>
 
 <h2>Wenn etwas kaputtgeht</h2>
@@ -164,12 +175,17 @@ Fälle abdeckt, ohne den Betrieb zu gefährden.</p>
   <li>Formale Prüfung des Programmtexts.</li>
   <li><strong>Trennungstest</strong> — sieht Studio A die Daten von Studio B?</li>
   <li>Test im echten Browser — funktionieren die Abläufe noch?</li>
-  <li>Prüfung der eingesetzten Fremdbausteine auf bekannte Schwachstellen.</li>
+  <li>Automatische Prüfung der eingesetzten Fremdbausteine auf bekannte Schwachstellen ab
+      Schweregrad „hoch".</li>
 </ol>
 
 <p>Erst wenn alle vier grün sind, wird ausgeliefert. Danach prüft der Server selbst, ob er
-gesund hochgekommen ist. Derzeit sind es <span class="zahl">327</span> Testdateien, die bei jeder
+gesund hochgekommen ist. Derzeit sind es <span class="zahl">335</span> Testdateien, die bei jeder
 Änderung durchlaufen.</p>
+
+<p>Diese automatische Prüfung ist keine vollständige Quelle — sie meldet nicht jede real
+erreichbare Schwachstelle. Deshalb kommt zusätzlich eine manuelle Prüfung gegen die exakt
+installierten Versionen mit zwei unabhängigen Quellen dazu.</p>
 
 <h2>Wie ich meine eigenen Fehler finde</h2>
 
@@ -177,29 +193,21 @@ gesund hochgekommen ist. Derzeit sind es <span class="zahl">327</span> Testdatei
 absichtlich den Fehler ein, den sie fangen soll, und messe, dass sie tatsächlich anschlägt. Erst
 dann gilt sie.</p>
 
-<p>Ein Beispiel vom Tag, an dem ich dieses Dokument schreibe: Eine Prüfung sollte verhindern, dass
-zwei gleichzeitige Vorgänge ein Gerät in einen Zustand bringen, aus dem die Oberfläche nicht mehr
-herausführt. Der Riegel funktionierte. Die <em>Prüfung</em> dazu war jedoch fünfmal hintereinander
-blind — zuletzt genügte ein einzelnes Leerzeichen an der richtigen Stelle, damit sie einen echten
-Fehler übersah. Gefunden habe ich das nicht durch Nachdenken, sondern durch Nachmessen. Das Ergebnis
-steht dokumentiert im System.</p>
-
 <p>Über bekannte Schwächen führe ich eine <strong>datierte, offene Liste</strong>. Punkte
 verschwinden daraus nicht, weil sie unangenehm sind, sondern wenn sie behoben und die Behebung
 gemessen ist.</p>
 
 <h2>Was heute offen ist</h2>
 
-
-
 <table class="schmal">
   <tr><td><strong>Eigene Sicherungsdateien auf dem Server</strong></td>
       <td>Die vom Rechenzentrum gezogene Sicherung ist verschlüsselt; meine eigenen Auszüge liegen
-          daneben unverschlüsselt auf der Platte. Das ist die Kopie, die ich als nächstes
-          verschlüssele — sie ist zusammen mit der ungeklärten Plattenverschlüsselung der
-          verbliebene Punkt.</td></tr>
-  <tr><td><strong>PDF-Dateien unverschlüsselt</strong></td>
-      <td>Der Baustein dafür ist vorhanden und wird an anderer Stelle bereits eingesetzt.</td></tr>
+          daneben unverschlüsselt auf der Platte — zusammen mit der ungeklärten
+          Plattenverschlüsselung der verbliebene offene Punkt.</td></tr>
+  <tr><td><strong>Übrige PDF-Dateien unverschlüsselt</strong></td>
+      <td>Prüfprotokolle und Monatsberichte. Das Verbandbuch-Einzeldokument ist seit 18.09.2026
+          nicht mehr betroffen. Der Baustein für die übrigen Dateien ist vorhanden und wird an
+          anderer Stelle bereits eingesetzt.</td></tr>
   <tr><td><strong>Festplattenverschlüsselung</strong></td>
       <td>Bewusst nicht eingerichtet, Begründung oben. Falls Ihre IT das anders bewertet, spreche
           ich gern darüber — es wäre eine Abwägung zwischen Schutz und Verfügbarkeit, keine
@@ -208,19 +216,22 @@ gemessen ist.</p>
       <td>Sie meldet Verstöße, blockiert sie aber noch nicht. Umstellung nach Auswertung.</td></tr>
   <tr><td><strong>Einzelne Reste eines Nebenläufigkeitsproblems</strong></td>
       <td>Vier benannte, datierte Punkte. Der Hauptweg ist geschlossen und abgesichert, die
-          Restwege sind beschrieben — nicht verschwiegen.</td></tr>
+          Restwege sind beschrieben.</td></tr>
+  <tr><td><strong>Bestätigter Befund in einer Upload-Bibliothek</strong></td>
+      <td>Über die zusätzliche manuelle Prüfung erkannt; wird behoben.</td></tr>
 </table>
 
 <h2>Was ich Ihnen anbiete</h2>
 
 <p><strong>Prüfen Sie es selbst.</strong> Ich betreibe eine vom Echtbetrieb vollständig getrennte
-Testumgebung mit eigenen Zugangsdaten und ausschließlich erfundenen Daten. Ihre IT kann dort auf
-meine Einladung hin selbst versuchen, das System zu überwinden. Ich halte das für überzeugender als
-jede Zusicherung, die ich hier hineinschreiben könnte.</p>
+Testumgebung unter eigener Adresse, mit eigener Datenbank, eigenen Geheimnissen und ausschließlich
+erfundenen Daten. Für die Prüfung richte ich dort zwei Studios mit erfundenen Gesundheitsdaten ein
+— nur so lässt sich die Mandantentrennung überhaupt testen. Ihre IT kann dort auf meine Einladung
+hin selbst versuchen, das System zu überwinden.</p>
 
 <p>Wenn Sie es lieber von dritter Seite hätten, beauftrage ich eine externe Sicherheitsprüfung und
 lege Ihnen den Bericht vor.</p>
 
-<p class="schluss">Stand 17. September 2026.</p>
+<p class="schluss">Stand 18. September 2026.</p>
 
 </body></html>
