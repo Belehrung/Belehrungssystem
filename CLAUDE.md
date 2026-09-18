@@ -119,6 +119,14 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
    `sed 's/^[[:space:]]*//'` nehmen, NIE `tr -d '[:space:]'`:** letzteres
    frisst auch die Zeilenumbrüche, aus 232 Zeilen wird eine, und der Vergleich
    meldet „registriert: 1" (gemessen 30.08.2026).
+   **Und BEIDE Seiten brauchen dasselbe Sieb.** Gemessen am 18.09.2026: ich
+   habe die gelaufenen Dateien mit `── test[^ ]*\.js ──` gezogen, die
+   registrierten mit `test_…\.js|ops/boot-smoke\.js` — Ergebnis 337 gegen 338
+   und ein Fehlalarm gegen einen völlig gesunden Lauf. `ops/boot-smoke.js` war
+   gelaufen (Logzeile 100), hiess nur nicht `test…`. Mit `── [^ ]+\.js ──` auf
+   der Log-Seite: **338 = 338, `diff` EXIT 0.** Ein Muster, das eine
+   NAMENSKONVENTION voraussetzt, misst die Konvention mit — und meldet jede
+   Datei als fehlend, die sich nicht daran hält.
 5. Erst dann Commit und Push.
 6. **Die CI ist die letzte Instanz, nicht der eigene Prüfstand.** Fertig
    ist, was GitHub Actions grün nennt — die lokale Suite hat schon grün

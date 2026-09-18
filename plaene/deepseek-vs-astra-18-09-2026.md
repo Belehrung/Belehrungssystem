@@ -213,7 +213,7 @@ Acht Befunde. Jeden habe ich selbst am Quelltext nachgemessen:
 
 | # | Befund | Verdikt | Deckung mit den eigenen Spuren |
 |---|---|---|---|
-| 2.1 | Ablehnung lässt sich mit `if (!ma)` in den `catch` verlagern, alle M2-Zusicherungen bleiben grün | **hält** | **= N9**, wörtlich dieselbe Mutation |
+| 2.1 | Ablehnung lässt sich mit `if (!ma)` in den `catch` verlagern, alle M2-Zusicherungen bleiben grün | **hält — inzwischen GEMESSEN** | **= N9**, wörtlich dieselbe Mutation |
 | 3 | Ununterscheidbarkeit nur für „fremd", nicht für „nicht vorhanden" zugesichert | **hält** | **= N4** |
 | 4.1 | `api()` wirft bei Netzfehler, der neue `alert` wird nie erreicht | **hält** | **= N6/N11** |
 | 2.2 | Zeilenzahl-Zusicherungen sind gegen `ON CONFLICT DO UPDATE` spröde | **hält** | ≈ N3 |
@@ -274,3 +274,20 @@ vom 13.09. — verschiedene Sucher finden verschiedene Klassen, nicht
 verschiedene Meinungen über dieselbe Frage.
 
 **Für billige Massenarbeit bleibt es bei DeepSeek**, unverändert.
+
+
+## Nachtrag zum Nachtrag: Befund 2.1 ist nicht mehr hergeleitet, sondern gemessen
+
+Als ich die Tabelle oben schrieb, war 2.1 der einzige Befund, den ich nur am
+Quelltext durchgedacht hatte — der Arbeitsbaum war von einem Executer belegt,
+und eine Mutation dort wäre genau der Fehler gewesen, den ich am 14.09. dreimal
+gemacht habe.
+
+Nachgeholt ist er jetzt, und zwar an der Nacharbeit selbst: die Mutation
+`if (!ma || !bel)` -> `if (!ma)` ergibt **EXIT 1, 85 PASS / 1 FAIL — und es
+fällt AUSSCHLIESSLICH der neu eingezogene `console.error`-Zähler.** Alle
+ergebnisorientierten Zusicherungen (Statuscode, Redirect-Ziel, Zeilenzahl)
+bleiben grün, genau wie DeepSeek und meine eigene Spur es vorhergesagt hatten.
+
+Damit halten **sechs von acht Befunden, alle sechs gemessen** — keiner mehr
+bloss hergeleitet.
