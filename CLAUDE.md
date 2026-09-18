@@ -1842,6 +1842,24 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
 - **Der erste Fehlschlag ist keine Antwort.** 503, leere Seite, Zeitüberschreitung:
   Anfang der Suche, nicht ihr Ende. Andere Endpunkte, andere Werkzeuge, andere
   Formulierung — und wenn nichts geht, wird die Lücke benannt.
+- **`read -t N </dev/null` SCHLÄFT NICHT — es ist der naheliegende Ersatz für
+  das gesperrte `sleep` und er wirkt nicht.** Gemessen am 18.09.2026:
+  `s=$(date +%s); read -t 5 </dev/null; e=$(date +%s)` ergibt **0 Sekunden**.
+  `read` trifft an `/dev/null` sofort EOF und kehrt zurück, das Zeitlimit
+  kommt gar nicht zum Tragen.
+  **Der Schaden ist keine Fehlermeldung, sondern eine falsche Diagnose.** Eine
+  Warteschleife `until grep -q SUITE_EXIT …; do read -t 5 </dev/null; done`
+  läuft ihre 110 Durchgänge in Millisekunden ab und meldet danach „läuft noch
+  (nach 550s)" — eine Zahl, die es nie gab. Ich habe daraufhin eine völlig
+  gesunde Suite für „seit 18 Minuten hängend" gehalten und angefangen, den
+  Fehler in der eigenen Änderung zu suchen. Aufgefallen ist es nur an einer
+  Nebensächlichkeit: `ps` zeigte für den angeblich 20 Minuten alten Prozess
+  eine Laufzeit von `02:20`.
+  **Richtig ist: gar nicht im Vordergrund warten.** Ein Hintergrundlauf meldet
+  sich von selbst; wer doch pollen muss, nimmt einen Hintergrundbefehl mit
+  echtem `sleep` darin. Und wer eine Wartezeit BEHAUPTET, misst sie mit
+  `date +%s` vorher und nachher — sonst steht am Ende eine erfundene Zahl in
+  der eigenen Meldung.
 - **Umlaute in `grep`:** `.` matcht ein Byte, ein Umlaut belegt in UTF-8 zwei.
   `gef.hrdungsbeurteilung` findet nichts. Ohne Umlaut suchen oder `-P`.
 - **GitHub geht NUR über die MCP-Werkzeuge.** Ein direkter API-Aufruf per
