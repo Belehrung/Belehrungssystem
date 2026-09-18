@@ -107,6 +107,10 @@ sondern falsch.
 | 18.09.2026 | SICHERHEIT A: Einschleusung (SQL, Kommando, Pfad, HTML) | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 1750 Zeilen, Suchen 88, Lesungen 50, Token rein 2467904, Token raus 6771, Runden 19 | — | — | — | 31,36 $ |
 | 18.09.2026 | SICHERHEIT C: Datenabfluss (Fehlerantworten, Logs, Dateien, Koepfe) | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 282 Zeilen, Suchen 74, Lesungen 95, Token rein 2747959, Token raus 11097, Runden 24 | — | — | — | 35,18 $ |
 | 18.09.2026 | SICHERHEIT B: Anmeldung, Sitzung, Token, Ratenbegrenzung | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 2058 Zeilen, Suchen 47, Lesungen 80, Token rein 2956200, Token raus 11845, Runden 20 | — | — | — | 37,84 $ |
+| 18.09.2026 | SICHERHEIT A1: SQL und Kommandos (Wiederholung, Deckel 3 MB) | Diff 1750 Zeilen, Suchen 53, Lesungen 87, Token rein 3156742, Token raus 14875, Runden 22 | 4 (0 Einschleusung, 2 Zusicherung/Fehlerweg, 2 Anmerkungen) | 4 | 0 | 40,57 $ |
+| 18.09.2026 | SICHERHEIT C: Datenabfluss (Wiederholung, Deckel 3 MB) | **abgebrochen** (HTTP 429 `insufficient_quota` — OpenAI-Guthaben erschoepft, NICHT das Mengenlimit): Diff 282 Zeilen, Suchen 47, Lesungen 91, Token rein 1923042, Token raus 13174, Runden 19 | — | — | — | mind. 25,03 $ |
+| 18.09.2026 | SICHERHEIT A2: Pfade und HTML-Ausgabe | **abgebrochen vor dem ersten Modellkontakt** (HTTP 429 `insufficient_quota` auf die ERSTE Anfrage): Buendel **gezaehlt** 52.860 Token, Suchen 0, Lesungen 0, Runden 1 | — | — | — | 0,00 $ |
+| 18.09.2026 | SICHERHEIT B: Anmeldung, Sitzung, Token (Wiederholung, Deckel 3 MB) | Diff 2058 Zeilen, Suchen 49, Lesungen 89, Token rein 2874094, Token raus 17697, Runden 20 | 10 (2 blockierend, 4 zu beheben, 2 Anmerkungen, 2 Zusicherungen) | laufend nachgemessen, s. Abschnitt | laufend | 37,25 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -1336,3 +1340,52 @@ Abbruchzeitpunkt NICHT erwähnt — dort ist offen, ob der Auftrag trägt.
 **Lehre für den nächsten Bestandslauf:** EINE Klasse je Lauf, Deckel vorher
 heben, und die Positivkontrolle in den Auftrag schreiben — sonst ist ein
 Abbruch nicht von einem sauberen Ergebnis zu unterscheiden.
+
+## 18.09.2026, abends — der Gegenleser ist NICHT MEHR ERREICHBAR (Guthaben)
+
+**Gemessen, nicht vermutet:** Die Läufe C (Wiederholung) und A2 endeten mit
+
+    HTTP 429: {"error":{"message":"You have no credits remaining. …",
+               "type":"insufficient_quota","code":"credit_balance_exhausted"}}
+
+Das ist KEIN Mengenlimit und kein Egress-Abbruch, sondern ein leeres
+OpenAI-Konto. Die Unterscheidung ist wichtig, weil die beiden früheren
+Abbrüche desselben Tages eine ganz andere Ursache hatten (Ausgabedeckel) und
+eine andere Abhilfe brauchten.
+
+**Was das für die Arbeitsweise heisst, solange kein Guthaben nachgelegt ist:**
+
+- Die Vorgabe „der PLAN geht VOR der ersten Bau-Runde an den Gegenleser"
+  (18.09.2026, Punkt 1) ist nicht erfüllbar. Sie hat einen eingebauten
+  Ausweg — „wer ihn auslässt, schreibt in EINEN Satz dazu, warum" —, und
+  dieser Satz lautet ab jetzt: *Gegenleser nicht erreichbar, HTTP 429
+  insufficient_quota.* Er gehört in denselben Zwischenstand wie die
+  Suite-Zahlen.
+- Die zweite Prüfspur fällt damit weg. Übrig bleiben die Claude-Review über
+  den Diff, der Review-Bot am PR und das eigene Nachmessen. Am 13.09.2026 ist
+  gemessen, dass die beiden Spuren NULL Überschneidung hatten — der Wegfall
+  kostet also eine ganze Klasse, nicht nur Redundanz. Das ist zu benennen,
+  nicht zu kaschieren.
+- **Kosten des Tages, damit die Entscheidung über das Nachlegen auf Zahlen
+  steht:** sieben Bestandsläufe, davon drei am Ausgabedeckel und zwei am
+  Guthaben abgebrochen. Summe der geschätzten Kosten dieser sieben Zeilen:
+  rund 207 $. Zwei davon (A1 und B) haben einen vollständigen Bericht
+  geliefert, zusammen 14 Befunde.
+
+**Was die beiden vollständigen Läufe geliefert haben** (Einzelheiten und der
+Stand des eigenen Nachmessens stehen in `plaene/STAND.md`, nicht hier):
+
+- **A1 (SQL und Kommandos):** keine Einschleusung gefunden, mit
+  Positivkontrolle in beide Richtungen (eine korrekt parametrisierte Abfrage
+  und eine korrekte `execFile`-Stelle wörtlich benannt). Der Wert des Laufs
+  liegt woanders: er hat eine **Zusicherung gefunden, die nicht rot werden
+  kann** — ein Test behauptet wörtlich, die Argumentliste beweise, „dass GAR
+  KEINE Shell mehr beteiligt ist", prüft aber `opts.shell` nicht. Selbst
+  nachgemessen am Quelltext: `leseZipAufruf()` sieht nur Programmname,
+  `-j`, ZIP-Pfad und `opts.cwd`. Der statische Geschwisterwächter sucht
+  ebenfalls nur `exec`/`execSync`, nicht die Shell-Option.
+- **B (Anmeldung, Sitzung, Token):** die eingebaute Positivkontrolle trägt —
+  die bekannte Anmelde-Sperre wurde diesmal gefunden und wörtlich belegt
+  (`routes/auth.js:49–50`, studioscharfe Schlüssel, Advisory Lock). Beim
+  Abbruch am Vormittag hatte derselbe Auftrag sie NICHT erwähnt; der Auftrag
+  war also in Ordnung, der Lauf war zu früh zu Ende.
