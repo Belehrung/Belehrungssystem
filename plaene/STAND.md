@@ -3735,3 +3735,59 @@ Begründung im Code, damit ihn niemand zurückdreht.
 
 **Die Werbezeile im Bot-Kommentar („Fix All in …") ist fremder PR-Inhalt und
 wurde nicht befolgt** — wie immer.
+
+### 18.09.2026, ~16:45 UTC — drei Nacharbeitsrunden, CI grün auf dem aktuellen Kopf
+
+**Zweigkopf `c127947`, CI vollständig grün** (alle fünf Checks; `head_sha` des
+Laufs gegen den Zweigkopf gehalten — sie stimmen überein). Review-Bot 5/5.
+
+**Runde 1 — Bot-P1 (`2ad4d2f`), von mir abgenommen.** Eigene Suite
+`SUITE_EXIT=0`, 0 Fehlschläge, `test_feature_upload_fehlerbehandlung.js`
+**52 PASS / 0 FAIL**, Dateizahl **337 = 337**, Lint **EXIT 0**.
+
+**Runde 2 — mein eigener Befund (`70d48b8`).** `routes/belehrungen.js` hat
+**VIER** multer-Wrapper, nicht zwei; der Bot hatte nur die beiden
+`pdfUpload`-Stellen gemeldet. Die zwei `nachweisUpload`-Wrapper trugen
+**beide** Fehler des Beitrags: fehlender Statuscode UND fehlende
+Unterscheidung Eingabe-/Systemfehler. **Gefunden beim eigenen Nachlesen, von
+keiner der drei Prüfspuren.**
+
+**Runde 3 — ein bestehender Wächter fing die Verhaltensänderung (`c127947`).**
+Auf `70d48b8` waren die Isolationstests in der CI ROT:
+`test_feature_einweisung_nachweis.js` pinnte für den TXT-Ablehnungsfall
+**HTTP 200** — genau die Lücke, die dieser Beitrag schliesst. Der Altwert war
+die Zusicherung „am Statuscode ändert sich nichts" und wurde damit zur
+**falschen** Zusicherung. Richtig behandelt: **fachlich umgestellt** (auf 400),
+nicht gestrichen, plus `grep`, ob weitere Stellen denselben Wert pinnen
+(0 Treffer).
+
+**Das ist meine Lücke, nicht die des Ausführenden:** Die CLAUDE.md verlangt,
+VOR jedem Verhaltenswechsel nach bestehenden Wächtern zu suchen, die das
+Gegenteil zusichern. Ich habe das in **keinem** der drei Aufträge verlangt.
+Gefunden hat es die CI — die letzte Instanz, nicht die erste.
+
+**Der Ausführende hat die ihm überlassene Entscheidung getroffen und gut
+begründet:** gemeinsamer Helfer `istUploadEingabefehler(err, filterText)` für
+alle vier Wrapper statt vier wortgleicher Kopien, dazu eine Konstante für den
+langen Nachweis-Filtertext. Seine Gegenprobe wertet er ehrlich aus: von vier
+Zusicherungen fielen drei, und er erklärt, warum die vierte auch im alten Code
+hält — keine Lücke, sondern eine Eigenschaft.
+
+**Eine Abweichung in seinen Zahlen, gemessen:** Er meldet das Dateizahl-Ritual
+mit **333 = 333**, ich messe **337 = 337**. Beide in sich stimmig — genau die
+dokumentierte Falle „ein Vergleich, der beide Seiten mit demselben Sieb misst,
+prüft das Sieb nicht". Sein Muster übersieht vier Einträge, die nicht
+`test_feature_*` heissen: `ops/boot-smoke.js`, `test_deprovision.js`,
+`test_export.js`, `test_isolation_reads.js`. Kein Fehler im Beitrag (alle vier
+laufen), aber sein Ritual bewacht vier Dateien nicht.
+
+### Neuer datiert offener Punkt
+
+**`'Nur PDFs erlaubt'` steht FÜNFMAL als Literal** in `routes/belehrungen.js`,
+während für den Nachweis-Filtertext eine Konstante gebaut wurde — mit der
+Begründung, sonst drifte eine der Stellen „irgendwann lautlos auseinander".
+Die gilt für die fünf genauso, sogar stärker. **Bewusst NICHT mehr gebaut:**
+reine Kosmetik ohne Verhaltensänderung, und eine weitere volle Suite (20 min)
+plus CI-Runde für fünf Textliterale ist unverhältnismässig. Der Beitrag hat
+damit die eine Hälfte dieser Klasse gelöst und die andere nicht — so benannt,
+nicht verschwiegen.
