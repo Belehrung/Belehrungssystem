@@ -2576,3 +2576,112 @@ den Umbau des Wächters, der die App-Registrierung auswerten muss.
 **Schwelle, damit das keine Ermessensfrage bleibt:** Zeigt der nächste Takt
 (05:40 UTC) weiterhin keinen neuen Commit, frage ich nach. Vorher nicht —
 eine Unterbrechung kostet eine Runde und macht seine Meldung verbraucht.
+
+### 18.09.2026, 05:5x UTC — Runde 2 geprüft, Runde 3 beauftragt
+
+**Der Executer aus Runde 2 ist nicht mehr erreichbar** (`ListAgents` leer, keine
+Suite laufend, Arbeitsbaum sauber). Runde 3 geht deshalb an einen NEUEN Agenten
+mit vollem Kontext, nicht als Fortsetzung — so, wie es die CLAUDE.md für einen
+verlorenen Transkript-Faden vorsieht.
+
+**Stand des Zweigs `claude/haertung-p1-p2`: `04e939c`, kein PR eröffnet.**
+Eigene Messungen an dieser Nacharbeit: Suite **SUITE_EXIT=0, 0 FAIL**,
+Mengenvergleich registriert ↔ gelaufen `diff` **EXIT 0**, 334 registrierte
+Einträge.
+
+Zwei Prüfspuren sind gelaufen. Die Gegenlesung (12,84 $) lieferte 3 Befunde,
+1 blockierend; die Code-Review 15 in Runde 1 und 14 auf die Nacharbeit. Beide
+fanden unabhängig, dass der Wächter `app.post(...)` direkt auf der App nicht
+sah — fünf bestehende CSRF-ausgenommene Schreibrouten, darunter
+`server.js:230 app.post("/intern/deprovision")`, das ein ganzes Studio löscht.
+Die Nacharbeit hat das geschlossen.
+
+**SELBST NACHGEMESSEN, weil ein Befund eine Behauptung bleibt, bis ich ihn
+gemessen habe — und er trägt:** Die Code-Review hat den Wächter danach EINE
+EBENE TIEFER blind gemessen. Ich habe das mit einer Wegwerf-Datenbank
+(`blindfleck_probe_test`, danach `dropdb`) nachgestellt:
+
+- Gepflanzt in `routes/offline.js:44` (per `app.use(require('./routes/offline'))`
+  OHNE Pfad eingehängt, `server.js:738`):
+  `router.post('/intern/blindfleck', (req, res) => res.send('x'));`
+  Mutationsskript mit Zielpfad als Argument, Abbruch bei ≠ 1 Treffer, Marker in
+  derselben Zeile, `node --check` bestanden.
+- **MIT Mutation: `EXIT 0`, `35 PASS / 0 FAIL`**, gefundene Menge unverändert
+  dreizehn, `POST /intern/blindfleck` nicht darin.
+- **OHNE (nach `cp`-Rücknahme, `diff` EXIT 0): `EXIT 0`, `35 PASS / 0 FAIL`** —
+  identisch. Die Mutation ist vollständig unsichtbar.
+
+Betroffen sind vier Stellen: `server.js:707` (`authRoutes`), `:708`
+(`mitarbeiter-auth`), `:738` (`offline`), `:743` (`tabletSperreRoutes`).
+**Heute besteht dadurch KEINE Lücke im Betrieb** — ich habe alle vier Router
+durchgesehen, keiner trägt eine Schreibroute unter `/api`, `/intern`, `/d/`
+oder `/v/`. Was besteht, ist eine FALSCHE ZUSICHERUNG VON ABDECKUNG: der
+Zusicherungstext sagt „entsprechen GENAU der erwarteten Menge", während vier
+ganze Router ausserhalb des Blickfelds liegen. Das ist unsere teuerste Klasse.
+
+**Entscheidung für Runde 3: kein weiterer Regex-Patch.** Die Klasse ist in zwei
+Runden zweimal eine Ebene tiefer weitergewandert; genau dieses Muster steht in
+der CLAUDE.md für den Scanner-Wächter fünfmal protokolliert. Der Wächter
+bekommt stattdessen eine REFERENZ VON AUSSEN: jede Registrierung an `app` in
+`server.js` wird eingesammelt und in genau einen von drei von Hand geschriebenen
+Töpfen klassifiziert (Pfad-Literal / pfadlose Middleware / pfadloser Router,
+letztere werden wirklich requiret und durchlaufen). Was in keinen Topf fällt —
+ein Backtick-Pfad, ein zur Laufzeit zusammengesetzter Pfad, ein neues
+`app.use(irgendwas)` — macht den Wächter ROT statt still durchzugehen. Der
+Vergleich ist ein MENGENvergleich über Zeilennummern, keine Zahl.
+
+Auftrag: `plaene/auftrag-haertung-p1-p2-runde3.md` (gepusht als `9915d56`),
+dazu die beiden anderen Befunde — der CSRF-Test misst nur Statuscodes statt der
+Wirkung, und ein Scratch-Verzeichnis bleibt im Abbruchzweig liegen.
+
+**Was von der Code-Review nach Runde 2 NICHT mehr im Kontext liegt:** ihre
+nicht-blockierenden Befunde. Sie sind beim Verdichten verlorengegangen. Ich
+behaupte nicht, sie seien erledigt — nach Runde 3 läuft die Review erneut über
+den dann vollständigen Diff, und was noch trägt, kommt dabei wieder hoch.
+
+### Entschieden, aber bis jetzt nicht festgehalten
+
+- **B5 (Offline-Rückfall des „✓ Fertig"-Knopfes) wird NICHT gebaut.** Meine
+  Prämisse war falsch, und der Executer hat mir das mit einer Messung
+  widersprochen: `public/offline-queue.js` bindet ausschliesslich
+  `gdSubmitCheck`, NIE den Fertig-Knopf — die Defektmail wurde also auch
+  vorher, als GET, bei Funkloch nicht verschickt. Was sich durch die
+  POST-Umstellung ändert, ist allein die Darstellung der Fehlerseite. Alle
+  drei geprüften Auswege haben echte Kosten (Variante 3 gemessen: die
+  Technikermails verlören ihre Fotoanhänge). Damit ist der Punkt keine
+  Verschlechterung und kein Bauauftrag.
+- **Die rund zwanzig weiteren Knöpfe mit gerissener Breite und die Ursache in
+  `.btn-small`** werden dokumentiert, nicht in diesem Beitrag behoben — sie
+  sind Bestand, nicht Regression dieses Zweigs.
+- **Die Wartungs-Mail behält das korrigierte Seitenziel** und wird NICHT auf
+  `core/basis-url.js` umgestellt; die Umstellung gehört in einen eigenen
+  Beitrag.
+- **Beweisfehler, den ich selbst gefunden habe und der benannt gehört:** die
+  beiden 390-px-Screenshots der Wartungsverlauf-Seite sind byte-identisch
+  (gleiche md5), weil die Aktionen-Spalte bei dieser Breite ausserhalb des
+  Bildes liegt. Sie belegen dort NICHTS. Der 1280-px-Vergleich ist der
+  tragfähige Beleg.
+- **Ungeklärt und als solches benannt:** der Kontrastbericht des Executers
+  widerspricht sich selbst (2,82:1 durchgefallen gegen 7,46:1 bestanden). Der
+  Quelltext setzt `.btn-small { color: var(--gd-auf-signal) }` = `#000000` und
+  überschreibt inline nur den Hintergrund; der gerenderte Screenshot wirkt
+  hell. Vorbestehend in jedem Fall — ich behaupte keine der beiden Zahlen.
+
+### Betreiber-Auftrag 18.09.2026 — die IT-Dokumente danach überarbeiten
+
+Wörtlich: „wenn das alles restlos fertig ist, dann bitte die PDF datein
+entsprechend überarbeiten. falls du die originale noch mal benötigst sage
+bescheid."
+
+Das betrifft die fünf fertigen IT-Dokumente, die auf seinen Wunsch
+zurückgestellt und nie verschickt wurden. **Sie beschreiben einen Stand, den
+die Härtung gerade verändert** — Verbandbuch-PDF flüchtig (#455), vier
+Schreibwege von GET auf POST, CSRF-Ausnahmen bewacht. Die Überarbeitung kommt
+NACH dem Härtungsprogramm, nicht dazwischen, und der Auftrag gilt für den dann
+erreichten Stand, nicht für den von heute Nacht.
+
+**Wichtig für den, der hier nach einem Neustart weiterliest:** die Originale
+liegen im Scratchpad (`scratchpad/dok/fertig/`), und der Scratchpad überlebt
+einen Container-Neustart NICHT. Sind sie weg, wird der Betreiber gefragt — er
+hat das ausdrücklich angeboten. Nicht improvisieren und nicht aus dem
+Gedächtnis nachbauen.
