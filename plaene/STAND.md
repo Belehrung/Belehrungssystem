@@ -2801,3 +2801,58 @@ umgebaut wird; ihre Befunde wären zur Hälfte hinfällig, bevor sie gelesen
 sind. Sie läuft auf den FERTIGEN Diff nach Runde 4 — zusammen mit dem
 Review-Bot am PR sind das dann wieder drei Spuren. Wer das hier später liest
 und die Spur vermisst: sie fehlt nicht, sie ist verschoben.
+
+### 18.09.2026, ~08:1x UTC — Runde 4 geliefert, eigene Messungen laufen
+
+Kopf `a8182b7`, zwei Commits, gepusht. 623 Zeilen dazu, 352 weg — beides
+weiterhin NUR Testdateien, kein Produktivcode.
+
+**Diff vollständig selbst gelesen.** Der Wächter liest `server.js` jetzt als
+Syntaxbaum (`acorn`, bestehende Abhängigkeit; geparst, NICHT ausgeführt).
+Damit fällt die ganze Regex-Maschinerie weg, und mit ihr drei der Befunde an
+der Wurzel: die Position ist der Schlüssel statt der Zeile, eine Kette
+`app.get(…).post(…)` wird als zwei Registrierungen gefunden, und als Pfad
+gilt nur noch ein String-Literal oder ein Template ohne `${…}`.
+
+**Das Wichtigste daran ist nicht der Parser, sondern eine Umkehr:** Die Frage
+„Router oder Middleware?" wird jetzt **am WERT** entschieden, nicht an der
+Liste, in die jemand den Eintrag geschrieben hat. Wo der Wert ohne Ausführen
+beschaffbar ist (`require('x')`, `require('x').y`, ein Bezeichner mit genau
+einer `const`-Bindung aus `require`), wird er geholt und auf `.stack` geprüft.
+Die Handliste bleibt nur noch für Formen, deren Ergebnis erst beim Ausführen
+entsteht — Fabrikaufrufe und Funktionsliterale —, jede mit benannter
+Begründung. Drei bisherige Handlisten-Einträge lösen sich dadurch strukturell
+auf (`uploadLimitWaechter`, `csrfSchutz`, `requireLogin`).
+
+**Selbst gemessen, mit Mutationen, die der Ausführende NICHT gefahren hat**
+(Wegwerf-DB `abnahme_r4_test`, Rücknahme je über `cp`-Kopie, `diff` EXIT 0,
+Marker danach 6):
+
+| Messung | Ergebnis |
+|---|---|
+| Wächter, sauberer Baum | `EXIT 0`, **71 PASS / 0 FAIL** |
+| Schreibroute in einen der ZWÖLF gemounteten Router gepflanzt (`routes/api.js`, `POST /v2/eigenprobe`) | `EXIT 1`, **70 / 1**, `{"nurGefunden":["POST /api/v2/eigenprobe"]}` |
+| Neuer Mount unter einem Ausnahme-Präfix (`app.use("/api-neu", …)`) | `EXIT 1`, **70 / 1**, `{"nurInServer":["/api-neu"]}` |
+| **Mein eigener Fund B9**: Router aus `PFADLOSE_ROUTER` raus, in `PFADLOSE_MIDDLEWARE` rein, Route gepflanzt | `EXIT 1`, **68 / 1** — vorher `EXIT 0, 60 / 0` |
+| E2E-Test, sauberer Baum | `EXIT 0`, **36 / 0**, keine Scratch-Reste |
+
+**Mein eigenes Loch ist damit strukturell zu**, nicht über eine
+Namenskonvention: der Eintrag in der falschen Liste ist jetzt WIRKUNGSLOS, weil
+die Middleware-Liste für beschaffbare Werte gar nicht mehr befragt wird. Die
+Fehlermeldung sagt obendrein, welche Liste die richtige ist.
+
+**Zwei Widersprüche des Ausführenden, beide angenommen:**
+- Die im Auftrag vorgesehene Rückfallebene (Namenskonvention) war NICHT nötig —
+  das Auflösen eines Bezeichners geht ohne Ausführen.
+- Die Vorhersage der Gegenlesung zu B8 stimmte nur zur Hälfte: der alte Lauf
+  war bei simuliertem `EACCES` NICHT durchgehend grün, zwei Positivkontrollen
+  fielen (`33 PASS / 2 FAIL`). Der Befund trägt trotzdem — vier Zusicherungen
+  waren grün, obwohl die Beobachtung gescheitert war. Er hat die Vorhersage
+  korrigiert statt sie passend zu machen.
+- Und er hat einen eigenen Zählfehler gemeldet und behoben (18 statt 19
+  Registrierungen in seiner Probe), statt die Zahl anzupassen.
+
+Läuft: meine eigene volle Suite. Danach Code-Review über den GESAMTEN
+Beitrag (`c40c52f..HEAD`), danach eine zweite Gegenlesung — die Umstellung
+ändert VERHALTEN, nicht nur Zusicherungen, und genau dafür sieht die
+CLAUDE.md eine zweite Runde vor.
