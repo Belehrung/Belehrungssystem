@@ -2685,3 +2685,70 @@ liegen im Scratchpad (`scratchpad/dok/fertig/`), und der Scratchpad überlebt
 einen Container-Neustart NICHT. Sind sie weg, wird der Betreiber gefragt — er
 hat das ausdrücklich angeboten. Nicht improvisieren und nicht aus dem
 Gedächtnis nachbauen.
+
+### 18.09.2026, ~08:4x UTC — Runde 3 abgenommen, EIN eigenes Loch gefunden
+
+Kopf `2a21152` (drei Commits, gepusht). Geändert sind zwei TESTDATEIEN, kein
+Produktivcode: 487 Zeilen dazu, 94 weg.
+
+**Diff vollständig selbst gelesen**, beide Dateien. Der Wächter ist neu gebaut
+als Vollständigkeitsriegel: jede Registrierung an `app` in `server.js` wird
+eingesammelt und in genau einen Topf einsortiert (P = Pfad-Literal,
+M = pfadlose Middleware von einer Handliste, R = pfadloser Router von einer
+zweiten Handliste, die dann WIRKLICH requiret und durchlaufen wird). Was in
+keinen Topf fällt, macht den Lauf rot. Der Vergleich ist ein Mengenvergleich
+über Zeilennummern, nicht eine Zahl.
+
+**Selbst gemessen, nicht aus dem Bericht übernommen** (Wegwerf-DB
+`abnahme_r3_test`, Rücknahme je über `cp`-Kopie mit `diff` EXIT 0, Marker
+danach 6):
+
+| Messung | Ergebnis |
+|---|---|
+| Wächter, sauberer Baum | `EXIT 0`, **62 PASS / 0 FAIL** |
+| `POST /intern/blindfleck` in `routes/offline.js` (die Mutation, die VOR Runde 3 unsichtbar war) | `EXIT 1`, **61 / 1**, `{"nurGefunden":["POST /intern/blindfleck"]}` |
+| `routes/offline` aus der Handliste `PFADLOSE_ROUTER` entfernt — die klassische „Liste kürzen"-Mutation | `EXIT 1`, **59 / 1**, `server.js:738` als UNKLASSIFIZIERT |
+| E2E-Test, sauberer Baum | `EXIT 0`, **35 / 0**, keine Scratch-Reste |
+| E2E mit abgeschaltetem CSRF-Riegel | `EXIT 1`, **14 / 21**, davon ACHT Wirkungs-Zusicherungen, die eigenständig fallen |
+
+Die Blindstelle aus Runde 2 ist damit **zu** — dieselbe Mutation, die vorher
+`EXIT 0, 35 PASS / 0 FAIL` liess, zeigt jetzt genau auf die gepflanzte Route.
+Und die „Liste kürzen"-Mutation, die in der CLAUDE.md beim Scanner-Wächter
+vier Runden lang überlebt hat, wird hier sofort rot.
+
+**EIN LOCH, das ICH gefunden habe und das die drei Prüfspuren bis dahin nicht
+hatten:** Wird derselbe Router aus `PFADLOSE_ROUTER` entfernt UND zugleich als
+Muster in `PFADLOSE_MIDDLEWARE` eingetragen — also FALSCH einsortiert —, dann
+läuft der Wächter mit gepflanzter `POST /intern/blindfleck` wieder auf
+**`EXIT 0`, 60 PASS / 0 FAIL**. Ein Router im falschen Topf wird nie
+durchlaufen.
+
+Das ist kein Sabotage-Szenario, sondern ein Fussangel des Wächters gegen sich
+selbst: seine eigene Fehlermeldung lautet „steht auf KEINER der beiden
+Handlisten" und sagt NICHT, welche die richtige ist. Wer die Meldung
+wegräumen will, hat 50 % Chance, das Loch zu öffnen.
+
+**Vorgesehene Behebung für Runde 4** (noch nicht gebaut, erst nach den
+Prüfspuren): eine Zusicherung, dass kein Muster aus `PFADLOSE_MIDDLEWARE` auf
+einen Kopf der Form `require('./routes/…')` oder auf einen Bezeichner passt,
+der auf `Routes`/`Router` endet — beides die Namenskonvention dieses Repos.
+Dazu eine Fehlermeldung, die sagt, welcher Topf für einen Router zuständig ist.
+
+**Widerspruch des Ausführenden, geprüft und angenommen:** Meine Vorgabe
+„jeder Layer hat eine eigene `.route`" gilt für die vier pfadlosen Router
+NICHT wörtlich — `routes/auth.js:1464` hat `router.use('/admin', requireAdmin)`
+(selbst nachgesehen, stimmt). Die strenge Form wäre dort rot aus dem falschen
+Grund. Gebaut sind stattdessen zwei Zusicherungen, die den Zweck tragen: kein
+Layer ohne `.route` ist ein Unter-Router (mit Positivkontrolle, dass die
+Unterscheidung überhaupt greift), und die Layer ohne `.route` sind genau eine
+literale Erwartung je Modul. Das trägt.
+
+**Zweiter Widerspruch, ebenfalls geprüft:** meine Auftragsvorgabe, das
+Zählmuster müsse auch `test/*.sh` treffen, ist hier gegenstandslos —
+`test/run.sh` registriert keine `.sh`-Einträge, die Shell-Prüfungen laufen
+laut CI-Workflow ausserhalb der Suite.
+
+Läuft gerade: meine eigene volle Suite und die Gegenlesung. Danach die
+Code-Review (nacheinander, nicht gleichzeitig — der Gegenleser LIEST den Baum,
+und eine Review, die mutieren darf, würde ihm den Boden unter den Füssen
+wegziehen).
