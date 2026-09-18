@@ -178,3 +178,172 @@ Die Mutationsspur hat drei Dinge gemessen, die NICHTS zeigten:
   gemeldet, mit `node --check` vor jeder Messung und Rücknahme gegen eine
   unabhängige `cp`-Kopie (`diff` EXIT 0), nie `git checkout`/`git stash`.
 - `npm run lint` läuft und wird wörtlich gemeldet, auch bei Grün.
+
+---
+
+# Fassung 2 — die dritte Spur (sol) ist ausgewertet
+
+`gpt-5.6-sol`, `effort: max`, Streaming (ohne das dreimal bei 300,3 s
+abgeschnitten). 39.683 rein / 39.614 raus, davon 34.186 Denken, 921 s.
+**Elf Befunde, neun davon als „blockierend" eingestuft.**
+
+**Zur Einstufung vorweg, weil sie selbst ein Befund ist:** neun von elf als
+blockierend zu führen, entwertet das Wort. Zwei davon fallen nach eigener
+Nachmessung, zwei weitere sind Bestandseigenschaften, die dieser Diff nicht
+eingeführt hat. Die Regel bleibt: **eine Schwereeinstufung ist eine
+Behauptung, bis sie gemessen ist** — in beide Richtungen.
+
+## H — BLOCKIEREND: bei M2 ist ein gefälschtes `studio_id` im Rumpf ungeprüft
+
+**Der wertvollste Befund des ganzen Tages, und KEINE der anderen beiden
+Spuren hatte ihn.**
+
+N7 belegt „ein `studio_id`-Feld im Rumpf wird ignoriert" — **nur für M1**.
+Selbst nachgemessen: `studio_id:` kommt in der ganzen Testdatei **genau
+einmal** vor (Zeile 318, der M1-Aufruf). **Null** der M2-Aufrufe auf
+`freischalten/` senden es.
+
+Damit bliebe diese Regression in `routes/belehrungen.js` unsichtbar:
+
+```js
+const sid = req.body.studio_id || req.studioId;
+const ma  = await db.one("... WHERE studio_id=$1 AND id=$2", [sid, mitarbeiter_id]);
+const bel = await db.one("... WHERE studio_id=$1 AND id=$2", [sid, req.params.belehrungId]);
+```
+
+Ein Aufrufer sendet `studio_id: B`, `mitarbeiter_id: maB` gegen `belB` —
+beide Nachschläge finden FREMDE Objekte, und anschliessend wird unter Studio A
+eine fremde Referenz geschrieben. Alle 86 Zusicherungen bleiben grün, weil
+keine von ihnen das Feld je sendet. Das ist Punkt 1 der Prüfreihenfolge, die
+Klasse, die wirklich katastrophal wäre.
+
+**ZU BAUEN:** dieselbe Probe wie N7, aber für M2 — Formular UND JSON, mit
+`{ studio_id: B, mitarbeiter_id: maB }` gegen `belB`. Erwartet: exakter
+Ablehnungs-Redirect, kein Absturz, unveränderter Zustand in A, B und C.
+
+**GEGENPROBE:** genau die Zeile oben einbauen → die neue Zusicherung muss
+fallen; ohne sie bleibt die Suite heute bei 86/0.
+
+## I — N9 deckt nur drei von acht Ablehnungswegen ab
+
+Erweitert Punkt A. Der Zähler umhüllt nur die drei Formularfälle; N1 (JSON,
+Zahl/Array/Objekt/null/fehlend), N4 und N8 laufen ohne ihn. sol nennt dazu
+eine Mutation, die grün bliebe:
+
+```js
+if ((!ma || !bel) && typeof mitarbeiter_id !== 'number') { return res.redirect(ZIEL); }
+```
+
+Formularwerte sind Zeichenketten → Wächter greift → die drei Zähler bleiben 0.
+Eine fremde numerische JSON-ID fällt dagegen in den Absturzpfad — und den
+beobachtet dort niemand.
+
+**ZU BAUEN:** jeden M2-Ablehnungsfall durch `mitConsoleErrorGezaehlt()`
+führen, nicht nur die drei Formularfälle. Zusammen mit A (Positivkontrolle)
+schliesst das die Klasse.
+
+## J — Der `console.error`-Sensor ist global und verschluckt fremde Fehler
+
+`mitConsoleErrorGezaehlt()` ersetzt `console.error` PROZESSWEIT und zählt
+alles. Ein asynchroner Pool-Fehler (`core/db.js`, `pool.on("error", …)`)
+würde mitgezählt (falsches Rot) und seine Diagnose unterdrückt.
+
+Die Mutationsspur hat statisch geprüft, dass auf dem M2-Pfad kein anderer
+`console.error` liegt — das trifft zu, deckt aber gerade den ASYNCHRONEN
+Fall nicht ab, der nicht am Pfad hängt.
+
+**ZU BAUEN:** nur Aufrufe mit dem bekannten Präfix `Freischalten-Fehler:`
+zählen, **alle anderen unverändert an das Original weiterreichen**. Damit ist
+der Sensor kalibriert und verschluckt nichts mehr.
+
+## K — Der Rumpfvergleich in N4 kann nicht rot werden
+
+Selbst nachgemessen (Zeilen 283/290): **beide** Seiten benutzen
+`.json().catch(() => ({}))`. Zwei VERSCHIEDENE unparsbare Antworten werden
+damit beide zu `{}` und der Vergleich meldet „ununterscheidbar" — genau die
+Aussage, die er belegen soll, kann nicht fallen.
+
+**ZU BAUEN:** `Content-Type` prüfen, ohne Rückfall parsen (ein Parsefehler ist
+ein FAIL), und zusätzlich gegen einen UNABHÄNGIG hingeschriebenen Vertrag
+halten (`{ error: 'Etage nicht gefunden' }`), nicht nur die beiden
+beobachteten Antworten gegeneinander.
+
+## L — „gleiche Zeilenzahl" ist bei M2 kein Zustandsnachweis
+
+N3 weist selbst nach, dass `ON CONFLICT DO UPDATE` eine bestehende Zeile
+ändern kann, ohne die Anzahl zu verändern. Alle M2-Ablehnungen benutzen
+trotzdem nur die Anzahl. Zum Zeitpunkt der Ablehnungen existiert bereits die
+erlaubte Zeile `(A, maA, belA)` — ein fehlerhafter Ablehnungspfad könnte sie
+aktualisieren und trotzdem den erwarteten Redirect liefern.
+
+**ZU BAUEN:** vor und nach jedem Ablehnungsblock einen sortierten
+Schnappschuss der relevanten FELDER je Mandant vergleichen
+(`studio_id, mitarbeiter_id, belehrung_id, grund, freigeschaltet_am`), nicht
+nur `count(*)`.
+
+## M — Die echten Router werden ohne ihren Rechtewächter geprüft
+
+Selbst nachgemessen: Produktion montiert
+`app.use("/admin/lageplan", requireAdmin, lageplanRoutes.admin)` und
+`app.use("/admin/belehrungen", requireAdmin, belehrungenRoutes.admin)`
+(`server.js:1429`, `:1445`). Der Test-Harness montiert beide OHNE Wächter und
+setzt `req.studioId` direkt. Nähme jemand `requireAdmin` dort heraus, bliebe
+das in allen 86 Zusicherungen unsichtbar.
+
+**Das ist eine Bestandseigenschaft, keine Regression dieses Diffs** — die
+Einstufung „blockierend" ist überzogen. Die Lücke ist aber billig zu
+schliessen und bewacht Punkt 1 der Prüfreihenfolge.
+
+**ZU BAUEN:** eine statische Zusicherung über `server.js`, dass beide Pfade
+MIT `requireAdmin` davor montiert sind. Gegenprobe: den Wächter aus einer der
+beiden Zeilen entfernen → muss fallen.
+
+## Was aus Fassung 2 NICHT gebaut wird — mit Begründung
+
+- **B1 (sol), die drei Sentinel-Abfragen: FÄLLT.** Sie fragen bewusst OHNE
+  `studio_id`, weil sie belegen sollen, dass eine ID in KEINEM Studio
+  existiert — Globalität ist ihr Zweck, nicht ihr Fehler. sols Ersatzvorschlag
+  (eine Zeile anlegen, ID merken, löschen) leistet dasselbe umständlicher.
+  Der `posEigen`-Teil desselben Befunds bleibt und steht als Punkt G.
+- **B8 (tote Quelltextkopie täuscht beide Spuren): FÄLLT weitgehend.** Die
+  Mutationsspur hat den Fall „doppelte Marke" GEMESSEN: **EXIT 1 mit
+  `SyntaxError: Unexpected end of input`**, also lauter Absturz statt falschem
+  Grün. sols Szenario ist nicht gemessen, und die vorhandene Messung zeigt in
+  die andere Richtung. Ein AST-Parser statt `indexOf` wäre eine Verbesserung —
+  aber ein eigener Beitrag, kein Blocker hier.
+- **B10 (Dateisystem, Listener, DB im Deploy-Gate): FÄLLT weitgehend.** Die
+  Regel zielt gemessen auf `pm2`, `nginx`, `/var/www` — nicht auf das Lesen
+  einer Repo-Datei oder eine Wegwerf-DB. Selbst gezählt: **138 Bestandstests**
+  benutzen `listen(0)`. Wäre sols Lesart richtig, verstiesse die ganze Suite.
+  **Ein Teil hält:** `listen(0)` ohne Host bindet an alle Schnittstellen statt
+  an Loopback. Das ist eine suiteweite Härtung über 138 Dateien — eigener
+  Beitrag, als datierter offener Punkt festzuhalten.
+- **B9 (Rumpf überschreibt `httpOk`): als offener Punkt, NICHT umdrehen.**
+  Die Reihenfolge `{ httpOk, httpStatus, ...daten }` ist eine BEWUSSTE,
+  im Quelltext begründete Entscheidung einer früheren Prüfrunde (R4): ein
+  vorhandenes Payload-Feld soll gewinnen. Selbst nachgemessen: **kein
+  Endpunkt liefert `httpOk` oder `httpStatus` im Rumpf**; die Kollision setzt
+  voraus, dass unser eigener Server damit anfängt. Umdrehen würde eine
+  gemessene Entscheidung ohne neue Messung kassieren.
+- **B11 (`wantsJson()` vereinheitlichen): eigener Beitrag.** Dass die Prüfung
+  case-sensitiv ist und `q=0` ignoriert, trifft zu. Sie betrifft aber
+  `requireLogin`, `requireAdmin` UND den globalen Fehlerhandler gemeinsam —
+  das ist eine Umstellung der Accept-Semantik, nicht eine Nacharbeit an der
+  Mandantengrenze. Datierter offener Punkt.
+- **Die acht fehlenden `Accept`-Header** (Punkt F): unverändert eigener
+  Beitrag.
+
+## Was die drei Spuren über sich selbst zeigen
+
+| | DeepSeek | Mutation | sol |
+|---|---|---|---|
+| Befunde | 7 | 2 | 11 |
+| nach eigener Nachmessung getragen | 6 | 2 | 5 ganz, 4 teilweise, 2 gefallen |
+| **nur von dieser Spur** | 4 | 1 | **6** |
+
+Die Überschneidung ist wieder klein: **einen** Befund hatten alle drei (A),
+alles andere verteilt sich. Und die Suchverfahren sind erkennbar verschieden —
+DeepSeek und sol LESEN, die Mutationsspur MISST. Der einzige Befund, der
+durch Ausführen gefunden wurde (B, die statische `return;`-Zusicherung),
+war durch Lesen nicht zu sehen; der wertvollste Lesebefund (H) durch
+Mutieren nicht.
