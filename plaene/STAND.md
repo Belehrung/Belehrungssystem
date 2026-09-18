@@ -2901,3 +2901,48 @@ in der CLAUDE.md, Abschnitt „Nachgemessen 18.09.2026". Kurz:
   uns trotzdem kein `reasoning`-Element. Der vorgeschlagene Ausweg aus dem
   Zielkonflikt `store:false` ↔ `previous_response_id` ist damit **nicht
   belegt**; die Entscheidung vom 12.09. bleibt.
+
+### Takt 18.09.2026, 08:40 UTC — Runde 5 läuft, Stand nachgezogen
+
+Executer bei Runde 5, zwei Commits gepusht (`1dc4e1b`), seine Suite läuft
+gerade. Kein Eingriff in den Arbeitsbaum.
+
+**Betreiber-Vorgabe 18.09.2026, umgesetzt:** „mir ist es wichtig, dass wir aus
+gpt das maximum an unterstützung raus holen was geht" — und: die geschätzten
+Kosten reichen, der Antrag auf ein Abrechnungsrecht ist damit GESTRICHEN.
+
+In der CLAUDE.md steht jetzt der Abschnitt **„Das Maximum herausholen"**: vier
+verbindliche Punkte und eine offene Messung. Der wichtigste ist der erste, und
+er ist eine Durchsetzung, keine neue Idee:
+
+> **Jeder Bauauftrag, der Produktivcode, einen Wächter, eine Zusicherung oder
+> die Testsuite anfasst, geht VOR der ersten Bau-Runde als Auftragspapier an
+> den Gegenleser.** Wer ihn auslässt, schreibt den Grund in denselben
+> Zwischenstand, in dem die Suite-Zahlen stehen.
+
+Die Regel „den Plan gegenlesen lassen" steht seit dem 10.09. da und wurde fast
+nie befolgt — heute dreimal nicht (Runden 3, 4, 5). Danach kamen am fertigen
+Diff fünf blockierende Befunde und noch einmal sechs; mehrere davon standen
+schon in MEINEM Auftragspapier falsch. Deshalb hat sie jetzt denselben
+mechanischen Auslöser wie der Astra-Einsatz selbst.
+
+Die drei anderen: Bündelgrösse VORHER zählen (`/v1/responses/input_tokens`),
+bei jeder Aussehensänderung den Screenshot mitgeben, und das
+Abhängigkeits-Audit gegen die EXAKTEN Versionen mit zwei unabhängigen Quellen.
+Die offene Messung ist „zwei Läufe mit verschiedenen Aufträgen statt einem" —
+sie steht ausdrücklich NICHT als Regel drin.
+
+**Erste Anwendung liegt fertig: `plaene/plan-upload-haertung.md`.** Er geht an
+den Gegenleser, BEVOR ein Executer ihn anfasst — erst aber, wenn Runde 5 durch
+ist, weil der Gegenleser denselben Arbeitsbaum liest.
+
+Der Plan bündelt zwei offene Punkte: den bestätigten `multer`-CVE (vier von
+sechs Aufrufen benutzen den betroffenen `diskStorage`-Pfad, von mir gemessen)
+und die seit Beginn ungemessenen Upload-Wege aus dem Härtungsprogramm. Er
+nennt fünf Fragen an den Prüfer, darunter ausdrücklich die nach meiner eigenen
+unbelegten Behauptung, `memoryStorage` sei nicht betroffen.
+
+**Anmerkung zum Takt-Prompt:** Er kennt den neuen CLAUDE.md-Abschnitt nicht —
+erwartungsgemäss, er ist eine Kopie und driftet. Die Abweichung ist additiv
+(neue Regeln fehlen, nichts widerspricht), und der Prompt sagt selbst, dass
+das Repo recht hat. Kein Handlungsbedarf, nur vermerkt.
