@@ -1992,6 +1992,12 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
 - **Die Marktplatz-Plugins sind in Claude-Code-Sitzungen NICHT geladen.**
   `design:critique`, `design:design-critique`, `engineering:code-review` — alle
   „Unknown skill", obwohl im Konto aktiv und aufgelistet.
+  **Der EINGEBAUTE `code-review` ist davon zu unterscheiden** und steht in
+  dieser Sitzung (18.09.2026, nach einem Container-Neustart) in der
+  Skill-Liste — anders als die gleichnamige Marktplatz-Variante. Nach unserer
+  eigenen Regel eine Zeile weiter unten ist das aber eine LISTUNG, kein Beleg:
+  er wird ausprobiert, wenn er das nächste Mal gebraucht wird, und erst dann
+  gilt er als verfügbar.
 - **Verfügbarkeit wird ausprobiert, nicht aus einer Liste geschlossen.**
   `dataviz` steht in keiner Liste und ist da; `design:critique` steht drin und
   ist es nicht. Dieselbe Positivkontrolle wie in der Recherche.

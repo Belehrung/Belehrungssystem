@@ -4022,3 +4022,26 @@ KOMMENTARZEILEN vor, kein einziges Shell-Skript wird dort ausgeführt (13
 Erwähnungen, alle Prosa). Die Warnung des Takt-Textes trifft für dieses Repo
 heute also ins Leere; sie ist nicht falsch, sie ist gegenstandslos. Wer sich
 auf sie beruft, hat damit KEINE Abdeckung belegt.
+
+## 18.09.2026, 23:40 UTC — Container-Neustart, Pflichtprüfung sauber
+
+Der Neustart hat alle laufenden Agenten und Läufe getötet. Pflichtprüfung nach
+der CLAUDE.md, beide Repos:
+
+- **GymDocu:** Marker-Scan **6**, alle in `docs/offene-befunde-31-08-2026.md`
+  (Sollwert erfüllt), `git status` leer, HEAD unverändert `4c50659`.
+- **Belehrungssystem:** Marker ausschliesslich in Prosa-Dateien
+  (`STAND.md`, drei Auftragspapiere, `CLAUDE.md`, `ASTRA-LAEUFE.md`) —
+  die dort geltende Bedingung ist „jeder Treffer ist Prosa", nicht eine Zahl.
+  `git status` leer.
+- Keine halb zurückgenommene Gegenprobe, nichts verloren. `/tmp/claude-0/s2`
+  hat den Neustart überlebt (Bündel und Schlüssel noch da) — das ist Glück,
+  kein Verfahren; das Auftragspapier lag ohnehin schon im Repo.
+
+**Läuft:** Planprüfung des Auftragspapiers (Fassungen 1+2) auf `gpt-5.6-sol`,
+`effort: max`, mit Streaming. 43.770 Token gezählt. Sie prüft meine ANWEISUNGEN,
+nicht den Diff — namentlich fünf Tatsachenbehauptungen, die ich selbst
+aufgestellt habe, und ob jede vorgeschriebene Gegenprobe überhaupt rot werden
+kann.
+
+**Danach:** Bau-Runde über die dreizehn Punkte, dann Suite, dann CI.
