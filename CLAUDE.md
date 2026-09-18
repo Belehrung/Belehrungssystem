@@ -445,7 +445,7 @@ Missbrauch zeigte sich an der OpenAI-Abrechnung.
     "stream": true,          // Egress-Proxy bricht lange Läufe sonst ab
     "store": false,          // unser Quelltext bleibt nicht auf fremden Servern
     "instructions": "…",     // die Unverhandelbaren, getrennt vom Material
-    "reasoning": {"effort":"high"},
+    "reasoning": {"effort":"xhigh"},  // NICHT high — das ist die Mitte (18.09.)
     "max_tool_calls": N,     // nur mit web_search; deckelt die Suchschleife
     "metadata": {…},         // Lauf wiederfindbar machen
     "max_output_tokens": 45000,
@@ -456,6 +456,42 @@ Dazu weiterhin die **Wiederholschleife** (ein Fehlschlag ist keine Antwort)
 und die **Statusprüfung bei JEDEM Aufruf**. **Und seit 18.09.2026 davor die
 Bündelzählung** über `POST /v1/responses/input_tokens` — gezählt wird, nicht
 geschätzt (Begründung im Abschnitt „Das Maximum herausholen").
+
+### Welche Modelle zur Verfügung stehen — gemessen 18.09.2026
+
+Anlass: Betreiber-Frage, ob auch kleinere Modelle erreichbar sind, um Astra für
+komplexe Lagen zu reservieren und Routinearbeit billiger zu erledigen.
+
+`GET /v1/models` listet **130** Modelle. **Eine Liste ist keine Verfügbarkeit** —
+das ist hier keine Theorie: `gpt-5-codex` steht darin und antwortet HTTP 404
+(gemessen 09.09.). Jedes Modell unten wurde deshalb mit einem echten Aufruf
+geprüft; die Positivkontrolle steht (`gpt-5.9-quatschmodell` →
+`model_not_found`).
+
+**Erreichbar und für uns brauchbar** (alle antworten korrekt auf eine
+Sachfrage):
+
+    gpt-6-astra                  unser Gegenleser. Denkt IMMER (kein `none`), kann als
+                                 einziges `max`. Langsamste, gründlichste Stufe.
+    gpt-5.6-terra/-sol/-luna     neuer als 5.4, können `none` bis `max`. `terra` denkt
+                                 auch mit `xhigh` NICHT (denk=0) — ein Chatmodell.
+    gpt-5.5                      denkt von sich aus, auch ohne effort-Angabe.
+    gpt-5.4, -mini, -nano        schnell; mit `effort: "none"` ganz ohne Denkphase.
+    gpt-5, -mini, -nano          ältere Generation, kein `xhigh`/`max`.
+
+**Wofür was.** Das ist eine Empfehlung aus den Messungen oben, keine Vorschrift:
+
+- **Prüfen und Gegenlesen: `gpt-6-astra`**, weil nur dort `max` verfügbar ist und
+  weil das Verfahren an ihm gemessen ist. Nicht wechseln, ohne es zu messen —
+  ein Modellwechsel ist nie die Erklärung für ein besseres Ergebnis, solange
+  sich am selben Tag auch die Aufträge geändert haben.
+- **Routinearbeit ohne Urteil** (etwas umformulieren, eine Liste sortieren, eine
+  Datei zusammenfassen): `gpt-5.4` mit `effort: "none"` — gemessen 44 Ausgabe-
+  Token und 1,7 s gegen 198 Token und 3,1 s bei `high`.
+- **Was NICHT dorthin gehört:** jede Aussage über unseren Bestand. Die Regel
+  „jeder Befund ist eine Behauptung, bis der Haupt-Agent sie gemessen hat" gilt
+  für ein kleines Modell erst recht, und ein billiger Lauf, dessen Befunde
+  alle fallen, ist teurer als gar keiner.
 
 ### Drei Zusätze am Prompt (Betreiber-Entscheidung 11.09.2026)
 
@@ -549,10 +585,36 @@ wird mit „Unknown parameter" abgelehnt — ein „OK" sagt also wirklich etwas
   bekannte Schwachstellen zu den Versionen in `package.json` nachschlagen,
   statt aus dem Gedächtnis zu raten. Die Regel „nicht als Rechtsquelle"
   bleibt davon unberührt.
-- **`reasoning: {"effort": "high"}` ist das Maximum für dieses Modell.**
-  `xhigh` wird ausdrücklich abgelehnt („Supported values are: 'minimal',
-  'low', 'medium', and 'high'"). Wer mehr Tiefe will, bekommt sie nicht
-  über diesen Schalter.
+- **`reasoning.effort` — die Notiz vom 11.09. war RICHTIG, aber sie galt für
+  `gpt-5`, nicht für das Modell, das wir heute fahren. Nachgemessen am
+  18.09.2026 über elf Modelle, mit Positivkontrolle.** Sie lautete: „`high` ist
+  das Maximum, `xhigh` wird abgelehnt". Für `gpt-5`, `gpt-5-mini` und
+  `gpt-5-nano` stimmt das bis heute (`xhigh` → `unsupported_value`). Für
+  `gpt-6-astra` stimmt es nicht: dort gibt es ZWEI Stufen darüber.
+
+  Die vollständige Werteliste nennt die Fehlermeldung bei einem erfundenen Wert:
+  `none, minimal, low, medium, high, xhigh, max`. **Sie ist aber generisch —
+  jedes Modell trägt nur eine Teilmenge davon**, und wer aus dieser Liste auf
+  Verfügbarkeit schliesst, liegt falsch. Gemessen, je Modell einzeln:
+
+      gpt-6-astra                       low medium high xhigh max   (kein none/minimal)
+      gpt-5.6-terra/-sol/-luna     none low medium high xhigh max
+      gpt-5.5, gpt-5.4/-mini/-nano none low medium high xhigh       (kein max)
+      gpt-5, gpt-5-mini, gpt-5-nano     low medium high             (+minimal, kein xhigh/max)
+
+  **Und es wirkt, es wird nicht still geschluckt.** Dieselbe Frage an
+  `gpt-6-astra`, nur die Stufe verändert — Denk-Token und Dauer steigen monoton:
+  `medium` 152 / 5,5 s, `high` 259 / 7,3 s, `xhigh` 442 / 9,0 s, **`max` 748 /
+  15,1 s**. Die Positivkontrolle steht: `effort: "ultrahoch"` wird mit
+  `invalid_value` abgelehnt, ein erfundenes Modell mit `model_not_found`.
+
+  **Folge für unsere Gegenlesungen: `high` war die MITTE, nicht das Maximum.**
+  Der Betreiber hat am 18.09. „das Maximum an Unterstützung" verlangt; für
+  Prüfläufe gilt deshalb `xhigh`, bei besonders folgenschweren `max`. **Was das
+  kostet, ist NICHT gemessen** — bei der Trivialfrage verdreifachten sich die
+  Denk-Token von `high` auf `max`, und Denk-Token sind Ausgabe-Token. Der letzte
+  volle Lauf kostete mit `high` 12,67 $. Wer die erste Runde mit `max` fährt,
+  trägt die Kosten in `ASTRA-LAEUFE.md` ein, damit daraus eine Messung wird.
 - **`context_management` nimmt `[{"type":"compaction","compact_threshold":N}]`.**
   Das ist die Struktur, an der der Versuch vom 10.09.2026 scheiterte
   („expected an array of objects"). Für eine EINZELNE Gegenlesung bleibt
