@@ -3957,3 +3957,33 @@ reine Kosmetik ohne Verhaltensänderung, und eine weitere volle Suite (20 min)
 plus CI-Runde für fünf Textliterale ist unverhältnismässig. Der Beitrag hat
 damit die eine Hälfte dieser Klasse gelöst und die andere nicht — so benannt,
 nicht verschwiegen.
+
+---
+
+## 18.09.2026 abends — DeepSeek gemessen, A/B-Lauf ausgewertet
+
+**Fertig und gepusht:** `plaene/deepseek-vs-astra-18-09-2026.md` (Nachtrag)
+und `ASTRA-LAEUFE.md` (Lauf-Eintrag).
+
+Der A/B-Lauf über den Mandantengrenze-Diff: **acht Befunde, sechs halten**
+nach eigener Nachmessung, **zwei davon hatte keine meiner beiden Spuren**.
+Drei decken sich wörtlich mit eigenen (N9, N4, N6/N11) — darunter N9, der
+schwerwiegendste eigene Befund, mit derselben Mutation.
+
+Die zwei gefallenen liegen an MEINER Bündelwahl: `package.json` fehlte (er
+nahm Express 4 an, wir fahren `^5.2.1`), und von `core/db.js` lag nur ein
+Schema-Auszug bei statt der Definition `one() -> rows[0] ?? null`.
+
+Vier eigene Fehlmessungen im ersten Stand korrigiert — die lehrreichste:
+`json_schema` wird an `/chat/completions` abgelehnt und an der
+**Responses-API** angenommen. Ein Negativbefund an der falschen Tür.
+
+**Laufend, nicht anfassen:** Executer `a4d0ea023376b4bfa` in
+`/home/user/gymdocu` (Nacharbeit N1–N12), wartet auf seinen eigenen
+Suite-Lauf. Der Arbeitsbaum ist damit NICHT frei; die Mutationsmessung zu
+Befund 2.1 (= N9) steht bis dahin aus, ebenso die ungelöste Kollision der
+PostgreSQL-Rolle zwischen den Arbeitsbäumen.
+
+**Als nächstes:** Nacharbeit 2a (Endungs-Grenzfall, drei Kopien des
+Dateinamenmusters), dann Gate/XSS, Identitätsbindung, Zusicherung/qpdf, S6,
+Punkt 3 des Härtungsprogramms.
