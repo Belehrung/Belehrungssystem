@@ -476,6 +476,31 @@ und die **Statusprüfung bei JEDEM Aufruf**. **Und seit 18.09.2026 davor die
 Bündelzählung** über `POST /v1/responses/input_tokens` — gezählt wird, nicht
 geschätzt (Begründung im Abschnitt „Das Maximum herausholen").
 
+**ACHTUNG — `tools/gegenleser-repo.js` SETZT DIESE ZIELKONFIGURATION NICHT UM.**
+Gemessen am 18.09.2026 am Quelltext (`anfragen()`, Zeile ~510): der Request
+enthält **genau vier Felder** — `model`, `input`, `tools`, `max_output_tokens`.
+Es fehlen also `store: false`, `reasoning.effort`, `truncation`, `stream`,
+`text.format` und `metadata`. Das Werkzeug ist vom 13.09.2026, die
+Zielkonfiguration wurde danach geschärft, und niemand hat sie nachgezogen.
+
+**Der schwerwiegende Teil ist `store`, nicht `effort`.** Gemessen mit
+Gegenprobe in beide Richtungen: ohne das Feld ist eine Antwort hinterher über
+`GET /v1/responses/<id>` **ABRUFBAR** — die Voreinstellung ist `true`, die
+Anfrage wird aufbewahrt; mit `store: false` liefert derselbe Abruf „Response
+with id … not found". **Damit liegt jeder Lauf über dieses Werkzeug auf
+fremden Servern** — und zwar ausgerechnet die materialreichsten, weil der
+Prüfer sich dort selbst Quelltext aus dem Repo holt. Das widerspricht der
+Entscheidung vom 12.09.2026 („`store: false` gewinnt") unmittelbar.
+
+Was dabei NICHT verletzt ist: die Datengrenze selbst. Gesendet wird weiterhin
+nur, was `git ls-files` auflistet, und der Geheimnis-Riegel läuft auf jedes
+Funktionsergebnis. Verletzt ist die Regel über das LIEGENLASSEN, nicht die
+über das Senden.
+
+Bis das Werkzeug nachgezogen ist, gilt: **wer `store: false` braucht, ruft die
+Schnittstelle direkt auf** (Aufrufmuster oben) und verzichtet dafür auf den
+Repo-Lesezugriff — beides zugleich gibt es derzeit nicht.
+
 ### Welche Modelle zur Verfügung stehen — gemessen 18.09.2026
 
 Anlass: Betreiber-Frage, ob auch kleinere Modelle erreichbar sind, um Astra für
