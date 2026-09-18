@@ -2321,3 +2321,36 @@ Randbefund fürs Härtungsprogramm: Die CI-Prüfung „Dependency audit
 (production, high)" ist GRÜN. Damit ist einer der zwei dort als „nicht
 gemessen" gekennzeichneten Punkte beantwortet; offen bleibt nur die Prüfung
 der Upload-Wege auf Dateityp und Grösse.
+
+### 18.09.2026, 01:1x UTC — Runde 5: derselbe Fehlertyp eine Ebene weiter
+
+Runde 4 hat die Verdrahtung geschlossen; der Review-Bot bestätigt das
+ausdrücklich („previous scheduling gap is fixed"). Er hat aber einen NEUEN P1,
+**selbst am Quelltext nachgemessen und zutreffend**: `hauptlauf()` schreibt
+`process.exitCode` unbedingt (`:359` sowie `:217`, `:226`, `:235`, `:263`,
+`:369`), und `ernteInProcess()` (`:416-418`) reicht nur `wirklich` und
+`schliesseDbPool` durch.
+
+Im langlaufenden Webprozess in beide Richtungen schlecht: ein sauberer
+Erntelauf setzt den Wert auf 0 und LÖSCHT einen vorher gesetzten Fehlerstatus;
+ein Erntefehler setzt ihn auf 1, und der Server meldet beim späteren Beenden
+einen Fehlschlag, den es nie gab — pm2 und die Deploy-Logik lesen genau das.
+
+**Das ist wieder meine Auslassung, und diesmal mit erkennbarem Muster.** In
+Runde 4 hatte ich EINE prozessglobale Nebenwirkung des CLI-Helfers benannt (den
+Datenbankpool) und stillschweigend angenommen, es sei die einzige. Der
+Ausführende hat genau die behandelt, die im Auftrag stand. Wer einen Helfer aus
+der Kommandozeile in einen langlaufenden Prozess holt, zählt ALLE
+prozessglobalen Nebenwirkungen auf: `process.exitCode`, `process.exit`,
+Signal- und `process.on`-Handler, Arbeitsverzeichnis, Umgebungsvariablen,
+geschlossene Verbindungen, Annahmen über STDOUT. Das steht so im Auftrag von
+Runde 5 und gehört als Kommentar an die Funktion.
+
+**Zwischenbilanz der Prüfspuren an diesem Beitrag, weil sie etwas zeigt:** Die
+beiden teuren Gegenlesungen (zusammen 24,33 $) und die Code-Review haben
+zusammen 23 Befunde gebracht, alle am DIFF. Die beiden P1 der letzten zwei
+Runden kamen vom Review-Bot, der nichts kostet — und beide waren keine
+Diff-Fragen, sondern Anschlussfragen: „wer ruft das auf?" und „was macht dieser
+Aufruf mit dem Prozess, der ihn ausführt?". Für künftige Beiträge, die etwas
+aus der Kommandozeile in den Betrieb holen, ist das der dritte Prüfpunkt neben
+Richtigkeit und Abdeckung.
