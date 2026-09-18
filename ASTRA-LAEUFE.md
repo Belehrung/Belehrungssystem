@@ -1162,6 +1162,7 @@ zurückgenommen):
 | `test_feature_geraete_typ_filter_static.js` | **EXIT 0, 108 / 0** | 185 statt 186 |
 | `test_feature_datum_zeitzonenfalle_static.js` | **EXIT 0, 90 / 0** | 185 statt 186 |
 | die drei neuen Wächter | je EXIT 1 | 211 statt 212 |
+| 18.09.2026 | **PLANpruefung** Upload-Haertung Beitrag 2 (U1+U2), vor der ersten Bau-Runde | Auftragspapier + 6 Dateien (Kernmodul, globaler Handler, `routes/lageplan.js` ganz, 3 Waechter), **gezaehlt** 79.520 Token rein / 12.696 raus (9.840 Denken), `xhigh` | 9 (2 blockierend) | **9** | 0 | n. e. (Schluessel ohne `api.usage.read`) |
 
 Gegengezählt statt vermutet: von vier Wächtern führten drei das Feld
 **null**-mal im Vergleich — exakt die drei, die der Bot genannt hatte.
@@ -1180,3 +1181,50 @@ Mal überhaupt mit, er kostet uns nichts, und er hat in denselben vier Läufen
 sonst nichts beigetragen. Wer daraus „der Bot ersetzt eine Spur" macht, stützt
 sich auf eine Stichprobe von eins — dieselbe Falle wie beim Modellvergleich
 weiter oben in der CLAUDE.md.
+
+## Planpruefung 18.09.2026 — erster Lauf, bei dem ALLE Befunde trugen
+
+**Neun Befunde, neun nach eigener Nachmessung getragen, null gefallen.** Das
+ist bisher einmalig; am 13.09. fielen zwei von sechs, am 12.09. drei von neun.
+Eine Erklaerung dafuer draengt sich auf, ist aber NICHT gemessen: geprueft
+wurde ein PLAN, kein Diff — an einem Plan gibt es keine Implementierung, deren
+Details man falsch raten kann. Wer daraus eine Regel macht, misst es an einem
+zweiten Plan.
+
+**Zwei Befunde widerlegten den Entwurf selbst**, und beide an Stellen, an
+denen ich mir sicher war:
+
+- Der geplante Filter `req.complete === false` haette ECHTE Serverfehler
+  verschluckt. Selbst nachgemessen an einem laufenden, NICHT abgebrochenen
+  Upload: `complete:false, aborted:false, destroyed:false`. Das war genau die
+  offene Frage, die ich dem Pruefer ausdruecklich gestellt hatte — die Antwort
+  fiel gegen mich aus.
+- Meine WAECHTERKARTE war falsch. Ich hatte `test_feature_error_tracking.js`
+  als „bewacht ausschliesslich die Signatur-Schwaerzung" eingetragen;
+  nachgemessen ruft sie das echte `melde()` an sieben Stellen und prueft
+  `senden` (12x), `unterdrueckt` (6x), `_state`, Drossel und `baueText`. Mein
+  grep-Muster hatte nur einen Ausschnitt erfasst, und `grep telegram` -> 0
+  Treffer hatte ich als „keine Verhaltensabdeckung" gelesen. Ein negatives
+  Ergebnis ohne Positivkontrolle.
+
+**Ein Befund war nach eigener Messung SCHWERER als gemeldet.** Der Pruefer
+meldete, ein ausgenommener Abbruch verbrauche den Drossel-Sendeplatz. Gemessen
+stimmt das (`senden:true`, danach `senden:false, unterdrueckt:1`,
+`DROSSEL_MS = 900000` = 15 Minuten) — und die Signatur traegt KEINE studio_id
+(`Error:POST /u` fuer Studio 1 und 99 identisch). Ein Abbruch in einem Studio
+haette also echte Fehler ANDERER Studios auf derselben Route 15 Minuten stumm
+geschaltet. Das stand so nicht im Befund.
+
+**Ein Befund wandte unsere eigene Hausregel auf unseren eigenen Waechter an:**
+`test_feature_keine_stillen_fehler.js` vergleicht `alle.length` gegen
+`OBERGRENZE = 60` — eine ZAHL. Wird ein leerer catch entfernt und andernorts
+einer hinzugefuegt, bleibt der Lauf gruen. „Eine Zusicherung ueber eine ZAHL
+ist keine ueber eine MENGE" steht seit dem 13.09. in der CLAUDE.md; auf diesen
+Waechter hatte sie niemand angewandt.
+
+**Was der Lauf NICHT geleistet hat:** die Einordnung. Der Pruefer meldete den
+Telegram-Befund als blockierend; erst die eigene Messung zeigte, dass die
+Erreichbarkeit aus dem Repo gar nicht entscheidbar ist (der Hand-Deploy liegt
+auf dem Server, und die CLAUDE.md belegte ihn mit einer Datei, die es nicht
+gibt). Aus „blockierend" wurde damit „latente Waffe, kein belegter laufender
+Schaden". Das Nadeloehr bleibt das eigene Nachmessen, nicht das Finden.
