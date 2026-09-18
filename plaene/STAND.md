@@ -2251,3 +2251,30 @@ das viele Aufrufer teilt.
 Auftrag: `plaene/auftrag-verschluesselung-stufe0-runde3.md`, an denselben
 Executer. Mit ausdrücklicher Abbruchregel am eigenen Verhalten: gebaut wird,
 was dort steht; Neues und nicht Blockierendes wird datierter offener Punkt.
+
+### Takt 18.09.2026, 00:40 UTC — nichts getan ausser Stand nachziehen
+
+Runde 3 ist gebaut (`db7bd9e`, gepusht), meine eigene Suite läuft. Kein
+Eingriff in den Arbeitsbaum.
+
+**Die Zahlendifferenz 329/330 ist geklärt und war kein Befund.** Ein
+bestehender Wächter meldet im Lauf wörtlich „329 `test_*.js` **+ 1 namentlich
+verlangte Einträge** geprüft". Der Executer zählt die 329, ich zähle 330
+einschliesslich des namentlich registrierten Eintrags (`ops/boot-smoke.js`).
+Beide Zahlen sind richtig, sie messen verschiedene Mengen — und der
+Mengenvergleich (`diff` EXIT 0) hatte ohnehin bewiesen, dass nichts
+übersprungen wird. Wer hier künftig eine Zahl gegen eine Notiz hält, prüft die
+Menge.
+
+**Selbst gemessen an Runde 3, alles richtig:** Der neue altersbasierte Ernter
+in allen fünf Fällen — Alt-Form gelöscht, junge Zufallsform (aktiver Download)
+unangetastet, gereifte Zufallsform geerntet, fremder Dateiname unberührt,
+alles ausserhalb von PDF_ROOT unberührt. Studio-Symlink wird gemeldet und
+erzeugt Exit 1 statt stillem Überspringen. Das harte Tor vergleicht jetzt
+Mengen samt gemeldeter Wurzel. F7 verbraucht den flüchtigen Echtheits-Code und
+lässt das dauerhafte Register unberührt. D17/D18/D19 sind wirklich
+dokumentiert, D18 ausdrücklich mit dem Vermerk „durch Codevergleich gefunden,
+NICHT gemessen".
+
+Nächster Schritt, sobald die Suite durch ist: Lint, Marker, Mengenvergleich —
+dann PR, CI, Review-Bot-Kommentare LESEN, Merge, Deploy, live-check.
