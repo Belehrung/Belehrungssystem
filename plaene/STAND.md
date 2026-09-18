@@ -32,15 +32,13 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Doku ins Belehrungssystem-main | gemergt `cbf5c31` (Bot 5/5, vier Befunde behoben) |
 | Verklemmung `qr_token` (#233) | **gemergt `a7ea96a`, Deploy 418 `success`, live-check grün** |
 | Härtung P1+P2 (CSRF-Ausnahmen-Wächter, Body-Härtung) | **gemergt `903247b` (#456), Deploy 424 `success`, live-check `EXIT 0`** — sechs Bau-Runden plus Nacharbeit, Regex→Syntaxbaum |
+| Upload-Härtung Beitrag 1 (multer 2.4.0, Fehlerbehandlung, Lageplan-Datenverlust) | **gemergt `78310b5` (#457)** — Suite `SUITE_EXIT=0`, 0 echte Fehlschläge, Dateizahl-Ritual 337 = 337 (`diff` EXIT 0), Lint 0. Eigene Gegenprobe an einem ANDEREN Wrapper als der Executer: mit Defekt **58/2** (genau dessen zwei Zusicherungen), Rücknahme gegen `cp`-Kopie `diff` EXIT 0, ohne Defekt **60/0**. Fünf Prüfinstanzen (Planprüfung, Astra, Claude-Review, Review-Bot, CI), drei Nacharbeitsrunden. **Deploy: CI für master lief um 16:48 UTC an, Ergebnis siehe unten** |
 | IT-Unterlagen (fünf Dokumente) | **überarbeitet und gepusht** (`fffbb92` + `996078f`), PDFs geliefert. Nicht gemergt — eigener Zweig |
 
-**`/home/user/gymdocu` ist BELEGT** (seit 18.09.2026, ~13:00 UTC). Dort baut
-ein Executer die Upload-Härtung Beitrag 1, Zweig `claude/upload-haertung-1`,
-Basis `903247b`, nach `plaene/auftrag-upload-haertung.md` Fassung 2.
-**Nicht anfassen, bis seine Benachrichtigung da ist** — und eine
-Benachrichtigung ist verbraucht, sobald ich ihn fortgesetzt habe. Nach
-laufenden Prozessen zu suchen ersetzt das nicht: ein Agent kann zwischen zwei
-Kommandos denken, ohne dass `pgrep` etwas findet.
+**`/home/user/gymdocu` ist FREI** (18.09.2026, ~16:55 UTC). Der Executer hat
+gemeldet, sein Beitrag ist gemergt, der Arbeitsbaum steht auf `master`
+(`78310b5`), `git status` sauber, der Lese-Arbeitsbaum `/workspace/gymdocu-lese`
+ist entfernt.
 
 ## Erledigt — Beitrag 1 ist gemergt
 
@@ -3629,6 +3627,8 @@ Neun Befunde, sechs selbst nachgemessen:
 - F3, F6–F8 noch offen; F6–F8 sind als vorbestehend gekennzeichnet.
 
 **`/home/user/gymdocu` ist BELEGT** — dort läuft die Claude-Code-Prüfspur.
+*(Überholt, Verlauf. Seit 18.09.2026 ~16:55 UTC ist der Baum frei — maßgeblich
+ist die Übersicht ganz oben.)*
 `/workspace/gymdocu-lese` ist ein reiner Lesebaum (jetzt auf `71bfcfb`), den
 Astra benutzt hat; abräumbar mit `git worktree remove`.
 

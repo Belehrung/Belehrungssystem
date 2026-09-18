@@ -1346,6 +1346,28 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   Möglichkeit getrennt (`GEGENPROBE-` und `DEFEKT` in zwei Teilen), wie wir
   es aus demselben Grund schon bei `node <testdatei>.js` in Commit-Botschaften
   tun.
+- **`| grep -v node_modules` filtert den INHALT der Zeile, nicht den PFAD — und
+  verschluckt damit genau die Treffer, die den Scan beschreiben.** Gemessen am
+  18.09.2026 im GymDocu-Repo: derselbe Marker-Scan zählt direkt in der Datei
+  **6**, über die Pipeline nur **4**. Die beiden fehlenden Zeilen zitieren das
+  Scan-Kommando selbst und tragen darin das Wort `node_modules`; mein eigener
+  Filter hat sie weggeworfen. Gefährlich ist daran nicht die zu kleine Zahl,
+  sondern die Klasse: **ein ECHTER Sabotage-Rest in einer Zeile, die
+  `node_modules` erwähnt, ist unsichtbar.** Positivkontrolle, je einzeln
+  gemessen an einer eigens angelegten Datei mit der Zeile
+  `rm -rf node_modules/foo   # GEGENPROBE-` + `DEFEKT`: altes Kommando **0
+  Treffer**, neues Kommando **1**. Gegenprobe in die andere Richtung, damit der
+  Ausschluss nicht nur wegfällt: eine echte Datei unter `node_modules/` bleibt
+  mit `--exclude-dir` draussen (**2 → 1**).
+  Der Ausschluss gehört deshalb an `grep` selbst, wo er auf den PFAD wirkt:
+
+      grep -rn --exclude-dir=node_modules --exclude-dir=.git \
+           "GEGENPROBE-DEFEKT\|SABOTAGE" .
+
+  Verallgemeinert, und das trifft jeden nachgeschalteten `grep -v`: **ein
+  Filter, der einen PFAD ausschliessen soll, aber auf ZEILEN wirkt, schliesst
+  auch Funde aus.** Wo ein Werkzeug einen eigenen Pfadausschluss mitbringt
+  (`--exclude-dir`, `:(exclude)` bei git, `--glob '!…'`), wird dieser benutzt.
 - **Eine Behebung kann Wächter BLIND machen, die vorher gesehen haben.**
   Nicht nur „kostet sie Abdeckung" — sie kann eine bestehende Zusicherung
   in eine verwandeln, die nicht mehr fallen KANN. Dreimal gemessen am
