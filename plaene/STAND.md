@@ -2438,3 +2438,38 @@ waren keine Diff-Fragen, sondern Anschlussfragen: „wer ruft das auf?" und „w
 macht dieser Aufruf mit dem Prozess, der ihn ausführt?". Beide Lücken stammten
 aus MEINEN Aufträgen. Für künftige Beiträge, die etwas aus der Kommandozeile in
 den Betrieb holen, ist das der dritte Prüfpunkt neben Richtigkeit und Abdeckung.
+
+### 18.09.2026, 01:52 UTC — #455 AUSGELIEFERT und belegt
+
+- Merge `c40c52f`, Botschaft zurückgelesen, endet auf `-- Ende der Botschaft --`.
+- **Deploy-Lauf 423 auf `head_sha c40c52fb…` = `success`** — also auf genau
+  diesem Merge-Commit, nicht auf einem beliebigen Lauf.
+- **`tools/live-check.sh` EXIT 0**: Landingpage 200, Echtheitsprüfung rendert,
+  Studio-Subdomain weist ab (302), Handbuch 2.9.11 ausgeliefert. Zwei Punkte
+  ehrlich ℹ statt grün (Zertifikatslaufzeit und Health-Endpunkt sind aus dieser
+  Umgebung nicht messbar — bekannt und dokumentiert).
+
+Damit ist der Beitrag ausgeliefert UND belegt. Regel 6a erfüllt, die Meldung an
+den Betreiber geht mit Link raus.
+
+**Neu im Betrieb, weil es eine Löschung ist und das benannt gehört:** täglich
+05:00 läuft der Ernter im Webprozess. Er löscht ausschliesslich unter
+`<PDF_ROOT>/<studio>/Verbandbuch/`, nur die beiden bekannten Namensformen, die
+Zufallsform erst ab einer Stunde Alter, und lehnt Verzeichnis-Symlinks ab.
+
+## Offen, in dieser Reihenfolge
+
+1. **D17/D18/D19** in `docs/offene-befunde-31-08-2026.md` — bewusst nicht
+   gebaut, alle drei fassen geteilte Kernmodule an. D19 ist der wichtigste: das
+   Einzel-PDF gar nicht erst unter PDF_ROOT erzeugen, das löst die Klasse
+   statt sie zu verwalten.
+2. **Härtungsprogramm** (`plaene/pentest-haertung-programm.md`): als nächstes
+   die vier GET-Routen auf POST plus der CSRF-Ausnahmen-Wächter
+   (`plaene/auftrag-haertung-p1-p2.md` liegt fertig), danach API-Härtung,
+   Offboarding-ZIP, Feldverschlüsselung der sieben Spalten (Plan vorher
+   gegenlesen lassen), zuletzt Monats-PDFs in die Warteschlange.
+3. Upload-Wege auf Dateityp und Grösse prüfen — im Programm als „nicht
+   gemessen" gekennzeichnet, noch offen. (Das Abhängigkeits-Audit ist
+   beantwortet: CI-Prüfung grün.)
+4. Die fünf fertigen IT-Dokumente liegen unverschickt in
+   `scratchpad/dok/fertig/` — der Betreiber hatte sie zurückgestellt.
