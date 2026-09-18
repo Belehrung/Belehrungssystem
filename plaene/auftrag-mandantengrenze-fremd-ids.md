@@ -490,3 +490,170 @@ genau diese, sie sind der Beleg, dass die Lücke wirklich geschlossen ist.
 Marker `GEGENPROBE-` + `DEFEKT`, Zielpfad als ARGUMENT, Abbruch bei ≠ 1
 Fundstelle, `node --check`, Rücknahme gegen eine unabhängig angelegte
 `cp`-Kopie mit `diff` EXIT 0 — nie `git checkout`, nie `git stash`.
+
+## Zweite Prüfspur — sechs WEITERE Befunde, keine Überschneidung
+
+Über denselben Diff lief parallel eine zweite, unabhängige Prüfung mit einer
+anderen Prüfrichtung. **Sie hat mit der ersten KEINEN einzigen Befund
+gemeinsam.** Das bestätigt die Messung vom 13.09.2026 ein zweites Mal: zwei
+Spuren finden verschiedene KLASSEN, nicht dieselben Fehler zweimal.
+
+Was sie ausserdem geleistet hat, gehört dazu, weil es die Befunde unten erst
+bewertbar macht: Sie hat **alle** Schreibwege in beide Tabellen aufgelistet
+und einzeln geprüft (neun Stellen, alle gebunden) — einschliesslich einer
+Namensfalle, an der ein `_id`-Suchmuster scheitert: `unterschriften` heisst
+seine Fremdschlüssel `mitarbeiter` und `belehrung`, OHNE `_id`
+(`core/db.js:1161-1162`). Auch dieser Weg ist geprüft und sauber. Ergebnis:
+die beiden vom Beitrag geschlossenen Stellen waren wirklich die Ausreisser.
+
+### N7 — Der Test schickt nie ein `studio_id`-Feld im Rumpf
+
+**Die Mutation, die alle 20 Zusicherungen grün lässt:**
+
+```js
+const etage = await db.one("SELECT id FROM etagen WHERE studio_id = $1 AND id = $2", [req.body.studio_id || req.studioId, eId]);
+```
+
+`postJson()` schickt nur `etage_id`, `x_prozent`, `y_prozent`. Ein Feld
+`studio_id` kommt in der ganzen Testdatei nicht vor, also ist der Rückfall
+immer aktiv und M1 verhält sich unverändert. **Live wäre die Lücke wieder
+offen:** ein Admin von A schickt `{"etage_id": <fremd>, "studio_id": <fremd>}`,
+die Nachschlagung trifft, und der INSERT schreibt `studio_id = A` mit fremder
+`etage_id` — exakt der Zustand vor dem Beitrag.
+
+**Zu bauen:** Eine Anfrage MIT einem fremden `studio_id`-Feld im Rumpf, die
+abgewiesen werden muss. Die Mandantenkennung kommt aus der Sitzung, nie aus
+dem Rumpf — und genau das gehört zugesichert.
+
+### N8 — Ein einzelnes Fremdstudio ist kein Allquantor
+
+**Die Mutation, die alle 20 Zusicherungen grün lässt:**
+
+```js
+const etage = await db.one("SELECT id FROM etagen WHERE (studio_id = $1 OR studio_id = 1) AND id = $2", [req.studioId, eId]);
+```
+
+Die einzige Fremdprobe des Tests ist `etageB` aus dem selbst angelegten
+Studio B. Eine Mutation, die einen ANDEREN Mandanten freistellt (etwa ein
+Demo- oder Vorlagenstudio), ist per Bauart unsichtbar. Der Test sichert zu
+„die Etage von Studio B wird abgewiesen", nicht „jede fremde Etage".
+
+**Zu bauen:** Ein DRITTES Studio anlegen und die Fremdfälle mit BEIDEN
+Fremdstudios fahren. **Ehrlich dazu:** das schliesst die Klasse nicht, es
+verengt sie — eine Mutation, die genau das dritte Studio freistellt, bliebe
+weiter unsichtbar. Es macht die naheliegende Form („ein fest verdrahtetes
+Studio freistellen") aber teuer, und das ist der Gewinn. Diese Einschränkung
+gehört als Kommentar an die Zusicherung, nicht verschwiegen.
+
+### N9 — Der Wächter und der Absturz sind nicht unterscheidbar
+
+**Der schwerwiegendste Befund dieser Spur, und er trifft eine Entscheidung,
+die ICH in Fassung 2 getroffen habe.**
+
+**Die Mutation, die alle 20 Zusicherungen grün lässt:**
+
+```js
+if (!ma) return res.redirect('/admin/belehrungen?feedback=anforderung_fehler');
+```
+
+— also `|| !bel` streichen. Durchgang: bei `eigen/fremd` ist `ma` gefunden,
+der Wächter lässt durch, `bel` ist `null`, und `bel.id` wirft einen
+`TypeError`. Der wird vom bestehenden `catch` gefangen und mündet in
+DENSELBEN Redirect mit DEMSELBEN `feedback`, ohne dass eine Zeile entsteht.
+Alle drei Zusicherungen des Falls bleiben grün.
+
+**Die Ursache ist eine Vorgabe aus MEINEM Papier:** „Die Ablehnung nimmt
+denselben Weg wie der bestehende catch-Zweig — keine neue Rückmeldung
+erfinden." Das war richtig gemeint (keine Oberfläche erfinden, die es nicht
+gibt) und macht Wächterpfad und Absturzpfad **beobachtungsgleich**. Eine
+ergebnisorientierte Zusicherung kann zwei Pfade nicht trennen, die dasselbe
+Ergebnis erzeugen.
+
+**Und es wird schlimmer im Zusammenspiel mit einer ZWEITEN Entscheidung von
+mir:** Fassung 2 hat die Zusicherung „der Rohwert wird nicht eingesetzt"
+ersatzlos gestrichen, mit der Begründung, sie sei Stilfrage und keine
+Sicherheitsaussage. Das stimmt für sich genommen weiterhin. Zusammen mit N9
+ergibt es aber eine Falle: Eine spätere, völlig vernünftige Aufräumarbeit
+(„nicht auf ein möglicherweise leeres Objekt zugreifen, nimm den Rohwert")
+entfernt den unbeabsichtigten zweiten Riegel — und dann ist die Lücke offen,
+alle Zusicherungen grün, und im Kopf der Testdatei steht ausdrücklich, dass
+genau das erlaubt sei.
+
+**Zu bauen — und zwar OHNE eine neue Rückmeldung in der Oberfläche zu
+erfinden:** Der Test muss die beiden Pfade unterscheiden können, der Benutzer
+nicht. Der billigste Weg: zusichern, dass die Ablehnung **ohne
+protokollierten Fehler** erfolgt — der Absturzpfad ruft
+`console.error('Freischalten-Fehler:', e)`, der Wächterpfad nicht. Also
+`console.error` für die Dauer des Falls ersetzen und zählen: beim Wächterfall
+**null** Aufrufe. Fällt der Wächter weg, wird daraus einer, und die
+Zusicherung fällt.
+Dazu den irreführenden Absatz im Kopf der Testdatei berichtigen: die
+Rohwert-Frage ist keine Sicherheitsaussage, aber `bel.id` hier trotzdem nicht
+gegen den Rohwert zu tauschen, solange N9 nicht anders abgesichert ist.
+
+### N10 — Das Redirect-Ziel wird nur als Teilstring geprüft
+
+`/feedback=anforderung_fehler/.test(location)` lässt angehängte
+Unterscheidungsmerkmale durch. **Die Mutation, die grün bleibt:** an den
+Redirect ein `&x=1` hängen, wenn die ID global existiert — ein Orakel über
+fremde Bestände, unsichtbar für den Test.
+
+**Zu bauen:** Das Ziel VOLLSTÄNDIG vergleichen, nicht per Teilstring.
+
+### N11 — Die Browser-Änderung ist völlig ungeprüft
+
+**Die Mutation, die alle 20 Zusicherungen grün lässt:**
+
+```js
+if (res.httpOk){   // statt: if (!res.httpOk){
+```
+
+Damit meldet JEDE erfolgreiche Platzierung „Platzieren fehlgeschlagen: 200"
+und kehrt vor dem Anlegen zurück — **der Lageplan-Editor ist für alle Admins
+aller Mandanten tot**, und kein Test zuckt. `httpOk` kommt in keiner
+Testdatei des Zweigs vor ausser im Kommentar, der die Lücke einräumt.
+
+**Die Begründung im Kopf der Testdatei („rein clientseitig, kein
+Server-Testpfad") trägt NICHT — gemessen:** Das Repo hat genau dafür schon
+ein Werkzeug. `test_feature_lageplan_sicherheit_static.js` liest
+`routes/lageplan.js` per `fs.readFileSync` und prüft Eigenschaften des
+eingebetteten Browserskripts; es ist in `test/run.sh:617` registriert.
+
+**Zu bauen:** Den neuen Zweig dort statisch zusichern — Vorhandensein der
+Prüfung, richtige Richtung (`!res.httpOk`), und dass der Erfolgszweig nicht
+hinter dem `return` liegt. Kein Browserstart, keine echten Dienste.
+
+### N12 — Der HÄUFIGSTE reale Fehlschlag bleibt weiterhin stumm
+
+Der neue Hinweis deckt 400 und 404 ab. Den wahrscheinlichsten Fall deckt er
+nicht: **die abgelaufene Admin-Sitzung bei offenem Lageplan-Tab.**
+
+Gemessen, beide Glieder:
+
+- `core/auth.js`: `requireLogin` hat einen JSON-Zweig
+  (`req.xhr || req.headers.accept?.includes('application/json')` → 401 JSON).
+  **`requireAdmin` hat ihn NICHT** — es macht `res.redirect('/login')`.
+- `api()` ruft `fetch` ohne `redirect`-Option, also mit dem Vorgabewert
+  `follow`. Ein 302 auf einen POST wird verfolgt und wird zu einem GET auf
+  `/login`; der liefert **200 mit HTML**.
+
+Folge: `r.ok === true` → `httpOk: true` → der neue Hinweis feuert NICHT;
+`daten` ist `{}` → `res.id` fehlt → stilles Überspringen. Also genau das
+Verhalten, das der neue Kommentar zu beheben beansprucht.
+
+**Zu bauen (zwei kleine, aufeinander abgestimmte Änderungen):**
+1. `api()` schickt zusätzlich `Accept: application/json`.
+2. `requireAdmin` bekommt DENSELBEN JSON-Zweig wie `requireLogin` — nicht
+   einen neuen erfinden, sondern den vorhandenen spiegeln.
+
+Damit beantwortet eine abgelaufene Sitzung den Aufruf mit 401 JSON,
+`httpOk` ist falsch, und der Hinweis erscheint.
+
+**Das ist eine Verhaltensänderung in einem gemeinsam genutzten Modul** —
+`core/auth.js` hängt vor jeder Admin-Route. Betroffen sind ausschliesslich
+Aufrufer, die `Accept: application/json` senden, also unsere eigenen
+`fetch`-Aufrufe; ein Browser-Seitenaufruf sendet das nicht und wird
+weiterhin umgeleitet. **Miss das nach, statt es zu glauben:** zeige an einer
+gewöhnlichen Admin-Seite, dass sie nach wie vor umgeleitet wird, und am
+`fetch`-Weg, dass er 401 JSON bekommt. Trägt die Abgrenzung nicht, melde es
+und baue NUR `redirect: 'manual'` in `api()` — das ist örtlich begrenzt.
