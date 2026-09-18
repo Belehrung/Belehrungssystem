@@ -3572,3 +3572,65 @@ fährt, rechnet damit.
 **Auftragspapier ist auf Fassung 3.** Der Executer hat alle sieben Punkte
 während seines Laufs per Nachricht bekommen; seine Benachrichtigung ist damit
 verbraucht, der Baum bleibt belegt bis zur NÄCHSTEN Meldung.
+
+### 18.09.2026, ~14:45 UTC — Beitrag gebaut, eigene Prüfung grün, Code-Prüfung läuft
+
+**Der Executer hat geliefert** (Zweig `claude/upload-haertung-1`, HEAD `71bfcfb`,
+gepusht). Bemerkenswert an seinem Vorgehen, weil es für die Arbeitsweise etwas
+hergibt: Er hat **einen eigenen kontaminierten Suite-Lauf erkannt und
+verworfen** (er hatte Messskripte gegen dieselbe DB laufen lassen, während die
+Suite lief — genau die Hausregel, die er selbst verletzt hat), einen hängenden
+Zombie-Prozess abgeschossen und dann isoliert neu gefahren. Er hat **einen
+eigenen Fehler gefunden** (ein Klartext-Passwort in einer neuen Testdatei, vom
+repo-weiten Scanner gemeldet) und behoben. Und er hat mir **an drei Stellen
+widersprochen** — darunter „vier Stellen" in meinem Papier, wo es fünf sind.
+
+**Meine eigene Abnahme, alles selbst gefahren:**
+`SUITE_EXIT=0`, **0 echte Fehlschläge** (die 296 „FAIL"-Treffer im Log sind
+`N PASS / 0 FAIL`-Zeilen — wer sie zählt, misst das Sieb), Dateizahl-Ritual
+**337 = 337**, `diff` **EXIT 0**, `npm run lint` **EXIT 0**. Diff Datei für
+Datei gelesen.
+
+**Zwei eigene Funde beim Lesen:**
+
+- Der neue Wrapper in `routes/lageplan.js` fängt zwei Fehlercodes; alles andere
+  geht weiter an `next(err)` und damit in den Telegram-Alarm. Gemessen: alle
+  drei Grundriss-Formulare haben **genau ein** `input[type=file]` ohne
+  `multiple` — über unsere Oberfläche nicht auslösbar. **Kein Blocker, datiert
+  offen.**
+- **Der Geheimnis-Riegel des Gegenlesers hat die erste Code-Prüfung
+  ABGEBROCHEN** — und das war der Befund. Er schlug auf eine
+  Platzhalter-Verbindungszeichenfolge in der neuen Testdatei an. Kein echtes
+  Geheimnis, bewusst so gebaut. Aber: **keine einzige** bestehende Testdatei
+  trägt dieses Muster, der Kommentar sagt selbst „nie verbindet sich ohnehin
+  jemand mit dieser URL", und die Zeile blockiert **dauerhaft jede künftige
+  Gegenlesung**, die diese Datei im Diff hat. Behebung: Passwort-Segment
+  weglassen. **Ein Riegel, der abbricht statt zu warnen, findet Dinge, nach
+  denen niemand gesucht hat.**
+
+**Astra-Code-Prüfung durch** (erster Lauf auf `xhigh`, **23,69 $** gegen
+12,67 $ bei `high` — der Aufpreis ist gemessen und gehört künftig mitgedacht).
+Neun Befunde, sechs selbst nachgemessen:
+
+- **F1 trägt, blockierend:** die Zusicherung „alle sieben Konfigurationen
+  erreicht" addiert **handgeschriebene Literale** und zählt damit nur, ob sechs
+  Module geladen haben. Wer `FOTOS_AKTIV` abschaltet, lädt das Modul weiter,
+  konstruiert aber keine Konfiguration — und der Test bleibt bei 7. Genau die
+  Abdeckungslüge, die dieser Test verhindern sollte.
+- **F2 trägt:** `includes('ui-banner--error')` ist immer wahr, weil die
+  Zeichenkette als CSS-Regel in jede Seite eingebettet wird.
+- **F4 trägt:** Isolations-Inkonsistenz **innerhalb** des Beitrags — die eine
+  neue Testdatei leitet fünf Verzeichnisse um, die andere drei.
+- **F5 trägt in der Sache, Schwere zu hoch:** die `pdftoppm`-Attrappe ist
+  wirklich ein Kindprozess, aber kontrolliert und nur nach `os.tmpdir()`.
+- **F9 FÄLLT:** „drei Test-SELECTs ohne `studio_id`", als blockierend gemeldet.
+  Gemessen: **133 gleichartige Vorkommen** im Testbestand; die Regel zielt auf
+  produktive Abfragen. **Zweites Mal dieselbe Einstufung** (nach 16.09.).
+- F3, F6–F8 noch offen; F6–F8 sind als vorbestehend gekennzeichnet.
+
+**`/home/user/gymdocu` ist BELEGT** — dort läuft die Claude-Code-Prüfspur.
+`/workspace/gymdocu-lese` ist ein reiner Lesebaum (jetzt auf `71bfcfb`), den
+Astra benutzt hat; abräumbar mit `git worktree remove`.
+
+**Als Nächstes:** auf die Claude-Spur warten, dann **EIN** Nacharbeitsauftrag
+mit allen getragenen Befunden — nicht zwei Runden.
