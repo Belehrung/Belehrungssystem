@@ -3041,3 +3041,82 @@ der Bau.
 
 Läuft: meine eigene volle Suite, und die erste Planprüfung nach der neuen
 Regel (`plaene/plan-upload-haertung.md`).
+
+### 18.09.2026, ~10:0x UTC — Runde 5 abgenommen, Runde 6 beauftragt, Planprüfung ausgewertet
+
+**Eigene Abschlussprüfung an `27241c1`:** Suite **`SUITE_EXIT=0`**, **0 FAIL**;
+Dateizahl-Ritual als MENGENvergleich **335 registriert = 335 gelaufen**,
+`diff` **EXIT 0**; `npm run lint` **EXIT 0**; Marker 6; Wegwerf-DBs entfernt.
+
+**Runde 6 läuft** (`plaene/auftrag-haertung-p1-p2-runde6.md`): genau EINE
+Zusicherung für die unbewachte Body-Härtung. Standard-Executer, kein Fable —
+eine Zusicherung mit selbst gemessener Prämisse ist nicht „sehr komplex".
+
+Der Auftrag stellt ausdrücklich frei, sie NICHT zu bauen, falls sie sich nur
+an eine beliebige Formatierung binden liesse; die vierte Gegenprobe misst
+genau das (harmlose Umformulierung darf nicht rot werden). Eine Zusicherung,
+die bei jeder Umformulierung fällt, wird abgeschaltet statt gelesen.
+
+**Das ist die LETZTE Bau-Runde dieses Beitrags** — Grenze am eigenen
+Verhalten, keine Vorhersage über die Befunde.
+
+## Die erste Planprüfung — und was sie über die neue Regel sagt
+
+`plaene/plan-upload-haertung.md` ist in **Fassung 2** ersetzt.
+Zahlen in `ASTRA-LAEUFE.md`. Kurz:
+
+**Fünf Befunde, drei blockierend, alle gegen MEINEN Plan, bevor eine Zeile
+gebaut war. 6,94 $.** Vier selbst nachgemessen, alle vier zutreffend:
+
+- **sieben** multer-Konfigurationen, nicht sechs — die siebte heisst
+  `seilMulter` (`routes/module.js:1135-1139`, Alias in einem `try/catch`),
+  mein `grep "multer("` traf sie nicht. **Dieselbe Alias-Blindheit, die den
+  CSRF-Wächter drei Runden lang beschäftigt hat, diesmal in meinem eigenen
+  Inventar.**
+- **vier** `fileFilter`, nicht einer.
+- **alle sieben** tragen `fileSize` — ich hatte das als offene Frage in den
+  Plan geschrieben, es war mit einem `grep` beantwortbar.
+- `core/pruefbericht.js:63` trägt zusätzlich `fieldSize: 25 MiB`, womit mein
+  Abbruchkriterium fällt.
+- meine pauschale Aussage „jede Abfrage trägt `studio_id`" stimmt für
+  `routes/verify.js:201` nicht — und dort wäre Nachrüsten SCHÄDLICH, weil die
+  Sicherheitsgrenze der global eindeutige Code ist. Ein Ausführender hätte das
+  womöglich brav „korrigiert".
+
+**Der strukturelle Punkt, der am meisten wert ist:** eine Konfiguration ist
+nicht ein Upload-Weg. Aus sieben werden elf Multipart-Pfade plus drei
+Eingänge ganz ohne multer (CSV über `FileReader` mit SEPARATEM Commit-Eingang,
+Base64-Signaturbilder). Nach Fassung 1 gebaut, hätte am Ende „Upload-Wege
+geprüft" dagestanden — und das wäre falsch gewesen.
+
+**Nebenbefund, vorbestehend, von mir am Quelltext bestätigt:**
+`routes/belehrungen.js:2001` löscht im gemeinsamen Fehlerausstieg die Datei,
+auf die das UPDATE in `:1992-1994` die Datenbank bereits zeigen lässt.
+Dieselbe Struktur beim Einweisungsweg (`:1438-1443` / `:1457`). Gegenmodell im
+Repo: `routes/admin/geraete.js:4839` (`gespeichert`-Kennzeichen). **Datierter
+offener Punkt, nicht in diesem Beitrag gebaut** — aber der Grund, warum im
+Upload-Beitrag kein Phasenmodell fehlen darf.
+
+**Was das über die Regel sagt:** Die Befunde trafen nicht den Code, sondern
+die BEHAUPTUNGEN im Auftragspapier. Genau dafür ist die Regel vom 18.09. da,
+und sie hat sich am ersten Tag bezahlt gemacht.
+
+## Offen, in dieser Reihenfolge
+
+1. Runde 6 abnehmen, dann Beitrag abschliessen: PR, Bot-Kommentare VOR den
+   Checks lesen, CI grün am aktuellen Kopf, Merge, Deploy-Lauf, live-check.
+2. **Upload-Härtung** nach `plaene/plan-upload-haertung.md` Fassung 2 — zuerst
+   die dort benannten Nachmessungen (elf Wege, drei Nicht-multer-Eingänge,
+   vier Fehlerbehandlungsstellen), dann Bauauftrag.
+3. `nodemailer` auf 10.x als eigener PR, `npm diff` vorab.
+4. `qs` 6.16.0 mitziehen, wenn Express es liefert.
+5. Rest des Härtungsprogramms: API-Härtung, Offboarding-ZIP,
+   Feldverschlüsselung der sieben Spalten (Plan zuerst gegenlesen lassen —
+   unwiderruflich, Migration über alle Studios), Monats-PDFs in die
+   Warteschlange.
+6. Danach die fünf IT-Dokumente überarbeiten (Betreiber-Auftrag 18.09.,
+   Quellen liegen jetzt in `dokumente/it-unterlagen/`).
+7. Datierte offene Punkte aus diesem Beitrag: E2E-Nachspiel des gerenderten
+   Formulars, Rückfalltext der Wartungsmail ohne `basis_url`, Unit-Test für
+   `pruefePdfRootSicher`, und der Integritätsfehler in
+   `routes/belehrungen.js:2001`.
