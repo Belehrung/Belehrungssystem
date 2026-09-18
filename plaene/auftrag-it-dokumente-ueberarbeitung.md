@@ -136,3 +136,21 @@ Je Dokument: was gestrichen wurde (stichwortartig), was inhaltlich geändert
 wurde, und **welche Stelle dir beim Arbeiten falsch oder widersprüchlich
 vorkam** — auch wenn du sie nach Auftrag so gelassen hast. Dazu: die Zeichen-
 zahl je Datei vorher und nachher.
+
+### B7 — die Härtung, die am 18.09.2026 dazugekommen ist
+
+Gemergt und im Ausrollen. Gehört in `02-Sicherheit-und-Datenschutz.html`,
+**ein bis zwei Sätze, nicht mehr** — für eine fremde IT ist das ein Detail,
+aber ein sicherheitsrelevantes:
+
+- Vier Aktionen, die Dokumente erzeugen bzw. eine Mail auslösen, liefen bisher
+  über einen einfachen Seitenaufruf und damit am Herkunftsschutz vorbei; sie
+  sind jetzt Formularabsendungen und laufen durch ihn hindurch.
+- Ein automatischer Wächter hält fest, welche Wege bewusst vom Herkunftsschutz
+  ausgenommen sind (sie tragen eine eigene Anmeldung). Kommt dort ein neuer
+  schreibender Weg dazu, wird die Auslieferung rot, bis jemand die Ausnahme
+  ausdrücklich bestätigt.
+
+**Nicht hineinschreiben**, wie der Wächter gebaut ist (Syntaxbaum, Töpfe,
+Vielfachheit) — das interessiert dort niemanden und macht den Text länger,
+nicht besser.
