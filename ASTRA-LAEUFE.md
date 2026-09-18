@@ -115,6 +115,8 @@ sondern falsch.
 | 18.09.2026 | **PLANPRUEFUNG** Mandantengrenze Fremd-IDs, vor der ersten Bau-Runde | Diff 7036 Zeilen, Suchen 41, Lesungen 52, Token rein 2723506, Token raus 19639, Runden 15 | 6 (1 blockierend) | **6** | 0 | 35,52 $ |
 | 18.09.2026 | SICHERHEIT C: Datenabfluss (Neustart nach Guthaben) | Diff 282 Zeilen, Suchen 67, Lesungen 110, Token rein 3411776, Token raus 24910, Runden 26 | 10 (2 blockierend) | 2 bisher (D1 Gate-Umgehung, F1 Dateiloeschung) | 0 | 44,52 $ |
 | 18.09.2026 | **PLANPRUEFUNG** Zusicherung Shell/qpdf/stiller catch, vor der ersten Bau-Runde | Diff 3289 Zeilen, Suchen 31, Lesungen 56, Token rein 1606111, Token raus 24732, Runden 13 | 5 (2 blockierend) | **5** | 0 | 21,93 $ |
+| 18.09.2026 | **CODEPRUEFUNG** Upload-Haertung 2a vor dem Merge | Diff 2018 Zeilen, Suchen 26, Lesungen 38, Token rein 766614, Token raus 25127, Runden 10 | 6 (1 blockierend, 1 Regress) | **6** | 0 | 11,47 $ |
+| 18.09.2026 | **PLANPRUEFUNG** Gate-Endungsausnahme, Symbol-XSS, doppelte Dekodierung | Diff 3673 Zeilen, Suchen 62, Lesungen 82, Token rein 2822763, Token raus 22255, Runden 20 | 6 (2 blockierend) | **6** | 0 | 36,95 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -1455,3 +1457,50 @@ hinausgegangen — nicht gegen ihn, sondern weiter:
 Das ist dieselbe Trennung wie am 13.09.2026, nur andersherum: **der Prüfer
 findet den Zustand, die eigene Messung findet seinen Umfang.** Wer nur den
 Bericht umsetzt, baut beide Male das Richtige — aber zu klein.
+
+
+## 18.09.2026, spaeter Abend — die Planpruefung steht jetzt bei 17 von 17
+
+Nach zwei weiteren Laeufen (Gate-Beitrag als PLAN, Upload-Beitrag 2a als
+fertiger CODE) sieht die Bilanz des Abends so aus:
+
+| Lauf | Art | Befunde | getragen | blockierend |
+|---|---|---|---|---|
+| Mandantengrenze | Plan | 6 | 6 | 1 |
+| Zusicherung/qpdf | Plan | 5 | 5 | 2 |
+| Gate/XSS/Dekodierung | Plan | 6 | 6 | 2 |
+| Upload-Haertung 2a | Code | 6 | 6 | 1 (+1 Regress) |
+
+**23 Befunde, 23 getragen, null gefallen.** Vier von ihnen widerlegten eine
+BEHEBUNG statt eines Befunds, zwei einen Satz, der in meinem Papier als
+Tatsache stand.
+
+**Der teuerste eigene Fehler des Abends steht im Gate-Papier** und ist ein
+Lehrbuchfall aus dieser Datei: Ich hatte behauptet, keine dynamische Route
+ende auf eine Asset-Endung — gesucht hatte ich nach Routen-LITERALEN. Die
+Grundriss-Auslieferung traegt die Endung im PARAMETER
+(`tabletRouter.get("/grundriss/:datei")`, Dateien `etage_<id>_<uuid>.jpg`).
+Die Regel „erst das Muster an einer bekannten Fundstelle LERNEN, dann damit
+suchen" steht seit dem 18.09. vormittags in der CLAUDE.md, aufgeschrieben
+nach drei Fehlschlaegen derselben Art am selben Tag. Sie hat mich am selben
+Abend ein viertes Mal erwischt.
+Das Ergebnis der Nachmessung war am Ende guenstig (die einbindenden Seiten
+liegen selbst hinter dem Gate, die Ausnahme ist dort ein zweites Leck) — aber
+das war Glueck, nicht Methode.
+
+**Zwei Befunde haben die SCHWERE erhoeht, nicht nur die Begruendung:**
+
+- Der Gate-Befund betrifft auch einen SCHREIBWEG (`POST /module/seil-foto/
+  123.jpg` schreibt Datei und DB-Zeile ohne PIN). Fassung 1 nannte nur
+  Lesewege. Ein Waechter, der nur Statuscodes prueft, haette das nicht
+  gefangen — er muss null SCHREIBAUFRUFE verlangen.
+- Der Upload-Beitrag hatte einen REGRESS, den weder der Ausfuehrende noch ich
+  gesehen hatten: `ENAMETOOLONG` bei einem 244 Zeichen langen Dateinamen ist
+  weder MulterError noch Filtertext, geht also ab 2a an `next(err)` — aus
+  einer Fehlerseite wird HTTP 500 mit Telegram-Alarm, ausgeloest durch eine
+  Benutzereingabe. Selbst nachgerechnet: 27 Byte Praefix + 244 = 271 gegen
+  die 255-Byte-Grenze.
+
+**Und ein Befund war wortwoertlich fatal:** „die Regex-Zeile entfernen" haette
+ein haengendes `||` hinterlassen — Syntaxfehler. Eine Anweisung, die man
+woertlich befolgen soll, muss woertlich stimmen.
