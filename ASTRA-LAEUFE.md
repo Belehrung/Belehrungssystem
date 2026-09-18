@@ -103,6 +103,7 @@ sondern falsch.
 | 18.09.2026 | CODE-Pruefung Upload-Haertung Beitrag 1 vor dem Merge (Astra) | **ABGEBROCHEN durch den eigenen Geheimnis-Riegel** — Diff 1104 Zeilen, Suchen 0, Lesungen 0, Token rein 0, Token raus 0, Runden 0. **Es wurde NICHTS gesendet und NICHTS geprueft.** | — | — | — | 0,00 $ — **aber der Abbruch war der Befund.** Der Riegel schlug auf `postgresql://gymdocu:PASSWORT@127.0.0.1/gymdocu_test` in der neuen Datei `test_feature_multer_2_4_bestandsschutz.js` an. **Kein echtes Geheimnis:** dort steht woertlich der Platzhalter `PASSWORT`, der Ausfuehrende hat das bewusst so gebaut, ausfuehrlich begruendet und sogar den repo-weiten Klartext-Scanner beruecksichtigt. Der Riegel unterscheidet aber keine Platzhalter — und das ist richtig so, er bricht ab statt zu warnen. **Der Befund dahinter traegt trotzdem, und ich haette ihn ohne den Abbruch nicht gesucht:** (1) `grep` ueber den Testbestand — **KEINE einzige** bestehende Testdatei traegt dieses Muster; das etablierte ist `process.env.DATABASE_URL` OHNE Fallback-Literal. (2) Der Kommentar des Ausfuehrenden sagt selbst „nie verbindet sich ohnehin niemand mit dieser URL" — das Passwort-Segment ist also schlicht ueberfluessig. (3) Die Folge ist nicht kosmetisch: die Zeile blockiert DAUERHAFT jede kuenftige Gegenlesung, die diese Datei im Diff hat. Behebung: Passwort-Segment weglassen (`postgresql://gymdocu@127.0.0.1/gymdocu_test` ist eine gueltige URL), sobald der Arbeitsbaum frei ist. **Lehre fuer die Arbeitsweise: ein Riegel, der abbricht statt zu warnen, findet Dinge, nach denen niemand gesucht hat** — der Lauf wurde mit bereinigtem Material wiederholt, siehe naechste Zeile |
 | 18.09.2026 | **CODE-Pruefung** Upload-Haertung Beitrag 1 vor dem Merge (Astra; **die Beschriftung „effort `xhigh`“ war FALSCH** — gemessen 18.09.2026 setzt `tools/gegenleser-repo.js` gar kein `reasoning`, der Lauf lief auf der Voreinstellung) | Diff 1104 Zeilen, Suchen 73, Lesungen 49, Token rein 1795110, Token raus 16628, Runden 22 | 9 (4 als blockierend gemeldet) | **bisher 6 selbst nachgemessen, 5 getragen** | **1 ganz, 1 in der Schwere** — 3 noch offen | **Der erste Lauf, bei dem die SUITE SCHON GRUEN war** (`SUITE_EXIT=0`, 0 Fehlschlaege, Dateizahl 337=337, Lint 0) — der Brief fragte deshalb nicht „laeuft es", sondern „ist es gruen aus dem RICHTIGEN Grund". GETRAGEN: **F1 (blockierend, und der teuerste):** die Zusicherung „alle SIEBEN Konfigurationen erreicht" addiert HANDGESCHRIEBENE Literale aus der `MODULE`-Liste und zaehlt damit nur, ob sechs Module geladen haben — nicht, ob sieben multer-Konstruktoren liefen. Wer `FOTOS_AKTIV` in `routes/sichtpruefung.js` abschaltet, laedt das Modul weiterhin, konstruiert aber KEINE Konfiguration, und der Test zaehlt trotzdem `anzahl: 1` und bleibt bei 7. Beide Seiten des Vergleichs stammen aus derselben Quelle — genau die Abdeckungsluege, die dieser Test verhindern sollte. **F2:** `seiteExe.text.includes("ui-banner--error")` ist IMMER wahr, weil die Zeichenkette als CSS-Regel in `core/ui-feedback.js:71` steht und ueber `UI_FEEDBACK_CSS` in jede Lageplan-Seite eingebettet wird (`routes/lageplan.js:1342`); ein `tone: "success"` statt `"error"` fiele nicht auf. Der Titel-Teil derselben UND-Verknuepfung bewacht dagegen etwas. **F4:** Isolations-Inkonsistenz INNERHALB des Beitrags — `test_feature_multer_2_4_bestandsschutz.js` leitet FUENF Verzeichnisse um (inkl. `EINWEISUNG_NACHWEIS_DIR`, `DEFECT_PHOTO_DIR`), `test_feature_upload_fehlerbehandlung.js` nur DREI; derselbe Ausfuehrende hat es einmal vollstaendig gemacht und einmal vergessen. **F5 (Schwere zu hoch):** die `pdftoppm`-Attrappe ist in der Sache wirklich ein echter Kindprozess (PATH-Attrappe, gestartet wird node statt poppler) — aber sie ist vollstaendig kontrolliert und schreibt nur nach `os.tmpdir()`; der Zweck der Regel (keine Live-Eingriffe) ist gewahrt. Was traegt, ist der KOMMENTAR, der mehr Isolation behauptet als besteht. **GEFALLEN (1 ganz): F9** — „drei neue SELECTs ohne `studio_id`", als BLOCKIEREND gemeldet. Gemessen: allein die acht haeufigsten Varianten von `SELECT … FROM … WHERE id=$1` ohne `studio_id` ergeben **133 Vorkommen** im Testbestand; es sind Fixture-Lesezugriffe auf selbst eingefuegte IDs, und die Regel zielt auf PRODUKTIVE Abfragen. Astra raeumt die Eindeutigkeit sogar selbst ein und stuft trotzdem blockierend ein. **Das ist das ZWEITE Mal, dass genau diese Einstufung faellt** (nach dem 16.09.) — zusammen mit der Testisolations-Klasse der zweite systematische blinde Fleck. NOCH OFFEN, nicht nachgemessen: F3 (Aufraeumen/Dateiintegritaet unbewacht), F6/F7/F8 (alle als VORBESTEHEND gekennzeichnet, gehoeren in die offenen Punkte, nicht in diesen Beitrag). **Zur Stufe:** `xhigh` kostete hier **23,69 $** gegen 12,67 $ bei `high` am selben Tag — der Aufpreis ist real und gehoert bei der naechsten Wahl mitgedacht | **23,69 $** |
 | 18.09.2026 | Planpruefung Upload-Haertung 2, RUNDE 2 (neuer Entwurf: Markierung an der Quelle) | Diff 235 Zeilen, Suchen 30, Lesungen 40, Token rein 909495, Token raus 9012, Runden 13 | 7 (3 blockierend) | **3 bisher, alle 3** | 0 (4 noch nicht nachgemessen) | 12,04 $ |
+| 18.09.2026 | SICHERHEIT: Fremd-ID ohne Zugehoerigkeitspruefung, systematische Suche in routes/ | Diff 2853 Zeilen, Suchen 86, Lesungen 95, Token rein 3646637, Token raus 14871, Runden 26 | 3 (F1 bekannt, **F2 neu**, F3 Anmerkung) | **3, alle** | 0 | 46,70 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -1264,3 +1265,36 @@ Das ist die Klasse „ein Kommentar behauptet eine Begründung, die es nicht
 gibt" — hier in einem MESSPROTOKOLL, wo sie besonders teuer ist: eine Zeile,
 die eine Einstellung behauptet, die nicht gesetzt war, entwertet jeden
 späteren Vergleich über diese Einstellung.
+
+## Sicherheitslauf 18.09.2026 — der teuerste Lauf bisher, und er hat geliefert
+
+**3.646.637 Eingabe-Token über 26 Runden, 86 Suchen, 95 Lesungen.** Das ist
+das 46-fache des handgebündelten Laufs vom selben Tag (79.520) und weit über
+allem bisherigen. Anlass war die Betreiber-Weisung „versuche mit allen Mitteln
+Lücken zu finden und zu schliessen".
+
+**Drei Befunde, alle drei selbst nachgemessen, alle drei getragen:**
+
+- **F1** `POST /api/position` — `etage_id` aus dem Body ungeprüft. War bereits
+  aus der Planprüfung bekannt; hier unabhängig bestätigt.
+- **F2 — NEU:** `POST /admin/belehrungen/freischalten/:belehrungId` nimmt
+  BEIDE Fremd-IDs ungeprüft (`mitarbeiter_id` aus dem Body, `belehrungId` aus
+  dem Pfad) und schreibt sie in einen Upsert. `belehrung_freischaltung` hat
+  **keinen** Fremdschlüssel auf Mitarbeiter oder Belehrungen — auch nicht
+  existierende IDs gehen durch.
+- **F3** Anmerkung: `ausmusterungToken.beanspruche()` setzt
+  `eintrag.verbraucht = true`, BEVOR `daten.studioId !== req.studioId` geprüft
+  wird. Wer einen fremden Token kennt, kann ihn entwerten.
+
+**Was den Lauf trägt, ist nicht die Zahl der Befunde, sondern WELCHE.** F2 ist
+genau die Stelle, die meine eigene Textsuche ZWEIMAL als „in Ordnung"
+abgehakt hatte — aus demselben Grund wie bei F1: `studio_id` steht dort, aber
+als EINGESETZTER Wert im INSERT, nicht als Prüfung. Eine Mustersuche kann
+diese Klasse nicht sehen; sie ist eine Frage nach dem Kontrollfluss.
+
+**Die Einordnung kam wieder vom eigenen Nachmessen, nicht aus dem Bericht** —
+wobei der Prüfer diesmal selbst sehr vorsichtig eingestuft hat (er nennt bei
+jedem Befund ausdrücklich, was der Angreifer NICHT erreicht). Nachgemessen
+gilt: keine der drei erlaubt das LESEN fremder Daten, und bei F2 ist
+`studio_id` Teil des Konfliktschlüssels, also gibt es kein Schreiben in fremde
+Zeilen. Es bleibt Datenintegrität, kein Datenabfluss.
