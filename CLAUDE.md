@@ -1599,9 +1599,19 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   Es gibt ZWEI Auslieferungswege, und sie verhalten sich gegensätzlich —
   wer nur einen ansieht, zieht den falschen Schluss (26.08.2026):
   `gymdocu-deploy` (`/usr/local/bin/`, von Hand) fährt `test/run.sh` auf dem
-  Server als PFLICHT-Gate (`ops/gymdocu-deploy:156`, Notausgang nur
-  `GYMDOCU_SKIP_TESTS=1`); GitHub Actions → `ops/deploy.sh` fährt sie dort
-  bewusst NICHT (Begründung im Kopf von `.github/workflows/deploy.yml`).
+  Server als PFLICHT-Gate (Notausgang nur `GYMDOCU_SKIP_TESTS=1`); GitHub
+  Actions → `ops/deploy.sh` fährt sie dort bewusst NICHT (Begründung im Kopf
+  von `.github/workflows/deploy.yml`).
+  **Die Fundstelle `ops/gymdocu-deploy:156` stand hier bis zum 18.09.2026 und
+  ist falsch: diese Datei existiert im Repo NICHT und hat nie existiert**
+  (gemessen: `test -f` negativ, `git log --diff-filter=D` leer). Das Skript
+  liegt ausschliesslich auf dem Server unter `/usr/local/bin/`. Folge, und sie
+  ist unangenehm: **aus dem Repo heraus lässt sich NICHT belegen, ob und mit
+  welchen Umgebungsvariablen die Suite dort läuft.** Wer eine Aussage darüber
+  braucht — etwa ob ein Test auf dem Server echte Dienste erreicht —, misst
+  sie auf dem Server oder führt sie als UNBESTÄTIGT. Die Regel „Tests fassen
+  keine echten Dienste an" bleibt davon unberührt; sie gilt gerade WEIL der
+  strengere Weg nicht einsehbar ist.
   Maßgeblich ist der strengere Weg: die Regel gilt.
 - **Tests dürfen nicht an Prosa scheitern.** Statische Prüfungen über Quelltext
   entfernen zuerst Kommentarzeilen — sonst schlägt der Wächter am erklärenden
