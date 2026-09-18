@@ -1,4 +1,4 @@
-# Auftragspapier — Upload-Härtung, Beitrag 1 (Fassung 2)
+# Auftragspapier — Upload-Härtung, Beitrag 1 (Fassung 3)
 
 **Repo:** `/home/user/gymdocu`, Zweig von `master` (`903247b`).
 **Grundlage:** `plaene/plan-upload-haertung.md` Fassung 3.
@@ -26,6 +26,18 @@ Satz der Form „X ist so, weil Y" ist eine Tatsachenbehauptung über Y** — au
 mitten in einem Auftragspapier. Fassung 1 hatte genau eine Behauptung
 ausdrücklich als „meine Messung, miss sie nach" gekennzeichnet; **diese eine
 trug.** Die ungekennzeichneten trugen nicht.
+
+**Fassung 3 trägt eine ZWEITE Prüfspur ein.** Über Fassung 2 lief der externe
+Gegenleser mit einem bewusst ANDEREN Auftrag: nicht „stimmen die Zeilen", sondern
+„welcher Zustand wird nie hergestellt, was folgt für den Betrieb, welcher Satz ist
+hergeleitet statt gemessen". Ergebnis: **sieben Befunde mit NULL Überschneidung zur
+ersten Spur** — sechs selbst nachgemessen und getragen, einer in der Schwere
+gefallen. Die Trennung der BRIEFE hat die Trennung der BEFUNDE erzeugt; wer beiden
+Spuren denselben Auftrag gibt, bezahlt zweimal für dieselbe Klasse.
+
+Zwei davon trafen wieder eine Tatsachenbehauptung von mir (B3.2, A3), einer einen
+Datenverlust im Bestand (B2), einer eine Zusicherung, die grün bleibt, während der
+Benutzer nichts sieht (B3.1).
 
 ## Schnitt — was in diesem Beitrag NICHT gebaut wird
 
@@ -123,10 +135,19 @@ Literalen, keines kommt aus `process.env`. Die Planprüfung hat das bestätigt.
 Dazu, ausdrücklich als **Bestandsschutz** beschriftet (sie belegen keine neue
 Härtung und erst recht nicht den CVE-Fix):
 
-- Alle elf Multipart-Wege funktionieren nach dem Sprung unverändert. Elf, nicht
-  zehn: die elfte entsteht aus der Schleife über `TYP_CONFIG` in
-  `routes/sichtpruefung.js` (zwei Einträge, `cardio` und `kraft`).
-- Die Grössengrenzen greifen weiterhin.
+- **Alle sieben Konfigurationen laden, und ihre Grenzen greifen weiterhin.**
+
+**Und NICHT mehr als das.** Fassung 2 verlangte hier „alle elf Multipart-Wege
+funktionieren nach dem Sprung unverändert" und sagte zwei Abschnitte später, Teil A
+fahre gar keine Route an. Beides zusammen geht nicht: eine Konfiguration zu laden
+beweist weder die Registrierung eines HTTP-Wegs noch seinen Feldnamen, seinen
+Wrapper oder die Übergabe an den Fachhandler. Eine einzige geänderte Pfadzeile in
+`routes/sichtpruefung.js` liesse eine solche Zusicherung grün, während der POST-Weg
+tot ist.
+
+**Schreib deshalb nirgends „alle elf Wege geprüft"** — nicht im Testnamen, nicht im
+Kommentar, nicht in der Commit-Botschaft. Gedeckt sind die sieben Konfigurationen
+plus die Wege, die Teil B ohnehin anfährt.
 
 ### A4 Drei Änderungen in 2.4.0, die man beim Diff-Lesen kennen muss
 
@@ -205,10 +226,43 @@ Fehlerstatus", und das wäre falsch.
 `res.redirect`, unterschieden nur durch `feedback=` (`upload_fehlt`,
 `pdf_fehler`, `grundriss_gespeichert`, `verarbeitung_fehler`).
 
-**Hier wird nichts am Verhalten geändert.** Gebaut wird eine Zusicherung mit
+**Am Weiterleiten wird nichts geändert.** Gebaut wird eine Zusicherung mit
 echtem Vertrag: der Test prüft den `feedback`-Wert im `Location`-Header
 wörtlich, **nicht** „wurde weitergeleitet". Letzteres ist bei dieser Route
 immer wahr und kann nicht rot werden.
+
+**Aber EINE Verhaltensänderung kommt hinzu, und sie ist nicht verhandelbar: der
+Weg verliert heute bei einem Teilfehlschlag den vorhandenen Grundriss.**
+Die Reihenfolge im Erfolgszweig lautet:
+
+    alte Datei aus der DB ermitteln
+    fs.unlinkSync(alte Datei)          <- unwiderruflich, VOR allem anderen
+    fs.writeFileSync(neue Datei)
+    UPDATE etagen SET grundriss_datei=…
+    catch -> feedback=verarbeitung_fehler
+
+Scheitert das Schreiben oder das UPDATE, ist der alte Grundriss **weg** und die
+Datenbank zeigt weiter auf ihn. Der Benutzer liest „Grundriss konnte nicht
+verarbeitet werden" und hat in Wahrheit seinen vorhandenen verloren.
+
+**Das ist NICHT der im Schnitt ausgeschnittene Integritätsfehler.** Jener liegt in
+`/neue-version/:id` und bräuchte ein Phasenmodell (ab wann gehört die Datei zum
+Nachweis?). Dieser hier ist eine reine Umordnung und folgt einer ausdrücklichen
+Hausregel: *„`unlinkSync()` lässt sich ohnehin nie zurückrollen — Dateilöschungen
+gehören NACH den Commit."* Genau deshalb wird er behoben und jener nicht.
+
+**Bau:** die alte Datei erst löschen, **nachdem** das UPDATE durch ist.
+
+**Miss:** eine Etage mit vorhandenem Grundriss, ausschliesslich das UPDATE
+fehlschlagen lassen; danach muss die **alte Datei noch da** und der DB-Dateiname
+unverändert sein. **Auf dem alten Stand muss dieselbe Zusicherung ROT sein** —
+sonst bewacht sie nichts.
+
+**Was dabei schlechter wird, und warum es trotzdem richtig ist:** im Fehlerfall
+bleibt die neue Datei verwaist liegen. Eine überzählige Datei auf der Platte ist
+harmloser als ein verlorener Grundriss mit einem DB-Verweis ins Leere. Schreib
+diese Abwägung als Kommentar daneben, sonst räumt sie jemand als „Schlamperei"
+wieder um.
 
 ### B3 Ein falscher Dateityp ist von „gar keine Datei" nicht zu unterscheiden
 
@@ -236,19 +290,60 @@ Bau deshalb so:
 
 1. **Die Route auf das Wrapper-Muster der anderen neun umstellen**, damit der
    Fehler im Handler ankommt und dieser `feedback=falscher_dateityp` setzen
-   kann.
-2. **`LIMIT_FILE_SIZE` ausdrücklich unverändert lassen.** Es fällt heute
-   ebenfalls in den globalen Behandler und bekommt dort eine eigene 413-Seite.
-   Der Wrapper darf das nicht nebenbei mitändern — und wenn es sich nicht
-   vermeiden lässt, wird es als gewollt benannt und gemessen, nicht
-   stillschweigend geändert.
+   kann. **Und den Definitionseintrag mitbauen** — sonst zeigt der neue Code dem
+   Benutzer GAR NICHTS: die Rückmeldungen des Lageplan-Editors sind eine feste
+   Liste (`upload_fehlt`, `pdf_fehler`, `verarbeitung_fehler`, je mit `tone` und
+   Text), und `core/ui-feedback.js` liefert für einen unbekannten Code
+   ausdrücklich `""`. Ohne Eintrag lehnt die Route die `.exe` korrekt ab, liefert
+   den richtigen `Location` — **und alle Zusicherungen unten wären grün, während
+   der Benutzer keine Erklärung sieht.**
+   Zusicherung dafür: dem Redirect per GET folgen und den Text im Fehlerbanner
+   erwarten. **Gegenmutation: nur den Definitionseintrag entfernen** — genau
+   diese Anzeigeprüfung muss fallen. Gilt gleichermassen für den neuen
+   `LIMIT_FILE_SIZE`-Code.
+2. **`LIMIT_FILE_SIZE` MIT aufnehmen — Fassung 2 stand hier auf einer falschen
+   Annahme.** Sie schrieb, der Fall bekomme im globalen Behandler „eine eigene
+   413-Seite", und verlangte, ihn unverändert zu lassen. Gemessen:
+
+       node -e 'const M=require("multer").MulterError; const e=new M("LIMIT_FILE_SIZE");
+                console.log({code:e.code, type:e.type, status:e.status})'
+       -> code "LIMIT_FILE_SIZE", type undefined, status undefined
+
+   Der Behandler prüft `err.type === 'entity.too.large' || err.status === 413`.
+   Ein `MulterError` erfüllt **keines von beidem**. Eine zu grosse Lageplan-Datei
+   bekommt also **heute schon 500 plus Telegram-Alarm** — genau der Zustand, den
+   dieser Abschnitt für den falschen Dateityp beseitigt. Wäre Fassung 2 gebaut
+   worden, stünde der eine Alarm-Auslöser beseitigt und der andere
+   ausdrücklich geschützt daneben.
+
+   Gib `LIMIT_FILE_SIZE` im neuen Wrapper deshalb einen **eigenen
+   `feedback`-Wert**. Miss den Istzustand vorher wörtlich (500, `melde` gerufen)
+   und danach (Redirect, `melde` nicht gerufen) — beide Richtungen.
 3. **Gemessen wird der ABLEHNUNGSweg**, nicht nur der Erfolgsweg: `.exe` hoch →
    `Location` enthält `feedback=falscher_dateityp`, **kein** 500, und
    **`errorTracker.melde` wurde NICHT gerufen** (Attrappe — dieselbe Suite ist
    auf dem Live-Server Deploy-Gate, ein echter Telegram-Aufruf aus einem Test
    ist eine Waffe).
+   **Davor gehört eine Positivkontrolle, sonst misst dieser Punkt nichts.** Die
+   vorhandenen Test-Apps bauen Express **ohne** den globalen Fehlerbehandler; in
+   so einer App bleibt die `melde`-Attrappe auch dann unberührt, wenn die Route
+   fälschlich `next(err)` ruft — Express übernimmt dann selbst. Sichere deshalb
+   ZUERST zu, dass die Attrappe bei einem kontrolliert durchgereichten Fehler
+   **genau einmal** gerufen wird; erst danach der `.exe`-Fall mit Erwartung null.
+   Unsere Regel dazu: ein negatives Ergebnis zählt nur, wenn dieselbe Methode
+   nachweislich ein positives liefern kann.
 4. Zusätzlich der Erfolgsweg, **vier Typen einzeln** (PNG, JPEG, WEBP, PDF).
    Eine Stichprobe mit einem Typ belegt die anderen drei nicht.
+   **Der PDF-Zweig bekommt eine Konverter-Attrappe.** Er ruft
+   `pdfErsteSeiteAlsPng()`, und das ist `execFileSync("pdftoppm", …)` mit 15 s
+   Timeout — ein **echter Prozess** in einer Suite, die auf dem Live-Server das
+   Deploy-Gate ist. `pdftoppm` ist hier zwar vorhanden, und der
+   Systemeingriffe-Wächter erlaubt harmlose lokale Werkzeuge über eine
+   ausdrückliche Liste; die Attrappe ist trotzdem der richtige Weg, weil sie
+   zugleich der Nachweis ist, dass der PDF-Zweig überhaupt betreten wurde.
+   **Beschrifte den Test als Routenvertrag mit Attrappe**, nicht als Beweis, dass
+   poppler funktioniert. Findest du einen sauberen Weg ohne Attrappe: melde ihn,
+   bevor du ihn baust.
 
 Fassung 1 verlangte nur die vier Erfolgsmessungen — also ausgerechnet nicht den
 Weg, um dessentwillen die Änderung stattfindet.
@@ -289,8 +384,15 @@ herausgelösten Helfer mit denselben Argumenten, die die Tests benutzen** — es
 gibt keinen Aufrufweg, den nur der Test kennt.
 
 **Abnahme der Herauslösung:** `test_feature_pruefbericht.js` vorher und
-nachher laufen lassen, beide Zahlen wörtlich melden. Gleiche PASS, gleiche
-FAIL — sonst ist Abdeckung verloren gegangen.
+nachher laufen lassen, beide Zahlen wörtlich melden.
+
+**Gleiche PASS und FAIL sind dabei notwendig, aber KEIN Nachweis des
+Abdeckungserhalts.** Dieselben Zahlen überleben auch, wenn eine Bedingung durch
+`true` ersetzt wird oder eine Prüfung wirkungslos geworden ist — dieselbe Klasse
+wie „eine Zahl ist keine Menge". Prüf deshalb zusätzlich, dass **beide Adapter
+dieselben Pfade, Feldnamen, Nutzdaten und Redirect-Einstellungen weitergeben wie
+vorher**. Die Mutationspflicht gilt für NEUE Zusicherungen; den Verlust
+bestehender bewacht sie nicht.
 
 Nebenbei: Teil A braucht diesen Helfer **nicht** (dort wird keine Route
 angefahren). Nur B braucht ihn.
@@ -307,6 +409,27 @@ zweiter Schreibweg im Zuschneide-Pfad.
 
 **Hier nicht anfassen.** Aber ohne sie wäre der Satz „Upload-Wege geprüft"
 unvollständig, und genau deshalb steht sie hier.
+
+## Testisolation — was gilt und was ausdrücklich NICHT gilt
+
+Die zweite Prüfspur meldete als blockierend, dass `EINWEISUNG_NACHWEIS_DIR` und
+`DEFECT_PHOTO_DIR` in `test/run.sh` nicht umgeleitet werden, obwohl schon das
+Modulladen ein `mkdirSync` auslöst (`routes/belehrungen.js`,
+`routes/sichtpruefung.js`).
+
+**Die Tatsache trägt, die Schwere nicht — nachgemessen.** **27** bestehende
+Testdateien laden `routes/sichtpruefung.js`, **14** laden `routes/belehrungen.js`;
+das passiert also längst. Wer das Verzeichnis wirklich braucht, setzt die Variable
+in seiner eigenen Testdatei — je fünf Dateien tun genau das. `einweisung-nachweise/`
+steht in `.gitignore`, die Verzeichnisse liegen nicht im Baum herum.
+
+**Folge: halt dich an dieses Muster.** Setz die Variablen in deinen neuen
+Testdateien selbst, wenn du die Verzeichnisse berührst. **Bau keine Umleitung in
+`test/run.sh` ein** — das wäre eine Änderung am Suite-Starter für ein Problem, das
+zehn Dateien bereits lokal lösen.
+
+Das ist zugleich ein Beispiel für die Regel, die für jeden Befund gilt: eine
+Schwereeinstufung ist in BEIDE Richtungen eine Behauptung, bis sie gemessen ist.
 
 ## Abnahme
 
