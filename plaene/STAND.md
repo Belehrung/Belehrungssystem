@@ -2278,3 +2278,46 @@ NICHT gemessen".
 
 Nächster Schritt, sobald die Suite durch ist: Lint, Marker, Mengenvergleich —
 dann PR, CI, Review-Bot-Kommentare LESEN, Merge, Deploy, live-check.
+
+### 18.09.2026, 00:5x UTC — PR #455 offen, Review-Bot findet einen P1 (zutreffend)
+
+Eigene Abnahme an `db7bd9e` war vollständig grün: Suite EXIT 0, 0 FAIL,
+Mengenvergleich 330 = 330 mit `diff` EXIT 0, `npm run lint` EXIT 0 ohne
+Ausgabe, Marker 6, Baum sauber. PR #455 eröffnet (nicht als Entwurf).
+
+**Der Review-Bot am PR hat einen P1, den KEINE der drei Prüfspuren hatte, und
+er trifft zu — selbst nachgemessen:** `ops/gymdocu-verbandbuch-pdf-aufraeumen.js`
+wird von NIEMANDEM aufgerufen. `grep -rn "verbandbuch-pdf-aufraeumen"` über das
+ganze Repo findet nur Kommentare (`core/retention.js:333`,
+`core/pdf-root.js:40`) und zwei Zeilen in der Befundliste. Kein Cron, kein
+Deploy-Schritt, keine Zeile in `server.js` — während `server.js` 13
+`cron.schedule`-Einträge hat.
+
+Damit ist die F5/F6-Behebung aus Runde 3 eine Absichtserklärung: eine Datei,
+die bei einem Prozessabbruch zwischen Erzeugung und Auslieferung liegenbleibt,
+erntet niemand, und der Retention-Resolver kennt nur den alten festen Namen.
+
+**Der Fehler steckte in MEINEM Auftrag von Runde 3.** Ich habe den Ernter
+bestellt und vergessen, ihn anzuschliessen — nachdem ich die Regel „ein
+Verdrahtungsfehler ist die Lücke, die eine Behebung hinterlässt" in drei
+aufeinanderfolgenden Aufträgen selbst zitiert habe.
+
+**Was das über die Prüfspuren sagt, und es ist die wertvollste Lehre des
+Tages:** Zwei Gegenlesungen (zusammen 24,33 $) und eine Code-Review haben es
+nicht gesehen, weil alle drei den DIFF geprüft haben. „Wer ruft das
+eigentlich auf?" ist keine Frage an den Diff, sondern ans Repo. Der Bot fand
+es, weil er als einziger nicht nach Richtigkeit suchte, sondern nach
+Anschluss. Für künftige Beiträge, die etwas NEUES einführen, das regelmäßig
+laufen soll: die Verdrahtung ist ein eigener Prüfpunkt, und sie gehört in eine
+Zusicherung, nicht in einen Kommentar.
+
+Runde 4 beauftragt (`plaene/auftrag-verschluesselung-stufe0-runde4.md`): den
+Ernter an den bestehenden täglichen Lauf in `server.js` hängen, NICHT in eine
+`cron.d`-Datei, die jemand von Hand installieren müsste. Dazu ein Wächter über
+die Verdrahtung selbst. Gefährlichste Stelle und im Auftrag benannt:
+`hauptlauf()` ruft im `finally` `db.pool.end()` — im Webprozess wäre das fatal.
+
+Randbefund fürs Härtungsprogramm: Die CI-Prüfung „Dependency audit
+(production, high)" ist GRÜN. Damit ist einer der zwei dort als „nicht
+gemessen" gekennzeichneten Punkte beantwortet; offen bleibt nur die Prüfung
+der Upload-Wege auf Dateityp und Grösse.
