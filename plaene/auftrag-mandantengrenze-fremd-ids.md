@@ -1,10 +1,17 @@
 # Auftrag: Fremde IDs aus dem Request ohne Besitzprüfung (Mandantengrenze)
 
-Fassung 1 — 18.09.2026, abends. Verfasser: Haupt-Agent.
+Fassung 2 — 18.09.2026, nach der Planprüfung. Verfasser: Haupt-Agent.
 
-**Der Gegenleser hat diesen Plan NICHT gesehen. Grund in einem Satz (wie die
-Regel es verlangt): Gegenleser nicht erreichbar, HTTP 429
-`insufficient_quota` — das OpenAI-Guthaben ist erschöpft.**
+**Der Gegenleser HAT diesen Plan gesehen** (Lauf „PLANPRUEFUNG Mandantengrenze
+Fremd-IDs", nachdem das Guthaben nachgelegt war). Sein Urteil lautete: „Den
+Plan nicht unverändert freigeben." Sechs Befunde, alle selbst nachgemessen,
+**alle sechs getragen** — drei davon widerlegen ausdrückliche Behauptungen der
+Fassung 1. Was sich dadurch geändert hat, steht unten jeweils an Ort und
+Stelle; die wichtigste Änderung ist das Testkonzept, das in Fassung 1 eine
+ganze Besitzgrenze ungeprüft gelassen hätte.
+
+Die Klasse selbst ist unverändert bestätigt: beide Schreiblücken existieren,
+beide Fundstellen wörtlich nachgelesen.
 
 ## Worum es geht
 
@@ -79,8 +86,18 @@ FOREIGN KEY (etage_id) REFERENCES etagen(id) ON DELETE CASCADE
 ```
 
 an — der Fremdschlüssel bindet KEIN `studio_id`. Löscht Studio A seine Etage,
-verschwinden damit auch die Zeilen, die Studio B daran gehängt hat. Ein
-fremder Mandant kann also indirekt Zeilen eines anderen löschen.
+verschwinden damit auch die Zeilen, die Studio B daran gehängt hat.
+
+**BERICHTIGT gegenüber Fassung 1 (Planprüfung, selbst nachgemessen).** Dort
+stand: „Ein fremder Mandant kann also indirekt Zeilen eines anderen löschen."
+Das dreht die Wirkungsrichtung um. Richtig ist: B hängt eine EIGENE Zeile an
+eine fremde Etage, und diese EIGENE Zeile von B verschwindet, wenn A seine
+Etage löscht. B kann damit **nicht** reguläre Zeilen von A löschen — er kann
+weder deren `studio_id` setzen noch die fremde Etage über die Löschroute
+erreichen (`routes/lageplan.js:611` bindet `studio_id`). Der
+mandantenübergreifende Kaskadeneffekt ist real; ein auslösbarer Löschangriff
+gegen fremde Bestände ist es nicht. Wer die falsche Fassung weiterträgt,
+begründet den Beitrag mit einer Wirkung, die es nicht gibt.
 
 **Behebung:** vor dem INSERT
 
@@ -89,12 +106,33 @@ const etage = await db.one("SELECT id FROM etagen WHERE studio_id = $1 AND id = 
 if (!etage) return res.status(404).json({ error: "Etage nicht gefunden" });
 ```
 
-und im INSERT `etage.id` einsetzen, nicht `eId`.
+und den geprüften Wert einsetzen.
 
-**Antwortcode:** 404, nicht 403. Ein 403 bestätigt dem Fragenden, dass die ID
-existiert; 404 unterscheidet „gibt es nicht" und „gehört dir nicht" nicht —
-genau das ist hier erwünscht. Dieselbe Linie fährt `routes/getraenkeanlage.js`
-(„Anlage nicht gefunden", 404).
+**DAZU GEHÖRT EINE ÄNDERUNG IM BROWSER — sonst verschluckt die Oberfläche die
+neue Ablehnung** (Planprüfung, selbst nachgemessen). `api()`
+(`routes/lageplan.js:1460-1469`) liefert bei einem 404 ein ganz normales
+Objekt zurück: `{ httpOk: false, httpStatus: 404, error: … }` — `fetch()`
+scheitert bei einem 404 nicht. Der Aufrufer `bindPlace()` (`:1858-1876`)
+prüft danach nur `if (res.id){ … }` und überspringt bei einer Ablehnung seinen
+gesamten Erfolgszweig **stumm**: keine Meldung, kein Neuladen. Der Admin tippt
+auf den Plan, und es passiert nichts.
+Zu bauen ist deshalb im selben Beitrag: `bindPlace()` wertet `!res.httpOk`
+aus und zeigt eine Meldung. Dafür gibt es `httpOk`/`httpStatus` bereits —
+sie wurden in einer früheren Prüfrunde genau für diesen Zweck eingeführt und
+bisher an dieser Stelle nicht benutzt.
+
+**Antwortcode:** 404, nicht 403 — aber aus dem richtigen Grund.
+
+**BERICHTIGT (Planprüfung, selbst nachgemessen).** Fassung 1 begründete das
+mit „ein 403 bestätigt dem Fragenden, dass die ID existiert". Das ist zu
+absolut: nicht der Statuscode entscheidet, sondern ob die beiden Fälle
+UNTERSCHEIDBAR beantwortet werden. Zwei gleiche 403 wären genauso dicht wie
+zwei gleiche 404. Gegenbeispiel im eigenen Bestand:
+`routes/pdf-waechter.js:107` antwortet 403, ohne vorher überhaupt zu prüfen,
+ob die Datei existiert — dort ist nichts unterscheidbar.
+Maßgeblich ist also die Regel: **fremd und nicht vorhanden bekommen dieselbe
+Antwort.** 404 bleibt, weil `routes/getraenkeanlage.js:369` dieselbe Linie
+fährt („Anlage nicht gefunden", 404) und weil die Route JSON liefert.
 
 ## Befund 2 — `POST /admin/belehrungen/freischalten/:belehrungId`
 
@@ -111,11 +149,22 @@ adminRouter.post('/freischalten/:belehrungId', async (req, res) => {
 ```
 
 **ZWEI** fremde IDs, beide ungeprüft: `mitarbeiter_id` aus dem Rumpf,
-`belehrungId` aus der URL. Die Tabelle hat KEINE Fremdschlüssel auf
-`mitarbeiter` oder `belehrungen`, nur `UNIQUE(studio_id, mitarbeiter_id,
-belehrung_id)` — die Datenbank fängt hier also gar nichts ab. Es gibt auch
-keine Kaskade, deshalb ist der Schaden kleiner als bei Befund 1: es entstehen
-Zeilen im eigenen Mandanten, die auf fremde Objekte zeigen.
+`belehrungId` aus der URL. Im Tabellenblock (`core/db.js:1738-1746`) steht für
+diese beiden Beziehungen nur `UNIQUE(studio_id, mitarbeiter_id,
+belehrung_id)` — **kein** Fremdschlüssel auf `mitarbeiter` oder
+`belehrungen`. Die Datenbank fängt für die beiden ZIELOBJEKTE also nichts ab.
+
+**PRÄZISIERT gegenüber Fassung 1 (Planprüfung, selbst nachgemessen):** „die
+Tabelle hat gar keine Fremdschlüssel" wäre zu pauschal. `core/db.js:2358-2372`
+zieht nachträglich für jede Tabelle mit einer `studio_id`-Spalte einen
+Fremdschlüssel auf `studios(id)` ein (Ausnahmen nur `qr_token`, `qr_charge`).
+Das schützt die beiden Zielobjekte nicht — aber wer den pauschalen Satz
+weiterträgt, wird bei der nächsten Schema-Frage falsch schließen. Ob diese
+nachträgliche Härtung auf einer konkreten Bestandsdatenbank durchgegangen ist,
+ist NICHT gemessen; Fehler werden dort nur geloggt.
+
+Es gibt keine Kaskade, deshalb ist der Schaden kleiner als bei Befund 1: es
+entstehen Zeilen im eigenen Mandanten, die auf fremde Objekte zeigen.
 
 **Behebung:** beide nachschlagen, beide studiogebunden, und die Ergebnisse
 einsetzen:
@@ -150,43 +199,109 @@ zeigen, wie ein Fremder an die ID kommt.
 
 ## Zusicherungen — und wie sie ROT werden müssen
 
+**Dieser Abschnitt ist gegenüber Fassung 1 VOLLSTÄNDIG ERSETZT.** Die
+Planprüfung hat darin einen blockierenden Fehler gefunden, und sie hat ihn
+mit einem wörtlichen Einzeiler belegt statt ihn zu behaupten. Das ist genau
+die Klasse, vor der unsere eigene CLAUDE.md an sieben Stellen warnt — und sie
+stand im Testkonzept, nicht im Code.
+
+**Der Fehler der Fassung 1:** Sie verlangte je Weg drei Zusicherungen, darunter
+„fremder Fall: ID eines ZWEITEN Studios → keine Zeile". Bei
+`POST /freischalten/:belehrungId` gibt es aber **zwei unabhängig wählbare
+Ziel-IDs**. Ein Test, der nur „beide eigen" und „beide fremd" prüft, erfüllt
+den Wortlaut der Fassung 1 vollständig — und lässt eine ganze Besitzgrenze
+ungeprüft. Der Beleg ist dieser Einzeiler, der die Belehrungsprüfung durch
+eine Attrappe ersetzt:
+
+```js
+const bel = { id: req.params.belehrungId };
+```
+
+Damit bleiben alle drei Zusicherungen der Fassung 1 grün: der gute Fall
+schreibt, der beidseitig fremde Fall scheitert weiterhin an `!ma`, und die
+geschriebene Zeile trägt die erwartete ID. Offen bleibt: **ein Admin
+verknüpft seinen EIGENEN Mitarbeiter mit einer FREMDEN Belehrung.**
+
+### Was stattdessen gebaut wird
+
 Neue Testdatei `test_feature_mandantengrenze_fremd_ids.js`, registriert in
 `test/run.sh`.
 
-Für JEDEN der beiden Wege dieselben drei Zusicherungen:
+**Für `POST /freischalten/:belehrungId` die volle Matrix — vier Fälle, nicht zwei:**
 
-1. **Guter Fall bleibt gut:** eigene Etage / eigener Mitarbeiter + eigene
-   Belehrung → Zeile entsteht, Antwort wie bisher. Ohne diesen Fall ist nicht
-   zu unterscheiden, ob die Behebung alles abweist.
-2. **Fremder Fall wird abgewiesen:** ID eines ZWEITEN Studios → **keine
-   Zeile** entsteht (nachgezählt per `SELECT count(*)`), Antwortcode wie oben
-   festgelegt.
-3. **Der Rohwert wird nicht eingesetzt:** die geschriebene Zeile trägt die ID
-   aus der Nachschlage-Abfrage. Prüfbar dadurch, dass im guten Fall die
-   erwartete ID wörtlich verglichen wird.
+| Mitarbeiter | Belehrung | Erwartung |
+|---|---|---|
+| eigen | eigen | Zeile entsteht |
+| fremd | eigen | Ablehnung, KEINE Zeile |
+| eigen | fremd | Ablehnung, KEINE Zeile |
+| fremd | fremd | Ablehnung, KEINE Zeile |
 
-**Zwei Studios anlegen, nicht eines.** Die Regel aus der CLAUDE.md gilt hier
-wörtlich: eine Zusicherung, deren Vorzustand das erwartete Ergebnis ohnehin
-erzwingt, ist keine. Gegen eine leere Datenbank schlägt jedes Nachschlagen
-fehl, und „keine Zeile entstanden" wäre wahr, ob der Riegel existiert oder
-nicht. Es braucht also eine Etage, die WIRKLICH EXISTIERT und einem ANDEREN
-Studio gehört.
+Die beiden mittleren Zeilen sind der ganze Punkt. Und: **die beiden Prüfungen
+werden in der Gegenprobe EINZELN mutiert** — erst die Mitarbeiterprüfung
+entfernen und messen, welche Fälle fallen, dann die Belehrungsprüfung. Wer nur
+beide zusammen herausnimmt, kann nicht unterscheiden, ob eine von ihnen
+überhaupt etwas tut.
 
-**IDs unverwechselbar wählen.** Nicht 1 und 2. Die fremde Etage bekommt eine
-ID, die im eigenen Studio nicht vorkommt, und der Test prüft vorher, dass sie
-dort wirklich nicht vorkommt — sonst ist „abgewiesen" womöglich nur „nicht
-gefunden, weil es die Nummer nirgends gibt".
+**Achtung beim Ergebnisvergleich:** Erfolg und Ablehnung antworten auf diesem
+Weg BEIDE mit HTTP 302 (`res.redirect` in beiden Zweigen). Ein Test, der nur
+den Statuscode prüft, prüft nichts. Geprüft wird deshalb (a) das
+Redirect-ZIEL, das sich zwischen Erfolg und Ablehnung unterscheidet, UND
+(b) die Zeilenzahl in `belehrung_freischaltung` per `SELECT count(*)`, vorher
+und nachher. Die Zeilenzahl ist dabei die tragende Zusicherung; das
+Redirect-Ziel ist die Diagnose.
 
-**GEGENPROBE, wörtlich zu melden (beide Richtungen, je einzeln gemessen):**
-Nimm in einem Arbeitsbaum die Nachschlage-Abfrage wieder heraus (bzw. setze
-den Rohwert statt des Abfrageergebnisses ein) und miss, dass die neuen
-Zusicherungen ROT werden — mit Ausgabe `EXIT`-Code und `PASS/FAIL`-Zahlen.
-Danach zurücknehmen und GRÜN messen. Beide Läufe wörtlich in den Bericht.
+**Für `POST /api/position` (JSON):** eigener Fall → `200` mit `id`; fremde
+Etage → `404`, und `SELECT count(*)` auf `geraete_positionen` unverändert.
 
-Die Mutation trägt den Marker `GEGENPROBE-` + `DEFEKT`, nimmt den Zielpfad
-als ARGUMENT (nicht fest verdrahtet), bricht ab, wenn das Suchmuster nicht
-GENAU EINMAL passt, und wird gegen eine unabhängig angelegte `cp`-Kopie mit
+**Zwei Studios anlegen, nicht eines.** Gegen eine leere Datenbank schlägt
+jedes Nachschlagen fehl, und „keine Zeile entstanden" wäre wahr, ob der
+Riegel existiert oder nicht. Es braucht eine Etage bzw. eine Belehrung, die
+WIRKLICH EXISTIERT und einem ANDEREN Studio gehört.
+
+**IDs unverwechselbar wählen.** Nicht 1 und 2. Jede der vier Matrixzeilen
+bekommt Werte, bei denen eine Verwechslung auffällt; der Test prüft vorab,
+dass die fremde ID im eigenen Studio nicht vorkommt — sonst ist „abgewiesen"
+womöglich nur „gibt es nirgends".
+
+### Was NICHT mehr zugesichert wird, und warum
+
+Fassung 1 verlangte als dritte Zusicherung: „der Rohwert wird nicht
+eingesetzt — die Zeile trägt die ID aus der Nachschlage-Abfrage." **Das ist
+als Sicherheitsaussage falsch, und die Planprüfung hat es belegt.** Nach einem
+erfolgreichen `SELECT … WHERE studio_id = $1 AND id = $2` bezeichnet der
+Rohwert DASSELBE Objekt wie das Abfrageergebnis — die Prüfung hat ja gerade
+festgestellt, dass diese ID zu diesem Studio gehört. `etage.id` statt `eId`
+einzusetzen ist Stilfrage, nicht Riegel.
+Der eigene Bestand macht es an zwei Stellen genau so und ist dort korrekt:
+`routes/lageplan.js:471-474` prüft `posId` studiogebunden und schreibt danach
+`posId`. Wer Fassung 1 wörtlich genommen hätte, hätte diese Stelle als Befund
+gemeldet — sie ist keiner.
+Die Zusicherung entfällt deshalb ersatzlos. An ihre Stelle tritt die
+Einzelmutation der beiden Prüfungen, die wirklich etwas beweist.
+
+### Gegenprobe, wörtlich zu melden
+
+Je Prüfung einzeln: herausnehmen, ROT messen (`EXIT`-Code und `PASS/FAIL`),
+zurücknehmen, GRÜN messen. Beide Läufe wörtlich in den Bericht. Zusätzlich die
+oben zitierte Attrappen-Mutation `const bel = { id: req.params.belehrungId };`
+fahren und zeigen, dass der Fall „eigen/fremd" dabei ROT wird — das ist der
+Nachweis, dass die neue Matrix den Fehler der Fassung 1 wirklich schließt.
+
+Jede Mutation trägt den Marker `GEGENPROBE-` + `DEFEKT`, nimmt den Zielpfad
+als ARGUMENT, bricht ab, wenn ihr Suchmuster nicht GENAU EINMAL passt, läuft
+durch `node --check`, und wird gegen eine unabhängig angelegte `cp`-Kopie mit
 `diff` (EXIT 0) zurückgenommen — nie per `git checkout` oder `git stash`.
+
+### Ein Rennen, das bleibt — und das NICHT in diesem Beitrag gelöst wird
+
+Zwischen dem neuen `SELECT` und dem `INSERT` kann die Etage gelöscht werden
+(TOCTOU). Das ist gemessen und benannt, nicht übersehen: Der Fremdschlüssel
+fängt den Fall ab (das INSERT scheitert, wenn die Elternzeile weg ist), und
+gewinnt das INSERT, kaskadiert die Löschung die neue Zeile regulär weg.
+**Beides gibt es heute schon**, mit und ohne Besitzprüfung. Für die
+Mandantengrenze ist das Rennen ohne Belang — es eröffnet keinen Weg zu einer
+fremden Etage. Ein echter Riegel bräuchte Transaktion samt Zeilensperre; das
+ist ein eigener Beitrag, kein Nebensatz. Als offener Punkt festhalten.
 
 ## Wie vollständig die Suche nach dieser Klasse ist
 
