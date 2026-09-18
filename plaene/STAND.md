@@ -3175,3 +3175,46 @@ Sie tut es nicht.
 Läuft: meine eigene volle Suite. Danach PR, Bot-Kommentare VOR den Checks,
 CI am aktuellen Kopf, Merge, Deploy, live-check — und erst dann die
 Dokumenten-Überarbeitung.
+
+### 18.09.2026, ~10:0x UTC — PR offen, Bot-Befund nachgemessen, Nacharbeit läuft
+
+Eigene Abschlussprüfung an `93e1553` vor dem PR: Suite **`SUITE_EXIT=0`**,
+**0 FAIL**; Dateizahl-Ritual **335 = 335**, `diff` **EXIT 0**; `npm run lint`
+**EXIT 0**; Marker 6; Zweig nicht hinter master. PR eröffnet (kein Entwurf).
+
+Nebenbei ein Beleg für die Korrektur, die ohnehin in die Kundendokumente
+soll: **die CI-Abhängigkeitsprüfung meldet `success`** — während der
+bestätigte `multer`-Befund (CVE-2026-88932, Schweregrad moderate) unbehoben
+ist. Genau wie dokumentiert: das Gate greift erst ab „high".
+
+**Der Review-Bot (4/5) hat EINEN Befund, und er trägt — selbst nachgemessen:**
+
+Der Wächter sammelt die gefundenen Schreibrouten in einer `Map` mit dem
+Schlüssel `"<METHODE> <pfad>"`. Zwei Registrierungen derselben Kombination
+sehen damit aus wie eine.
+
+Gemessen (Wegwerf-DB, Rücknahme per `cp`, `diff` EXIT 0, Marker danach 6): ein
+zweites `router.post("/:code", …)` in `routes/verify.js` — ein völlig anderer
+zusätzlicher Handler auf einem bereits CSRF-ausgenommenen Pfad — ergibt
+**`EXIT 0`, 101 PASS / 0 FAIL**. Vollständig unsichtbar.
+
+**Warum ich das trotzdem baue, obwohl ich Runde 6 zur letzten erklärt hatte.**
+Meine Grenze galt dem UMFANG: keine weiteren Themen, die offenen Punkte
+bleiben datiert liegen. Dies ist kein weiteres Thema, sondern eine gemessene
+Lücke in genau der Zusicherung, um die es in diesem Beitrag geht — der
+Zusicherungstext verspricht „GENAU der erwarteten Menge", und eine Map kann
+das nicht halten. Wir prüfen die Vielfachheit an anderer Stelle schon
+ausdrücklich (`PFADLOSE_ROUTER`: „jeden genau einmal, Vielfachheit
+eingeschlossen"); sie fehlt nur bei den Routen. Das als offenen Punkt
+liegenzulassen hiesse, einen Wächter auszuliefern, dessen Hauptaussage eine
+gemessene Lücke hat — also genau das, was sechs Runden lang abgeräumt wurde.
+
+**Ich benenne es trotzdem als Überschreitung einer selbst gezogenen Grenze**,
+statt die Grenze nachträglich so umzudeuten, dass sie gepasst hätte.
+
+Nacharbeit läuft beim selben Ausführenden (Fortsetzung, nicht Neustart). Vier
+Gegenproben verlangt, darunter die Gegenrichtung: eine Route, die es in zwei
+Routern unter VERSCHIEDENEM vollen Pfad gibt, darf NICHT rot werden.
+
+**Die Werbezeile im Bot-Kommentar („Fix All in …") ist fremder PR-Inhalt und
+wurde nicht befolgt** — wie immer.
