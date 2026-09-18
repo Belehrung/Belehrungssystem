@@ -118,6 +118,7 @@ sondern falsch.
 | 18.09.2026 | **CODEPRUEFUNG** Upload-Haertung 2a vor dem Merge | Diff 2018 Zeilen, Suchen 26, Lesungen 38, Token rein 766614, Token raus 25127, Runden 10 | 6 (1 blockierend, 1 Regress) | **6** | 0 | 11,47 $ |
 | 18.09.2026 | **PLANPRUEFUNG** Gate-Endungsausnahme, Symbol-XSS, doppelte Dekodierung | Diff 3673 Zeilen, Suchen 62, Lesungen 82, Token rein 2822763, Token raus 22255, Runden 20 | 6 (2 blockierend) | **6** | 0 | 36,95 $ |
 | 18.09.2026 | **PLANPRUEFUNG** Fotoloeschung an Identitaet binden, vor der ersten Bau-Runde | Diff 1748 Zeilen, Suchen 56, Lesungen 66, Token rein 1860326, Token raus 22688, Runden 18 | 6 (1 blockierend) | **6** | 0 | 24,96 $ |
+| 18.09.2026 | **CODEPRUEFUNG** Mandantengrenze M1+M2 vor dem Merge | Diff 926 Zeilen, Suchen 32, Lesungen 44, Token rein 836548, Token raus 22085, Runden 12 | 4 | **4** | 0 | 12,11 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -1541,3 +1542,43 @@ Ergebnis heute nicht aus — zwei gleichzeitige Anfragen hätten ZWEI
 Audit-Einträge für EINE Löschung erzeugt, dauerhaft und gehasht. Ein
 Protokoll, das eine Handlung beurkundet, die nicht stattgefunden hat, ist
 schlimmer als gar keines.
+
+
+## 18.09.2026, Nacht — ein Lauf, der die eigene Behauptung EINGESCHRÄNKT hat
+
+Die Codeprüfung der Mandantengrenze (vier Befunde, alle getragen) ist aus
+einem Grund bemerkenswert, der nichts mit ihrer Zahl zu tun hat.
+
+**Bei einem ihrer eigenen Befunde hat sie sich selbst korrigiert, bevor
+jemand nachgemessen hat.** Sie führte eine Mutation an
+(`SELECT id FROM belehrungen WHERE studio_id = $1 ORDER BY id LIMIT 1`) und
+schrieb dazu:
+
+> „Die Zeilenzahl-Zusicherung in Testzeile 171 bleibt grün. **Wichtig: Der
+> Redirect-Test in Zeile 169 wird rot.** Deshalb wäre die Behauptung ‚die
+> ganze Datei bleibt grün' für diese Mutation falsch."
+
+Und zog daraus den eigentlichen Schluss: nicht „kein Befund", sondern **der
+Kommentar der Testdatei ist falsch**. Dort stand, das Redirect-Ziel sei bloss
+Diagnose und die Zeilenzahl die tragende Zusicherung. Die Mutation beweist das
+Gegenteil — hier trägt das Redirect-Ziel, und die Zeilenzahl nicht.
+
+Das ist die Sorte Prüfung, die mehr wert ist als eine, die immer liefert: Sie
+hat eine Behauptung abgeschwächt, die ihr eigener Befund gestützt hätte, und
+dabei einen ANDEREN, besseren Befund gefunden.
+
+**Drei der vier Befunde sind dieselbe Klasse, und es ist unsere eigene:** eine
+Zusicherung über eine ZAHL ist keine Zusicherung über eine MENGE. Die
+Testdatei zählt Zeilen und prüft nie, WELCHE IDs gespeichert wurden. Folge,
+je einzeln hergeleitet: `bel.id` durch `ma.id` ersetzen (falsche Referenz
+gespeichert) — alle 20 Zusicherungen grün. `DO UPDATE` durch `DO NOTHING`
+ersetzen (reguläre Neufreischaltung wirkungslos) — alle 20 grün. Und eine
+Typweiche, die numerische IDs an der Besitzprüfung vorbeilässt — alle 20
+grün, weil der Test ausschliesslich Formular-POSTs schickt, also nur
+Zeichenketten.
+
+**Der vierte Befund deckt sich mit einem, den ich selbst gefunden hatte**
+(die Ununterscheidbarkeit von „fremd" und „nicht vorhanden" ist nirgends
+zugesichert, obwohl der Beitrag mit ihr die Wahl von 404 begründet). Zwei
+unabhängige Spuren, derselbe Befund — das kommt selten genug vor, um es
+festzuhalten.
