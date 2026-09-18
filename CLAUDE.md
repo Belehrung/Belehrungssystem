@@ -473,8 +473,8 @@ Sachfrage):
 
     gpt-6-astra                  unser Gegenleser. Denkt IMMER (kein `none`), kann als
                                  einziges `max`. Langsamste, gründlichste Stufe.
-    gpt-5.6-terra/-sol/-luna     neuer als 5.4, können `none` bis `max`. `terra` denkt
-                                 auch mit `xhigh` NICHT (denk=0) — ein Chatmodell.
+    gpt-5.6-terra/-sol/-luna     neuer als 5.4, können `none` bis `max`. Alle drei
+                                 denken; siehe die Berichtigung unten.
     gpt-5.5                      denkt von sich aus, auch ohne effort-Angabe.
     gpt-5.4, -mini, -nano        schnell; mit `effort: "none"` ganz ohne Denkphase.
     gpt-5, -mini, -nano          ältere Generation, kein `xhigh`/`max`.
@@ -492,6 +492,25 @@ Sachfrage):
   „jeder Befund ist eine Behauptung, bis der Haupt-Agent sie gemessen hat" gilt
   für ein kleines Modell erst recht, und ein billiger Lauf, dessen Befunde
   alle fallen, ist teurer als gar keiner.
+
+**BERICHTIGUNG am selben Tag, eigener Messfehler:** Oben stand zuerst, `gpt-5.6-terra`
+denke „auch mit `xhigh` nicht (denk=0) — ein Chatmodell". Das war an der Frage
+„Hauptstadt von Österreich" gemessen, die kein Denken erfordert. An einer echten
+Rechenaufgabe denkt terra sehr wohl: `medium` 33, `xhigh` 65, `max` 91 Denk-Token.
+Lehrbuchfall aus dieser Datei — **Testdaten, die den gesuchten Unterschied gar nicht
+auslösen können.** Wer ein Modell einordnet, nimmt eine Aufgabe, die ohne Denken
+nicht lösbar ist.
+
+**Und was ein Vergleich an EINER Frage NICHT hergibt.** Dieselbe echte
+Kontrollfluss-Frage aus unserem Bestand (was tut der globale Fehlerbehandler bei
+einem `MulterError`?) ging an terra, sol, luna, `gpt-6-astra` und `gpt-5.4`:
+**alle fünf antworteten richtig**, alle nannten den tragenden Grund. Der Test
+unterscheidet sie also nicht — er zeigt nur, dass für eine Frage MIT
+mitgeliefertem Kontext das billigste Modell reicht. Die Aufgabe, für die wir den
+Gegenleser brauchen, ist eine andere: im Repo SUCHEN, über viele Runden, und
+Zustände finden, die niemand beschrieben hat. **Wer aus so einem Test auf
+Prüfeignung schliesst, hat eine zweite Behauptung aufgestellt, die er nicht
+gemessen hat.**
 
 ### Drei Zusätze am Prompt (Betreiber-Entscheidung 11.09.2026)
 
