@@ -3634,3 +3634,63 @@ Astra benutzt hat; abräumbar mit `git worktree remove`.
 
 **Als Nächstes:** auf die Claude-Spur warten, dann **EIN** Nacharbeitsauftrag
 mit allen getragenen Befunden — nicht zwei Runden.
+
+### 18.09.2026, ~15:30 UTC — Nacharbeit abgenommen, PR offen, CI läuft
+
+**Nacharbeit gebaut** (HEAD `3d2119b`), alle sechs Punkte aus zwei Prüfspuren.
+Der Ausführende hat bei EINEM Punkt widersprochen und recht behalten: statt
+`LIMIT_FILE_COUNT` nahm er `LIMIT_UNEXPECTED_FILE` für den
+`next(err)`-Nachweis, weil multers Prüfreihenfolge ihn deterministisch und ohne
+Rennbedingung auslöst und der bestehende Helfer unverändert bleibt. Ich hatte
+beide als gleichwertig genannt; seine Wahl ist die bessere.
+
+**Meine eigene Abnahme, alles selbst gefahren:**
+`SUITE_EXIT=0`, **0 echte Fehlschläge**, die beiden geänderten Testdateien
+**46 PASS / 0 FAIL** und **11 PASS / 0 FAIL**, Dateizahl-Ritual **337 = 337**
+(`diff` **EXIT 0**), `npm run lint` **EXIT 0**, Marker-Scan **6 Treffer, alle in
+`docs/offene-befunde-31-08-2026.md`** — keine Sabotage-Reste.
+
+**Eigene Gegenprobe der Kernzusicherung** (der Zusicherung, die zweimal falsch
+war): `routes/verify.js` auf einen Stub-Konstruktor mutiert, sodass im Repo nur
+noch sechs echte `multer()`-Aufrufe stattfinden. Ergebnis **`EXIT 1,
+10 PASS / 1 FAIL`**, und zwar genau die neue Zusicherung mit dem Istwert `(6)`
+— eine gefallene ZUSICHERUNG, kein Absturz. Rücknahme gegen die `cp`-Kopie
+**`diff` EXIT 0**, danach wieder **`EXIT 0, 11 PASS / 0 FAIL`**. Auf dem alten
+Stand wäre dieselbe Mutation grün geblieben.
+
+**Was die zwei Code-Prüfspuren über das Verfahren sagen — Teilüberschneidung,
+nicht null wie am 13.09.:** Beide fanden die falsche Konfigurationszählung
+(Astra LAS sie, die Claude-Spur MASS sie mit einer echten Mutation) und den
+Datenverlust im Zeichnen-Weg. Je drei Befunde hatte nur eine der beiden. Den
+schwersten — den ungeschützten `next(err)`-Rückfall — hatte **nur** die
+Claude-Spur, und zwar weil sie ausführen durfte: sie ersetzte die Zeile und
+maß 39/0.
+
+**Ein Befund verschärfte meine eigene Messung.** Ich hatte die Restfälle des
+Wrappers als „über unsere Oberfläche nicht auslösbar" abgehakt. Das trägt — aber
+ich hatte den **Verbindungsabbruch** übersehen, und der ist erreichbar und
+alarmiert weiterhin. Bei 25 MiB auf einem Trainer-Tablet ist Funkloch der
+häufigste Fall. Steht jetzt als offener Punkt im Code; die Behebung gehört in
+`core/error-tracker.js`, damit sie alle Routen deckt.
+
+**Zweig nicht hinter master, PR offen. Offen bis zur Meldung (Regel 6a):**
+Review-Bot-Kommentare lesen (VOR den Checks), CI auf dem aktuellen Kopf,
+Merge, Deploy-Lauf mit dem richtigen `head_sha`, live-check.
+
+### Datiert offene Punkte aus diesem Beitrag
+
+- **Abgebrochener Upload löst weiterhin einen Telegram-Alarm aus.** Behebung
+  über `core/error-tracker.js` (Ausnahmeliste für Verbindungsabbrüche), nicht
+  je Route.
+- **Kein Reaper für `lageplan-uploads/`.** Verwaiste Dateien wachsen
+  unbegrenzt. Gemessen und entwarnt: sie werden nie ausgeliefert (die
+  Auslieferung prüft vorher gegen die DB) und landen nicht im Export-ZIP.
+  Wenn gebaut: Sollwert von aussen — Verzeichnisinhalt gegen
+  `SELECT grundriss_datei FROM etagen`, nicht gegen einen mitgeführten Zähler.
+- **`/etage/:id/loeschen`** hat dieselbe Löschreihenfolge (Datei weg vor
+  `DELETE`).
+- **Die zehn übrigen `res.send`-Stellen ohne Status** in
+  `routes/belehrungen.js`.
+- **`fieldSize: 25 MiB`** in `core/pruefbericht.js` ist unbegründet und
+  nachzumessen — ein einzelnes Textfeld dieser Grösse liegt im RAM.
+- **`accept="image/*"`** im Editor-Formular weicht von den beiden anderen ab.
