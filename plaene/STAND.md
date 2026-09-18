@@ -2759,3 +2759,45 @@ Beides läuft: meine eigene volle Suite (bei `test_feature_suite_laufsperre.js`,
 der Registrierungs-Wächter hat schon grün gemeldet — „333 test_*.js + 1
 namentlich verlangte Einträge … alle registriert") und die Gegenlesung. Kein
 Eingriff in den Arbeitsbaum, solange der Gegenleser dort liest.
+
+### 18.09.2026, ~07:0x UTC — Runde 3 vollständig geprüft, Runde 4 beauftragt
+
+**Meine eigene Abschlussprüfung an `2a21152`:** Suite **`SUITE_EXIT=0`**,
+**0 FAIL-Zeilen**; Dateizahl-Ritual als MENGENvergleich **334 registriert =
+334 gelaufen**, `diff` **EXIT 0**; `npm run lint` **EXIT 0** ohne jede
+eslint-Ausgabe; Marker-Scan **6**; `git status` leer; Wegwerf-DB entfernt.
+
+Runde 3 ist damit nachweislich grün — **und trotzdem nicht mergefähig.**
+
+**Die Gegenlesung (6,25 $) brachte acht Befunde, fünf blockierend, und ich
+habe alle fünf Prämissen selbst nachgemessen, ohne den Arbeitsbaum
+anzufassen.** Alle fünf treffen zu (Einzelheiten in `ASTRA-LAEUFE.md`):
+
+| Befund | eigene Messung |
+|---|---|
+| B2 verkettete Registrierung | `app.get('/a',h) === app` ist `true` (Express 5.2.1) — die Kette registriert beide Routen, die Regex findet nur die erste |
+| B5 Pfad-Array | `route.path` ist bei `['/x','/intern/y']` ein ARRAY, interpoliert zu `/x,/intern/y`, `istAusnahmePfad(…)` ist `false` |
+| B4 Wurzel-Mount | `mountKoennteAusnahmeRoutenTragen('/')` ist `false` — sauber klassifiziert, danach herausgefiltert, nie durchlaufen |
+| B3 Literal-Verkettung | `istAusnahmePfad('/')` ist `false` — `'/' + 'intern/x'` wird als Pfad `/` gelesen |
+| B1 Zeile als Schlüssel | am Quelltext: zwei Registrierungen auf einer Zeile decken einander zu, und `unklassifiziert` wird AUSGEGEBEN, aber von keiner Zusicherung gelesen |
+
+**Der Prüfer hat meinen eigenen Behebungsvorschlag begründet zurückgewiesen**,
+und er hat recht: die Namenskonvention gegen `require('./routes/…')` schliesst
+genau die eine Schreibweise, die ich gemessen habe, und trägt keinen
+Vollständigkeitsbeweis. Sie wird zur Rückfallebene, nicht zur Behebung.
+
+**Entscheidung: Runde 4 ändert den ANSATZ, nicht die nächste Regex.** `acorn`
+ist bereits direkte Abhängigkeit (`package.json:8`, 8.18.0 — selbst
+nachgesehen); die Erfassung kommt in einen Syntaxbaum. Das löst B1, B2 und B3
+an der Wurzel und liefert endlich einen eindeutigen Schlüssel je
+Registrierung. B4, B5 und mein eigener Fund sitzen auf der Auswerteseite und
+werden getrennt behoben.
+
+Auftrag: `plaene/auftrag-haertung-p1-p2-runde4.md`. Läuft.
+
+**Bewusste Abweichung vom Ritual, mit Begründung:** Die Code-Review läuft
+für diese Runde NICHT. Sie käme auf einen Stand, der gerade in seinem Kern
+umgebaut wird; ihre Befunde wären zur Hälfte hinfällig, bevor sie gelesen
+sind. Sie läuft auf den FERTIGEN Diff nach Runde 4 — zusammen mit dem
+Review-Bot am PR sind das dann wieder drei Spuren. Wer das hier später liest
+und die Spur vermisst: sie fehlt nicht, sie ist verschoben.
