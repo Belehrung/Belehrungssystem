@@ -1,0 +1,226 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
+<title>Sicherheit und Datenschutz</title><link rel="stylesheet" href="stil.css"></head><body>
+
+<div class="titel">
+  <h1>Sicherheit und Datenschutz</h1>
+  <p class="unter">Für Ihre IT und Ihren Datenschutzbeauftragten — ohne Fachchinesisch, aber vollständig</p>
+  <p class="stand">Stand 17. September 2026</p>
+</div>
+
+<h2>Wer kommt an die Daten heran</h2>
+
+<h3>Die Zentrale und das Ketten-Portal</h3>
+<p>Anmeldung mit E-Mail und Passwort, dazu ein <strong>zweiter Faktor</strong> aus einer
+Authenticator-App. Ohne den zweiten Faktor kommt niemand hinein, auch nicht mit richtigem Passwort.
+Für den Fall, dass das Telefon verloren geht, gibt es einmalig verwendbare Wiederherstellungscodes.
+Auch der Download von Monatsberichten verlangt diesen zweiten Faktor — das ist der Punkt, an dem
+viele Systeme eine Hintertür offen lassen.</p>
+
+<p>Nach mehreren falschen Anmeldeversuchen wird das Konto gesperrt. Diese Sperre ist gegen den Trick
+abgesichert, viele Versuche gleichzeitig zu schicken, um am Zähler vorbeizukommen.</p>
+
+<h3>Das Tablet im Studio</h3>
+<p>Jeder Mitarbeiter meldet sich mit einer eigenen PIN an. Das Tablet selbst muss vorher als Gerät
+freigeschaltet worden sein — ein fremdes Gerät kommt auch mit richtiger PIN nicht hinein.</p>
+
+<h3>Ihre Standorte untereinander</h3>
+<p>Jede einzelne Datenbankabfrage trägt die Kennung des Studios. Es gibt keine Abfrage, die „alle
+Studios" zurückgibt und danach filtert — der Filter sitzt in der Abfrage selbst. Das ist der
+wichtigste Punkt des ganzen Systems, und deshalb ist es auch der einzige, den ich bei
+<em>jeder</em> Änderung automatisch nachprüfen lasse: Ein eigener Testlauf legt zwei Studios an
+und stellt sicher, dass keines die Daten des anderen sieht. Schlägt er fehl, geht die Änderung
+nicht auf den Server.</p>
+
+<h2>Gesundheitsdaten aus dem Verbandbuch</h2>
+
+<p>Unfall- und Verletzungsdaten sind rechtlich besonders geschützt (Artikel 9 DSGVO). Bei mir heißt
+das konkret:</p>
+
+<ul class="haken">
+  <li>Sichtbar nur für angemeldete Administratoren oder ein per PIN entsperrtes Studio-Tablet.</li>
+  <li><strong>Nicht</strong> im Monatsarchiv, das die Zentrale herunterlädt. Ein Bezirksleiter
+      bekommt sie also nicht zu sehen, auch nicht versehentlich.</li>
+  <li>Kein anonymer Zugriff, auf keinem Weg.</li>
+  <li>Automatische Löschung nach Ablauf der gesetzlichen Aufbewahrungsfrist.</li>
+</ul>
+
+<h2>Dass nachträglich nichts verändert wird</h2>
+
+<p>Jeder prüfrelevante Eintrag wird zusammen mit einem Prüfwert gespeichert, der auch den
+<em>vorherigen</em> Eintrag einbezieht. Dadurch entsteht eine Kette: Wer einen alten Eintrag
+verändert, müsste alle folgenden mitverändern, sonst passt die Kette nicht mehr. Ein solcher Bruch
+wird <strong>wöchentlich automatisch gesucht</strong>, und ich bekomme eine Meldung aufs Telefon.</p>
+
+<p>Korrekturen löschen nichts. Sie entstehen als eigenes Korrekturblatt mit Begründung; das Original
+bleibt unangetastet und sichtbar.</p>
+
+<p>Jedes ausgegebene Prüfprotokoll trägt einen QR-Code. Ein externer Prüfer oder eine Behörde kann
+darüber unabhängig nachschlagen, ob das Papier in der Hand echt ist — ohne Zugang zum System und
+ohne mich fragen zu müssen.</p>
+
+<h2>Verschlüsselung — was zutrifft und was nicht</h2>
+
+<p>Im Einzelnen:</p>
+
+<table>
+  <tr><th>Was</th><th>Stand</th></tr>
+  <tr><td>Übertragung zwischen Tablet/Browser und Server</td>
+      <td><strong>Verschlüsselt</strong>, durchgehend erzwungen. Ein unverschlüsselter Weg
+          existiert nicht.</td></tr>
+  <tr><td>Passwörter und PINs</td>
+      <td><strong>Nicht rückrechenbar</strong> gespeichert (bcrypt). Auch ich kann sie nicht
+          auslesen.</td></tr>
+  <tr><td>Zweitkopie wichtiger PDF-Dateien</td>
+      <td><strong>Verschlüsselt</strong> (AES-256-GCM).</td></tr>
+  <tr><td>Zwei-Faktor-Geheimnisse</td>
+      <td>Der Baustein zur Verschlüsselung ist vorhanden und in Benutzung; ob der Schlüssel auf dem
+          Produktionsserver gesetzt ist, ziehe ich gerade nach (siehe unten).</td></tr>
+  <tr><td>PDF-Dateien auf der Festplatte</td>
+      <td><strong>Unverschlüsselt.</strong> Steht auf meiner Liste, siehe unten.</td></tr>
+  <tr><td>Sicherung — mein eigener Weg auf dem Server<br>
+          <span class="klein">(Datenbank-Auszüge und fortlaufendes Archiv)</span></td>
+      <td><strong>Ohne eigenen Verschlüsselungsschritt.</strong> Das ist der Punkt, den ich zuerst
+          angehe. Diese Auszüge sind kein Doppel des Rechenzentrums-Backups, sondern notwendig:
+          jenes sichert die Maschine als Dateien, meines sichert die Datenbank punktgenau und
+          wird monatlich auf Wiederherstellbarkeit getestet.</td></tr>
+  <tr><td>Sicherung — Backup-Paket des Rechenzentrums<br>
+          <span class="klein">(gebucht und aktiv)</span></td>
+      <td><strong>Verschlüsselt</strong> nach Dokumentation des Anbieters (AES-256, standardmäßig
+          serverseitig; eine zusätzliche eigene Verschlüsselung mit Passwort ist möglich). Der
+          Speicherort ist zwischen Europa und den USA <em>wählbar</em> — ich weise die
+          Europa-Einstellung nach, bevor ich sie hier behaupte.</td></tr>
+  <tr><td>Festplatte des Servers</td>
+      <td><strong>Nicht verschlüsselt.</strong> Bewusste Entscheidung — Begründung im nächsten
+          Abschnitt.</td></tr>
+</table>
+
+<h3>Warum die Festplatte nicht verschlüsselt ist</h3>
+
+<p>Eine verschlüsselte Festplatte muss beim Start entsperrt werden. An einem Server, der
+unbeaufsichtigt läuft, sitzt dafür niemand an der Konsole. Es bleiben drei Möglichkeiten, und keine
+davon trägt:</p>
+
+<ul class="haken">
+  <li>Der Schlüssel liegt auf derselben Platte — dann schützt die Verschlüsselung nichts, denn wer
+      die Platte hat, hat den Schlüssel.</li>
+  <li>Entsperrt wird über das Netz — dafür braucht es eine zweite, ständig laufende Maschine.
+      Fällt sie aus, startet der Server nicht mehr.</li>
+  <li>Die Passphrase wird von Hand eingegeben — nach <em>jedem</em> Neustart, auch nach einem
+      ungeplanten nachts um drei. Bis dahin steht das System.</li>
+</ul>
+
+<p>Dazu kommt, was eine verschlüsselte Platte überhaupt leistet: Sie schützt gegen jemanden, der die
+<em>ausgeschaltete</em> Maschine oder ihr Abbild in die Hand bekommt. Im Betrieb läuft der Server,
+und dann ist die Platte entsperrt — gegen einen Zugriff auf das laufende System schützt sie nicht.</p>
+
+<p>Für ein System, das Ihre Studios jeden Morgen brauchen, wiegt das Verfügbarkeitsrisiko schwerer
+als der Gewinn. Ich habe mich deshalb dagegen entschieden und stattdessen für den Weg, der dieselben
+Fälle abdeckt, ohne den Betrieb zu gefährden.</p>
+
+<div class="kasten">
+  <div class="kopf">Der Weg, den ich stattdessen gehe</div>
+  <p>Der wahrscheinlichste Weg, auf dem solche Daten abhandenkommen, ist nicht ein Einbruch in das
+  laufende System — es ist eine <em>Kopie</em>, die den Server verlässt: eine verlorene Sicherung,
+  ein weitergegebener Auszug, ein Zugriff auf die Platte. Die Sicherung des Rechenzentrums ist
+  verschlüsselt; offen bleiben meine eigenen Auszüge auf der Platte und die PDF-Dateien. Genau dort
+  setze ich als nächstes an — und nicht bei der Verschlüsselung einzelner Datenfelder, die gegen
+  eine Kopie ohnehin nicht hilft, wenn der Schlüssel auf derselben Maschine liegt.</p>
+</div>
+
+<h2>Wenn etwas kaputtgeht</h2>
+
+<ul class="haken">
+  <li>Tägliche Vollsicherung, dazu fortlaufende Zwischensicherungen. Im schlimmsten Fall gehen
+      etwa <strong>eine Stunde</strong> an Eingaben verloren.</li>
+  <li>Die Wiederherstellung wird <strong>monatlich automatisch getestet</strong>: Die Sicherung
+      wird tatsächlich auf einen Zeitpunkt zurückgespielt, und es wird geprüft, ob die Datensätze
+      und die Prüfkette danach stimmen. Nicht „die Sicherung läuft", sondern „das Zurückspielen
+      funktioniert nachweislich".</li>
+  <li>Bleibt ein solcher Nachweis aus, meldet sich das System von selbst als beeinträchtigt. Eine
+      ausgefallene Prüfung sieht also nicht aus wie eine bestandene.</li>
+  <li>Ein Gesundheitswert über Datenbank, Warteschlange, Zweitkopie, Wiederherstellungstests,
+      Plattenplatz und Prozesse wird laufend überwacht; bei einem Statuswechsel bekomme ich sofort
+      eine Meldung.</li>
+  <li>Diese Betriebsmeldungen enthalten <strong>keine personenbezogenen Inhalte</strong>, nur
+      Zustände und Zahlen.</li>
+</ul>
+
+<h2>Löschen und Aufbewahren</h2>
+
+<ul class="haken">
+  <li>Aufbewahrung so lange, wie es gesetzlich geboten ist — danach automatische Markierung,
+      Schonfrist, dann endgültige Löschung, samt der zugehörigen PDF-Dateien.</li>
+  <li><strong>Läuft ein Rechtsstreit, werden Löschungen aktiv angehalten</strong>, bis die Sache
+      geklärt ist.</li>
+  <li>Auskunft und Datenübertragung: strukturierter Export. Passwort- und PIN-Prüfwerte sowie
+      Zwei-Faktor-Geheimnisse werden dabei automatisch entfernt.</li>
+</ul>
+
+<h2>Wie eine Änderung auf den Server kommt</h2>
+
+<p>Keine Änderung geht direkt in den Betrieb. Sie muss vier automatische Prüfungen bestehen:</p>
+
+<ol>
+  <li>Formale Prüfung des Programmtexts.</li>
+  <li><strong>Trennungstest</strong> — sieht Studio A die Daten von Studio B?</li>
+  <li>Test im echten Browser — funktionieren die Abläufe noch?</li>
+  <li>Prüfung der eingesetzten Fremdbausteine auf bekannte Schwachstellen.</li>
+</ol>
+
+<p>Erst wenn alle vier grün sind, wird ausgeliefert. Danach prüft der Server selbst, ob er
+gesund hochgekommen ist. Derzeit sind es <span class="zahl">327</span> Testdateien, die bei jeder
+Änderung durchlaufen.</p>
+
+<h2>Wie ich meine eigenen Fehler finde</h2>
+
+<p>Ein Test, der nie fehlschlagen kann, ist kein Test. Deshalb baue ich zu jeder neuen Prüfung
+absichtlich den Fehler ein, den sie fangen soll, und messe, dass sie tatsächlich anschlägt. Erst
+dann gilt sie.</p>
+
+<p>Ein Beispiel vom Tag, an dem ich dieses Dokument schreibe: Eine Prüfung sollte verhindern, dass
+zwei gleichzeitige Vorgänge ein Gerät in einen Zustand bringen, aus dem die Oberfläche nicht mehr
+herausführt. Der Riegel funktionierte. Die <em>Prüfung</em> dazu war jedoch fünfmal hintereinander
+blind — zuletzt genügte ein einzelnes Leerzeichen an der richtigen Stelle, damit sie einen echten
+Fehler übersah. Gefunden habe ich das nicht durch Nachdenken, sondern durch Nachmessen. Das Ergebnis
+steht dokumentiert im System.</p>
+
+<p>Über bekannte Schwächen führe ich eine <strong>datierte, offene Liste</strong>. Punkte
+verschwinden daraus nicht, weil sie unangenehm sind, sondern wenn sie behoben und die Behebung
+gemessen ist.</p>
+
+<h2>Was heute offen ist</h2>
+
+
+
+<table class="schmal">
+  <tr><td><strong>Eigene Sicherungsdateien auf dem Server</strong></td>
+      <td>Die vom Rechenzentrum gezogene Sicherung ist verschlüsselt; meine eigenen Auszüge liegen
+          daneben unverschlüsselt auf der Platte. Das ist die Kopie, die ich als nächstes
+          verschlüssele — sie ist zusammen mit der ungeklärten Plattenverschlüsselung der
+          verbliebene Punkt.</td></tr>
+  <tr><td><strong>PDF-Dateien unverschlüsselt</strong></td>
+      <td>Der Baustein dafür ist vorhanden und wird an anderer Stelle bereits eingesetzt.</td></tr>
+  <tr><td><strong>Festplattenverschlüsselung</strong></td>
+      <td>Bewusst nicht eingerichtet, Begründung oben. Falls Ihre IT das anders bewertet, spreche
+          ich gern darüber — es wäre eine Abwägung zwischen Schutz und Verfügbarkeit, keine
+          technische Unmöglichkeit.</td></tr>
+  <tr><td><strong>Eine Schutzrichtlinie im Browser</strong> läuft noch im Beobachtungsmodus</td>
+      <td>Sie meldet Verstöße, blockiert sie aber noch nicht. Umstellung nach Auswertung.</td></tr>
+  <tr><td><strong>Einzelne Reste eines Nebenläufigkeitsproblems</strong></td>
+      <td>Vier benannte, datierte Punkte. Der Hauptweg ist geschlossen und abgesichert, die
+          Restwege sind beschrieben — nicht verschwiegen.</td></tr>
+</table>
+
+<h2>Was ich Ihnen anbiete</h2>
+
+<p><strong>Prüfen Sie es selbst.</strong> Ich betreibe eine vom Echtbetrieb vollständig getrennte
+Testumgebung mit eigenen Zugangsdaten und ausschließlich erfundenen Daten. Ihre IT kann dort auf
+meine Einladung hin selbst versuchen, das System zu überwinden. Ich halte das für überzeugender als
+jede Zusicherung, die ich hier hineinschreiben könnte.</p>
+
+<p>Wenn Sie es lieber von dritter Seite hätten, beauftrage ich eine externe Sicherheitsprüfung und
+lege Ihnen den Bericht vor.</p>
+
+<p class="schluss">Stand 17. September 2026.</p>
+
+</body></html>
