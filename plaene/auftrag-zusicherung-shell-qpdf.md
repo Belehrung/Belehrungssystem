@@ -1,6 +1,12 @@
 # Auftrag: Die Shell-Zusicherung, die nicht rot werden kann — und zwei Nachbarn
 
-Fassung 1 — 18.09.2026, abends. Verfasser: Haupt-Agent.
+Fassung 2 — 18.09.2026, nach der Planprüfung. Verfasser: Haupt-Agent.
+
+**Der Gegenleser hat diesen Plan gesehen.** Urteil: „Das Papier sollte so noch
+nicht als Bauauftrag freigegeben werden." Fünf Befunde, alle selbst
+nachgemessen, **alle fünf getragen** — zwei davon blockierend, und beide
+betreffen die BEHEBUNG, nicht den Befund. Die drei Befunde selbst sind
+unverändert bestätigt.
 
 ## Warum dieser Beitrag zuerst kommt
 
@@ -73,15 +79,66 @@ abgeschaltet statt gelesen) und jede Zeile melden, die in einem
 `execFile`/`execFileSync`/`spawn`/`spawnSync`-Aufruf eine wahre Shell-Option
 setzt.
 
-**Die Formulierung des Musters ist der schwierige Teil, und sie gehört
-gemessen, nicht geraten.** `shell:` kann in einem Optionsobjekt stehen, das
-zwei Zeilen tiefer beginnt; ein zeilenweises Muster sieht das nicht. Der
-Auftrag lautet deshalb ausdrücklich: **stelle beide Formen her** (einzeilig
-und über mehrere Zeilen verteilt), miss, welche dein Muster fängt, und melde
-BEIDE Zahlen. Fängt es nur die einzeilige Form, dann steht das als benannte
-Grenze im Kopf des Abschnitts — wie die bereits dort dokumentierte Grenze zu
-`cp.exec(...)`. Eine unbenannte Grenze ist eine Lüge, eine benannte ist eine
-Entscheidung.
+**BLOCKIEREND BERICHTIGT (Planprüfung, selbst nachgemessen).** Fassung 1
+sagte: fängt das Muster nur die einzeilige Form, reicht es, die Grenze zu
+BENENNEN. Das ist hier falsch, und der Prüfer hat recht mit der Begründung:
+Eine benannte Grenze macht aus einer Lücke eine bekannte Lücke — aber keinen
+Riegel. Bei einem Wächter, der die Shell-Klasse ABSCHLIESSEN soll, ist das
+nicht vertretbar; der funktionale Z1a-Test schützt nur die eine
+Einstellungen-Route, alle übrigen Aufrufer blieben ungeschützt.
+
+**Die mehrzeilige Form ist deshalb PFLICHTABDECKUNG, kein zulässiges
+Negativergebnis.** Der bestehende Scanweg (`maskiereKommentare(text)
+.split("\n").some(...)`, `test_feature_owasp_haertung_static.js:56-57`) kann
+einen Aufruf und ein zwei Zeilen tiefer beginnendes Optionsobjekt
+grundsätzlich nicht verbinden — wer diesen Weg benutzt, muss ihn für diesen
+Abschnitt verlassen (etwa: Kommentare abziehen, dann über den GANZEN
+Dateiinhalt statt zeilenweise suchen).
+
+**Und der Bestand enthält bereits eine Schreibform, die Fassung 1 übersehen
+hat** — ein Alias, kein exotischer Trick:
+
+```js
+const execFileP = require('util').promisify(execFile);   // routes/health-intern.js:26
+await execFileP('df', ['--output=pcent', mount], {
+    encoding: 'utf8',
+    timeout: 3000,
+});
+```
+
+Ein Wächter, der auf die vier Aufrufnamen `execFile`/`execFileSync`/`spawn`/
+`spawnSync` zielt, sieht diesen Aufruf nicht — auch dann nicht, wenn das
+Mehrzeilenproblem gelöst ist.
+
+**Verbindliche Abdeckung, jede Form eigens gegengeprobt:**
+
+| Schreibform | muss der Wächter |
+|---|---|
+| `execFile(x, y, {\n shell: true\n});` | FINDEN |
+| `const opts = { shell: true }; execFile(x, y, opts);` | FINDEN oder als „nicht auflösbar" MELDEN |
+| `execFile(x, y, { ...defaults });` mit Shell in `defaults` | melden |
+| `opts.shell = true; execFile(x, y, opts);` | FINDEN |
+| `execFile(x, y, { ['shell']: true });` | FINDEN |
+| `execFileP(...)`, `const { execFile: run } = …; run(...)` | FINDEN (Alias steht im Bestand) |
+| `{ cwd: tmpDir }`, `{ shell: false }`, das Wort „shell" in Prosa | NICHT anschlagen |
+
+**Die Politik, die daraus folgt, und sie ist die eigentliche Entscheidung:**
+Was der Wächter nicht statisch auflösen kann, gilt NICHT als sicher, sondern
+wird GEMELDET. Ein Optionsobjekt aus einer Variablen ist damit entweder
+auflösbar oder ein Befund — nie stillschweigend in Ordnung. Das ist unsere
+Hausregel „leeres Ergebnis ist nicht sauberes Ergebnis", auf einen Scanner
+angewandt.
+
+**Der Geltungsbereich ist ebenfalls zu weiten:** `alleDateien` in jener Datei
+umfasst nach `:70-72` nur `routes/` und `core/` — **nicht `server.js`** und
+nicht die produktiven Wurzelskripte. Der neue Abschnitt nimmt sie dazu, sonst
+bewacht er die halbe Anwendung.
+
+**Die Beispiele laufen durch den VOLLSTÄNDIGEN Wächterpfad**, samt
+Aufrufkontext — ein isoliertes `{ shell: true }` beweist nur, dass die Regex
+eine Zeichenkette trifft, nicht dass sie den richtigen Aufruf findet. Und die
+Kommentar-Negativkontrolle enthält eine VOLLSTÄNDIGE verbotene Schreibweise in
+`//` und in `/* … */`, nicht bloss das Wort „shell".
 
 **Positivkontrolle ist Pflicht** (der Abschnitt daneben macht es vor): das
 Muster muss an hingeschriebenen Beispielen ANSCHLAGEN — `{ cwd: tmpDir, shell: true }`,
@@ -107,10 +164,35 @@ qpdf-Fassung als Option gelesen werden. Welche Fassung auf dem Server läuft,
 ist im Repo nicht festgelegt, und der zugehörige Test ersetzt `qpdf` durch
 einen Stub — aus dem Repo heraus ist die Frage also **nicht entscheidbar**.
 
-**Genau deshalb wird sie nicht entschieden, sondern umgangen:** ein Passwort,
-das mit `-` beginnt, wird abgewiesen, bevor es qpdf erreicht. Das kostet den
-Benutzer nichts (ein führender Bindestrich in einem PDF-Passwort ist kein
-Verlust) und macht die qpdf-Fassung gleichgültig.
+**BLOCKIEREND BERICHTIGT (Planprüfung, selbst nachgemessen).** Fassung 1
+wollte nur ein führendes `-` abweisen und behauptete, das mache „die
+qpdf-Fassung gleichgültig". Beides war falsch:
+
+1. **`@` fehlte.** qpdf kennt Argumentdateien über `@dateiname` (und `@-` für
+   die Standardeingabe). Ein Passwort `@/pfad/zur/datei` besteht sowohl die
+   Längenprüfung als auch die Bindestrichprüfung und ist trotzdem kein
+   gewöhnliches Passwortargument mehr. Schon die Zusage „wird unverändert als
+   Passwort behandelt" wäre damit unwahr.
+2. **Die Bindestrich-Begründung war zu stark.** `--encrypt` nimmt seine
+   Passwörter POSITIONELL; aus einem führenden `-` folgt nicht automatisch,
+   dass qpdf es als Option liest. Eine konkrete Fassung, in der das passiert,
+   kann ich nicht benennen — also ist es eine Vorsichtsmassnahme, keine
+   Behebung einer nachgewiesenen Lücke, und so gehört es auch im Kommentar zu
+   stehen.
+3. **„Kostet den Benutzer nichts" ist keine technische Tatsache**, sondern
+   eine Annahme über Passwortgewohnheiten. Ein mit `-` beginnendes Passwort
+   ist eine legitime Wahl.
+
+**Zu bauen ist deshalb:** abgewiesen werden führendes `-` UND führendes `@`.
+Die Meldung nennt beide Zeichen ausdrücklich, damit der Benutzer nicht raten
+muss. Im Kommentar steht getrennt, was belegt ist (`@` ist dokumentierte
+qpdf-Syntax) und was Vorsicht ist (`-`).
+
+Was daran NICHT übertrieben werden darf: Andere Zeichen — Leerzeichen,
+Semikolon, `$`, Anführungszeichen — sind bei diesem direkten `execFile`-Aufruf
+ohne Shell bedeutungslos. **Die Aussage „ein Shell-Ausbruch ist hier
+ausgeschlossen" ist von der Prüfung ausdrücklich bestätigt worden.** Es geht
+allein um die Argumentsyntax des Zielprogramms.
 
 Die Ablehnung nimmt denselben Weg wie die bestehende Längenprüfung
 (`res.status(400).send(...)`), mit einem Text, der SAGT, was erlaubt ist —
@@ -140,8 +222,14 @@ und die Anzeige:
 ${infoZeile(wartungTextFarbe === 'var(--gd-auf-status)' ? '⚠️ Prüfung fällig!' : '')}
 ```
 
-Scheitert die Fälligkeitsabfrage, bleiben die Ausgangswerte stehen — die
-Kachel ist grün und die Warnung fehlt. Es gibt keinen dritten Zustand „nicht
+Scheitert die Fälligkeitsabfrage, bleiben die Ausgangswerte stehen und die
+Warnung fehlt.
+
+**BERICHTIGT (Planprüfung, selbst nachgemessen):** Fassung 1 schrieb „die
+Kachel ist grün". Sie ist GELB — `--gd-signal` ist `#F7D000` (`core/design.js`).
+Der Fehler ändert den Befund nicht (der Zustand ist derselbe wie bei
+erfolgreich ermittelten null Fälligkeiten, also „nichts zu tun"), aber eine
+Abnahme darf sich nicht an einer Farbe festmachen, die es nicht gibt. Es gibt keinen dritten Zustand „nicht
 ermittelbar", und der Fehler landet nicht einmal im Log. Das ist unsere
 Hausregel „leeres Ergebnis ist nicht sauberes Ergebnis", auf die Oberfläche
 angewandt.
@@ -152,10 +240,18 @@ Kachel als „Status nicht ermittelbar" anzeigt — NICHT als „alles in Ordnun
 und NICHT als „Prüfung fällig". Beides wäre eine Behauptung, die wir gerade
 nicht belegen können.
 
-**Vorbild im Bestand, nicht neu erfinden:** `routes/sichtpruefung.js` fängt
-denselben Fall bereits richtig ab — `messfehler = true`, Zahlen auf `null`,
-Seite bleibt benutzbar, ohne eine erfolgreiche Messung vorzutäuschen. Diese
-Stelle ist zu lesen, bevor gebaut wird.
+**Vorbild im Bestand, aber ENG gefasst — und die Einschränkung ist gemessen:**
+`routes/sichtpruefung.js:3561-3568` fängt denselben Fall richtig ab
+(`messfehler = true`, Defektzahlen auf `null`), und die Anzeige wertet den
+unbekannten Zähler wirklich aus (`:3738` → „Mängelstand nicht ermittelbar").
+**Nur dieser Teil ist Vorbild.**
+
+NICHT mitkopieren: dieselbe Datei führt `heuteGemacht` bei einem Fehler als
+`false` weiter (`:3530`) und zeigt ab 10 Uhr trotzdem „Noch nicht erledigt!"
+(`:3662`, `:3704-3711`) — also genau die Krankheit, die Z2 beheben soll, nur
+in die andere Richtung: eine Behauptung über einen Zustand, der gar nicht
+ermittelt wurde. Und die dortigen `catch`-Blöcke protokollieren den Fehler
+ebenfalls nicht. Wer das Vorbild als Ganzes nachbaut, baut den Befund mit ein.
 
 **Zwei gleichartige Stellen liegen daneben** (Belehrungs-Warnung, Spülplan) —
 sie werden in DIESEM Beitrag NICHT mitgeändert, sondern als offener Punkt
