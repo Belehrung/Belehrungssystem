@@ -4012,3 +4012,13 @@ Mechanismus lautlos wirkungslos.
 geht nach der Regel vom 18.09. VOR der Bau-Runde an den Gegenleser.
 Weiterhin offen: Nacharbeit 2a, Gate/XSS, Identitätsbindung,
 Zusicherung/qpdf, S6, Punkt 3 des Härtungsprogramms.
+
+**Takt 22:40 — nichts angefangen (zwei Läufe aktiv), nur nachgemessen.**
+Der Takt nennt ein Zählmuster, das auch `test/*.sh` erfassen soll. Mit diesem
+Muster gemessen: weiterhin **338 = 338, `diff` EXIT 0**, Liste identisch zu
+meiner ersten Messung. Der `.sh`-Teil hat dabei aber NICHTS geprüft — in
+`test/run.sh` (GymDocu, Stand 4c50659) kommen `.sh`-Dateien ausschliesslich in
+KOMMENTARZEILEN vor, kein einziges Shell-Skript wird dort ausgeführt (13
+Erwähnungen, alle Prosa). Die Warnung des Takt-Textes trifft für dieses Repo
+heute also ins Leere; sie ist nicht falsch, sie ist gegenstandslos. Wer sich
+auf sie beruft, hat damit KEINE Abdeckung belegt.
