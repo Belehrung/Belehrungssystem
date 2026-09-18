@@ -3353,3 +3353,81 @@ Bewusst NICHT gebaut, weil sie den Beitrag gesprengt hätten:
 - **`routes/belehrungen.js:2001`** — ein später Fehlschlag löscht eine Datei,
   auf die die Datenbank schon verweist. Bestand, nicht von diesem Beitrag
   eingeschleppt.
+
+### 18.09.2026, ~12:30 UTC — Upload-Härtung: Nachmessungen durch, Auftragspapier steht
+
+**Die im Plan offenen Nachmessungen sind erledigt**, alle selbst gemacht.
+`plaene/plan-upload-haertung.md` ist damit **Fassung 3**; der Abschnitt „Was
+noch nachzumessen ist" ist gestrichen, nicht danebengelegt.
+
+**Bestätigt:** sieben multer-Konfigurationen; elf Multipart-POST-Wege; vier
+davon `diskStorage` und damit CVE-betroffen; alle drei Fehlerbehandlungsstellen
+aus S4.
+
+Die Elf ist dabei nicht so entstanden, wie ich sie gesucht hätte: es gibt nur
+**zehn** Middleware-Aufrufstellen. Die elfte Route kommt aus einer Schleife über
+`Object.keys(TYP_CONFIG)` in `routes/sichtpruefung.js:5508`, und `TYP_CONFIG`
+hat zwei Einträge. **Wer Aufrufstellen zählt, zählt keine Wege.**
+
+**Mein eigener Plan war an vier Stellen unvollständig:**
+
+- **`routes/upload-limit-waechter.js` kommt darin überhaupt nicht vor** — dabei
+  ist er die einzige Grössengrenze sämtlicher Nicht-multer-Wege, hängt vor den
+  Body-Parsern, hebt für drei Präfixe von 1 MB auf 4 MB und fällt bei einem
+  DB-Fehler geschlossen zurück. Ein Plan, der „Grenzen nachrüsten" sagt, ohne
+  die vorhandene Grenze zu kennen, hätte doppelt gebaut oder sie gelockert.
+- Die CSV-Eingänge sind je **zwei** (Vorschau und Commit), nicht einer.
+- Das Signaturbild ist **elf** Eingänge über sechs Dateien, nicht einer. Alle
+  elf liegen unter den drei Präfixen des Wächters — einzeln nachgesehen, auch
+  `/module/spuelplan` und der Tablet-Mount `/getraenkeanlage` (nicht
+  `/admin/getraenkeanlage`, wo der Wächter nicht griffe).
+- „die vier Fehlerbehandlungsstellen aus S4" — S4 nennt drei.
+
+**Neu gefunden:**
+
+- **Fünf der elf Unterschrift-Wege prüfen den Inhalt überhaupt nicht**
+  (`routes/module.js:3392`, `:3532`, `:3603`, `:3717`,
+  `routes/getraenkeanlage.js:361`) — Rohwert direkt in die DB. Eigener Beitrag.
+- **`core/pruefbericht.js:52-62` begründet `fieldSize: 25 MiB` mit einem
+  25-MB-Parserlimit in `server.js`, das es seit dem 03.09.2026 nicht mehr
+  gibt.** Der Kommentar zitiert den damaligen Wortlaut sogar. Heute: 1 MB, vom
+  Wächter auf 4 MB gehoben. Lehrbuchfall „dieselbe Aussage an zwei Orten".
+- **multer 2.4.0 bringt `lib/validate-limits.js`, das WIRFT.** Alle sieben
+  Konfigurationen bestehen es — sämtliche Limits sind Literale oder Produkte
+  von Literalen, **keines kommt aus `process.env`**. Genau das war der
+  Bruchfall: ein `parseInt(process.env.X)` auf `NaN` hätte den Serverstart
+  geworfen.
+
+**Das Auftragspapier steht in `plaene/auftrag-upload-haertung.md`.** Es
+schneidet bewusst drei Dinge aus: den Upload-Inventar-Wächter (eigener Beitrag
+— der CSRF-Wächter brauchte sechs Runden, ein erreichbarer CVE soll darauf
+nicht warten), die fünf Unterschrift-Wege, und den Integritätsfehler
+`routes/belehrungen.js:2002`.
+
+### 18.09.2026, ~12:35 UTC — Das OpenAI-Guthaben ist aufgebraucht
+
+**Die Planprüfung nach der Regel vom 18.09. konnte NICHT stattfinden.** Der
+Aufruf kam mit **HTTP 429, `insufficient_quota`, `credit_balance_exhausted`**
+zurück: „You have no credits remaining."
+
+Gemessen: **Suchen 0, Lesungen 0, Token rein 0, Token raus 0.** Es wurde nichts
+gesendet und nichts geprüft. `tools/gegenleser-repo.js` hat sich dabei richtig
+verhalten — es meldet den Fehlschlag, statt einen leeren Bericht als „keine
+Befunde" auszugeben, und trägt in `ASTRA-LAEUFE.md` Striche statt Nullen ein.
+Ein abgebrochener Lauf hat NICHTS geliefert, nicht „nichts gefunden".
+
+**Das ist eine Betreiber-Sache** — Guthaben nachlegen kann nur er. Bis dahin
+fällt die Astra-Spur aus.
+
+Ersatzweise läuft die Claude-Spur über dasselbe Auftragspapier. **Das ist kein
+Gleichwertiges und wird nicht so gemeldet:** nach der Messung vom 13.09.2026
+finden beide Spuren verschiedene Klassen mit NULL Überschneidung — die
+Claude-Spur misst Mutationen, Astra durchdenkt Kontrollfluss. Was Astra
+gefunden hätte, ist damit **ungeprüft, nicht sauber**.
+
+### Nebenbei gemessen: nodemailer
+
+Installiert ist **9.1.1** (`package.json` sagt `^9.0.5`), nicht 9.0.5. Der
+Sprung auf 10.0.0 ändert praktisch jede Datei der Bibliothek — erwartbar bei
+einem Hauptversionssprung und der Grund, warum er nach Hausregel einen eigenen
+PR bekommt. Der `npm diff` der für uns entscheidenden Dateien steht noch aus.
