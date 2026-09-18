@@ -576,6 +576,58 @@ wird mit „Unknown parameter" abgelehnt — ein „OK" sagt also wirklich etwas
    Wiederholschleife gehört deshalb ins Aufrufmuster; ein einzelner
    Fehlschlag ist keine Antwort.
 
+### Nachgemessen 18.09.2026 — vier Fähigkeiten, die wir nicht kannten
+
+Anlass: Betreiber-Frage „was kann diese API noch?". Das Modell wurde mit
+Websuche danach gefragt und hat eine lange, mit Quellen belegte Liste
+geliefert. **Diese Liste ist eine BEHAUPTUNG.** Gemessen wurde davon nur, was
+hier steht; die Gegenprobe steht (`quatschfeld_xyz` → HTTP 400 „Unknown
+parameter"), ein „wird angenommen" sagt also etwas.
+
+**GEMESSEN und brauchbar:**
+
+- **`POST /v1/responses/input_tokens` gibt es und es antwortet** (HTTP 200,
+  `{"object":"response.input_tokens","input_tokens":14}`). Damit lässt sich
+  der Umfang eines Bündels VORHER zählen, statt gegen die Grenze zu raten.
+  Das schliesst die Lücke aus dem 11.09.2026, wo wir uns der Grenze mit zwei
+  Versuchen genähert haben („~412.500 abgelehnt, 145.000 gehen durch").
+- **`truncation: "disabled"` wird angenommen.** Laut Beschreibung lässt es
+  einen zu grossen Aufruf SCHEITERN, statt still älteren Inhalt zu
+  entfernen — genau unsere Regel „leeres Ergebnis ist nicht sauberes
+  Ergebnis". Dass es wirklich hart scheitert, ist von uns NICHT gemessen.
+- **`GET /v1/organization/costs` existiert**, unser Schlüssel darf nur nicht
+  darauf zugreifen: HTTP 401 mit `Missing scopes: api.usage.read` — also
+  eine Rechte-, keine Existenzfrage. Eine laufgenaue Kostenzuordnung bräuchte
+  einen Schlüssel mit diesem Recht; das ist eine Betreiber-Entscheidung, keine
+  technische Hürde. Bis dahin bleiben unsere Kostenangaben in
+  `ASTRA-LAEUFE.md` die geschätzten aus dem Werkzeug.
+
+**GEMESSEN und NICHT brauchbar — wichtig, weil es verlockend aussieht:**
+
+- **`include: ["reasoning.encrypted_content"]` wird ANGENOMMEN, liefert bei
+  uns aber NICHTS.** Die Antwort enthielt überhaupt kein `reasoning`-Element,
+  nur `message`. Der Vorschlag, damit den Zielkonflikt vom 12.09.2026 zu
+  lösen (`store:false` schliesst `previous_response_id` aus), ist also
+  **NICHT belegt**. Angenommen heisst nicht wirksam — dieselbe Unterscheidung
+  wie bei `service_tier` (429 statt Ablehnung), nur in die andere Richtung.
+  Die Entscheidung „`store: false` gewinnt, Material geht erneut mit" bleibt.
+
+**BEHAUPTET, von uns NICHT gemessen** (wer eines davon benutzen will, misst
+es zuerst): eingebaute Werkzeuge `file_search`, `code_interpreter`, `shell`,
+`apply_patch`, `mcp`; Dateien per `input_file`/`file_id` statt im Prompt;
+`prompt_cache_options` mit `ttl`; `POST /v1/batches` (50 % billiger, bis 24 h
+Laufzeit); `tool_choice` mit erzwungener Funktion und Grammatik-Ausgabe
+(`syntax: "lark"`/`regex`); `expires_after` auf hochgeladenen Dateien;
+Container mit `network_policy: {"type":"disabled"}`.
+
+**Was davon für UNS von vornherein ausscheidet:** alles, was dem Prüfer
+Ausführung oder Schreibzugriff gibt (`shell`, `apply_patch`, `code_interpreter`,
+`mcp`) — das ist dieselbe Ablehnung wie am 11.09.2026, und sie steht. Und
+alles, was unseren Quelltext auf fremden Servern LIEGEN lässt (`file_search`
+mit Vector Stores, hochgeladene Dateien, Container) verträgt sich schlecht mit
+`store: false`; die Datenschutz-Übersicht weist diese Ressourcen ausdrücklich
+NICHT als rückstandsfrei aus.
+
 ### Nachgemessen 12.09.2026 — und was sich dadurch an der Arbeitsweise ändert
 
 Anlass: Betreiber-Frage „nutzen wir Astra schon optimal?" — Antwort war
