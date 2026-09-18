@@ -45,7 +45,7 @@
 // AUFRUF:
 //   node tools/gegenleser-repo.js <diff.txt> --brief=<auftrag.txt>
 //                                 [--wurzel=/pfad/zum/repo]
-//                                 [--modell=gpt-6-astra] [--max-runden=25]
+//                                 [--modell=gpt-5.6-sol] [--max-runden=25]
 //                                 [--protokoll=/pfad.jsonl] [--zweck=<text>]
 //   node tools/gegenleser-repo.js --selbsttest   (prueft die Riegel, OHNE Netz)
 //
@@ -124,11 +124,23 @@ const EFFORT = process.env.GEGENLESER_EFFORT || 'xhigh';
 // und mit einem echten, mehrrundigen Aufruf inklusive zurueckgeschicktem
 // Funktionsergebnis.
 //
-// --modell= bleibt der Schalter zum Vergleichen -- aber NUR gpt-6-astra ist
-// auf DIESEM Endpunkt gemessen. Ein anderes Modell (z. B. das bisherige
-// gpt-5.5) laeuft hier ungeprueft; vor Verlass darauf erst messen, nicht
+// --modell= bleibt der Schalter zum Vergleichen. Auf DIESEM Endpunkt sind
+// GEMESSEN: gpt-6-astra (12.09.2026) und gpt-5.6-sol (18.09.2026) -- letzteres
+// mit "tools" im Request UND einer ZWEITEN Runde samt zurueckgeschicktem
+// function_call_output, also genau der Nachweis, den die LEHRE oben verlangt.
+// Abgelesen: output[] traegt {type:"function_call", name:"lies_datei",
+// arguments:{"pfad":"core/db.js"}, call_id:"call_..."}, Runde 2 antwortet als
+// {type:"message"}; store:false bestaetigt, effort xhigh angenommen. Jedes
+// ANDERE Modell laeuft hier ungeprueft; vor Verlass darauf erst messen, nicht
 // annehmen, dass /v1/responses fuer jede Stufe gleich funktioniert.
-const VORGABE_MODELL = 'gpt-6-astra';
+//
+// VORGABE seit 18.09.2026 gpt-5.6-sol statt gpt-6-astra -- Betreiber-
+// Entscheidung, Grund sind die Kosten: 5,00/30,00 $ je Mio Token gegen
+// 12,50/75,00 $ (PREISE unten), also Faktor 2,5.
+// WAS DAMIT NICHT BELEGT IST: dass sol als PRUEFER gleich gut ist. Gemessen
+// ist bisher nur, dass der WEG technisch traegt. Die Pruefguete steht aus und
+// wird an einem echten Diff gemessen, bevor sich jemand darauf beruft.
+const VORGABE_MODELL = 'gpt-5.6-sol';
 // 25 reichten in Messlauf 1 (09.09.2026) NICHT: das Modell rief je Antwort
 // genau EINEN Werkzeugaufruf auf (gemessen: 25 Antworten, 25 Aufrufe) und lief
 // mitten in der Arbeit ins Limit. Der Abbruch war richtig -- ein Lauf, der
@@ -585,7 +597,7 @@ function protokollSchreiben(eintrag) {
 
 function konsoleUsage() {
     console.error('Aufruf: node tools/gegenleser-repo.js <diff.txt> --brief=<auftrag.txt>');
-    console.error('        [--wurzel=/pfad/zum/repo] [--modell=gpt-6-astra] [--max-runden=25]');
+    console.error('        [--wurzel=/pfad/zum/repo] [--modell=gpt-5.6-sol] [--max-runden=25]');
     console.error('        [--protokoll=/pfad.jsonl] [--zweck=<text>]');
     console.error('        node tools/gegenleser-repo.js --selbsttest');
     console.error('--brief ist PFLICHT: liefert den beitragsspezifischen Teil des Auftrags,');

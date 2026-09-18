@@ -525,10 +525,32 @@ Sachfrage):
 
 **Wofür was.** Das ist eine Empfehlung aus den Messungen oben, keine Vorschrift:
 
-- **Prüfen und Gegenlesen: `gpt-6-astra`**, weil nur dort `max` verfügbar ist und
-  weil das Verfahren an ihm gemessen ist. Nicht wechseln, ohne es zu messen —
-  ein Modellwechsel ist nie die Erklärung für ein besseres Ergebnis, solange
-  sich am selben Tag auch die Aufträge geändert haben.
+- **Prüfen und Gegenlesen: `gpt-5.6-sol`** — Betreiber-Entscheidung vom
+  18.09.2026, und der Grund sind die Kosten. Die Preistabelle in
+  `tools/gegenleser-repo.js` nennt 5,00/30,00 $ je Mio Token gegen 12,50/75,00 $
+  bei `gpt-6-astra`; ein Lauf, der mit astra 12,67 $ kostete, liegt damit bei
+  rund 5 $. `max` gibt es dort ebenfalls, die Stufe geht also nicht verloren.
+  **Gemessen ist bisher nur, dass der WEG trägt** (18.09.2026, `/v1/responses`
+  MIT `tools` im Request und einer ZWEITEN Runde samt zurückgeschicktem
+  `function_call_output`, `store:false` bestätigt) — die frühere Sackgasse galt
+  für `/v1/chat/completions`, nicht für diesen Endpunkt.
+  **Was NICHT gemessen ist: die PRÜFGÜTE.** Kein einziger Befund von sol ist
+  bisher durch unser Nachmessen gegangen. Wer sich darauf beruft, sol sei so
+  gut wie astra, hat eine Behauptung aufgestellt, die niemand geprüft hat —
+  und der Vergleich an EINER Frage (18.09., alle fünf Modelle antworteten
+  richtig) unterscheidet sie ausdrücklich NICHT.
+- **Zweite Lesespur bei folgenschweren Beiträgen: `deepseek-v4-pro`** —
+  Betreiber-Entscheidung 18.09.2026, gestützt auf den A/B-Lauf (acht Befunde,
+  sechs nach eigener Nachmessung getragen, **zwei davon hatte keine andere
+  Spur**; Einzelheiten in `plaene/deepseek-vs-astra-18-09-2026.md`). Sie
+  ERSETZT die vorhandenen Spuren nicht, sie kommt daneben — derselbe Grund wie
+  am 13.09.: verschiedene Sucher finden verschiedene Klassen. Ohne Websuche,
+  also nicht für das Abhängigkeits-Audit.
+- **Ein Modellwechsel ist nie die Erklärung für ein besseres Ergebnis**,
+  solange sich am selben Tag auch die Aufträge geändert haben. Das gilt nach
+  dem Wechsel genauso wie davor: wird eine Gegenlesung ab jetzt schwächer,
+  ist das ZUERST ein Verdacht gegen sol — und zwar einer, den man messen muss,
+  statt ihn zu behaupten.
 - **Routinearbeit ohne Urteil** (etwas umformulieren, eine Liste sortieren, eine
   Datei zusammenfassen): `gpt-5.4` mit `effort: "none"` — gemessen 44 Ausgabe-
   Token und 1,7 s gegen 198 Token und 3,1 s bei `high`.
