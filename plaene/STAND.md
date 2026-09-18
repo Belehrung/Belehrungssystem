@@ -2856,3 +2856,48 @@ Läuft: meine eigene volle Suite. Danach Code-Review über den GESAMTEN
 Beitrag (`c40c52f..HEAD`), danach eine zweite Gegenlesung — die Umstellung
 ändert VERHALTEN, nicht nur Zusicherungen, und genau dafür sieht die
 CLAUDE.md eine zweite Runde vor.
+
+### Takt 18.09.2026, 07:40 UTC — Runde 5 läuft, Stand nachgezogen
+
+Der Executer arbeitet an `plaene/auftrag-haertung-p1-p2-runde5.md`; noch kein
+neuer Commit auf `claude/haertung-p1-p2` (zuletzt `a8182b7`), keine Suite
+laufend. Kein Eingriff in den Arbeitsbaum.
+
+**Was Runde 5 auslöst: die Code-Review über den GESAMTEN Beitrag
+(`c40c52f..HEAD`) hat fünfzehn Befunde geliefert, sechs blockierend.** Die
+schweren habe ich selbst nachgemessen:
+
+| Befund | eigene Messung |
+|---|---|
+| **R1 Produktivcode:** `routes/sichtpruefung.js:5478` liest `req.body.ids` vor dem `try` | Mit der Parser-Konfiguration aus `server.js:161-162` (Express 5.2.1) ist `req.body` **`undefined`** ohne Content-Type, bei multipart und bei text/plain; nur urlencoded liefert ein Objekt. Die Route wirft dann eine TypeError statt weiterzuleiten — **eine Fehlerklasse, die es vor diesem Beitrag nicht gab** (`req.query` ist immer definiert) |
+| **R2, der schwerste:** kein Test sichert, dass `server.js` den CSRF-Schutz einhängt | `app.use(…csrfSchutz);` auskommentiert → `test_feature_haertung_csrf_end_zu_ende.js` **EXIT 0**, `test_feature_csrf.js` **EXIT 0**, `test_feature_csrf_ausnahmen_waechter.js` **EXIT 0**. Alle drei bauen ihre App selbst |
+| **R3:** `METHODEN` kennt acht Verben | An einer frischen `express()`-App sind `purge`, `search`, `link`, `lock`, `mkcol`, `copy`, `move`, `report`, `merge`, `notify`, `trace`, `propfind` u.a. allesamt Funktionen. Die Zusage „JEDE Registrierung an `app`" im Kopfkommentar ist damit falsch |
+| **R4 Abdeckungsverlust durch diesen Beitrag:** das versteckte `ids`-Feld | `value="${escapeAttr(ids.join(','))}"` → `value=""` gesetzt (die Defektmail an den Servicetechniker fällt damit lautlos aus): `messfehler_nicht_behaupten` **45/0**, `get_schreibt_nicht` **27/0**, `tablet_navigation` **3/0**, `haertung_csrf_end_zu_ende` **36/0** — alle grün |
+
+R2 ist der Befund, der weh tut: der gesamte Beitrag handelt von CSRF, und die
+eine Zeile, die den Schutz für die ganze Anwendung einschaltet, ist von nichts
+bewacht. Der Wächter parst `server.js` ohnehin schon und klassifiziert diese
+Registrierung — es fehlte nur die Zusicherung, dass sie da ist.
+
+Vor Runde 5 gemessen und unverändert: Suite `SUITE_EXIT=0`, 0 FAIL,
+Dateizahl-Ritual **334 = 334** mit `diff` EXIT 0, `npm run lint` EXIT 0,
+Marker 6.
+
+### Betreiber-Frage 18.09.2026: „was kann die API noch?"
+
+Gefragt und die brauchbaren Antworten SELBST gegen den echten Endpunkt
+gemessen (Gegenprobe steht: `quatschfeld_xyz` → HTTP 400). Das Ergebnis steht
+in der CLAUDE.md, Abschnitt „Nachgemessen 18.09.2026". Kurz:
+
+- **`POST /v1/responses/input_tokens` gibt es** — Bündelgrösse lässt sich
+  VORHER zählen statt gegen die Grenze zu raten.
+- **`truncation: "disabled"`** wird angenommen (lautes Scheitern statt stillem
+  Kürzen).
+- **`GET /v1/organization/costs` existiert**, unserem Schlüssel fehlt nur
+  `api.usage.read` — laufgenaue Kosten wären eine Betreiber-Entscheidung, keine
+  technische Hürde.
+- **Negativ, und das ist der wichtigere Fund:**
+  `include: ["reasoning.encrypted_content"]` wird ANGENOMMEN und liefert bei
+  uns trotzdem kein `reasoning`-Element. Der vorgeschlagene Ausweg aus dem
+  Zielkonflikt `store:false` ↔ `previous_response_id` ist damit **nicht
+  belegt**; die Entscheidung vom 12.09. bleibt.
