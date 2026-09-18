@@ -11,6 +11,43 @@ Container neu startet.
 hat und was nicht neu aufgerollt wird.** Diese Beschlüsse standen bis zum
 16.09.2026 ausschliesslich im Prompt einer Routine.
 
+## ZIEL, dem alles untergeordnet ist (Betreiber, 17.09. und 18.09.2026)
+
+> „alle erwähnten punkte sollen sicher behoben werden. das system soll einen
+> pentest bestehen können."
+
+**Das Programm steht in `plaene/pentest-haertung-programm.md`, sechs Punkte.**
+Stand 18.09.2026, 19:00 UTC:
+
+| | Punkt | Stand |
+|---|---|---|
+| 1+2 | vier schreibende GET-Routen auf POST, CSRF-Ausnahmen-Wächter | **fertig** (#456, Deploy 424) |
+| 3 | externe Schnittstelle härten (Ratelimit, Schema, Protokoll) | **NÄCHSTES** |
+| 4 | Offboarding-ZIP verschlüsseln | offen |
+| 5 | Feldverschlüsselung der sieben Gesundheitsspalten | offen |
+| 6 | Monats-PDFs aus dem Hauptprozess | offen |
+
+**Betreiber-Weisung 18.09.2026, ~19:00 UTC: „mach fertig aber verliere das
+Ziel nicht aus den Augen."** Anlass war seine Frage, warum der ganze Tag in
+die Upload-Härtung ging — die auf KEINEM der sechs Punkte steht. Sie kam aus
+dem Abhängigkeits-Audit (multer-CVE), also aus einer eigenen Spur.
+
+**Daraus folgt verbindlich:**
+
+1. **Beitrag 2a wird fertiggestellt** (läuft beim Executer) — eine halb
+   geschlossene Klasse ist die schlechteste Lage.
+2. **Danach Punkt 3 des Programms**, NICHT 2b/2c. Die Abbruch-Markierung und
+   die Löschreihenfolge sind Betriebsqualität, kein Pentest-Thema.
+3. **2b und 2c sind ZURÜCKGESTELLT**, nicht gestrichen. Das Auftragspapier
+   Fassung 3 bleibt gültig und liegt bereit.
+4. Wer hier eine neue Spur aufmacht, die nicht auf einen der sechs Punkte
+   einzahlt, schreibt in EINEN Satz dazu, warum sie vorgeht — in denselben
+   Zwischenstand, in dem die Suite-Zahlen stehen.
+
+Punkt 4 ist die Lehre des Tages: Die Upload-Spur war sachlich richtig (sie
+hat ein echtes Informationsleck gefunden), aber sie ist ohne Entscheidung an
+das Programm vorbeigewachsen, und gemerkt hat es der Betreiber, nicht ich.
+
 ## Stand JETZT — das gilt, alles Weitere ist Verlauf
 
 Die Abschnitte unter dieser Übersicht beschreiben, WIE es dazu kam. Wo sie
