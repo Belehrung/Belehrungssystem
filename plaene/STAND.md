@@ -2381,3 +2381,31 @@ ihn diesmal selbst bemerkt, gestoppt und gemeldet hat, statt ihn abzuhaken,
 ist der Grund, warum er hier überhaupt in der Abnahme auftaucht — und der
 praktische Beleg für die Hausregel, dass ein Agent, der einen Befund meldet,
 mehr wert ist als einer, der immer liefert.
+
+### Takt 18.09.2026, 01:40 UTC — nichts getan ausser Stand nachziehen
+
+Runde 5 ist gebaut und gepusht (`3d92e51`), der Executer ist endgültig fertig,
+seine unkontaminierte Abschluss-Suite war grün, und die CI ist auf diesem Kopf
+in allen fünf Prüfungen grün. Der Review-Bot steht auf 5/5 und „safe to merge",
+beide P1 als behoben.
+
+Meine eigene Abschluss-Suite läuft gerade. Bis dahin kein Merge.
+
+Selbst nachgemessen an Runde 5, bevor die Suite startete:
+- Die Wiederherstellung von `process.exitCode` in beide Richtungen: war vorher
+  nichts gesetzt, bleibt hinterher `undefined` (kein stilles Umkippen auf 0);
+  war vorher ein Fehlerstatus gesetzt, steht er unverändert da.
+- Die neuen Zusicherungen prüfen beide Schadensrichtungen und tragen je eine
+  Positivkontrolle („hat wirklich geerntet" / „hat wirklich einen Fehler
+  produziert") — ohne die wäre ein leerer Lauf grün geworden.
+- Der Kommentar an `ernteInProcess()` zählt alle prozessglobalen
+  Nebenwirkungen auf, nicht nur die behobene.
+
+Registrierte Einträge im Zweig: **331** (master 327). Vier neue Testdateien
+über den ganzen Beitrag; die vierte kam in Runde 4 dazu, NICHT in Runde 5
+(`git diff 9e08387..3d92e51 -- test/run.sh` ist leer). Die wiederkehrende
+Differenz zur Zahl des Executers (330) ist weiterhin nur die Zählweise — er
+lässt den namentlich registrierten Eintrag aus.
+
+Nächster Schritt nach grüner eigener Suite: Lint, Mengenvergleich, Marker,
+dann Merge mit eigener Botschaft, Deploy-Lauf und live-check.
