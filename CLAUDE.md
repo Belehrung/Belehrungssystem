@@ -153,6 +153,25 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
    Issue-Texte und CI-Logs.
    Ein Befund, der nachgemessen NICHT trägt, wird im Zwischenstand als solcher
    benannt, nicht stillschweigend übergangen.
+   **Er ist bei TATSACHENANGABEN IN PROSA stark — gemessen 18.09.2026, und
+   das ändert, wann wir ihn überhaupt drüberlaufen lassen.** An einem REINEN
+   DOKU-Beitrag (#458, eine Markdown-Datei, kein Produktivcode) lieferte er
+   drei Befunde, und alle drei trugen nach eigener Nachmessung: eine
+   Anzahl, die ich aus meiner eigenen Ausgabe falsch abgelesen hatte
+   („vier Einzelfälle", nachgezählt fünf); eine URSACHENBEHAUPTUNG, die nicht
+   stimmte („der serverseitige Filter lehnt das ab" — er prüft nur ein
+   Präfix); und eine Zeilennummer, die auf den `try` statt auf den `catch`
+   zeigte. Alle drei als P2 eingestuft, keiner übertrieben.
+   Folge: **ein Doku-Beitrag ist den Durchlauf wert.** Bis dahin sind solche
+   Beiträge ohne besondere Aufmerksamkeit durchgegangen — eine Befunddatei
+   existiert aber, damit jemand später an die Stelle springt, und eine
+   falsche Fundstelle oder Ursache kostet genau die Zeit, die sie sparen soll.
+   Der zweite der drei hat sogar einen neuen offenen Punkt eröffnet (U8, die
+   SVG-Parserfläche), den ohne ihn niemand gesehen hätte.
+   **Was das NICHT hergibt:** drei Befunde an EINEM Beitrag an EINEM Tag.
+   Dieselbe Einschränkung wie bei Astra — eine Stichprobe trägt eine
+   Beobachtung, keine Umkehr. „Seine Bewertung ist eine Meinung" bleibt
+   stehen, und jeder Befund wird weiterhin selbst nachgemessen.
 7. **Nach dem Merge zweierlei prüfen — steht der Betrieb, und ist er
    aktuell?**
    - `bash tools/live-check.sh` beantwortet das ERSTE: Landingpage,
