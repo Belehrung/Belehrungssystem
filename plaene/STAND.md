@@ -2752,3 +2752,10 @@ Läuft gerade: meine eigene volle Suite und die Gegenlesung. Danach die
 Code-Review (nacheinander, nicht gleichzeitig — der Gegenleser LIEST den Baum,
 und eine Review, die mutieren darf, würde ihm den Boden unter den Füssen
 wegziehen).
+
+### Takt 18.09.2026, 06:40 UTC — nichts getan ausser Stand nachziehen
+
+Beides läuft: meine eigene volle Suite (bei `test_feature_suite_laufsperre.js`,
+der Registrierungs-Wächter hat schon grün gemeldet — „333 test_*.js + 1
+namentlich verlangte Einträge … alle registriert") und die Gegenlesung. Kein
+Eingriff in den Arbeitsbaum, solange der Gegenleser dort liest.
