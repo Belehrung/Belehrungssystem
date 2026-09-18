@@ -1032,6 +1032,34 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   dieselbe Methode nachweislich ein positives liefern kann. „Nichts gefunden"
   ohne Gegenprobe heißt „nicht gesucht". In Rechercheaufträgen muss diese
   Anforderung im Prompt stehen — Subagenten lesen diese Datei nicht.
+- **Das gilt auch für ein SUCHMUSTER beim Kartieren — und genau dort wird es
+  am häufigsten übersprungen.** Gemessen am 18.09.2026 abends, **dreimal
+  hintereinander in einer Stunde**, bei einer beauftragten Lückensuche:
+  *Erstens:* Filter „steht `studio_id` im Block?" stufte den BEKANNTEN Befund
+  (`/api/position` nimmt `etage_id` ungeprüft aus dem Body) als in Ordnung
+  ein — `studio_id` stand dort, aber als eingesetzter WERT im INSERT, nicht
+  als Prüfung.
+  *Zweitens:* verschärft auf „`WHERE … studio_id … id =` im Block?" — derselbe
+  Befund wieder als geprüft gemeldet, weil eine ANDERE Abfrage im selben
+  30-Zeilen-Block eine passende Klausel hatte.
+  *Drittens:* bei der Frage, ob die acht `/intern`-Router bewacht sind, suchte
+  ich nach `superadmin|requireSuper|INTERN_TOKEN|x-intern|Bearer` und bekam
+  **sechs von acht als ungeschützt** gemeldet. Tatsächlich sind alle acht
+  bewacht; die Wache heisst `BEZIRK_EXPORT_TOKEN`/`PROVISION_TOKEN` im Header
+  `X-Bezirk-Token` über `core/bezirk-token.js`. Mit dem am echten Fall
+  GELERNTEN Muster: acht von acht bewacht.
+  **Die Reihenfolge ist der ganze Punkt: erst das Muster an einer bekannten
+  Fundstelle LERNEN, dann damit suchen — nie umgekehrt.** Ein geratenes Muster
+  liefert in beide Richtungen Unsinn: es übersieht den echten Fall (1, 2) und
+  meldet Fehlalarme (3). Wer keinen bekannten Positivfall hat, stellt einen
+  her, bevor das Ergebnis zählt.
+  **Und für eine Frage nach dem KONTROLLFLUSS taugt Textsuche grundsätzlich
+  nicht.** „Wird diese Variable geprüft, bevor sie benutzt wird?" ist keine
+  Mustersuche — vier Verdachtsfälle waren beim Lesen alle sauber, und zwei von
+  ihnen hatte der Filter nur deshalb gemeldet, weil die Prüfung NACH dem Lesen
+  statt in der WHERE-Klausel steht (`routes/admin/qr-druckdaten.js:246-249`:
+  `SELECT … WHERE id = $1`, danach `if (charge.studio_id !== studioId)`).
+  Dafür sind der Gegenleser mit Repo-Lesezugriff und das eigene Lesen da.
 - **Gegenprobe zu jeder neuen Prüfung.** Fehler herstellen, ROT messen,
   zurücknehmen, GRÜN messen — beides wörtlich melden. Ohne diesen Nachweis ist
   eine Prüfung Dekoration. Am 17.08.2026 rutschten fünf konstruierte Verstöße
