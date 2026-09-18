@@ -64,24 +64,91 @@ Punkt 4 ist die Lehre des Tages: Die Upload-Spur war sachlich richtig (sie
 hat ein echtes Informationsleck gefunden), aber sie ist ohne Entscheidung an
 das Programm vorbeigewachsen, und gemerkt hat es der Betreiber, nicht ich.
 
-## LÄUFT GERADE (18.09.2026, 19:45 UTC) — nicht anfassen
+## LÄUFT GERADE (18.09.2026, 20:15 UTC) — nicht anfassen
 
 | Was | Wo | Arbeitsbaum |
 |---|---|---|
-| **Executer: Upload-Härtung 2a** (vier Wrapper vereinheitlichen) | Zweig `claude/upload-haertung-2a` | **`/home/user/gymdocu` — BELEGT** |
-| Gegenleser **A1**: SQL- und Kommando-Einschleusung | `/tmp/claude-0/s2/lauf-a1.log` | `/workspace/gymdocu-sicher` (nur lesend) |
-| Gegenleser **B**: Anmeldung, Sitzung, Token (Wiederholung) | `/tmp/claude-0/s2/lauf-b2.log` | dito |
-| Gegenleser **C**: Datenabfluss (Wiederholung) | `/tmp/claude-0/s2/lauf-c2.log` | dito |
+| **Executer: Upload-Härtung 2a** (vier Wrapper vereinheitlicht, committet, volle Suite läuft) | Zweig `claude/upload-haertung-2a` | **`/home/user/gymdocu` — BELEGT** |
 
-**Noch zu starten:** Gegenleser **A2** (Pfade und HTML-Ausgabe), Brief liegt
-fertig in `/tmp/claude-0/s2/brief-a2.txt`.
+**`/workspace/gymdocu-sicher`** ist ein reiner LESE-Arbeitsbaum auf `03f0c3c`.
+Nach Abschluss mit `git worktree remove` abräumen. Er wird derzeit von
+niemandem benutzt.
 
-**`/workspace/gymdocu-sicher`** ist ein reiner LESE-Arbeitsbaum auf `03f0c3c`,
-damit die Gegenleser dem Executer nicht in die Quere kommen. Nach Abschluss
-mit `git worktree remove` abräumen.
+## DER GEGENLESER IST NICHT MEHR ERREICHBAR (18.09.2026, ~20:05 UTC)
 
-**Drei Mandantenbefunde warten auf den freien Arbeitsbaum** (F1–F3, s. oben
-unter „Daraus folgt verbindlich", Punkt 2). Alle drei selbst nachgemessen.
+**Gemessen:** HTTP 429, `insufficient_quota`, „You have no credits remaining."
+Das OpenAI-Guthaben ist aufgebraucht. Das ist KEIN Mengenlimit (das war die
+Ursache der drei Abbrüche am Nachmittag) und kein Egress-Abbruch.
+
+Folgen, die jeder Nachfolger kennen muss:
+
+- **Zwei der fünf Bestandsläufe haben noch geliefert** (A1, B), zwei brachen
+  ab (C-Wiederholung nach 19 Runden, A2 vor dem ersten Modellkontakt), einer
+  wurde nie gestartet.
+- **Die Regel „der Plan geht VOR der ersten Bau-Runde an den Gegenleser" ist
+  bis auf Weiteres nicht erfüllbar.** Sie hat einen eingebauten Ausweg
+  („wer ihn auslässt, schreibt in EINEN Satz dazu, warum"); der Satz lautet:
+  *Gegenleser nicht erreichbar, HTTP 429 insufficient_quota.*
+- Übrig bleiben als Prüfspuren: die Claude-Review über den Diff, der
+  Review-Bot am PR, das eigene Nachmessen. Am 13.09.2026 ist gemessen, dass
+  Claude-Spur und Astra-Spur NULL Überschneidung hatten — es fehlt also eine
+  ganze Suchklasse, nicht nur Redundanz.
+- Kosten der sieben Bestandsläufe dieses Tages: rund **207 $**. Die Zahlen je
+  Lauf stehen in `ASTRA-LAEUFE.md`.
+
+## OFFENE BEFUNDE, alle selbst nachgemessen (Stand 20:15 UTC)
+
+**Mandantengrenze — zwei Stellen, Auftragspapier liegt fertig in
+`plaene/auftrag-mandantengrenze-fremd-ids.md`:**
+
+| | Stelle | Was fehlt |
+|---|---|---|
+| M1 | `routes/lageplan.js:796` (`POST /admin/lageplan/api/position`) | fremde `etage_id` ungeprüft; der Fremdschlüssel trägt `ON DELETE CASCADE` ohne `studio_id` |
+| M2 | `routes/belehrungen.js:1953` (`POST /admin/belehrungen/freischalten/:id`) | ZWEI fremde IDs ungeprüft, Tabelle hat gar keine Fremdschlüssel |
+
+Die Klasse ist systematisch durchsucht: **51 Fremdschlüssel-INSERTs
+angesehen, 2 offen.** Grenzen der Suche stehen im Auftragspapier.
+
+**GEFALLEN — kein Befund (war früher „F3"):** der Ausmusterungs-Token
+(`core/ausmusterung-token.js:87`) verbraucht vor der Studio-Prüfung. Die
+Token-ID ist `crypto.randomBytes(32)`, also nicht zu erraten, und das
+Verhalten ist im Kopfkommentar ausdrücklich begründet. **Wird nicht gebaut.**
+
+**Aus Gegenleser-Lauf A1 (SQL und Kommandos) — keine Einschleusung gefunden,
+Positivkontrolle in beide Richtungen bestanden:**
+
+| | Stelle | Was |
+|---|---|---|
+| Z1 | `test_feature_mandantengrenze_dateiwege.js:487` | Zusicherung behauptet wörtlich, die Argumentliste beweise, „dass GAR KEINE Shell mehr beteiligt ist" — `leseZipAufruf()` prüft `opts.shell` nie. Der statische Geschwisterwächter sucht ebenfalls nur `exec`/`execSync`, nicht die Shell-Option. Eine Zusicherung, die nicht rot werden kann. |
+| Z2 | `server.js:1008` | `catch(e) {}` auf der Startseite: bei einem DB-Fehler verschwindet die Wartungswarnung, die Kachel bleibt grün. Kein Log, kein „nicht ermittelbar". |
+| Z3 | `routes/verbandbuch-admin.js:598` | das vom Admin gewählte PDF-Passwort geht unverändert als Argument an `qpdf --encrypt`. Keine Shell beteiligt; ein Wert, der mit `-` beginnt, kann trotzdem von qpdfs eigener Argumentsyntax gefressen werden. Niedrig, aber billig zu schliessen. |
+
+**Aus Gegenleser-Lauf B (Anmeldung, Sitzung, Token) — selbst nachgemessen:**
+
+| | Stelle | Was ein Angreifer erreicht |
+|---|---|---|
+| S1 | `routes/webhooks.js:146-160` | **Der schwerste Befund des Tages.** Im 30-Minuten-Fenster, das der Admin mit „Verbindung vorbereiten" öffnet, wird JEDER nichtleere `X-API-Key` eines Unangemeldeten zum künftig vertrauten Schlüssel. Die Subdomain ist öffentlich, und schon die HEAD-Route läuft durch dieselbe Middleware — wer pollt, gewinnt das Rennen gegen den echten ersten Magicline-Aufruf. Danach: Mitarbeiter im fremden Studio anlegen, ändern, deaktivieren, samt PIN-Einladungsmail. Also SCHREIBZUGRIFF auf ein fremdes Studio. |
+| S2 | `server.js:774` | Die Tablet-Identität wird allein am Sitzungs-Zeitstempel geprüft (gleitendes 5-Min-Fenster). Weder `aktiv=1` noch eine PIN-Version werden nachgelesen, und die Schreibwege (PIN-Reset, Admin-PIN-Vergabe, Deaktivierung über den Webhook) löschen die Sitzung nicht. Ein deaktivierter Mitarbeiter unterschreibt weiter — auch `routes/belehrungen.js:781` prüft beim Unterschreiben kein `aktiv=1`. |
+| S3 | `routes/archiv.js:572` | Die 15-Minuten-Archivfreischaltung speichert nur `{sid, bis}` — keine Benutzer-ID, kein `regenerate()`. `entwerteBenutzerSessions()` trifft nur `benutzer`/`pending2fa`; eine rein per `/d/auth/…` freigeschaltete Sitzung überlebt Passwort-Reset und Kontosperre. |
+| S4 | `routes/auth.js:1006`, `routes/tablet-sperre.js:536` | Die Sperre wird VOR der Geheimnisprüfung gelesen und erst DANACH gezählt. Parallele Anfragen kommen gemeinsam durch die Vorprüfung; nach dem Treffer wird die inzwischen entstandene Sperre nicht noch einmal geprüft. |
+| S5 | mehrere (`routes/api.js:30`, `routes/archiv.js:578`, `routes/auth.js:1251`) | Geheimniseingänge ohne eigene Versuchsdrossel. Gehört sachlich zu **Punkt 3** des Programms. |
+| S6 | `routes/sichtpruefung.js:3357` | `try { fs.unlinkSync(…) } catch (e) {}` verschluckt auch Rechte- und E/A-Fehler; danach wird der DB-Verweis gelöscht und Erfolg gemeldet. Unwiderruflicher Weg. |
+
+**NOCH NICHT NACHGEMESSEN, deshalb noch kein Auftrag:** der Befund zum
+offenen Tablet-Modus (`routes/auth.js:1045`, Rolle `tablet` ohne
+Anmeldenachweis) samt Fotolöschung ohne Audit. Der offene Modus ist
+ausdrücklich beabsichtigt; was daran Produktentscheidung und was Lücke ist,
+gehört dem Betreiber vorgelegt, nicht einseitig gebaut.
+
+## Reihenfolge, die jetzt gilt
+
+1. **2a fertigstellen** (Diff lesen, Suite, Review, Merge, Deploy, live-check).
+2. **M1+M2 als EIN Beitrag** — Auftragspapier liegt.
+3. **Z1+Z3 als EIN Beitrag** (Zusicherung über `opts.shell`, statischer
+   Wächter gegen `shell:` unter `routes/`+`core/`, qpdf-Argumentprüfung).
+   Z2 als kleine Zugabe.
+4. **S2+S3 als EIN Beitrag** (Sitzungswiderruf).
+5. **Punkt 3 des Programms**, und dorthin gehören S1, S4 und S5.
 
 ## Stand JETZT — das gilt, alles Weitere ist Verlauf
 
