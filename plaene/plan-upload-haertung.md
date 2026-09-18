@@ -237,9 +237,21 @@ Geänderte Dateien: `storage/disk.js`, `index.js`, `lib/make-middleware.js`,
 `storage/memory.js`, `lib/multer-error.js`, `lib/validate-limits.js` (NEU),
 `package.json`, `README.md`.
 
-- **Der CVE-Fix sitzt in `storage/disk.js`:** eine neue `flushingFiles`-WeakMap
-  lässt `_removeFile` warten, bis ein nachgezogener Flush-Deskriptor zu ist,
-  bevor es entlinkt. Ohne das bleibt bei einem Abbruch eine Datei liegen.
+- **WIDERLEGT — dieser Satz stand hier bis zum 18.09.2026 abends und war
+  falsch.** Er lautete: „Der CVE-Fix sitzt in `storage/disk.js`: eine neue
+  `flushingFiles`-WeakMap lässt `_removeFile` warten…". Nachgemessen: jene
+  WeakMap wird ausschliesslich unter `if (that.flush)` befüllt, `opts.flush`
+  ist ein **neues Feature** in 2.4.0, und wir setzen es nirgends.
+  **Der echte Fix ist `abortCleanupDone` / `abortRemovedFiles` in
+  `lib/make-middleware.js`** (`grep -c abortCleanupDone`: **0** in 2.3.0,
+  **3** in 2.4.0). Der OSV-Text sagt es wörtlich: „file writes that complete
+  **after** multer has already run its abort cleanup are not removed".
+  Die vollständige Erklärung steht in `plaene/auftrag-upload-haertung.md`,
+  Abschnitt A2 — **hier steht sie bewusst NICHT ein zweites Mal.**
+  Gefunden hat den stehengebliebenen Widerspruch eine dritte Prüfspur, nachdem
+  ich das Auftragspapier korrigiert und diesen Plan vergessen hatte: dieselbe
+  Aussage an zwei Orten, eine nachgezogen, eine nicht — die häufigste
+  Fehlerquelle dieses Projekts, diesmal von mir selbst erzeugt.
 - **`lib/validate-limits.js` WIRFT** einen `TypeError`, sobald ein Limit weder
   nicht-negative Ganzzahl noch `Infinity` ist. **Alle sieben Konfigurationen
   bestehen das** — nachgesehen: sämtliche Limits sind Literale oder Produkte
