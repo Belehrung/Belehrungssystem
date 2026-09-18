@@ -1582,3 +1582,38 @@ Zeichenketten.
 zugesichert, obwohl der Beitrag mit ihr die Wahl von 404 begründet). Zwei
 unabhängige Spuren, derselbe Befund — das kommt selten genug vor, um es
 festzuhalten.
+
+---
+
+## 18.09.2026, abends — A/B-Lauf DeepSeek v4-pro gegen denselben Diff
+
+**Zweck:** Betreiber-Auftrag „finde raus was es kann und vergleiche mit gpt 6,
+nutze jeweils das beste System für die Aufgaben". Kein zusätzlicher Prüflauf,
+sondern eine MESSUNG des Prüfers — derselbe Diff (Mandantengrenze M1+M2),
+dasselbe Bündel, derselbe Auftrag wörtlich wie an die beiden eigenen Spuren.
+
+**Modell/Stufe:** `deepseek-v4-pro`, `reasoning_effort: "max"`.
+**Material:** 54.477 Zeichen (Diff, Gegenproben des Ausführenden, Vorbildstelle
+`routes/getraenkeanlage.js`, Schema-Auszug aus `core/db.js`) = 18.344 Token.
+**Ausgabe:** 27.197 Denk-Token, 31.453 Ausgabe-Token gesamt, 264 s,
+`finish_reason: stop`.
+
+**Befunde: 8. Nach eigener Nachmessung getragen: 6. Gefallen: 2.**
+Davon **zwei Befunde, die KEINE der beiden eigenen Spuren hatte** (21
+ungeprüfte INSERTs; `MINDEST_PRUEFUNGEN` zählt nur die Menge). Drei Befunde
+decken sich wörtlich mit eigenen (N9, N4, N6/N11) — darunter N9, der
+schwerwiegendste Befund der eigenen Spur, mit derselben Mutation.
+
+**Die beiden gefallenen gehen auf MEINE Bündelwahl zurück, nicht auf den
+Prüfer:** `package.json` lag nicht bei (er nahm Express 4 an, wir fahren
+`^5.2.1` plus globalen Fehlerhandler `server.js:1467`), und von `core/db.js`
+lag nur ein Schema-Auszug bei, nicht die Definition `one() -> rows[0] ?? null`
+(`core/db.js:426-429`). Zwei Dateien mehr hätten beide verhindert.
+
+**Erster Versuch: ABGEBROCHEN, Striche statt Null.** `max_tokens: 16000`,
+`finish_reason: length`, 0 Zeichen Bericht bei 62.186 Zeichen Denkprotokoll.
+Geprüft hat da niemand. Kosten sind trotzdem angefallen.
+
+**Kosten:** nicht gemessen — wie bei den OpenAI-Läufen fehlt uns das Recht
+auf die laufgenaue Kostenabfrage. Token stehen oben, Geld steht auf der
+Abrechnung.
