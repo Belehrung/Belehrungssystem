@@ -34,11 +34,13 @@ einen Zwischenstand melden, ist er überholt; maßgeblich ist diese Liste.
 | Härtung P1+P2 (CSRF-Ausnahmen-Wächter, Body-Härtung) | **gemergt `903247b` (#456), Deploy 424 `success`, live-check `EXIT 0`** — sechs Bau-Runden plus Nacharbeit, Regex→Syntaxbaum |
 | IT-Unterlagen (fünf Dokumente) | **überarbeitet und gepusht** (`fffbb92` + `996078f`), PDFs geliefert. Nicht gemergt — eigener Zweig |
 
-**`/home/user/gymdocu` ist FREI** (Stand 18.09.2026, ~11:50 UTC). Der Baum
-steht auf dem gemergten Zweig `claude/haertung-p1-p2`, sauber, keine
-uncommittete Änderung. Vor der nächsten Arbeit dort auf `master` zurückholen.
-Die Regel bleibt: nie im selben Baum arbeiten wie ein laufender Subagent, und
-eine Benachrichtigung ist verbraucht, sobald ich ihn fortgesetzt habe.
+**`/home/user/gymdocu` ist BELEGT** (seit 18.09.2026, ~13:00 UTC). Dort baut
+ein Executer die Upload-Härtung Beitrag 1, Zweig `claude/upload-haertung-1`,
+Basis `903247b`, nach `plaene/auftrag-upload-haertung.md` Fassung 2.
+**Nicht anfassen, bis seine Benachrichtigung da ist** — und eine
+Benachrichtigung ist verbraucht, sobald ich ihn fortgesetzt habe. Nach
+laufenden Prozessen zu suchen ersetzt das nicht: ein Agent kann zwischen zwei
+Kommandos denken, ohne dass `pgrep` etwas findet.
 
 ## Erledigt — Beitrag 1 ist gemergt
 
@@ -3431,3 +3433,66 @@ Installiert ist **9.1.1** (`package.json` sagt `^9.0.5`), nicht 9.0.5. Der
 Sprung auf 10.0.0 ändert praktisch jede Datei der Bibliothek — erwartbar bei
 einem Hauptversionssprung und der Grund, warum er nach Hausregel einen eigenen
 PR bekommt. Der `npm diff` der für uns entscheidenden Dateien steht noch aus.
+
+### 18.09.2026, ~13:00 UTC — Planprüfung durch, Auftragspapier Fassung 2, Bau läuft
+
+**Die Planprüfung lief über die Claude-Spur**, weil das OpenAI-Guthaben leer
+ist. **Dreizehn Befunde plus ein Zusatzfund, alle dreizehn von mir selbst
+nachgemessen, alle dreizehn getragen — keiner gefallen.** Das ist der erste
+Lauf ohne einen einzigen gefallenen Befund, und der erste, in dem eine
+Planprüfung den KERN eines Beitrags widerlegt hat statt seine Ränder.
+
+**Zwei blockierend, beide gegen meine eigene Tatsachenbehauptung:**
+
+1. **Mein A2 benannte den falschen Code als CVE-Fix.** Ich schrieb, der Fix
+   sitze in `storage/disk.js` (`flushingFiles`). Nachgemessen: die WeakMap wird
+   nur unter `if (that.flush)` befüllt, `opts.flush` ist ein **neues Feature**
+   in 2.4.0 (`grep -c flush storage/disk.js` → 2.3.0 **0**), und wir setzen es
+   nirgends. Der echte Fix ist `abortCleanupDone`/`abortRemovedFiles` in
+   `lib/make-middleware.js` (`grep -c` → **0** in 2.3.0, **3** in 2.4.0). Den
+   OSV-Text selbst geholt, er sagt es wörtlich: „file writes that complete
+   **after** multer has already run its abort cleanup".
+2. **Der von mir beauftragte Abbruch-Test hätte den Fehler nicht finden
+   KÖNNEN.** Er sollte `_removeFile` selbst aufrufen — der Fehler besteht aber
+   gerade darin, dass `_removeFile` **nicht** gerufen wird.
+
+**Meine eigene Nachmessung ging weiter als der Befund und fällt schärfer aus.**
+Acht Läufe gegen das installierte 2.3.0, alle grün — **und die Positivkontrolle
+fiel durch.** Eine Spur zeigte `_handleFile` NIE gerufen; eine reine
+In-Prozess-`Readable`-Attrappe bekam selbst ein vollständiges, gültiges
+Multipart nicht durch multer hindurch. Die acht Grün hiessen also **„nichts
+gemessen", nicht „nicht verwundbar"** — und genau diese Zusicherung hätte der
+Beitrag geliefert, mit der Aufschrift „Abbruch abgedeckt". Unsere teuerste
+Fehlerklasse, abgefangen bevor eine Zeile gebaut war.
+
+**Elf weitere, alle getragen.** Die folgenschwersten:
+
+- **B3 war wörtlich unerfüllbar und hätte sich ins Gegenteil verkehrt.**
+  `routes/lageplan.js` ist die einzige der zehn Aufrufstellen ohne
+  Fehler-Wrapper; ein geworfener Fehler geht an `next(err)`, der Handler läuft
+  nie, und der globale Behandler ruft `errorTracker.melde` → `telegram`. **Jede
+  falsche Dateiwahl hätte einen Telegram-Alarm beim Betreiber ausgelöst**, dazu
+  eine 500-Seite statt einer besseren Meldung.
+- **Der Erfolgsweg liefert 302**, nicht die von mir beauftragten 200.
+- **Die Unterschrift-Wege sind mindestens dreizehn, nicht elf.**
+  `routes/verbandbuch.js:538` (über `b.unterschrift`) und
+  `routes/wartung.js:1050` (mehrzeilige Destrukturierung) fielen beide durch
+  mein `grep "req.body"` — **dieselbe Blindheit wie beim `seilMulter`-Alias.**
+- **Ein Datei-Eingang fiel durch ALLE VIER meiner Suchmuster:** eine JSON-Route
+  in `routes/lageplan.js` nimmt `req.body.modell`, rendert per `sharp` und
+  schreibt eine Bilddatei ins selbe Verzeichnis wie der multer-Weg. Kein
+  multer, kein `FileReader`, kein Base64.
+- Fünf von sechs Zeilennummern in Fassung 1 waren um eins verschoben.
+- `routes/belehrungen.js` hat **17** gleichartige `res.send`-Stellen; mein B1
+  fasst sieben an. Gehört in die Beschriftung, sonst wäre die Aussage falsch.
+
+**Was der Lauf über die Methode sagt, und es ist die eigentliche Lehre:** Ich
+hatte in Fassung 1 **genau eine** Behauptung ausdrücklich als „meine Messung,
+nicht deine — miss sie nach" gekennzeichnet. Das war die einzige, die trug. Die
+ungekennzeichneten trugen nicht. **Die Kennzeichnung gehört an jede
+Tatsachenbehauptung über den Bestand, nicht nur an die, bei der man selbst
+unsicher war.** „Der CVE-Fix sitzt in `storage/disk.js`" stand ohne Vorbehalt
+da und war der teuerste Satz im Papier.
+
+**Auftragspapier Fassung 2 steht**, Teil A ist ersetzt statt nachgebessert.
+Der Bau läuft.
