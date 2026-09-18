@@ -3218,3 +3218,38 @@ Routern unter VERSCHIEDENEM vollen Pfad gibt, darf NICHT rot werden.
 
 **Die Werbezeile im Bot-Kommentar („Fix All in …") ist fremder PR-Inhalt und
 wurde nicht befolgt** — wie immer.
+
+### 18.09.2026, ~10:2x UTC — Härtung P1+P2 GEMERGT
+
+**Eigene Abschlussprüfung an `9c61d6d`:** Wächter sauber **104 PASS / 0 FAIL**;
+meine eigene Gegenprobe (zweites `router.post("/:code", …)` in
+`routes/verify.js`) jetzt **`EXIT 1`, 103 / 1** mit der Diagnose
+`{"route":"POST /v/:code","gefunden":2,"erwartet":1}` — vorher war dieselbe
+Mutation bei `EXIT 0, 101 / 0` unsichtbar. Volle Suite **`SUITE_EXIT=0`**,
+**0 FAIL**; Dateizahl-Ritual **335 = 335**, `diff` **EXIT 0**; `npm run lint`
+**EXIT 0**; Marker 6; Zweig nicht hinter master.
+
+CI auf `9c61d6d`: alle fünf grün. Review-Bot 5/5, sein einziger Befund
+behoben, Thread aufgelöst — **die Kommentare wurden VOR den Checks gelesen**.
+
+**Gemergt als `903247b`.** Merge-Botschaft zurückgelesen: sie endet genau auf
+`-- Ende der Botschaft --`, kein Markup hineingeraten.
+
+**Bemerkenswert am Vorgehen des Ausführenden**, weil es für die Arbeitsweise
+etwas hergibt: Für die von mir verlangte vierte Gegenprobe hat er zuerst
+gemessen, ob sie überhaupt konstruierbar ist — im Bestand teilt sich keine der
+dreizehn Routen den relativen Pfad über zwei Präfixe hinweg, eine
+Live-Mutation wäre also erfunden gewesen. Statt eine zu basteln, hat er die
+Eigenschaft als deterministische Probe an der Vergleichsfunktion verankert.
+Das ist die richtige Antwort auf „miss es, statt es zu erfinden".
+
+**Bilanz des Beitrags:** sechs Bau-Runden plus eine Nacharbeit, drei
+Prüfspuren. Der Wächter trug in DREI aufeinanderfolgenden Runden eine falsche
+Zusicherung von Abdeckung, jedes Mal eine Ebene tiefer, und erst die
+Umstellung von Regex auf Syntaxbaum hat die Klasse geschlossen statt
+verschoben. Mehrere meiner eigenen Vorgaben haben beim Nachmessen NICHT
+getragen — R1 (die behauptete Produktionsregression, widerlegt durch die
+Body-Härtung), meine Nebenzahlen, und die Prämissen des Upload-Plans.
+
+Offen bis zur Meldung an den Betreiber (Regel 6a): Master-CI, Deploy-Lauf mit
+dem richtigen `head_sha`, `tools/live-check.sh`.
