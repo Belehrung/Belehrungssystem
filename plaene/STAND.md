@@ -2495,3 +2495,52 @@ einen davon verliert, tauscht einen CSRF-Befund gegen eine liegenbleibende
 Gesundheitsdatei.
 
 Läuft: `claude/haertung-p1-p2`.
+
+### 18.09.2026, 03:1x UTC — Härtung P1+P2 geprüft, Nacharbeit läuft
+
+Executer hat geliefert (`claude/haertung-p1-p2`, `d85bd0b`). Eigene Messungen:
+Suite **EXIT 0**, **0 FAIL**; 333 registrierte Einträge (331 + zwei neue
+Wächter). **Nicht gemergt**, kein PR eröffnet.
+
+**Der schwerste Befund betrifft den Wächter, den ICH bestellt habe — beide
+Prüfspuren fanden ihn unabhängig, eine hat ihn AUSGEFÜHRT gemessen:**
+`test_feature_csrf_ausnahmen_waechter.js` sammelt nur aus einer selbst
+gewählten Router-Liste und wertet die gebaute App für die Inventur gar nicht
+aus. Gemessen `5 PASS / 0 FAIL`, gefundene Menge 8 — während `server.js`
+FÜNF weitere Schreibrouten direkt per `app.post` registriert, alle unter
+`/intern` (`:196`, `:214`, `:230` löscht ein ganzes Studio, `:266`, `:652`).
+Der Zusicherungstext behauptet „die tatsächlich registrierten". Das ist am Tag
+der Auslieferung falsch — unsere teuerste Klasse, eine FALSCHE Zusicherung von
+Abdeckung.
+
+Zweiter blockierender Punkt derselben Art: die Präfixregel des Wächters ist
+ENGER als die produktive (`startsWith(a + '/')` gegen `startsWith(a)`). Ein
+Mount `/api-docs` wäre produktiv CSRF-ausgenommen und für den Wächter
+unsichtbar.
+
+Dritter: **kein Test schickt die vier umgestellten Routen durch den ECHTEN
+CSRF-Schutz.** Die eine Fehlerart, die dieser Beitrag einführt — jeder Klick
+wird mit 403 beantwortet — ist ungeprüft.
+
+**Selbst nachgemessen, weil zwei Angaben sich widersprachen:** Der Executer
+hielt den Mail-Link in `routes/wartung.js:1421` für tot, die Review für
+lebendig. Beide haben teilweise recht: `basis_url` wird von der Anwendung
+nirgends geschrieben (`core/basis-url.js:57` trägt den Befund selbst), UND
+diese Stelle liest roh mit Vorgabe leer, ohne den Host-Rückfall des Helfers.
+Der Link ist heute inert — aber ab jetzt definitiv kaputt, sobald jemand die
+Einstellung setzt. Vorher hätte er funktioniert. Wird behoben (Ziel auf die
+SEITE statt auf den Schreibweg), nicht nur dokumentiert.
+
+**Zwei Fehler in meinem eigenen Auftrag:**
+- `/design-pruefung` fehlte, obwohl drei Links zu Knöpfen wurden. Beide
+  Layouts setzen `button { width:100% }`, `.btn-small` bringt keine Breite
+  mit — das Repo setzt an fünf vergleichbaren Stellen ausdrücklich
+  `width:auto`. Die neuen Knöpfe tun es nicht.
+- Der „✓ Fertig"-Knopf auf dem Trainer-Tablet war eine GET-Navigation mit
+  Offline-Rückfall über den Service Worker (`core/service-worker.js:307`
+  steigt bei Nicht-GET sofort aus). Als POST fällt das weg, und nichts reiht
+  ein oder wiederholt — `sendeDefektMails()` liefe bei Funkloch NIE.
+  **Ausdrücklich NICHT zum Bauen freigegeben**: erst Messung und
+  Möglichkeiten, dann meine Entscheidung.
+
+Auftrag: `plaene/auftrag-haertung-p1-p2-nacharbeit.md`.
