@@ -1,4 +1,4 @@
-# Auftrag: Die Shell-Zusicherung, die nicht rot werden kann — und zwei Nachbarn
+# Auftrag: Die Zusicherung, die durch Einschalten der Shell nicht rot wird — und zwei Nachbarn
 
 Fassung 2 — 18.09.2026, nach der Planprüfung. Verfasser: Haupt-Agent.
 
@@ -14,6 +14,16 @@ Punkt 2 unserer Prüfreihenfolge: „Prüfungen, die nicht rot werden können" �
 unsere teuerste Klasse, weil sie nicht Abdeckung FEHLEN lässt, sondern
 Abdeckung VORTÄUSCHT. Hier liegt ein Musterfall: eine Zusicherung, die
 wörtlich behauptet, sie beweise etwas, das sie nie prüft.
+
+**PRÄZISIERT (Planprüfung, selbst nachgemessen).** Fassung 1 nannte sie
+pauschal „eine Zusicherung, die nicht rot werden kann". Das ist zu weit: sie
+WIRD rot, wenn jemand den Programmnamen oder das erste Argument ändert
+(`aufruf.datei !== 'zip'`, `aufruf.args[0] !== '-j'`). Sie kann nur für die
+EINE Eigenschaft nicht rot werden, die ihr eigener Text ausdrücklich
+behauptet — die Shell-Freiheit. Das ist eine fehlende Teilprüfung, keine
+durchweg tautologische Zusicherung, und der Unterschied gehört benannt: wer
+den pauschalen Satz weiterträgt, sucht beim nächsten Mal an der falschen
+Stelle.
 
 ## Befund Z1 — „beweist, dass GAR KEINE Shell beteiligt ist" (prüft es nicht)
 

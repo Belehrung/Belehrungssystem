@@ -111,6 +111,10 @@ sondern falsch.
 | 18.09.2026 | SICHERHEIT C: Datenabfluss (Wiederholung, Deckel 3 MB) | **abgebrochen** (HTTP 429 `insufficient_quota` — OpenAI-Guthaben erschoepft, NICHT das Mengenlimit): Diff 282 Zeilen, Suchen 47, Lesungen 91, Token rein 1923042, Token raus 13174, Runden 19 | — | — | — | mind. 25,03 $ |
 | 18.09.2026 | SICHERHEIT A2: Pfade und HTML-Ausgabe | **abgebrochen vor dem ersten Modellkontakt** (HTTP 429 `insufficient_quota` auf die ERSTE Anfrage): Buendel **gezaehlt** 52.860 Token, Suchen 0, Lesungen 0, Runden 1 | — | — | — | 0,00 $ |
 | 18.09.2026 | SICHERHEIT B: Anmeldung, Sitzung, Token (Wiederholung, Deckel 3 MB) | Diff 2058 Zeilen, Suchen 49, Lesungen 89, Token rein 2874094, Token raus 17697, Runden 20 | 10 (2 blockierend, 4 zu beheben, 2 Anmerkungen, 2 Zusicherungen) | laufend nachgemessen, s. Abschnitt | laufend | 37,25 $ |
+| 18.09.2026 | SICHERHEIT A2: Pfade und HTML-Ausgabe (Neustart nach Guthaben) | Diff 3247 Zeilen, Suchen 99, Lesungen 107, Token rein 4897220, Token raus 19066, Runden 28 | 8 (2 blockierend) | 3 bisher (H1 XSS, F4 URIError, F1 Dateiloeschung) | 0 | 62,65 $ |
+| 18.09.2026 | **PLANPRUEFUNG** Mandantengrenze Fremd-IDs, vor der ersten Bau-Runde | Diff 7036 Zeilen, Suchen 41, Lesungen 52, Token rein 2723506, Token raus 19639, Runden 15 | 6 (1 blockierend) | **6** | 0 | 35,52 $ |
+| 18.09.2026 | SICHERHEIT C: Datenabfluss (Neustart nach Guthaben) | Diff 282 Zeilen, Suchen 67, Lesungen 110, Token rein 3411776, Token raus 24910, Runden 26 | 10 (2 blockierend) | 2 bisher (D1 Gate-Umgehung, F1 Dateiloeschung) | 0 | 44,52 $ |
+| 18.09.2026 | **PLANPRUEFUNG** Zusicherung Shell/qpdf/stiller catch, vor der ersten Bau-Runde | Diff 3289 Zeilen, Suchen 31, Lesungen 56, Token rein 1606111, Token raus 24732, Runden 13 | 5 (2 blockierend) | **5** | 0 | 21,93 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -1389,3 +1393,65 @@ Stand des eigenen Nachmessens stehen in `plaene/STAND.md`, nicht hier):
   (`routes/auth.js:49–50`, studioscharfe Schlüssel, Advisory Lock). Beim
   Abbruch am Vormittag hatte derselbe Auftrag sie NICHT erwähnt; der Auftrag
   war also in Ordnung, der Lauf war zu früh zu Ende.
+
+## 18.09.2026, nach dem Nachlegen des Guthabens — was die PLANPRÜFUNG leistet
+
+**Die Regel „der Plan geht VOR der ersten Bau-Runde raus" steht seit dem
+10.09.2026 in der CLAUDE.md und war bis heute fast nie befolgt.** An diesem
+Abend wurde sie zum ersten Mal für zwei Beiträge hintereinander angewandt.
+Ergebnis, zählbar:
+
+| Lauf | Befunde | nach eigener Nachmessung getragen | davon blockierend |
+|---|---|---|---|
+| Planprüfung Mandantengrenze | 6 | **6** | 1 |
+| Planprüfung Zusicherung/qpdf | 5 | **5** | 2 |
+
+**Elf von elf getragen, null gefallen.** Das ist die höchste Trefferquote, die
+in dieser Datei steht — und der Grund ist strukturell, nicht Glück: ein Papier
+behauptet mehr als ein Diff. Es enthält Begründungen, Vorbilder,
+Abgrenzungen und Testkonzepte, und jede dieser Aussagen ist prüfbar, bevor
+sie Code geworden ist.
+
+**Drei der elf haben eine BEHEBUNG widerlegt, nicht einen Befund** — das ist
+die teuerste Sorte, weil sie sonst erst nach dem Bauen auffällt:
+
+1. Mein Testkonzept für `POST /freischalten/:belehrungId` verlangte drei
+   Zusicherungen. Die Route hat aber ZWEI unabhängig wählbare Ziel-IDs. Eine
+   Attrappe von einer Zeile — `const bel = { id: req.params.belehrungId };` —
+   hätte alle drei grün gelassen und die Grenze „eigener Mitarbeiter, fremde
+   Belehrung" offen. Die Prüfung lieferte den Einzeiler wörtlich mit.
+2. Mein qpdf-Riegel wies ein führendes `-` ab und behauptete, das mache die
+   qpdf-Fassung gleichgültig. qpdf liest Argumente aus Dateien über
+   `@dateiname` — der Riegel hätte daran vorbeigegriffen.
+3. Mein geplanter statischer Shell-Wächter durfte die mehrzeilige
+   Schreibweise als „benannte Grenze" offenlassen. Dazu übersah er einen
+   Alias, der im Bestand SCHON STEHT (`promisify(execFile)` in
+   `routes/health-intern.js`).
+
+**Was das NICHT hergibt:** zwei Läufe an einem Abend. Die Quote 11/11 ist eine
+Beobachtung, keine Statistik, und beide Papiere stammen vom selben Verfasser
+am selben Tag — ein Verfasser, der schon müde war, macht womöglich mehr
+Fehler als üblich. Wer sich darauf beruft, nennt diese Einschränkung mit.
+
+**Was es SEHR WOHL hergibt:** Die Kosten. Die beiden Planprüfungen zusammen
+kosteten 57,45 $. Eine einzige Bau-Runde des Executers für Beitrag 2a hat
+431.277 Token und 270 Werkzeugaufrufe gebraucht. Drei der elf Befunde hätten
+je eine solche Runde ausgelöst.
+
+### Eine Beobachtung zur Arbeitsteilung, die neu ist
+
+Bei zwei Befunden dieses Abends ist meine EIGENE Nachmessung über den Bericht
+hinausgegangen — nicht gegen ihn, sondern weiter:
+
+- Der Prüfer nannte **zwei** rohe Ausgabestellen des Kategorie-Symbols. Eine
+  Vollerhebung aller 18 `.symbol`-Stellen fand eine **dritte**, und
+  ausgerechnet die folgenreichste: den „Jetzt fällig"-Block der Startseite,
+  also jeden Benutzer statt nur die Admins.
+- Beim Gate-Befund nannte der Prüfer den Weg. Die Frage, ob die
+  Endungs-Ausnahme überhaupt gebraucht wird, hat erst die eigene Messung der
+  Mount-Reihenfolge beantwortet — und sie hat die Behebung von „Muster
+  verschärfen" auf „Zeile löschen" gedreht.
+
+Das ist dieselbe Trennung wie am 13.09.2026, nur andersherum: **der Prüfer
+findet den Zustand, die eigene Messung findet seinen Umfang.** Wer nur den
+Bericht umsetzt, baut beide Male das Richtige — aber zu klein.
