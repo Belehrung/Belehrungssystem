@@ -2561,3 +2561,18 @@ verliert durch die POST-Umstellung seinen Offline-Rückfall
 Navigations-Zweig greift), und nichts reiht ein oder wiederholt. Erst Messung
 und Möglichkeiten, dann meine Entscheidung. Ein schneller Bau dort tauscht
 einen CSRF-Befund gegen verlorene Defektmeldungen.
+
+### Takt 18.09.2026, 04:40 UTC — nichts getan ausser Stand nachziehen
+
+Unverändert `d85bd0b`, keine Suite laufend. Der Executer arbeitet also seit
+rund einer Stunde OHNE Zwischencommit, obwohl der Auftrag „committe und pushe
+früh" verlangt.
+
+**Das ist noch kein Befund, aber ein Risiko, das benannt gehört:** Ein
+Container-Neustart würde diese Arbeit verlieren. Plausibel ist die Dauer
+trotzdem — die Runde enthält die Designprüfung mit Chromium-Screenshots und
+den Umbau des Wächters, der die App-Registrierung auswerten muss.
+
+**Schwelle, damit das keine Ermessensfrage bleibt:** Zeigt der nächste Takt
+(05:40 UTC) weiterhin keinen neuen Commit, frage ich nach. Vorher nicht —
+eine Unterbrechung kostet eine Runde und macht seine Meldung verbraucht.
