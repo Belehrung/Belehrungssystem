@@ -2354,3 +2354,30 @@ Diff-Fragen, sondern Anschlussfragen: „wer ruft das auf?" und „was macht die
 Aufruf mit dem Prozess, der ihn ausführt?". Für künftige Beiträge, die etwas
 aus der Kommandozeile in den Betrieb holen, ist das der dritte Prüfpunkt neben
 Richtigkeit und Abdeckung.
+
+### 18.09.2026, 01:2x UTC — Executer meldet eigenen Regelverstoss
+
+Der Ausführende hat während der laufenden Runde-4-Abschluss-Suite bereits an
+Runde 5 gearbeitet (eine additive Änderung an
+`ops/gymdocu-verbandbuch-pdf-aufraeumen.js`), es SELBST bemerkt, gestoppt und
+gemeldet — samt der Folgerung, dass dieser Lauf keine saubere Einzelbestätigung
+für Runde 4 ist.
+
+Seine Einordnung trägt und ich habe sie geprüft: die Liste der GELAUFENEN
+Dateien hängt an `test/run.sh`, die während des Laufs unverändert blieb; der
+Mengenvergleich (330 = 330, `diff` EXIT 0) ist davon unberührt. Was die
+Vermischung berühren KANN, ist das Ergebnis der einen Testdatei, die genau
+diesen Helfer prüft — je nachdem, ob sie vor oder nach der Änderung lief.
+
+Folge für die Abnahme: **Der Runde-4-Lauf wird nicht als Beleg gezählt.**
+Maßgeblich ist allein die Suite NACH dem Runde-5-Commit, unvermischt. Ein
+erneuter Lauf nur für Runde 4 wäre verschwendet, weil Runde 5 denselben
+Helfer ohnehin noch einmal anfasst.
+
+Bemerkenswert und hier festgehalten, weil es die Regel stützt statt sie zu
+beschädigen: Genau diesen Verstoss hat der Haupt-Agent am 14.09.2026 DREIMAL
+an einem Tag begangen (s. CLAUDE.md, Prüfstand-Regeln). Dass der Ausführende
+ihn diesmal selbst bemerkt, gestoppt und gemeldet hat, statt ihn abzuhaken,
+ist der Grund, warum er hier überhaupt in der Abnahme auftaucht — und der
+praktische Beleg für die Hausregel, dass ein Agent, der einen Befund meldet,
+mehr wert ist als einer, der immer liefert.
