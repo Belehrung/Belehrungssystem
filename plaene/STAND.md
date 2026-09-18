@@ -3313,12 +3313,22 @@ PostgreSQL-Cluster hochgefahren und es selbst gemeldet
 Gegenprobe halb zurückgenommen ist":
 
 - **`git status` in beiden Bäumen: sauber**, keine uncommittete Änderung.
-- **Marker-Scan GymDocu: 4 Treffer, alle in `docs/offene-befunde-31-08-2026.md`**
-  — Prosa, kein ausführbarer Code, also der Sollzustand.
-- **Marker-Scan Belehrungssystem: 6 Dateien, alle `.md`** (STAND, drei
-  Auftragspapiere, CLAUDE.md, ASTRA-LAEUFE.md). Hier gilt seit 16.09.2026
-  keine Zahl mehr als Sollwert, sondern die Bedingung „jeder Treffer ist
-  Prosa" — sie ist erfüllt.
+- **Marker-Scan — beim ersten Versuch mit dem FALSCHEN Muster gemessen, um
+  12:45 UTC berichtigt.** Ich hatte nur nach `GEGENPROBE-DEFEKT` gesucht und
+  für GymDocu „4 Treffer" gemeldet. Das vollständige Muster lautet
+  `GEGENPROBE-DEFEKT\|SABOTAGE`; damit sind es **6**, alle in
+  `docs/offene-befunde-31-08-2026.md` — **exakt der Sollwert**. Die beiden
+  fehlenden tragen `SABOTAGE`.
+  Die Aussage „alle in einer Datei" war zufällig trotzdem richtig; die Messung
+  war es nicht, und mit einem Sabotage-Rest unter `SABOTAGE` hätte sie ihn
+  übersehen. **Ein Scan ist nur so gut wie sein Muster** — dieselbe Klasse wie
+  das Dateizahl-Ritual, das vier Läufe lang beide Seiten mit demselben Sieb
+  mass und 308 = 308 meldete.
+- **Belehrungssystem, vollständiges Muster: 9 Treffer in 6 Dateien, alle
+  `.md`, alle Prosa.** Hier gilt seit 16.09.2026 keine Zahl mehr als Sollwert,
+  sondern die Bedingung „jeder Treffer ist Prosa, keiner steht in ausführbarem
+  Code" — erfüllt. (Der Takt-Prompt nennt hier noch „2"; er ist an dieser
+  Stelle überholt, und nach seiner eigenen Vorrangregel gilt die CLAUDE.md.)
 
 ### Was als Nächstes ansteht
 
