@@ -1617,3 +1617,44 @@ Geprüft hat da niemand. Kosten sind trotzdem angefallen.
 **Kosten:** nicht gemessen — wie bei den OpenAI-Läufen fehlt uns das Recht
 auf die laufgenaue Kostenabfrage. Token stehen oben, Geld steht auf der
 Abrechnung.
+
+---
+
+## 18.09.2026, abends — DeepSeek als ZWEITE Lesespur (Nacharbeit M1/M2)
+
+**Zweck:** Erster Einsatz nach der Betreiber-Entscheidung, DeepSeek bei
+folgenschweren Beiträgen als zweite Spur neben dem Gegenleser zu fahren.
+Geprüft: der Diff, der zwölf Befunde zweier Prüfspuren nachzieht.
+
+**Modell/Stufe:** `deepseek-v4-pro`, `reasoning_effort: "max"`, Responses-API
+(zustandslos, `store: false` in der Antwort bestätigt).
+**Material:** 136.075 Zeichen = **43.145 Token** — Diff, `package.json`,
+db-Semantik, `core/auth.js` vollständig, globaler Fehlerhandler, unveränderte
+M2-Route, BEIDE Testdateien vollständig, Test-Harness. Vorher gezählt über
+`/v1/responses/input_tokens` (38.811 ohne den Auftrag), nicht geschätzt.
+**Ausgabe:** 66.524 Token, davon 62.536 Denken. 518 s, ohne Streaming
+durchgelaufen.
+
+**Befunde: 7. Nach eigener Nachmessung getragen: 6. Gefallen: 1.**
+
+| # | Befund | Verdikt |
+|---|---|---|
+| 2 | N9-Zähler prüft nur `=== 0`, nie `> 0` — wer das `console.error` aus dem catch nimmt, macht den Mechanismus lautlos wirkungslos | **hält, blockierend** |
+| 7 | Kommentar in `core/auth.js` verallgemeinert „unsere eigenen fetch()-Aufrufe" | **hält, SCHÄRFER als gemeldet** |
+| 3 | statische Richtungsprüfung sucht im ganzen Quelltext statt im Funktionsausschnitt | hält |
+| 4 | statische Testdatei hat keine Mindest-Prüfzahl | hält |
+| 5 | halbe Admin-Session (`totpOk:false`) im N12-Test ungeprüft | hält |
+| 1 | Test-Abfrage ohne `studio_id` (`posEigen`) | hält als Hygiene, Schwere leicht überzogen |
+| 6 | Zeitvergleich `>` sei flaky | **fällt** |
+
+**Warum 6 fällt:** die Begründung läuft in die falsche Richtung. `clock_timestamp()`
+wird über JavaScript auf Millisekunden ABGESCHNITTEN, der Bezugspunkt rutscht
+also nach FRÜHER — der Vergleich wird dadurch wahrscheinlicher wahr, nicht
+unwahrscheinlicher.
+
+**Warum 7 schärfer ist als gemeldet:** selbst gezählt — von NEUN
+Browser-`fetch`-Aufrufen auf eigene Endpunkte trägt genau EINER den
+`Accept`-Header, und zwei der fehlenden stehen in derselben Datei, die gerade
+repariert wurde (`routes/lageplan.js:1524`, `:2843`).
+
+**Kosten:** nicht gemessen (kein Recht auf die laufgenaue Abfrage). Token oben.
