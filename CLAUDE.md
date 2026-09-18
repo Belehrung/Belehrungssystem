@@ -733,6 +733,20 @@ wird mit „Unknown parameter" abgelehnt — ein „OK" sagt also wirklich etwas
    passiert, beide Male lief der ZWEITE Versuch durch. Eine
    Wiederholschleife gehört deshalb ins Aufrufmuster; ein einzelner
    Fehlschlag ist keine Antwort.
+   **NACHGESCHÄRFT 18.09.2026 — gegen `api.openai.com` ist es KEIN Flattern,
+   sondern eine harte Grenze, und die Wiederholschleife hilft dagegen NICHT.**
+   Gemessen: drei Versuche derselben Anfrage, jeder bei **300,3 s** abgeschnitten
+   (300.313, 300.383, und der erste ebenso) — Exit 56, keine Antwortdatei.
+   Wer darauf vertraut, dass „der zweite Versuch durchläuft", verbrennt bei
+   einem langen Prüflauf drei volle Läufe und hat am Ende nichts. Der Ausweg
+   ist `"stream": true` aus der Zielkonfiguration — dann parst man die
+   SSE-Zeilen (`data: {…}`) und nimmt das Abschluss-Ereignis
+   `response.completed` / `.incomplete` / `.failed`, in dem das vollständige
+   Antwortobjekt samt `usage` steckt.
+   **Was das NICHT hergibt:** eine Aussage über den Proxy allgemein. Am selben
+   Tag lief ein Aufruf gegen `api.deepseek.com` OHNE Streaming **518 s** durch
+   und kam mit HTTP 200 zurück. Die Grenze hängt also an der Gegenstelle, nicht
+   pauschal am Proxy — wer sie für einen neuen Endpunkt behauptet, misst sie.
 
 ### Nachgemessen 18.09.2026 — vier Fähigkeiten, die wir nicht kannten
 
