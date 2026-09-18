@@ -2409,3 +2409,32 @@ lässt den namentlich registrierten Eintrag aus.
 
 Nächster Schritt nach grüner eigener Suite: Lint, Mengenvergleich, Marker,
 dann Merge mit eigener Botschaft, Deploy-Lauf und live-check.
+
+### 18.09.2026, 01:5x UTC — #455 GEMERGT, Deploy steht aus
+
+Eigene Abschlussprüfung an `3d92e51`, alles selbst gefahren:
+Suite **SUITE_EXIT=0**, **0 FAIL-Zeilen**; Dateizahl-Ritual als MENGENvergleich
+**331 registriert = 331 gelaufen**, `diff` **EXIT 0**; `npm run lint`
+**EXIT 0** ohne jede Ausgabe; Marker-Scan **6**; `git status` leer; Zweig nicht
+hinter master; der grüne CI-Lauf gehörte zu genau diesem Kopf.
+
+Review-Bot zuletzt 5/5, „safe to merge", beide P1 als behoben — die Kommentare
+wurden VOR den Checks gelesen, wie es die Regel verlangt. Das war hier kein
+Formalismus: sein Haken stand schon grün, als im Kommentar noch „should not
+merge" stand.
+
+Gemergt als `c40c52f`. **Merge-Botschaft zurückgelesen: sie endet genau auf
+`-- Ende der Botschaft --`**, kein Markup hineingeraten.
+
+Offen: Master-CI, danach der Deploy-Lauf (`deploy.yml`, `workflow_run`, mit dem
+RICHTIGEN `head_sha`), danach `bash tools/live-check.sh`. Erst danach geht die
+Meldung mit Link an den Betreiber (Regel 6a).
+
+**Bilanz des Beitrags, weil sie für die Arbeitsweise etwas hergibt:** fünf
+Bau-Runden, drei Prüfspuren, insgesamt 31 Befunde, davon neun blockierend.
+Die beiden letzten blockierenden kamen vom kostenlosen Review-Bot, nicht von
+den beiden Gegenlesungen (24,33 $) und nicht von der Code-Review — und beide
+waren keine Diff-Fragen, sondern Anschlussfragen: „wer ruft das auf?" und „was
+macht dieser Aufruf mit dem Prozess, der ihn ausführt?". Beide Lücken stammten
+aus MEINEN Aufträgen. Für künftige Beiträge, die etwas aus der Kommandozeile in
+den Betrieb holen, ist das der dritte Prüfpunkt neben Richtigkeit und Abdeckung.
