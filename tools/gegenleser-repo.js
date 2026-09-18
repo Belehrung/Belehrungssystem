@@ -138,7 +138,14 @@ const VORGABE_MAX_RUNDEN = 40;
 const MAX_ANTWORT_TOKEN = 24000;
 const MAX_SUCHE_ZEILEN = 80;
 const MAX_LIES_ZEILEN = 400;
-const MAX_AUSGABE_BYTES = 600 * 1024;
+// Deckel fuer die SUMME aller Funktionsergebnisse (gelesene Ausschnitte).
+// 600 KiB reichen fuer eine DIFF-Pruefung -- dafuer ist das Werkzeug gebaut.
+// Fuer eine BESTANDSSUCHE ueber das ganze Repo reichen sie NICHT: gemessen am
+// 18.09.2026 brach ein Sicherheitslauf nach 36 gelesenen Dateien bei 620900
+// Bytes ab, der Bericht war damit verloren (nach unserer Hausregel: NICHTS
+// geliefert, nicht "keine Befunde"). Deshalb hebbar, Voreinstellung
+// unveraendert -- wer hebt, tut es bewusst und traegt die Kosten.
+const MAX_AUSGABE_BYTES = Number(process.env.GEGENLESER_MAX_AUSGABE_BYTES) || 600 * 1024;
 
 // Preise pro 1 Mio. Token (USD), Stand 10.09.2026 -- das ist ein STAND, kein
 // Naturgesetz, und er VERALTET: bei jeder neuen Modellstufe hier nachtragen,
