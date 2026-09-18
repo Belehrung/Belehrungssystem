@@ -2544,3 +2544,20 @@ SEITE statt auf den Schreibweg), nicht nur dokumentiert.
   Möglichkeiten, dann meine Entscheidung.
 
 Auftrag: `plaene/auftrag-haertung-p1-p2-nacharbeit.md`.
+
+### Takt 18.09.2026, 03:40 UTC — nichts getan ausser Stand nachziehen
+
+Executer arbeitet an `plaene/auftrag-haertung-p1-p2-nacharbeit.md`; noch kein
+neuer Commit auf `claude/haertung-p1-p2` (zuletzt `d85bd0b`), keine Suite
+laufend. Kein Eingriff in den Arbeitsbaum.
+
+Die Gegenlesung ist eingetragen (`ASTRA-LAEUFE.md`): 3 Befunde, 1 blockierend,
+alle drei nach eigener Nachmessung getragen, 12,84 $.
+
+**Zur Erinnerung für den, der hier nach einem Neustart weiterliest — B5 ist
+NICHT zum Bauen freigegeben.** Der „✓ Fertig"-Knopf auf dem Trainer-Tablet
+verliert durch die POST-Umstellung seinen Offline-Rückfall
+(`core/service-worker.js:307` steigt bei Nicht-GET aus, BEVOR der
+Navigations-Zweig greift), und nichts reiht ein oder wiederholt. Erst Messung
+und Möglichkeiten, dann meine Entscheidung. Ein schneller Bau dort tauscht
+einen CSRF-Befund gegen verlorene Defektmeldungen.
