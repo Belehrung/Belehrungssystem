@@ -19,7 +19,7 @@ Schreibvorgang im angemeldeten Admin-Konto auslösen.
 
 | Route | Fundort |
 |---|---|
-| `GET /admin/verbandbuch/eintrag/:id/pdf` | `routes/verbandbuch-admin.js:443` |
+| `GET /admin/verbandbuch/eintrag/:id/pdf` | `routes/verbandbuch-admin.js:515` |
 | `GET /module/wartung/pruefung-pdf/:id` | `routes/wartung.js:1552` (Link `:1534`) |
 | `GET /admin/geraetewartung/verlauf/pdf/:id` | `routes/admin/geraete.js:4703` (Links `:4445`, `:4657`) |
 | `GET /module/<pfad>/neue-fotos/fertig` | `routes/sichtpruefung.js:5462` (Link `:3447-3448`) |
@@ -131,3 +131,32 @@ zurücknehmen → `diff` EXIT 0 → GRÜN messen.
 - Bericht: Diff Datei für Datei, Testausgaben wörtlich, alle Gegenproben in
   beide Richtungen, die Router-Differenz aus C, und jeder Punkt, an dem deine
   Messung meinen Fundorten widerspricht.
+
+
+---
+
+## NACHGEMESSEN 18.09.2026, nach dem Merge von #455
+
+Dieser Auftrag wurde VOR #455 geschrieben. Master steht jetzt auf `c40c52f`,
+und `routes/verbandbuch-admin.js` hat sich dabei erheblich geändert. Neu
+gemessene Fundorte:
+
+| Route | Fundort auf `c40c52f` |
+|---|---|
+| `GET /admin/verbandbuch/eintrag/:id/pdf` | `routes/verbandbuch-admin.js:515` (war 443) |
+| `GET /module/wartung/pruefung-pdf/:id` | `routes/wartung.js:1552` (Link `:1534`) — unverändert |
+| `GET /admin/geraetewartung/verlauf/pdf/:id` | `routes/admin/geraete.js:4703` (Links `:4445`, `:4657`) — unverändert |
+| `GET /module/<pfad>/neue-fotos/fertig` | `routes/sichtpruefung.js:5462` (Link `:3447-3448`) — unverändert |
+
+Ebenfalls unverändert: `core/csrf-schutz.js:8` (`AUSNAHME_PREFIX`) und
+`core/pdf-engine.js:82` (der `INSERT INTO verify_dokumente`).
+
+**WICHTIG, weil #455 genau diese Route angefasst hat:** Die Verbandbuch-Route
+erzeugt das PDF inzwischen unter einem ANFRAGE-EIGENEN Namen
+(`verbandbuchZielpfad()`), verbraucht den flüchtigen Echtheits-Code
+(`consumeVerifyCode`) und löscht die Datei in JEDEM Ausgang. Beim Umbau auf
+POST bleibt das alles erhalten — prüfe nach dem Umbau ausdrücklich, dass die
+Löschung weiterhin in allen Ausgängen greift und die zugehörigen Zusicherungen
+aus #455 unverändert grün sind. Ein Umbau, der die Route umstellt und dabei
+einen Aufräumpfad verliert, tauscht einen CSRF-Befund gegen eine
+liegenbleibende Art.-9-Datei.
