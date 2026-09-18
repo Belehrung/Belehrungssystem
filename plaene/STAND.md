@@ -3987,3 +3987,28 @@ PostgreSQL-Rolle zwischen den Arbeitsbäumen.
 **Als nächstes:** Nacharbeit 2a (Endungs-Grenzfall, drei Kopien des
 Dateinamenmusters), dann Gate/XSS, Identitätsbindung, Zusicherung/qpdf, S6,
 Punkt 3 des Härtungsprogramms.
+
+## 18.09.2026 spät — Prüfgang der M1/M2-Nacharbeit, drei Spuren
+
+**Umgestellt:** Gegenleser-Vorgabe auf `gpt-5.6-sol` (Kosten, Faktor 2,5),
+DeepSeek als zweite Lesespur. Beides an allen Fundstellen nachgezogen,
+Selbsttest EXIT 0.
+
+**Eigene Suite:** SUITE_EXIT=0, kein ✗, 338 = 338. Der erste Fehlalarm
+(337) war mein eigenes asymmetrisches Suchmuster, nicht die Suite.
+
+**Spur DeepSeek:** 7 Befunde, 6 getragen, 1 gefallen. Einer davon
+**blockierend** — die drei N9-Zusicherungen prüfen nur `=== 0`, nie `> 0`;
+wer das `console.error` aus dem catch nimmt, macht den ganzen neuen
+Mechanismus lautlos wirkungslos.
+
+**Spur sol:** erster Anlauf ohne Streaming dreimal bei 300,3 s abgeschnitten
+(Egress-Proxy, jetzt in der CLAUDE.md nachgeschärft). Zweiter Anlauf mit
+`stream: true` läuft.
+
+**Spur Mutation** (Executer, misst nur, baut nichts): läuft.
+
+**Offen, sobald alle drei da sind:** Auftragspapier für die Behebung — es
+geht nach der Regel vom 18.09. VOR der Bau-Runde an den Gegenleser.
+Weiterhin offen: Nacharbeit 2a, Gate/XSS, Identitätsbindung,
+Zusicherung/qpdf, S6, Punkt 3 des Härtungsprogramms.
