@@ -159,3 +159,125 @@ treiben und einen ausdrücklich nicht erfolgreichen Ausgang verlangen.
 `POST /api/position` (`etage_id` aus dem Body ohne Zugehörigkeitsprüfung,
 Fremdschlüssel kaskadiert ohne `studio_id`), U8 (Erlaubnisliste statt
 `startsWith('image/')`), U3 (Ernter), U4–U7.
+
+---
+
+# NACHARBEIT 2 — zwei Befunde aus MEINER Prüfung des Nacharbeits-Diffs
+
+Der Ausführende hat die fünf Prüfbefunde behoben und dabei an drei Stellen
+meine Vorgabe mit einer Messung widerlegt. **Alle drei Widersprüche habe ich
+nachgemessen, alle drei tragen** — Einzelheiten unten unter „Was der
+Ausführende richtig zurückgewiesen hat".
+
+Beim Lesen des Diffs sind mir zwei Dinge aufgefallen, die niemand sonst
+hatte.
+
+## F-A — Die Kürzung greift nicht, wenn die ENDUNG lang ist
+
+`kuerzeAufBytes()` nimmt die Endung vom Budget AUS:
+
+```js
+const ext = path.extname(name);
+const extBytes = Buffer.byteLength(ext, 'utf8');
+const basisBudget = Math.max(0, maxBytes - extBytes);
+```
+
+Bei `basisBudget = 0` bleibt die Endung übrig — in voller Länge.
+`path.extname()` liefert alles ab dem letzten Punkt, und ein Dateiname wie
+`a.` + 300 Zeichen hat damit eine 301 Byte lange „Endung".
+
+**Selbst gemessen**, mit dem echten Helfer und dem echten Präfix (27 Byte):
+
+| Eingabe | gespeicherter Name |
+|---|---|
+| 240 × `a` + `.pdf` | 177 Byte — ok |
+| 240 × `ä` + `.pdf` | 177 Byte — ok |
+| `a.` + 300 × `b` | **328 Byte — reisst die 255er-Grenze** |
+| `a.` + 500 × `b` | **528 Byte — reisst sie** |
+
+Damit steht genau der Befund wieder da, den B6 schliessen sollte: 
+`ENAMETOOLONG`, kein MulterError, kein Filtertext → `next(err)` → HTTP 500
+**und Telegram-Alarm**, ausgelöst durch eine reine Benutzereingabe.
+
+**Zu bauen:** Die Endung ebenfalls deckeln, bevor sie vom Budget abgezogen
+wird — eine Endung von mehr als etwa 16 Byte ist keine Endung mehr, sondern
+Text hinter einem Punkt. Die Gegenprobe ist vorgegeben: die vier Zeilen der
+Tabelle oben als Zusicherung, mit den gemessenen Zahlen.
+
+## F-B — Dieselbe Stelle steht DREIMAL im Repo, behoben ist EINE
+
+Der Ausführende hat es selbst gemeldet statt abgehakt — das ist der Grund,
+warum es hier steht. Nachgemessen, das Muster kommt im ganzen Repo genau
+dreimal vor:
+
+```
+routes/belehrungen.js:142    (pdfUpload — Belehrungs-PDF)
+routes/belehrungen.js:1029   (nachweisUpload — Einweisungs-/Ersthelfer-Nachweis)
+core/pruefbericht.js:94-97   (berichtUpload — BEHOBEN)
+```
+
+Alle drei bauen denselben Namen: `Date.now() + '_' + zufall + '_' +
+originalname.replace(…)`, ohne Längengrenze.
+
+**Und das ist KEIN reines Zweig-Problem — es ist LIVE.** Beitrag 1 (#457)
+ist gemergt und ausgeliefert, und er hat genau diese beiden Wrapper auf
+`next(err)` für Nicht-Eingabefehler umgestellt. Ein Belehrungs-PDF oder ein
+Nachweis mit einem sehr langen Dateinamen erzeugt auf dem Live-Server also
+heute schon HTTP 500 samt Alarm. **Das gehört als erstes behoben, nicht als
+letztes.**
+
+**Zu bauen:** Den Namensbau in EINEN gemeinsamen Helfer ziehen und alle drei
+Stellen darauf umstellen. Drei wortgleiche Kopien derselben Zeile sind keine
+Konsistenz, sondern drei Orte derselben Aussage — und genau deshalb wurde
+nur einer geheilt.
+
+Wo der Helfer hingehört, entscheidest du am Bestand: `core/pruefbericht.js`
+ist das falsche Zuhause (`routes/belehrungen.js` würde dann aus einem
+Prüfbericht-Modul importieren). Ein eigenes kleines `core/`-Modul neben
+`core/upload-fehler.js` liegt näher. Sag, was du gewählt hast und warum.
+
+**Zusicherung:** Ein Wächter, der zählt, wie viele Stellen im Repo einen
+Speichernamen aus `file.originalname` bauen, und ihn gegen eine literal
+hingeschriebene Erwartung hält — sonst steht die vierte Kopie in einem Monat
+wieder ungedeckelt da. Das ist dieselbe Bauform wie der Mengen-Wächter über
+die Upload-Eintrittspunkte, den dieser Beitrag schon hat.
+
+## Was der Ausführende richtig zurückgewiesen hat — nachgemessen
+
+**1. „Beliebige Empfängernamen erfassen" hätte den Wächter zerstört.**
+Meine Vorgabe lautete, den Namensfilter `[Uu]pload` fallenzulassen. Selbst
+nachgemessen über `git ls-files routes`, kommentarbereinigt:
+
+| Muster | Treffer |
+|---|---|
+| `([a-zA-Z]*[Uu]pload)\(req, *res,` | **1** |
+| `(\w+)\(req, *res,` | **84** |
+
+Allein `fehlerSeite` matcht 33-mal, `zustandFehlerSeite` 14-mal — `(req, res,
+next)` ist die verbreitetste Middleware-Signatur in Express überhaupt. Der
+Ausführende hat den Filter für die direkte Aufrufform behalten und nur die
+Methodenform geweitet. **Richtig entschieden, und mit einer Messung begründet
+statt mit einer Meinung.**
+
+**2. Die Rückfalllösung hätte die vorgegebene Gegenprobe nicht gefangen.**
+Ich hatte ersatzweise eine Liste aller aus `multer(...)` entstehenden
+Bezeichner angeboten. Die Mutation fügt aber keine neue Deklaration hinzu,
+sie benutzt eine bestehende bloss als Middleware. Er hat stattdessen einen
+fensterbegrenzten Scan über `router.*(…)`-Aufrufe gebaut — und dazu
+gemessen, warum ein echter Klammer-Parser nicht trägt: ein naiver
+Tiefenzähler endet in 4 von 8 Dateien „unbalanciert", weil Regex-Literale
+Klammern enthalten. **Eine benannte Fenstergrenze ist ehrlicher als ein
+Parser, der falsch zählt.**
+
+**3. Die B6-Zusicherung prüft den erreichten Handler, nicht den vollen
+Schreibvorgang.** Begründet mit dem Testrahmen (ein echter Erfolgspfad
+bräuchte Gerätedatensatz, Prüfername und Unterschrift). Das ist die früheste
+Stelle, an der sich „multer hat nicht geworfen" von der
+Systemfehlerbehandlung trennen lässt. Trägt.
+
+**Und eine Umgebungslücke, die keine Auftragslücke ist:** Der frische
+Arbeitsbaum hatte weder `.env` noch eine Postgres-Rolle mit Passwort; der
+erste Suite-Lauf war deshalb rot (`test_feature_qr_block.js`, fehlendes
+`SESSION_SECRET`). Er hat die Ursache richtig ausserhalb seines Diffs
+verortet, behoben und beide Läufe gemeldet. Für künftige Worktrees gehört
+das in die Vorbereitung, nicht in die Fehlersuche.
