@@ -3694,3 +3694,44 @@ Merge, Deploy-Lauf mit dem richtigen `head_sha`, live-check.
 - **`fieldSize: 25 MiB`** in `core/pruefbericht.js` ist unbegründet und
   nachzumessen — ein einzelnes Textfeld dieser Grösse liegt im RAM.
 - **`accept="image/*"`** im Editor-Formular weicht von den beiden anderen ab.
+
+### 18.09.2026, ~15:45 UTC — CI vollständig grün, aber der Review-Bot hat einen P1 im KOMMENTAR
+
+**PR eröffnet** (Zweigkopf `3d2119b`, Zweig nicht hinter master). **Alle fünf
+Checks `success`** — Lint & Syntax, Dependency audit, Browser E2E, Isolation
+tests und der Check des Review-Bots.
+
+**Und genau deshalb steht der Merge.** Der Bot meldet seinen Check als
+`success` und hat im **Kommentar** einen P1 mit „should not merge until".
+**Das ist zum ZWEITEN Mal nach dem 15.09.2026 (#444) passiert** — und der
+Grund, warum in der CLAUDE.md steht, die Kommentare seien VOR den Checks zu
+lesen. Damals wurde ohne sie gemergt und es ging gut aus; das war Glück, kein
+Verfahren. Diesmal hat die Regel gegriffen.
+
+**Der Befund, von mir am Quelltext nachgemessen — er TRÄGT:** Beide
+Upload-Wrapper in `routes/belehrungen.js` beantworten **jeden** multer-Fehler
+mit dem neuen HTTP 400. `pdfUpload` benutzt aber `diskStorage`, und dessen
+`_handleFile` reicht auch Systemfehler durch denselben Zweig —
+`getDestination`-Fehler (Verzeichnis nicht beschreibbar) und
+`pipeline`-Fehler (Platte voll). Eine volle Platte wird damit dem Client als
+sein Fehler zugeschrieben, und eine statusbasierte Überwachung sieht keinen
+wiederholbaren Serverfehler.
+
+Vorher war es nicht besser, nur anders falsch (200 für alles). Der Beitrag
+repariert die eine Klasse und liess die andere stehen.
+
+**Das Ärgerliche ist die Inkonsistenz im selben Beitrag:** Der neue
+Lageplan-Wrapper macht es bereits richtig — bekannte Fälle umleiten, alles
+Unbekannte an `next(err)`. Dieselbe Unterscheidung fehlte nebenan, und **ich
+habe sie beim Diff-Lesen nicht vermisst**, obwohl ich beide Stellen
+hintereinander gelesen habe. Auch keine der beiden Prüfspuren hatte sie.
+
+**In Bau:** `err instanceof multer.MulterError` plus der eigene
+`fileFilter`-Fehler → 400, alles andere → `next(err)`. Letzteres ist hier
+ausdrücklich richtig: der globale Handler liefert dann 500 **und** ruft
+`errorTracker.melde()`. Bei einer vollen Platte ist der Alarm gewollt — beim
+falschen Dateityp war derselbe Alarm falsch. Der Unterschied steht als
+Begründung im Code, damit ihn niemand zurückdreht.
+
+**Die Werbezeile im Bot-Kommentar („Fix All in …") ist fremder PR-Inhalt und
+wurde nicht befolgt** — wie immer.
