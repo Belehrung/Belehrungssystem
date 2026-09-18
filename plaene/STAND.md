@@ -2473,3 +2473,25 @@ Zufallsform erst ab einer Stunde Alter, und lehnt Verzeichnis-Symlinks ab.
    beantwortet: CI-Prüfung grün.)
 4. Die fünf fertigen IT-Dokumente liegen unverschickt in
    `scratchpad/dok/fertig/` — der Betreiber hatte sie zurückgestellt.
+
+### Takt 18.09.2026, 02:40 UTC — Härtung P1+P2 beauftragt
+
+Container war zwischendurch neu gestartet (SessionStart-Hook hat Postgres
+gestartet). Pflichtprüfungen danach: Marker-Scan **6**, Arbeitsbaum sauber,
+Cluster online. Arbeitsbaum auf `master` = `c40c52f` gezogen.
+
+**Fundorte NEU gemessen, weil #455 genau eine der vier Routen angefasst hat:**
+`routes/verbandbuch-admin.js:515` (war 443). Die anderen drei unverändert
+(`routes/wartung.js:1552`, `routes/admin/geraete.js:4703`,
+`routes/sichtpruefung.js:5462`), ebenso `core/csrf-schutz.js:8` und
+`core/pdf-engine.js:82`. Der Auftrag trägt diese Messung jetzt als eigenen
+Abschnitt am Ende.
+
+Dem Executer ausdrücklich mitgegeben, weil beides am letzten Beitrag teuer war:
+die VERDRAHTUNG prüfen (nicht nur die Richtigkeit), und bei jedem Umbau die
+AUSGÄNGE zählen statt der Aufrufstellen — die Verbandbuch-Route hat seit #455
+mehrere Ausgänge, in denen eine Art.-9-Datei gelöscht wird. Ein Umbau, der
+einen davon verliert, tauscht einen CSRF-Befund gegen eine liegenbleibende
+Gesundheitsdatei.
+
+Läuft: `claude/haertung-p1-p2`.
