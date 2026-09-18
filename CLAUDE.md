@@ -449,10 +449,13 @@ Missbrauch zeigte sich an der OpenAI-Abrechnung.
     "max_tool_calls": N,     // nur mit web_search; deckelt die Suchschleife
     "metadata": {…},         // Lauf wiederfindbar machen
     "max_output_tokens": 45000,
+    "truncation": "disabled",  // laut scheitern statt still kuerzen (18.09.)
     "text": {"format": {"type":"json_schema","strict":true, …}}
 
 Dazu weiterhin die **Wiederholschleife** (ein Fehlschlag ist keine Antwort)
-und die **Statusprüfung bei JEDEM Aufruf**.
+und die **Statusprüfung bei JEDEM Aufruf**. **Und seit 18.09.2026 davor die
+Bündelzählung** über `POST /v1/responses/input_tokens` — gezählt wird, nicht
+geschätzt (Begründung im Abschnitt „Das Maximum herausholen").
 
 ### Drei Zusätze am Prompt (Betreiber-Entscheidung 11.09.2026)
 
@@ -627,6 +630,106 @@ alles, was unseren Quelltext auf fremden Servern LIEGEN lässt (`file_search`
 mit Vector Stores, hochgeladene Dateien, Container) verträgt sich schlecht mit
 `store: false`; die Datenschutz-Übersicht weist diese Ressourcen ausdrücklich
 NICHT als rückstandsfrei aus.
+
+### Das Maximum herausholen — Betreiber-Vorgabe 18.09.2026
+
+Wörtlich: „mir ist es wichtig, dass wir aus gpt das maximum an unterstützung
+raus holen was geht." Der Engpass war nie, was die Schnittstelle kann, sondern
+WOMIT wir sie füttern. Fünf Punkte; vier sind ab sofort verbindlich, der
+fünfte ist eine Messung, die noch aussteht.
+
+**1. Der PLAN geht raus, BEVOR gebaut wird — mit einem Auslöser, der ohne
+Tagesform funktioniert.**
+
+Die Regel steht seit dem 10.09.2026 als „Punkt mit dem grössten Hebel" in
+dieser Datei und ist seither fast nie befolgt worden. Nach der Hausregel über
+unbefolgte Regeln („wird entweder durchgesetzt oder geändert") bekommt sie
+deshalb denselben Auslöser, der beim Astra-Einsatz am 12.09. funktioniert hat:
+
+> **Jeder Bauauftrag, der Produktivcode, einen Wächter, eine Zusicherung oder
+> die Testsuite anfasst, geht VOR der ersten Bau-Runde als Auftragspapier an
+> den Gegenleser.** Wer ihn auslässt, schreibt in EINEN Satz dazu, warum — in
+> denselben Zwischenstand, in dem die Suite-Zahlen stehen.
+
+Dieselbe Umkehr der Beweislast: vorher musste man begründen, warum man ihn
+RUFT, jetzt, warum nicht.
+
+*Beleg dafür:* 15.09.2026, zwei Planprüfungen über die Ausmusterung, 18
+Befunde, alle selbst nachgemessen, alle getragen — drei widerlegten
+ausdrückliche BEHAUPTUNGEN meines eigenen Plans, einer strich einen ganzen
+geplanten Beitrag.
+*Beleg dagegen, aus demselben Repo:* Am 18.09.2026 gingen die Härtungsrunden 3,
+4 und 5 ohne Planprüfung raus. Danach kamen am fertigen Diff fünf blockierende
+Befunde (Runde 3) und noch einmal sechs (Runde 4). Mehrere davon — eine
+unvollständige Verbenliste, eine Zeilennummer als Schlüssel, ein fehlender
+Nachweis für die CSRF-Verdrahtung — standen schon im Auftragspapier falsch
+bzw. fehlten dort. Am Papier wären sie billiger gewesen als an drei Bau-Runden.
+
+**2. Vor JEDEM Lauf die Bündelgrösse ZÄHLEN, nicht schätzen.**
+
+`POST /v1/responses/input_tokens` (gemessen 18.09., s. Abschnitt darüber). Bis
+dahin haben wir klein gebündelt, weil wir die Grenze nicht kannten und sie mit
+zwei Fehlversuchen eingrenzen mussten. Ab jetzt wird gezählt — und der
+gewonnene Platz geht in **Geschwisterdateien**, nicht in mehr Prosa. Die
+Bündelwahl hat am 12.09. nachweislich über einen Befund entschieden: der
+Prüfer fand eine von zwei Stellen derselben Regelverletzung, weil die zweite
+in einer Datei lag, die nicht im Bündel war. Er KONNTE sie nicht finden.
+
+**3. Bei jeder Änderung am Aussehen geht der SCREENSHOT mit, nicht nur der
+Quelltext.**
+
+Bildeingabe ist seit 14.09.2026 gemessen, mit Positivkontrolle — und war bis
+zum 18.09. kein einziges Mal benutzt. Drei ganzseitige Tablet-Screenshots
+fielen im Verbrauch nicht auf. Ein Prüfer, der die gerenderte Seite sieht,
+beantwortet Fragen, die am Quelltext gar nicht entscheidbar sind; der offene
+Kontrastwiderspruch beim `.btn-small` (Quelltext sagt schwarz, Screenshot
+wirkt hell) ist genau so eine.
+
+**4. Das Abhängigkeits-Audit läuft gegen die EXAKTEN installierten Versionen —
+und jeder Treffer wird gegen ZWEI unabhängige Quellen gehalten.**
+
+Gemessen am 18.09.2026 über alle 253 Laufzeitpakete (Einzelheiten in
+`plaene/abhaengigkeits-audit-18-09-2026.md`, hier nur, was für die Regel
+folgt):
+
+- **`npm audit` ist KEINE vollständige Quelle.** Es hat den einzigen für uns
+  erreichbaren Befund des Tages nicht gemeldet (`multer@2.3.0`,
+  CVE-2026-88932, verwaiste Dateien bei abgebrochenen Uploads — in OSV
+  bestätigt, vier unserer sechs `multer()`-Konfigurationen benutzen den
+  betroffenen `diskStorage`-Pfad).
+- **Eine OSV-VERSIONSABFRAGE ist kein verlässliches Negativ.** Für
+  `multer@2.3.0` liefert sie 0 Treffer, obwohl der Datensatz existiert — er
+  trägt Commit- statt npm-Versionsbereiche. Wer nur so fragt, meldet „sauber"
+  und meint „falsch gefragt". Richtig ist zusätzlich die Abfrage über die
+  KENNUNG (`/v1/vulns/<id>`), und wenn die 404 liefert, über den dort
+  genannten Alias.
+- **`github.com/advisories` ist aus dieser Umgebung nicht erreichbar**
+  (HTTP 403 vom Egress-Proxy). Eine dritte Quelle steht also nicht zur
+  Verfügung; was sich aus zwei nicht bestätigen lässt, wird als UNBESTÄTIGT
+  geführt — nicht als widerlegt und nicht als Befund. Am 18.09. traf das fünf
+  gemeldete `nodemailer`-Advisories.
+- **Die ERREICHBARKEIT misst der Haupt-Agent, nicht der Prüfer.** Er schreibt
+  korrekterweise „nicht entscheidbar"; ein `grep` über die eigene
+  Konfiguration macht daraus in zwei Minuten ein Ergebnis. Genau so wurden am
+  18.09. aus zwei bestätigten `qs`-Lücken „bestätigt, aber nicht erreichbar"
+  (`comma: true` nirgends gesetzt, `qs.stringify` nirgends aufgerufen).
+
+**5. NOCH NICHT GEMESSEN, deshalb keine Regel: zwei Läufe mit VERSCHIEDENEN
+Aufträgen statt einem.**
+
+Am 13.09.2026 ist gemessen, dass zwei Prüfspuren neun Befunde mit NULL
+Überschneidung liefern — und zwar weil sie verschieden SUCHEN, nicht weil sie
+verschiedener Meinung sind. Ob sich dasselbe INNERHALB des Gegenlesers
+herstellen lässt (ein Lauf „komm an diesem Wächter vorbei", ein Lauf „was
+folgt daraus für den Betrieb"), ist eine offene Frage. Sie wird an einem
+echten Diff gemessen, bevor sie hier als Regel steht.
+
+**Was sich dadurch NICHT ändert:** Der Prüfer bekommt weiter keine Ausführung
+und keinen Schreibzugriff, und unser Quelltext bleibt nicht auf fremden
+Servern liegen. Die Schnittstelle kann beides (`shell`, `code_interpreter`,
+`apply_patch`, Datei-Upload, Vector Stores) — genau deshalb steht es im
+Abschnitt darüber als ausdrücklich ABGELEHNT und nicht als „noch nicht
+ausprobiert". Und „Astra bestätigt" heisst weiter nie „mergefähig".
 
 ### Nachgemessen 12.09.2026 — und was sich dadurch an der Arbeitsweise ändert
 
