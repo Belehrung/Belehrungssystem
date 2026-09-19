@@ -2259,6 +2259,7 @@ auf die dann schon vier Orte zeigen.
 | 19.09.2026 | **Planprüfung Schreibreihenfolge Fassung 2** (sol, Repo-Lesezugriff) | Papier + 13 Auszüge + Sperrlandschaft, 42.838 Token; 92 Suchen / 47 Lesungen / 21 Runden | 11 | **10** | 0 (1 = Betreiber-Entscheidung) | **17,42 $** |
 | 19.09.2026 | dieselbe Planprüfung, zweite Spur (deepseek-v4-pro, ohne Repo) | wortgleich, 42.838 Token rein / 23.649 raus | 2 | **2** | 0 | ~0,05 $ |
 | 19.09.2026 | dieselbe Planprüfung, dritte Spur (**kimi-k3**, A/B) | wortgleich bis auf `model`; 44.704 rein (44.544 aus dem Cache) / 26.885 raus | 7 | **7** | 0 | **~0,42 $** |
+| 19.09.2026 | **Planprüfung Runde 3** (kimi-k3), eng auf die beiden Neuentwürfe S6/S1 | Papier + 10 Auszüge, 32.901 rein / 21.653 raus | 8 | **8** | 0 | **~0,30 $** |
 
 **Das ist die mit Abstand grösste Prüfserie dieser Datei — und die einzige, in
 der KEIN einziger Befund gefallen ist.** Zum Vergleich: am 12.09. fielen drei
@@ -2440,3 +2441,38 @@ kimi ~0,42 $, deepseek ~0,05 $.
 aus dem automatischen Präfix-Cache — Reste der beiden abgebrochenen Versuche
 davor. **Damit ist der Cache an unserem eigenen Material belegt**, nicht nur
 behauptet; er hat die Kosten dieses Laufs auf etwa ein Fünftel gedrückt.
+
+## 19.09.2026, 22:53 UTC — Runde 3, und ein Muster über drei Fassungen
+
+**8 Befunde, alle acht nach eigener Nachmessung getragen.** Einer davon war
+Minuten vorher schon von mir selbst gefunden — er zählt als BESTÄTIGUNG, nicht
+als Fund, und steht so in der Tabelle des Papiers.
+
+**Der teuerste Befund ist zum DRITTEN Mal in Folge ein Fehler meiner
+BEHEBUNG, nicht des Befunds:**
+
+| Fassung | Der Befund war | Meine Behebung wäre gewesen |
+|---|---|---|
+| 1 | richtig | ein Rennen im Normalbetrieb |
+| 2 | richtig | eine echte Verklemmung (`40P01`) |
+| 3 | richtig | ein offenes Token trotz neuer PIN |
+
+Dreimal hintereinander unstrittiger Befund, dreimal die vorgeschlagene Abhilfe
+als eigentliche Gefahr. **Das ist keine Pechsträhne, sondern eine Eigenschaft
+dieser Klasse:** wer eine Schreibreihenfolge ändert, VERSCHIEBT ein Fenster,
+statt es zu schliessen — und ob das hilft, hängt an allen anderen Wegen, die
+dieselben Zeilen anfassen. Die Regel steht seit heute in CLAUDE.md.
+
+**Und eine Beobachtung zur Fragestellung.** Der Fund R3-1 lag in einem Weg,
+nach dem ich NICHT gefragt hatte: ich fragte nach Verklemmungen (Runde 2) und
+nach Verschränkungen mit dem Einlöse- und dem Löschweg (Runde 3). Der Weg, der
+Tokens ERZEUGT, stand in keiner meiner Fragen. Gefunden wurde er, weil eine
+Frage offen genug gestellt war: *„welchen Zustand erzeugt das, den es heute
+nicht gibt?"* — **eine Frage nach einem ZUSTAND findet mehr als eine Frage
+nach einem MECHANISMUS.** Das ist übertragbar und gehört in jeden künftigen
+Prüfauftrag.
+
+**Kostenbilanz der drei Runden über dieses eine Papier:** 17,42 $ (sol) +
+0,05 $ (deepseek) + 0,42 $ (kimi, Runde 2) + 0,30 $ (kimi, Runde 3) =
+**rund 18,19 $ für 45 Befunde, von denen 44 getragen haben** — und keine
+einzige Zeile Produktivcode wurde dafür geschrieben.
