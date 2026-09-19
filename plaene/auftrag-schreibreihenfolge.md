@@ -83,7 +83,16 @@ danach steht es doppelt, eines davon mit halber Aufgabenliste.
 
    **Die Behebung ist ein Wegfall, kein Zusatz:** `:5458` liest dieselbe Zeile
    schon (`SELECT id FROM wartung_kategorien WHERE id=$1 AND studio_id=$2`) und
-   ist die Mandantenprüfung. Sie wird auf `SELECT id, name` erweitert, der
+   ist die Mandantenprüfung.
+
+   **Was sich dadurch an der BEDEUTUNG ändert, und es wird hier festgelegt
+   statt übergangen (R3-6):** der Audit protokolliert danach den
+   Kategorienamen zum Zeitpunkt der MANDANTENPRÜFUNG (Anfang des Requests)
+   statt zum Zeitpunkt des Schreibens. Benennt ein zweiter Admin die
+   Kategorie dazwischen um, steht im Protokoll der alte Name. **Das ist
+   gewollt:** das Ereignis heisst `wartung_geraet_angelegt`, und der Name zum
+   Anlagezeitpunkt ist dafür die richtige Angabe — im Löschfall der
+   Kategorie sogar die einzige noch verfügbare. Sie wird auf `SELECT id, name` erweitert, der
    zweite Aufruf bei `:5540` entfällt ersatzlos, und der Audit nimmt `kat.name`
    aus der ersten Lesung. Damit ist der fehlbare Schritt nicht verschoben,
    sondern **verschwunden** — und eine doppelte Abfrage derselben Zeile gleich
@@ -485,7 +494,8 @@ erst EINEN bestimmten (`:295`) und danach die übrigen (`:301`). Hält A
 Token 2 und wartet auf Token 1, während B Token 1 und die Mitarbeiterzeile
 hält und auf Token 2 wartet, entsteht derselbe Kreis eine Ebene tiefer.
 
-**Gebaut wird deshalb OHNE Transaktion, mit umgedrehter Reihenfolge:**
+**Gebaut wird OHNE Transaktion, mit umgedrehter Reihenfolge — und mit einem
+DRITTEN Schritt (R3-1, selbst nachgemessen):**
 
     // 1. offene Einladungs-/Reset-Tokens ZUERST entwerten (eigener Commit)
     await db.run("UPDATE mitarbeiter_token SET verwendet=1 WHERE studio_id=$1
@@ -494,12 +504,50 @@ hält und auf Token 2 wartet, entsteht derselbe Kreis eine Ebene tiefer.
     const r = await db.run("UPDATE mitarbeiter SET pin_hash=$1, pin_gesetzt_am=… 
                             WHERE id=$2 AND studio_id=$3", […]);
     if (r.rowCount === 0) return <nicht gefunden>;
+    // 3. NOCH EINMAL entwerten — schliesst das Fenster zwischen 1 und 2
+    await db.run("UPDATE mitarbeiter_token SET verwendet=1 WHERE studio_id=$1
+                  AND mitarbeiter_id=$2 AND verwendet=0", […]);
+
+**Warum Schritt 3 sein muss — gemessen, und es ist ein Fehler meines eigenen
+Entwurfs.** Die Zwei-Schritt-Fassung sah nur den EINLÖSEweg an. Sie übersah
+den Weg, der Tokens ERZEUGT: `sendeMitarbeiterEinladung()`
+(`routes/mitarbeiter-auth.js:172-186`) ist eine eigene `db.tx`, die erst alle
+offenen Tokens entwertet und dann ein NEUES einfügt — und sie ist nicht nur
+vom Admin erreichbar, sondern öffentlich über `/pin-vergessen` (`typ:
+'reset'`) und über `routes/webhooks.js`.
+
+Damit gilt für die Zwei-Schritt-Fassung die Ordnung
+
+    Schritt 1 (entwerten, Commit)  <  INSERT eines NEUEN Tokens  <  Schritt 2 (PIN)
+
+und am Ende steht **`pin_hash` neu UND ein gültiges, frisch verschicktes Token
+offen** — genau der Zustand, den Z6a verbietet. Mein Entwurf hätte den alten
+Fehler durch ein schmaleres Fenster wieder hereingelassen.
+
+Schritt 3 schliesst es, kostet nichts und öffnet keinen neuen Sperrpfad (es
+ist dieselbe Anweisung wie Schritt 1, wieder ein eigener Commit).
+**Die verbleibenden Fehlerfälle sind dann:** scheitert Schritt 2, ist alles
+tot und die PIN alt (s. Abwägung unten); scheitert Schritt 3, ist die PIN neu
+und höchstens ein Token aus dem schmalen Fenster offen — **das ist der heutige
+Zustand, aber nur noch für dieses Fenster statt für alle Bestandstokens.**
 
 **Warum das die Klasse schliesst, ohne eine neue zu öffnen:**
 
-* **Keine neue Sperrordnung.** Zwei Autocommits halten nie zwei Sperren
-  gleichzeitig. Der Kreis aus B3 kann nicht entstehen — auch nicht eine
-  Ebene tiefer.
+* **Keine neue Sperrordnung** — aber die Begründung dafür war in Fassung 3
+  zunächst FALSCH formuliert (R3-4, trifft zu). Dort stand: *„Zwei Autocommits
+  halten nie zwei Sperren gleichzeitig.“* Das stimmt nicht: Schritt 1 und
+  Schritt 3 sind MEHRZEILIGE UPDATEs, und PostgreSQL nimmt deren Zeilensperren
+  während der Anweisung nacheinander und hält sie bis zum Anweisungsende
+  gleichzeitig. Zwei nebenläufige mehrzeilige UPDATEs auf derselben
+  Token-Menge können sich also sehr wohl verklemmen.
+  **Richtig ist der schwächere, aber tragende Satz:** zwei Autocommits halten
+  keine Sperre ÜBER ANWEISUNGSGRENZEN hinweg — und genau das verlangt der
+  Kreis aus B3 (eine Sperre auf `mitarbeiter` HALTEN, während auf
+  `mitarbeiter_token` gewartet wird). **Dieser Kreis kann nicht entstehen.**
+  Das Restrisiko mehrzeiliger UPDATEs gegeneinander besteht heute schon
+  (`:762` ist dieselbe Anweisung) und wird von diesem Beitrag weder
+  eingeführt noch behoben — es ist zu NENNEN, nicht stillschweigend
+  wegzulassen.
 * **Der verbleibende Fehlerfall ist harmloser als heute — aber nicht
   kostenlos, und das gehört gesagt.** Scheitert Schritt 2, sind die alten
   Links tot und die PIN unverändert. Selbst nachgemessen, was das für den
@@ -526,21 +574,25 @@ hält und auf Token 2 wartet, entsteht derselbe Kreis eine Ebene tiefer.
 **`bcrypt.hash` bleibt VOR beiden Schritten** — es steht bereits davor
 (`:759`), 12 Runden bcrypt gehören in keinen Schreibpfad hinein.
 
-**Der Kommentar `:763-767` wird berichtigt, nicht nur ergänzt.** Er sagt
-heute „Keine Transaktion hier — der Protokolleintrag darf das bereits
-erfolgte Setzen nicht scheitern lassen". Für den **`auditAppend`**
-(`:769-776`, eigenes `try/catch`) bleibt das richtig. Für die
-**Tokenentwertung** war es nie ein Protokolleintrag, und ab jetzt steht sie
-davor. Der neue Kommentar nennt BEIDE Gründe — die Reihenfolge UND warum
-hier ausdrücklich KEINE Transaktion steht (mit Verweis auf
-`mitarbeiter-auth.js:295-301`), sonst zieht sie jemand später als
-„Verbesserung" wieder ein.
+**Der Kommentar `:763-767` wird BERICHTIGT, nicht nur ergänzt — eine
+Anweisung, nicht zwei (R3-8: sie stand hier doppelt und leicht abweichend).**
 
-**Der Kommentar `:763-767` behauptet heute:** *„Keine Transaktion hier — der
-Protokolleintrag darf das bereits erfolgte Setzen nicht scheitern lassen."*
-Das bleibt für den **`auditAppend`** richtig (`:769-776`, eigenes `try/catch`,
-bleibt draussen). Für die **Tokenentwertung** war es nie ein Protokolleintrag.
-**Der Kommentar ist entsprechend zu berichtigen, nicht nur zu ergänzen** —
+Er sagt heute: *„Keine Transaktion hier — der Protokolleintrag darf das
+bereits erfolgte Setzen nicht scheitern lassen."* Für den **`auditAppend`**
+(`:769-776`, eigenes `try/catch`) bleibt das richtig, und er bleibt draussen.
+Für die **Tokenentwertung** war es nie ein Protokolleintrag — dort ist der
+Satz schlicht falsch.
+
+Der neue Kommentar trägt DREI Angaben, und alle drei sind nötig:
+
+1. **warum die Reihenfolge so ist** (entwerten – setzen – nochmals entwerten,
+   mit dem Erzeugungsfenster als Grund, s.o.);
+2. **warum hier ausdrücklich KEINE Transaktion steht** — mit Verweis auf
+   `routes/mitarbeiter-auth.js:295-301`, sonst zieht sie jemand später als
+   „Verbesserung" wieder ein und baut den Kreis aus B3;
+3. **dass der `auditAppend` aus einem ANDEREN Grund draussen bleibt** als die
+   Tokenentwertung — sonst liest sich Punkt 2 so, als gälte er auch für ihn.
+
 CLAUDE.md: ein Kommentar ist eine Zusicherung.
 
 **S5 und S6 treffen sich in derselben Route** — und die Reihenfolge aus S6
@@ -603,6 +655,20 @@ dieses Abschnitts ausdrücklich als Prüfschritt, nicht als „Z7“.*
   alle Aufgabenzeilen an — Zählungen um 1 bzw. um die Zeilenzahl erhöht.
 * **Gegenprobe:** `db.tx` zurück auf `db.one`/`db.run` → Z1 ROT, mit einer
   FAIL-Zeile, nicht mit einem Absturz.
+* **ZWEITE Zusicherung, weil der `kat`-Umbau sonst still schiefgehen kann
+  (R3-5, gemessen).** Vergisst der Ausführende, `:5458` von `SELECT id` auf
+  `SELECT id, name` zu erweitern, ist `kat.name` `undefined`. Der Ausdruck
+  `kat ? kat.name : null` liefert dann **nicht `null`, sondern `undefined`**
+  (`kat` ist truthy) — und `JSON.stringify` **lässt den Schlüssel still weg**.
+  Gemessen: `JSON.stringify({name:"X", kategorie: ({id:7}).name})` ergibt
+  `{"name":"X"}`, der Schlüssel `kategorie` ist **nicht vorhanden**. Kein
+  Wurf, kein roter Test — der Audit-Eintrag `wartung_geraet_angelegt` trägt
+  ab da schlicht keinen Kategorienamen mehr, und Z1 misst bisher nur
+  Zeilenzählungen.
+  **Also:** nach dem fehlerfreien POST den jüngsten `audit_log`-Eintrag mit
+  `ereignis='wartung_geraet_angelegt'` lesen und zusichern, dass sein Payload
+  den Schlüssel `kategorie` mit dem NAMEN der angelegten Kategorie trägt.
+  **Gegenprobe:** `:5458` zurück auf `SELECT id` → genau diese Zusicherung ROT.
 
 ### Z2a — S2: nach einem Fehler ist die Belehrung noch AUSLIEFERBAR
 
@@ -827,14 +893,37 @@ zieht sie jemand später als „Verbesserung“ wieder ein.*
   und `POST /mitarbeiter/pin-setzen/:token` desselben Mitarbeiters. Die
   Überschneidung wird über `pg_blocking_pids` BELEGT, nicht über eine
   Zeitschwelle.
-* **Erwartet:** **kein** `40P01`. Einer gewinnt, der andere wird fachlich
-  über seinen `rowCount`-Riegel abgewiesen — und am Ende ist **kein Token
-  mehr offen**.
+* **Erwartet, und zwar NUR das, was in JEDER Verschränkung gilt (R3-3):**
+  **kein** `40P01`, und am Ende ist **kein Token mehr offen**.
+  *Fassung 3 verlangte hier zusätzlich „der andere wird fachlich über seinen
+  `rowCount`-Riegel abgewiesen“. Das widerspricht dem Behebungstext von S6,
+  der für eine der beiden Verschränkungen ausdrücklich sagt, dass BEIDE
+  Vorgänge erfolgreich sind (löst der Mitarbeiter zuerst ein, gewinnt der
+  spätere Schreiber die PIN — der Admin-Schritt 1 trifft dann `rowCount 0`,
+  und das ist dort kein Fehler, sondern der Normalfall). Eine Zusicherung,
+  die eine Abweisung VERLANGT, wäre in genau dieser Reihenfolge falsch rot.*
+* **Die Abweisung wird nur für den EINEN Fall geprüft, in dem sie gilt:**
+  löst der Mitarbeiter NACH Admin-Schritt 1 ein, greift sein eigener Riegel
+  (`routes/mitarbeiter-auth.js:298`) und der Einlöseversuch wird abgewiesen.
 * **Gegenprobe:** die beiden Admin-Schritte in eine `db.tx` in der Ordnung
   `mitarbeiter` → `mitarbeiter_token` packen (also genau der Entwurf der
   Fassung 2) → Z6b muss mit `deadlock detected` / SQLSTATE `40P01` ROT
   werden. **Ohne diese Gegenprobe ist Z6b nur eine Behauptung, dass zwei
   Autocommits sich nicht verklemmen können.**
+* **Die Gegenprobe braucht einen ERZWINGUNGSMECHANISMUS, sonst misst sie den
+  Zufall (R3-2).** Ein Deadlock zwischen zwei echten Requests tritt nur ein,
+  wenn beide ihre erste Sperre HALTEN, bevor eine die zweite anfordert. Ohne
+  Erzwingung kann die mutierte Fassung wiederholt grün laufen — und ein
+  grünes Ergebnis ist hier der gefährlichste Befund: es liest sich als „den
+  Kreis gibt es gar nicht“ und hiesse in Wahrheit „die Probe hat ihn nicht
+  getroffen“.
+  **Festgelegt:** das Mutationsskript setzt in die mutierte Transaktion
+  zwischen die beiden Anweisungen ein `SELECT pg_sleep(2)` — nur dort, nie im
+  Produktivcode — und der Gegenweg wird während dieser Pause gestartet. Die
+  Überschneidung wird wie bei Z4a über `pg_blocking_pids` BELEGT, nicht über
+  eine Zeitschwelle. **Bleibt die Probe trotz Erzwingung grün, ist das ein
+  Befund gegen meine eigene Begründung für den Transaktionsverzicht** und
+  wird gemeldet (Abschnitt 5), nicht weggeschrieben.
 
 ### KEINE Zusicherung, sondern ein PFLICHT-PRÜFSCHRITT: kein Fehler wird stumm
 
@@ -1093,3 +1182,54 @@ Zum Vergleich derselbe Gegenstand: sol **17,42 $** (mit Repo-Zugriff),
 deepseek **~0,05 $**. Die Cache-Treffer stammen aus den beiden abgebrochenen
 Versuchen davor — **der automatische Präfix-Cache ist damit an unserem
 eigenen Material belegt**, nicht nur behauptet.
+
+---
+
+# NACHTRAG 3 — Runde 3, nur auf die beiden NEUENTWÜRFE gerichtet (22:53 UTC)
+
+Gefahren, weil unsere eigene Regel eine zweite Lesung verlangt, wenn eine
+Behebung VERHALTEN ändert — S6 (Transaktion → drei Autocommits) und S1
+(engere → weitere Transaktionsgrenze) tun beides. **Eine Spur, `kimi-k3`,
+~0,30 $, 32.901 Token rein / 21.653 raus.**
+
+**8 Befunde. Alle acht selbst nachgemessen, alle acht tragen.** Einer davon
+(R3-7, die verwaiste `Z6`-Referenz) war Minuten vorher schon von mir selbst
+gefunden und behoben — er zählt trotzdem, aber als BESTÄTIGUNG, nicht als
+Fund.
+
+| # | Schwere | Befund | Nachgemessen |
+|---|---|---|---|
+| **R3-1** | hoch | **Der Zwei-Schritt-Entwurf übersieht den Weg, der Tokens ERZEUGT.** `sendeMitarbeiterEinladung()` (`mitarbeiter-auth.js:172-186`, eigene `db.tx`) ist öffentlich über `/pin-vergessen` erreichbar. Committet ihr INSERT zwischen Schritt 1 und 2, steht am Ende PIN neu UND Token offen | **trägt** — Quelltext bestätigt. **Schritt 3 eingeführt** |
+| R3-2 | mittel | Z6b hat keinen Erzwingungsmechanismus; ein Deadlock zwischen echten Requests ist zeitabhängig, die Gegenprobe kann zufällig grün bleiben | **trägt** — `pg_sleep(2)` im Mutationsskript festgelegt |
+| R3-3 | mittel | Z6b verlangt eine Abweisung, die S6s eigener Text für eine der Verschränkungen ausschliesst | **trägt** — auf die verschränkungs-invarianten Eigenschaften umgestellt |
+| R3-4 | mittel | „Zwei Autocommits halten nie zwei Sperren gleichzeitig" ist **falsch**: ein mehrzeiliges UPDATE hält seine Zeilensperren bis Anweisungsende gleichzeitig | **trägt** — auf den schwächeren, tragenden Satz berichtigt |
+| R3-5 | mittel | Vergisst der Ausführende `SELECT id, name`, ist `kat.name` `undefined`, und `JSON.stringify` lässt den Schlüssel **still weg** — kein Wurf, kein roter Test | **trägt** — in `node` nachgemessen, Z1 um eine Payload-Zusicherung erweitert |
+| R3-6 | niedrig | Die Semantik des früh gelesenen Kategorienamens war nicht festgelegt | **trägt** — festgelegt |
+| R3-7 | niedrig | Verwaiste `Z6`-Referenz in §5 | **trägt** — war selbst schon gefunden |
+| R3-8 | niedrig | Die Kommentar-Anweisung stand zweimal, leicht abweichend | **trägt** — zu einer zusammengeführt |
+
+## Was diese Runde über das Verfahren sagt
+
+**Der teuerste Befund ist wieder ein Fehler MEINER BEHEBUNG, nicht des
+Befunds.** Das ist jetzt die DRITTE Fassung in Folge, in der das so war:
+
+| Fassung | Der Befund war | Meine Behebung wäre gewesen |
+|---|---|---|
+| 1 | richtig | ein Rennen im Normalbetrieb (N-2) |
+| 2 | richtig | eine echte Verklemmung (B3) |
+| 3 | richtig | ein offenes Token trotz neuer PIN (R3-1) |
+
+Dreimal hintereinander war der GEFUNDENE Fehler unstrittig und die von mir
+vorgeschlagene Abhilfe die eigentliche Gefahr. **Das ist kein Zufall mehr,
+sondern eine Eigenschaft dieser Klasse:** wer eine Schreibreihenfolge ändert,
+verschiebt ein Fenster, statt es zu schliessen — und ob das hilft, hängt an
+allen ANDEREN Wegen, die dieselben Zeilen anfassen. Die Regel steht seit
+heute in CLAUDE.md; dieser dritte Fall belegt sie ein weiteres Mal.
+
+**Und die Frage, die R3-1 gefunden hat, hatte ich zweimal gestellt und
+zweimal zu eng.** In Runde 2 fragte ich nach Verklemmungen; in Runde 3 nach
+Verschränkungen mit dem EINLÖSEweg und dem LÖSCHweg. Der Weg, der Tokens
+ERZEUGT, stand in keiner meiner Fragen — gefunden wurde er trotzdem, weil die
+Frage „welchen Zustand erzeugt das, den es heute nicht gibt?" offen genug
+gestellt war. **Eine Frage nach einem ZUSTAND findet mehr als eine Frage nach
+einem MECHANISMUS.**
