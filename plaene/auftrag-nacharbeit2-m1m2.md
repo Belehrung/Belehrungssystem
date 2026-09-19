@@ -496,3 +496,157 @@ aufmachen.** Die 138 Altstellen bleiben ein eigener Beitrag.
   dazugeschrieben statt behauptet.
 - **Der injizierbare Logger** statt der globalen `console.error`-Ersetzung:
   eigener Beitrag, datierter offener Punkt.
+
+---
+
+# Fassung 4 — Runde 3, und der schwerste Befund ist wieder meiner
+
+Zwei Spuren über den fertigen Diff (`217da0a..3eed991`): **sol acht Befunde,
+DeepSeek fünf.** Nach eigener Nachmessung tragen **sieben**, drei fallen,
+zwei sind bekannte Grenzen. Überschneidung: zwei Befunde hatten beide.
+
+## N1 — BLOCKIEREND: bei M1 ist die INSERT-Grenze ungeprüft, genau wie bei M2
+
+**Von sol. Und es ist derselbe Fehler, den die Planprüfung schon an meinem
+Auftrag H gefunden hat — ich habe ihn für M2 behoben und für M1 nie
+gestellt.**
+
+Der einzige M1-Aufruf mit gefälschtem Studio (Zeile 479) schickt
+`etage_id: etageB` — eine FREMDE Etage. Die scheitert schon am
+studiogebundenen Nachschlag mit 404, das INSERT wird nie erreicht. Selbst
+nachgemessen: `studio_id: B` kommt in der ganzen Datei zweimal vor, einmal
+bei M1 (mit fremder Etage) und einmal in der H-Matrix.
+
+Damit bliebe diese Mutation in `routes/lageplan.js` unsichtbar:
+
+```js
+// Nachschlag bleibt korrekt auf req.studioId
+const r = await db.one(`INSERT INTO geraete_positionen (studio_id, …)`,
+    [req.body.studio_id || req.studioId, etage.id, …]);
+```
+
+Die Erfolgsaufrufe senden kein `studio_id`; der eine, der es sendet, kommt
+nicht bis zum INSERT. Und danach wird nur Studio A gezählt — ein
+Schreibvorgang unter B wäre ohnehin unsichtbar.
+
+**ZU BAUEN:** die M1-Entsprechung der H-Positivkontrolle — `etage_id: etageA`
+(EIGEN) zusammen mit `studio_id: B`, Erfolg erwartet, Schnappschuss von A UND
+B je Einzelrequest, und die zurückgelieferte ID **mandantengebunden** unter A
+gelesen und gegen alle erwarteten Felder gehalten. Dazu bei der bestehenden
+N7-Negativprobe zusätzlich B auf Unverändertheit prüfen.
+
+**GEGENPROBE:** genau die Zeile oben → die neue Zusicherung muss fallen.
+
+## N2 — BLOCKIEREND: `posEigen` steht immer noch ohne `studio_id`
+
+**Von beiden Spuren. Das stand bereits als Punkt G in Fassung 3 und wurde
+nicht umgesetzt** — Zeile 424 liest weiterhin
+`SELECT etage_id FROM geraete_positionen WHERE id=$1`.
+
+**ZU BAUEN:** `WHERE studio_id = $1 AND id = $2` mit `[A, body.id]`, und
+`studio_id === A` mit zusichern, nicht nur `etage_id`.
+
+## N3 — HOCH: `requireAdmin` hat eine VIERTE Fallklasse
+
+Der Test kennt leere Sitzung, Admin mit `totpOk:true` und Admin mit
+`totpOk:false`. Es fehlt die **angemeldete Nicht-Admin-Sitzung**. Selbst
+nachgemessen: es gibt genau zwei Rollen, `admin` und `tablet`. Diese Mutation
+bliebe damit grün:
+
+```js
+if (benutzer && benutzer.totpOk === true) return next();   // rolle weg
+```
+
+**ZU BAUEN:** ein Fall `{ rolle:'tablet', totpOk:true }` — Handler wird NICHT
+erreicht, 302 bei normaler Navigation, 401 JSON bei `Accept`, 401 JSON bei
+ausschliesslich `X-Requested-With`.
+
+## N4 — Der acorn-Test prüft den NAMEN `requireAdmin`, nicht seine Identität
+
+Ein lokales `const requireAdmin = (_req,_res,next) => next();` in `server.js`
+bliebe grün. Das ist unsere Klasse „das Muster sucht die FORM statt der
+TATSACHE".
+
+**ZU BAUEN — NICHT sols Vorschlag.** Er will `buildApp()`/`registerRoutes()`
+aus `server.js` herauslösen; das ist ein eigener, grosser Beitrag und fasst
+den Startpfad des Live-Servers an. Billiger und ausreichend: im selben
+AST-Lauf zusichern, dass `requireAdmin` in `server.js` GENAU EINMAL gebunden
+wird und diese Bindung aus `require('./core/auth')` stammt — keine zweite
+Deklaration, kein Alias.
+
+## N5 — Der acorn-Extraktor ignoriert Mounts in Verzweigungen
+
+**Von beiden Spuren.** Die Zusicherung sagt in ihrem eigenen Text „kein
+zweiter, ungeschützter Mount desselben Pfads", sammelt aber nur `tiefe===0`.
+Selbst nachgemessen: `server.js` hat **34** top-level Mounts mit Pfad-Literal
+und **NULL** verschachtelte — die Lücke ist heute leer, der Zusicherungstext
+verspricht trotzdem mehr, als er hält.
+
+**ZU BAUEN:** zusätzlich ALLE Mounts sammeln (jede Tiefe) und zusichern, dass
+es für die beiden Zielpfade **keinen** Mount ausserhalb der Top-Level-Ebene
+gibt. Dann deckt sich der Text mit der Prüfung.
+
+## N6 — Die H-Positivkontrolle beweist nur, DASS sich A geändert hat
+
+**Von beiden Spuren.** Der Erfolgszweig prüft `nachA !== vorA`. Ein Fehler,
+der bei vorhandenem `body.studio_id` falsche-aber-gültige IDs schreibt,
+käme durch.
+
+**ZU BAUEN:** die neu entstandene Zeile mandantengebunden lesen und gegen die
+erwarteten `mitarbeiter_id`, `belehrung_id` und `studio_id = A` halten.
+
+## N7 — M2 „fremd gegen nirgends" vergleicht nur den `Location`-Header
+
+Status, Content-Type und Rumpf bleiben ungeprüft. Eine Regression könnte
+302 gegen 303 bei identischem `Location` liefern — die Route wäre wieder eine
+Existenzsonde.
+
+**ZU BAUEN:** Status, `Location`, Content-Type und Rumpf vergleichen, und
+zusätzlich gegen den unabhängig hingeschriebenen Vertrag halten (wie bei K
+für M1 schon geschehen).
+
+## N8 — Die Zeilenangaben der MINDEST-Herleitung sind veraltet
+
+**Mein eigener Befund; KEINE der beiden Spuren hat ihn gefunden.** Die
+Vorprüfung steht bei 300-305, der Kommentar sagt 282-287; H steht bei
+574-599, der Kommentar sagt 549-576 — Versatz 18 bzw. 25. Die ZAHLEN stimmen
+(nachgerechnet: acht `ok()`-Zeilen in `pruefeHFall`, je Aufruf laufen vier,
+mal vier Fälle mal zwei Transporte = 32; Summe 149).
+
+**ZU BAUEN:** die Zeilenbereiche durch die ohnehin vorhandenen
+`console.log('== … ==')`-Abschnittsnamen ersetzen. Die driften nicht mit.
+
+## Was NICHT gebaut wird — mit Begründung
+
+- **sol #5 („der Test liest echte Produktionsdateien") FÄLLT.** Selbst
+  gezählt: **192** Bestandstests benutzen `readFileSync`, **64** davon lesen
+  `__dirname`-Quelltext genau wie unserer. Die Regel zielt gemessen auf
+  `pm2`, `nginx`, `/var/www` — sols Lesart würde ein Drittel der Suite
+  verurteilen. **Zweite Runde in Folge, in der dieselbe Regel überdehnt
+  wird** (letzte Runde war es `listen(0)` mit 138 Bestandsstellen).
+- **DeepSeek B2 („`>= 15` ist willkürlich") FÄLLT.** Gemessen sind es 34;
+  der Abstand ist gross, und eine Untergrenze ist bei uns ausdrücklich nur
+  ein Schutz gegen den Totalausfall. Sie tut genau das.
+- **DeepSeek B4 („Präfixfilter auf `a[0]`") FÄLLT.** Er argumentiert selbst
+  in beide Richtungen und nennt das Rotwerden bei geänderter Logmeldung
+  „gewollt". Ein stilles Grün entsteht dabei nicht.
+- **DeepSeek B5 („Mengenschwelle beweist nicht, WELCHE liefen") ist eine
+  BEKANNTE GRENZE**, seit 13.09. so in der CLAUDE.md. Kein neuer Befund.
+
+## Was die dritte Runde über die Prüfer sagt
+
+| | sol | DeepSeek |
+|---|---|---|
+| Befunde | 8 | 5 |
+| nach eigener Nachmessung getragen | 6 | 3 |
+| gefallen | 1 | 2 |
+| als „blockierend" eingestuft | **5** | 0 |
+
+**sol findet mehr und stuft systematisch zu hoch ein** — fünf von acht
+blockierend, darunter einer, der gegen den Bestand messbar fällt. Dieselbe
+Beobachtung wie in Runde 2. Die Einstufung bleibt eine Meinung; die Befunde
+sind trotzdem die besseren.
+
+**Und keine der beiden Spuren hat N8 gefunden** — den einzigen Befund, den
+ich selbst hatte. Das ist der dritte Beleg für dieselbe Sache: das Nadelöhr
+ist nicht das Finden, sondern das eigene Nachmessen.
