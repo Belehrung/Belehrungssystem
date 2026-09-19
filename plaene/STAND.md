@@ -4178,3 +4178,40 @@ hinter A war, den Befund nicht umzudrehen, und genau das tut er nicht.
 **Läuft:** zwei Prüfspuren (sol als Gegenleser, DeepSeek als zweite Spur),
 Bündel 29.563 Token gezählt. Meinen eigenen Befund habe ich ihnen bewusst
 VERSCHWIEGEN — als Messung, ob eine der beiden ihn selbst findet.
+
+## 19.09.2026, 02:45 — Runde 3 ausgewertet, Nacharbeit läuft
+
+**Beide Prüfspuren zurück, jeder Befund selbst nachgemessen.**
+
+| Spur | gemeldet | nach eigener Nachmessung getragen |
+|---|---|---|
+| DeepSeek (`deepseek-v4-pro`) | 5 | 3 |
+| Gegenleser (`gpt-5.6-sol`) | 8 | 6 |
+| ich selbst | 1 | 1 (blockierend) |
+
+**Meinen eigenen Befund hat KEINE der beiden gefunden** — die Messung, für
+die ich ihn verschwiegen hatte, ist damit beantwortet: negativ.
+Er ist zugleich der einzige blockierende: **bei M1 ist die INSERT-Grenze
+ungeprüft.** Der einzige M1-Aufruf, der `studio_id: B` sendet (Zeile 479),
+benutzt `etage_id: etageB` — eine FREMDE Etage, die schon am studiogebundenen
+Nachschlag mit 404 scheitert und den INSERT nie erreicht. Eine Mutation
+`[req.body.studio_id || req.studioId, etage.id, …]` in `routes/lageplan.js`
+bliebe also unsichtbar. Die H-Matrix habe ich für M2 gebaut und dieselbe
+Frage für M1 nie gestellt — genau die Klasse, vor der die CLAUDE.md warnt.
+
+**Weiter getragen:** `posEigen` (Zeile 424) trägt trotz Fassung-3-Auftrag
+immer noch kein `studio_id`; `requireAdmin` hat eine vierte ungeprüfte Klasse
+(gemessene Rollen: genau `admin` und `tablet`); der acorn-Test prüft den
+NAMEN `requireAdmin`, nicht seine Identität; verschachtelte Mounts bleiben
+unbeachtet (gemessen: 34 oberste Ebene, 0 verschachtelt).
+
+**Gefallen — drei Befunde, einer davon zum ZWEITEN Mal in Folge:** sol wendet
+die Regel „Tests fassen kein echtes Dateisystem an" zu weit an. Gemessen:
+**192** Bestandstests benutzen `readFileSync`, **64** lesen Quelltext über
+`__dirname`. Die Regel zielt auf echte DIENSTE und Prozesse, nicht auf das
+Lesen des eigenen Repos.
+
+**Fassung 4** des Auftragspapiers (`2e18b59`) trägt N1–N8; der Ausführende
+baut sie mit Commit-und-Push nach jedem Punkt. Für N1 steht die Gegenprobe
+schon fest: in `routes/lageplan.js` das erste INSERT-Argument auf
+`req.body.studio_id || req.studioId` — die neue Zusicherung MUSS fallen.
