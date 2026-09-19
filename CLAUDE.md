@@ -512,6 +512,43 @@ DRINGENDER geworden:**
 Eine Zahl oder Zustandsaussage im Fliesstext veraltet — diese hier hat es
 innerhalb eines Tages getan.
 
+### Kimi K3 — Schlüssel seit 19.09.2026, am echten Endpunkt gemessen
+
+Betreiber hat den Schlüssel geliefert (`/tmp/claude-0/.kimi-key`, wie die
+anderen NIE in die Kommandozeile). Alles hier ist gemessen; Einzelheiten und
+die Gegenproben stehen in `plaene/kimi-k3-eignung-19-09-2026.md`.
+
+* **Endpunkt ist `api.moonshot.ai`, NICHT `.cn`** — dort HTTP 401, eigener
+  Kontoraum. `/v1/responses` und `/v1/chat/completions` antworten beide.
+* **Konto ist Tier 2**, gemessen über `GET /v1/users/me`: `max_concurrency 40`,
+  RPM 100, TPM 3 Mio. Parallelaufrufe sind erlaubt — die Tier-0-Zeile der
+  Herstellertabelle („Concurrency 1, RPM 3") gilt für uns NICHT. Guthaben über
+  `/v1/users/me/balance`.
+* **`kimi-k3`: Kontext 1.048.576, von der API selbst bestätigt.** Die anderen
+  drei (`kimi-k2.7-code`, `-highspeed`, `kimi-k2.6`) haben 262.144.
+* **WICHTIGSTER UNTERSCHIED ZU OPENAI: ein erfundenes Feld
+  (`quatschfeld_xyz`) wird mit HTTP 200 ANGENOMMEN.** Bei OpenAI gibt es dafür
+  „Unknown parameter", und genau darauf stützt sich unsere Gegenprobe-Methode
+  seit dem 12.09.2026. **Hier sagt „wird angenommen" NICHTS über Wirkung** —
+  jeder Schalter ist an seiner WIRKUNG zu messen. Nicht pauschal alles fällt
+  durch: `truncation` wird laut ABGELEHNT („not supported"). Bekannt-aber-nicht-
+  unterstützt scheitert also, unbekannt rutscht durch.
+* **`reasoning: {"effort": …}` wirkt** (an einer Aufgabe gemessen, die ohne
+  Denken nicht lösbar ist): `low` 312 Denk-Token / 21,5 s, `high` 598 / 29,0 s,
+  `max` **5781 / 157,0 s**. Wäre der Schalter ignoriert worden, lägen alle drei
+  auf dem Standardwert `max` — tun sie nicht. **Inhaltlich waren alle drei
+  Antworten richtig; `max` lieferte dieselbe Antwort ohne Begründung bei
+  zehnfachem Aufwand.** Für Sachfragen ist `high` das bessere Geschäft.
+* **Der Egress-Proxy schneidet auch hier bei 301 s ab** (curl-Exit 56,
+  gemessen). Dieselbe harte Grenze wie gegen `api.openai.com`. **`stream: true`
+  ist Pflicht** — funktioniert, lief über fünf Minuten durch.
+* **NICHT gemessen:** die Prüfgüte. Derselbe Vorbehalt wie bei `sol` seit dem
+  18.09. — ein Modell, dessen Befunde noch nie durch unser Nachmessen
+  gegangen sind, ist eine Behauptung. Der wortgleiche A/B-Lauf gegen die
+  Planprüfung läuft; die Messlatte steht (sol 11 Befunde, deepseek 2).
+* **Websuche ist laut Hersteller „being updated and not recommended"** — für
+  das Abhängigkeits-Audit also vorerst nicht.
+
 ### Welche Modelle zur Verfügung stehen — gemessen 18.09.2026
 
 Anlass: Betreiber-Frage, ob auch kleinere Modelle erreichbar sind, um Astra für
@@ -1662,6 +1699,52 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   ist.** Am selben Tag wurde ein ganzer geplanter Beitrag deshalb GESTRICHEN
   statt verfeinert — er war für die Richtigkeit nicht nötig, weil ein
   Schnappschuss-Vergleich innerhalb der Transaktion dasselbe leistete.
+- **Bei dieser Klasse ist die BEHEBUNG gefährlicher als der Fehler — und die
+  richtige Behebung ist nicht vorhersagbar.** Gemessen am 19.09.2026 an EINEM
+  Papier, zweimal, in ENTGEGENGESETZTE Richtungen:
+  *Bei `/neue-version/:id`* standen ein `dateiname`-UPDATE und `schalteAlleFrei()`
+  als zwei Autocommits. Sie zu VERTAUSCHEN wäre falsch gewesen: der
+  Unterschriftenweg liest `freigeschaltet_am` (R1) vor `dateiname` (R2), also
+  immer R1 < R2. Der Schaden „neue Generation gelesen, altes Dokument
+  unterschrieben" verlangt `R1 > W_g` und `R2 < W_d` — bei der heutigen Ordnung
+  `W_d < W_g` folgt daraus `R1 > R2`, ein Widerspruch, der Schaden ist
+  AUSGESCHLOSSEN; nach dem Tausch (`W_g < W_d`) ist `W_g < R1 < R2 < W_d`
+  widerspruchsfrei und damit MÖGLICH. Richtig war dort die **Transaktion**: vor
+  dem COMMIT ist nichts sichtbar, es gibt kein Fenster, dessen Ordnung kippen
+  könnte.
+  *Bei `/mitarbeiter/pin-direkt/:id`* standen PIN-UPDATE und Tokenentwertung
+  ebenfalls als zwei Autocommits — und dort ist es GENAU UMGEKEHRT. Eine
+  Transaktion hätte die Ordnung `mitarbeiter` → `mitarbeiter_token` gehalten,
+  während `routes/mitarbeiter-auth.js:295-299` (der öffentliche PIN-Weg) genau
+  umgekehrt sperrt: **`deadlock detected`, 40P01**. Heute gibt es den Kreis
+  nicht, weil Autocommit nie zwei Sperren gleichzeitig hält. Richtig war dort
+  der **Reihenfolgentausch** (erst Tokens entwerten, dann PIN setzen) — und
+  zwar OHNE Transaktion.
+  **Die Lehre ist nicht „nimm Transaktionen" und nicht „tausche die
+  Reihenfolge".** Beide Mittel sind einmal richtig und einmal falsch. Was
+  entscheidet, ist vor jeder Behebung ABZUZÄHLEN: *welche anderen Transaktionen
+  fassen dieselben Zeilen an, in welcher Reihenfolge nehmen sie ihre Sperren —
+  und welcher Leser sieht das Fenster zwischen den beiden Schreibungen?*
+- **Ein Wurf aus `db.tx()` beweist KEINEN Rollback.** Geht die COMMIT-Quittung
+  verloren (Verbindung stirbt, Proxy schneidet ab), hat PostgreSQL womöglich
+  längst committet, während `db.tx` nach aussen wirft; `core/db.js:471` benennt
+  diese Ungewissheit für den ROLLBACK-Fall. Ein `catch`, der daraus „nichts ist
+  passiert" schliesst und aufräumt, löscht dann genau das, worauf die
+  committete Zeile zeigt. **Im Zweifel nicht löschen:** eine verwaiste Datei
+  ist Müll und aufräumbar, eine gelöschte Datei mit Verweis darauf ist
+  Datenverlust. Wer im Fehlerweg etwas Unwiderrufliches tut, misst vorher über
+  eine FRISCHE Verbindung nach, was in der Datenbank steht.
+- **Eine Gegenprobe, die an einem Frühausstieg hängenbleibt, misst nichts.**
+  Zweimal am 19.09.2026 in einem Papier: „`studio_id` aus der neuen `WHERE`
+  entfernen" bleibt grün, weil der Fremdstudio-Request schon am vorgelagerten
+  `SELECT … AND studio_id=$2` und dem `if (!g) return` endet; „die
+  `rowCount`-Abfrage entfernen" bleibt grün, weil eine nie vergebene ID schon
+  am `ma`-Frühausstieg scheitert. Beide Male misst die Zusicherung den
+  FRÜHAUSSTIEG statt des Riegels, den sie bewachen soll. Vor jeder Gegenprobe
+  den Weg vom Eintrittspunkt bis zur mutierten Zeile durchgehen und JEDEN
+  Ausstieg dazwischen benennen — erreicht die Probe die Zeile nicht, braucht es
+  entweder einen anderen Eingang (Löschung zwischen SELECT und UPDATE über eine
+  zweite Verbindung) oder eine STATISCHE Zusicherung auf die Anweisung selbst.
 - **`db.q`/`db.run` benutzen den POOL, nicht die Transaktionsverbindung**
   (`core/db.js:421-432`). Einen Helfer „in die `db.tx()` zu ziehen" macht ihn
   NICHT transaktional; nur das übergebene `t` schreibt dort. Und `unlinkSync()`
