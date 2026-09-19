@@ -251,3 +251,176 @@ nicht den Weg zu prüfen (CLAUDE.md) — beide braucht es.
   Status 200 bzw. 500 festschreibt: **nicht streichen**, sondern melden. Solche
   Wächter werden fachlich umgestellt.
 * Widerspricht ihm eine Messung: der Widerspruch ist das wertvollste Ergebnis.
+
+---
+
+# NACHTRAG — Planprüfung, Spur 2 (`deepseek-flash`), 19.09.2026
+
+Frage: *„Was verspricht dieser Plan, das er nicht einlöst?"* — **neun Befunde,
+alle neun von mir selbst nachgemessen, alle neun tragen.** Zwei mit einer
+kleinen Einschränkung, die unten benannt ist.
+
+Verbrauch: 14.458 rein / 34.237 raus (davon 26.768 Denk-Token), 150 s.
+Material: das Auftragspapier plus Ausschnitte, **kein Repo-Zugriff** — die Spur
+hat ausschliesslich aus dem Papier und den abgedruckten Zeilen gearbeitet.
+
+**Das Papier war also an neun Stellen falsch oder lückenhaft, BEVOR eine
+einzige Zeile gebaut wurde.** Genau dafür ist die Regel „der Plan geht vor der
+ersten Bau-Runde raus" da.
+
+## P-1 (blockierend) — Z3 widerspricht 1.2/1.4 in derselben Datei
+
+Z3 verbietet in `geraete.js` „kein `/^\d+$/` UND kein `typeof … === 'object'`
+als Wache". Genau so eine Wache steht dort: `geraete.js:708`, in der
+`inbetriebnahme`-Route. **Gemessen:** `grep -c "typeof .*=== *'object'"
+routes/admin/geraete.js` → **1**, und zwar diese. Kein Bauabschnitt plant,
+sie umzustellen: 1.2 bindet nur `geraete-typen.js:246`, 1.4 listet fünf
+`.trim()`-Stellen, `:708` ist keine davon.
+
+Folge nach der Umsetzung: Z3 ist entweder ROT oder wird stillschweigend auf
+die ID-Regel verengt und misst dann nicht mehr, was ihr Text behauptet.
+Verschärfend: Z3s Verbot erzeugt einen Anreiz, die Wache dort zu LÖSCHEN —
+sie ist laut Kommentar `:700-707` fast verhaltensneutral, also fällt es
+niemandem auf.
+
+**TRÄGT.** Entscheidung: `:708` kommt in 1.4 dazu (dann sind es SECHS Stellen,
+und Z2 braucht einen sechsten HTTP-Fall), und Z3 nennt Regel und Ort getrennt.
+
+## P-2 (hoch) — Z3s NAME sichert mehr zu, als Z3 misst
+
+Z3 heisst „Es gibt keine zweite Regelkopie mehr" — ein Satz über das REPO —
+misst aber vier namentlich genannte Dateien. **Gemessen:**
+`routes/admin/mitarbeiter.js` trägt dieselbe Lücke an fünf Stellen (346, 347,
+671, 737, 808) und enthält `pruefeTextfelder` **null mal**.
+
+Das ist die Klasse „ein Name, der mehr verspricht als die Zusicherung hält" —
+und sie ist hier schlechter als der heutige Zustand, weil heute niemand aus
+der Existenz eines `core/eingabe-pruefung.js` auf Abdeckung schliessen kann.
+Verschärfend: die Präambel begründet die Dringlichkeit mit dem „von aussen
+taktbaren Alarmkanal" — dieser Satz gilt nach der Umsetzung unverändert
+weiter, der Auftrag löst sein eigenes Warum also nur zum Teil ein.
+
+**TRÄGT.** Entscheidung: Z3 wird wörtlich auf „in diesen vier Dateien" verengt,
+und die Restliste (`mitarbeiter.js`, `tablet-sperre.js`) wird als OFFEN in
+`plaene/durchgang-befunde.md` geführt.
+
+## P-3 (hoch) — Z3 misst die SCHREIBWEISE, nicht die REGEL, und keine Verdrahtung
+
+Nach der Umsetzung ist diese EINZEILIGE Änderung unsichtbar: in
+`geraete.js:699` `!istGueltigeId(id)` zurück auf `isNaN(id)`. Z3 kennt
+`isNaN` nicht (sie sucht `/^\d+$/` und `typeof object`), das `require` bleibt
+stehen, Z1 fährt nur `loeschen` und `umbenennen`, Z4 prüft nur den Helfer.
+Ergebnis: `POST /admin/geraete/inbetriebnahme/1e3` liefert wieder 200 mit
+„Datenbankfehler" und Alarm — derselbe Befund wie 0.2, nur an der dritten
+Stelle. Dasselbe gilt für jede andere Schreibweise derselben Regel
+(`/[0-9]+/`, `Number.isInteger(Number(id))`).
+
+**TRÄGT** — und es ist genau die Klasse „Ein Verdrahtungsfehler ist die Lücke,
+die eine Behebung hinterlässt" aus CLAUDE.md, in meinem eigenen Papier
+übersehen. Entscheidung: Z3 bekommt `isNaN(` ins Muster, und **jede Route mit
+`:id` in den betroffenen Dateien wird über HTTP geprüft**, nicht per Muster.
+
+## P-4 (hoch) — Das VORBILD ist von keiner Zusicherung bewacht
+
+1.2 bindet `geraete-typen.js:246` an die neue Quelle — gebunden wird die
+FUNKTION, nicht ihre AUFRUFE. Z1/Z2 nennen ausschliesslich `geraete.js`-Routen.
+Damit ist das Löschen EINER Zeile unsichtbar: der `pruefeTextfelder`-Aufruf in
+`geraete-typen.js:390`.
+
+**Gemessen, und die Folge ist schlimmer als ein 500er:** `String({a:1})` ist
+`"[object Object]"` und `String(["a","b"])` ist `"a,b"` — beides wirft nicht
+und beides überlebt die Leer-Prüfung `:393`. Ohne den Aufruf schriebe
+`POST /admin/geraete/cardio/umbenennen/<id>` mit `neuerName[a]=x` still
+`[object Object]` nach `geraete.name`: **kein 500, kein Alarm, eine korrupte
+Zeile.**
+
+**TRÄGT.** Entscheidung: Z2 wird auf `geraete-typen.js:390` und `:435`
+ausgedehnt, mit der Gegenprobe „Aufruf an EINER Stelle entfernen → genau diese
+Zusicherung ROT".
+
+## P-5 (mittel) — Ich habe den Schutz dem falschen Mechanismus zugeschrieben
+
+0.4 schreibt: `geraete-typen.js` sei „nicht verwundbar … weil es jeden Wert in
+`String(...)` wickelt". **Y ist richtig gemessen, die Folgerung trägt Y aber
+nicht:** `String()` verhindert nur den Wurf, nicht das Schreiben. Sicher ist
+die Datei allein wegen des `pruefeTextfelder`-AUFRUFS (P-4).
+
+Praktische Folge, und deshalb ist es kein Wortklauben: 1.1 will diese
+Begründung wörtlich in den Kopf der neuen Quelle schreiben. Wer die Lehre
+„`String()` schützt" dann in `geraete.js` anwendet, tauscht dort einen 500er
+gegen ein stilles Schreiben.
+
+**TRÄGT.** Entscheidung: der Satz wird berichtigt — `String()` verhindert den
+Absturz, die ABWEISUNG kommt vom Aufruf.
+
+## P-6 (mittel) — Ein Kommentar im Bestand behauptet eine falsche MENGE
+
+`routes/admin/tablets.js:42-43`: „dieselbe Prüfung wie an **jeder anderen
+Stelle** im Admin-Bereich, die eine `:id` aus der URL übernimmt".
+**Gemessen:** `grep -rn "isNaN(id)" routes/admin/` liefert **sechs
+Gegenbeispiele** — `geraete.js:337,467` und `mitarbeiter.js:672,704,738,836`.
+
+Die Mengenaussage ist falsch, und 1.1 hätte sie kanonisch in den Dateikopf der
+neuen Quelle übernommen.
+
+**TRÄGT.** Entscheidung: der Kopf der neuen Quelle nennt die abgelösten Orte
+NAMENTLICH und macht keine Aussage über „jede andere Stelle".
+
+## P-7 (mittel) — „Zitierring ohne Quelle" stimmt nicht
+
+0.1 behauptet, jede der drei Funktionen verweise auf eine der anderen.
+**Gemessen:** `geraete-typen.js:227-231` nennt „Befund 11, unabhängige Prüfung
+28.08.2026, GEMESSEN" und keine Schwester. Es ist ein **Stern mit Quelle**,
+kein Ring: `ausmusterung.js:73` und `tablets.js:46` zeigen beide dorthin.
+
+**TRÄGT sachlich.** *Einschränkung zu seiner eigenen Nachmessung:* er sagte
+`grep -n 'ausmusterung\|tablets' routes/admin/geraete-typen.js` → 0 Treffer;
+gemessen ist es **1**, aber der Treffer ist `:351`, eine URL in der
+HTML-Ausgabe, keine Zitatstelle. Die Vorhersage war ungenau, der Befund
+richtig.
+
+Folge für den Auftrag: die Begründung wird berichtigt, und der Umbau ist
+KLEINER als gedacht — `geraete-typen.js:227-231` ist bereits die kanonische
+Begründung und wandert mit, zwei Verweise werden umgehängt statt drei.
+
+## P-8 (mittel) — Eine Ausklammerung, die auf einer BEHAUPTUNG steht
+
+0.3 klammert die `parseInt`-Klasse aus mit der Begründung „alle fünf Abfragen
+tragen `studio_id`". Das war **behauptet, nicht gemessen** — im Material war
+keine der fünf Abfragen abgedruckt.
+
+**Jetzt gemessen, je einzeln:** `tablet-sperre.js:550` → `WHERE studio_id = $1
+AND id=$2 AND aktiv=1`; `mitarbeiter-auth.js:173` (der Einladungsweg) →
+`WHERE studio_id = $1 AND id=$2 AND aktiv=1`; `mitarbeiter.js` E-Mail-,
+PIN- und Löschweg → jeweils `AND studio_id`, im Löschweg auch alle
+Folgeanweisungen (`DELETE FROM belehrung_freischaltung`, `mitarbeiter_token`).
+**Die Folgerung hält.**
+
+**TRÄGT als Methodenbefund, nicht als Sachbefund.** Der Unterschied zählt: die
+Ausklammerung bleibt, aber sie steht ab jetzt auf einer Messung. Ein Satz der
+Form „X ist unbedenklich, weil Y" ist eine Tatsachenbehauptung über Y.
+
+## P-9 (niedrig) — Die Bauanweisung 1.3 ist invertiert
+
+1.3 schreibt die Ersetzung wörtlich als „`isNaN(id)` → `istGueltigeId(id)`".
+`isNaN` ist WAHR bei UNGÜLTIG, `istGueltigeId` ist WAHR bei GÜLTIG. Wörtlich
+ausgeführt entstünde `if (!id || istGueltigeId(id))` — eine invertierte Wache,
+die gültige IDs abweist und `1e3` durchlässt.
+
+**TRÄGT.** Z1s Positivkontrolle finge es, aber die Anweisung selbst ist falsch.
+Entscheidung: 1.3 lautet ab jetzt `!istGueltigeId(id)`.
+
+---
+
+## Was diese Runde für die Arbeitsweise zeigt
+
+**Neun von neun getragen, an einem Papier, das ich für sorgfältig gehalten
+habe** — vier davon (P-1, P-3, P-4, P-9) hätten fehlerhaften Code oder eine
+nicht fallende Zusicherung erzeugt, drei (P-5, P-6, P-7) berichtigen
+Tatsachenbehauptungen, die ich in einen kanonischen Dateikopf geschrieben
+hätte.
+
+**Und die Spur hatte KEINEN Repo-Zugriff.** Sie hat aus dem Papier und den
+mitgelieferten Ausschnitten gearbeitet. Das ist ein Argument für die Sorgfalt
+beim BÜNDELN, nicht für mehr Werkzeuge: fünf der neun Befunde stützen sich auf
+Zeilen, die ich selbst mitgeschickt habe.
