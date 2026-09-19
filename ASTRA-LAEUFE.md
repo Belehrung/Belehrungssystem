@@ -1852,3 +1852,29 @@ existiert nur im Browser).
 Deshalb steht es in der CLAUDE.md als beratend und ausdrücklich nicht als Gate —
 gestützt zusätzlich auf eine externe Messung, nach der automatische Filter in
 genau unseren Fehlerklassen bis zu drei Viertel der echten Befunde verwerfen.
+
+## 19.09.2026 — Planprüfung Signaturbild (zwei Spuren, PLAN statt Diff)
+
+Erste Anwendung der Regel vom 18.09.2026 („der Plan geht raus, BEVOR gebaut
+wird") auf einen sicherheitsrelevanten Auftrag. Material: das Auftragspapier
+plus der IST-Zustand — `routes/belehrungen.js`, `core/db.js`,
+`core/integritaet.js`, vier betroffene Testdateien, `package.json` und vier
+Auszüge (Geschwisterstellen). **Bündel GEZÄHLT statt geschätzt:
+127.232 Token** über `POST /v1/responses/input_tokens`.
+
+| Lauf | Modell | Stufe | Ergebnis | Befunde | getragen | Kosten |
+|---|---|---|---|---|---|---|
+| a) abgebrochen | deepseek-v4-pro | — | `finish_reason: "length"` | — | — | 139.138 ein / 16.000 aus |
+| b) Wiederholung | deepseek-v4-pro | — | (läuft) | | | |
+| c) | gpt-5.6-sol | xhigh | (läuft) | | | |
+
+**Lauf (a) ist ein Abbruch, keine Null.** Alle 16.000 Completion-Token gingen
+ins Nachdenken (`completion_tokens_details.reasoning_tokens: 16000`), für die
+Antwort blieb nichts. Das ist die Klasse aus der CLAUDE.md: wer nur den Text
+ausliest, meldet „keine Befunde" und meint „niemand hat geprüft". Aufgefallen
+ist es allein daran, dass `finish_reason` bei JEDEM Aufruf geprüft wird.
+Die Kosten sind angefallen und stehen deshalb in der Zeile.
+
+**Merkposten für künftige DeepSeek-Läufe:** `max_tokens` deckelt dort Denken
+UND Antwort gemeinsam. 16.000 reichen bei einem 127k-Bündel nicht; die
+Wiederholung fährt mit 64.000.
