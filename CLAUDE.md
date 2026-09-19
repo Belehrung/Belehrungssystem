@@ -1783,6 +1783,24 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   in eine Variable auswerten, dann prüfen UND ausgeben. Zwei getrennte
   Aufrufe sind zwei Messungen; bei einem flatternden Befund beschreibt die
   Diagnose dann womöglich einen anderen Durchlauf als den roten.
+- **Wer misst, ob ein Prozess von selbst endet, darf das Zeitlimit nicht IN
+  den Prozess legen.** Gemessen am 19.09.2026 an meiner eigenen Messung: Um zu
+  prüfen, ob ein nicht zerstörter Socket die Ereignisschleife am Leben hält,
+  hatte ich einen `setTimeout(..., 1200)` als Wachhund IN das Node-Skript
+  gelegt. **Dieser Timer hält die Schleife selbst am Leben** — das Ergebnis
+  „Prozess läuft noch" war damit garantiert, mit und ohne Defekt. (`wach.unref
+  && null` wertet die Eigenschaft nur aus und ruft nichts auf; auch das fiel
+  erst beim zweiten Hinsehen auf.) Der Befund stimmte trotzdem — aus Glück,
+  nicht aus Messung.
+  Mit dem Instrument AUSSERHALB des Prozesses (`timeout 2 node probe.js`, dazu
+  `unref()` auf Server und Intervall) wird es eindeutig: ohne `destroy()`
+  **Exit 124 nach 2006 ms** (vom äußeren Zeitlimit getötet), mit `destroy()`
+  **Exit 0 nach 58 ms** (von selbst beendet). Verallgemeinert: **eine Frage
+  nach der LEBENSDAUER eines Prozesses kann nicht von innen beantwortet
+  werden** — jedes Messmittel im Prozess ist Teil dessen, was ihn am Leben
+  hält. Dasselbe gilt für offene Handles, Sockets und Server: wer sie zum
+  Messen anlegt, `unref()`t sie, sonst misst er sich selbst.
+
 - **Eine Zuweisung aus einer gescheiterten Kommandosubstitution IST
   zugewiesen** — `set -u` greift nicht, die Variable ist nur leer. Unter
   `set -uo pipefail` OHNE `-e` gilt deshalb: jedes `VAR=$(mktemp -d …)`
