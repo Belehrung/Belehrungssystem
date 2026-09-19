@@ -2258,7 +2258,7 @@ auf die dann schon vier Orte zeigen.
 | | **Summe** | **63** | **63** | **20** | **42,81 $** |
 | 19.09.2026 | **Planprüfung Schreibreihenfolge Fassung 2** (sol, Repo-Lesezugriff) | Papier + 13 Auszüge + Sperrlandschaft, 42.838 Token; 92 Suchen / 47 Lesungen / 21 Runden | 11 | **10** | 0 (1 = Betreiber-Entscheidung) | **17,42 $** |
 | 19.09.2026 | dieselbe Planprüfung, zweite Spur (deepseek-v4-pro, ohne Repo) | wortgleich, 42.838 Token rein / 23.649 raus | 2 | **2** | 0 | ~0,05 $ |
-| 19.09.2026 | dieselbe Planprüfung, dritte Spur (**kimi-k3**, A/B) | wortgleich bis auf `model`; `truncation` raus, `stream` rein | — | — | — | — |
+| 19.09.2026 | dieselbe Planprüfung, dritte Spur (**kimi-k3**, A/B) | wortgleich bis auf `model`; 44.704 rein (44.544 aus dem Cache) / 26.885 raus | 7 | **7** | 0 | **~0,42 $** |
 
 **Das ist die mit Abstand grösste Prüfserie dieser Datei — und die einzige, in
 der KEIN einziger Befund gefallen ist.** Zum Vergleich: am 12.09. fielen drei
@@ -2411,3 +2411,32 @@ dazu steht jetzt in CLAUDE.md unter „Transaktionen und Sperren".
 **Vier von elf Befunden betrafen Zusicherungen, die nicht rot werden können**
 (B4, B5, B6, B7) — unsere teuerste Klasse, und alle vier an einem Papier
 gefunden, das noch keine Zeile Code hatte.
+
+## 19.09.2026, 22:38 UTC — der erste Kimi-Lauf, und was der A/B wirklich hergibt
+
+**7 Befunde, alle sieben nach eigener Nachmessung getragen, SECHS davon hatte
+keine der beiden anderen Spuren.** Der Auftrag war wortgleich zur
+DeepSeek-Spur (maschinell verglichen, einziges abweichendes Feld `model`).
+
+**Die Klasse, die nur Kimi traf, ist einheitlich und das ist der eigentliche
+Befund:** innere Widersprüche des PAPIERS. S6 gegen Z5b, S1 gegen seine eigene
+Schadensbeschreibung, Z4d gegen den tatsächlichen Bestand, eine Zählung und
+ein Codezitat gegen den Quelltext. Es hat das Papier gegen SICH SELBST
+gelesen. Sol hat stattdessen die Umgebung abgesucht und dort den
+Verklemmungskreis gefunden (B3), den Kimi nicht hatte — es hatte
+`mitarbeiter-auth.js` gar nicht im Bündel.
+
+**Der Vergleich ist NICHT gleichwertig, und das gehört dazu:** sol durfte im
+Repo lesen (47 Lesungen, 92 Suchen, 21 Runden), Kimi bekam ein festes Bündel
+und einen Schuss. „Kimi findet mehr" wäre deshalb eine Behauptung, die diese
+Messung nicht trägt. Was sie trägt: **der dritte Sucher deckt eine Klasse ab,
+die die anderen beiden nicht abdecken** — dieselbe Beobachtung wie am
+13.09.2026, an einem dritten Gegenstand.
+
+**Kostenverhältnis am selben Gegenstand:** sol 17,42 $ (mit Repo-Zugriff),
+kimi ~0,42 $, deepseek ~0,05 $.
+
+**Nebenbefund, der uns etwas spart:** 44.544 der 44.704 Eingabe-Token kamen
+aus dem automatischen Präfix-Cache — Reste der beiden abgebrochenen Versuche
+davor. **Damit ist der Cache an unserem eigenen Material belegt**, nicht nur
+behauptet; er hat die Kosten dieses Laufs auf etwa ein Fünftel gedrückt.
