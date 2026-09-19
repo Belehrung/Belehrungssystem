@@ -1,4 +1,4 @@
-# Stand — 19.09.2026, ~18:50 UTC
+# Stand — 19.09.2026, ~18:55 UTC
 
 Diese Datei ist der Übergabepunkt. Der Takt-Prompt ist beim Bau von
 Beitrag 1 stehengeblieben. **Hier steht, was wirklich gilt.**
@@ -64,23 +64,19 @@ Punkt 4 ist die Lehre des Tages: Die Upload-Spur war sachlich richtig (sie
 hat ein echtes Informationsleck gefunden), aber sie ist ohne Entscheidung an
 das Programm vorbeigewachsen, und gemerkt hat es der Betreiber, nicht ich.
 
-## LÄUFT GERADE (19.09.2026, ~18:50 UTC) — nicht anfassen
+## LÄUFT GERADE (19.09.2026, ~18:55 UTC) — nicht anfassen
 
-| Was | Arbeitsbaum |
-|---|---|
-| **Gegenleser Spur 1 (`gpt-5.6-sol`): Planprüfung ID-Wache + Textfeld-Wache**, Runde 3 — Frage „wo scheitert der Inventar-Wächter?" | LIEST `/home/user/gymdocu` |
-| **Gegenleser Spur 2 (`deepseek-flash`): dieselben zwei Papiere** — Frage „was verspricht das Verfahren, das es nicht einlöst?" | statisches Bündel |
+| Was | Zweig | Arbeitsbaum |
+|---|---|---|
+| **Executer: ID-Wache bauen** (`plaene/auftrag-id-wache.md` Fassung 2) | `claude/id-wache` (Basis `4c4b729`) | **`/home/user/gymdocu` — BELEGT** |
 
-**Kein Executer läuft**, alle vier Arbeitsbäume sauber. **Solange Spur 1
-läuft, wird in `/home/user/gymdocu` nicht geschrieben.**
+**In `/home/user/gymdocu` wird nicht geschrieben, solange er läuft** — und er
+ist erst fertig, wenn die BENACHRICHTIGUNG da ist, nicht wenn sein
+Hintergrundlauf durch ist. Wer ihn per SendMessage fortsetzt, macht ihn wieder
+aktiv und muss auf die NÄCHSTE Meldung warten.
 
-Die drei Arbeitsbäume aus dem 18.09. sind abgearbeitet; `/workspace/gymdocu-2a`
-und `/workspace/gymdocu-sicher` stehen weiter und können mit
-`git worktree remove` abgeräumt werden, sobald nichts mehr darauf zeigt.
-
-**Die beiden Suiten serialisieren über `/tmp/gymdocu-suite.lock`.** Eine, die
-wartet, ist NICHT hängengeblieben. Nicht abbrechen, nicht in ein äusseres
-`flock` packen.
+Kein Gegenleser läuft. `/workspace/gymdocu-2a` und `/workspace/gymdocu-sicher`
+stehen unbenutzt und können mit `git worktree remove` abgeräumt werden.
 
 ## Der Gegenleser ist wieder erreichbar (18.09.2026, ~20:20 UTC)
 
@@ -5204,3 +5200,79 @@ Protokoll**; sein Kopf sagt das.
 **Achtung beim Bauen:** `plaene/auftrag-textfeld-wache.md` und
 `plaene/auftrag-schreibreihenfolge.md` fassen BEIDE `routes/admin/geraete.js:5496`
 an. Wer zuerst baut, nennt es dem anderen.
+
+---
+
+## 19.09.2026, ~18:55 UTC — Runde 3 kippte den ENTWURF, der Beitrag wurde KLEINER
+
+### Die Serie, vollständig
+
+| Runde | Gegenstand | Befunde | getragen | blockierend | Kosten |
+|---|---|---|---|---|---|
+| 1 | Eingabewache Fassung 1 | 17 | 17 | 4 | 11,23 $ |
+| 2 | Eingabewache Fassung 2 (die BEHEBUNGEN) | 17 | 17 | 5 | 18,81 $ |
+| 3 | ID-Wache + Textfeld-Wache (der neue ENTWURF) | 29 | 29 | 11 | 12,77 $ |
+| | **Summe** | **63** | **63** | **20** | **42,81 $** |
+
+**Grösste Prüfserie unseres Protokolls, und die einzige ohne einen einzigen
+gefallenen Befund.** Alles am PAPIER, nichts am fertigen Code.
+
+### Warum Runde 3 den Entwurf kippte
+
+Der Inventar-Wächter — die Antwort auf „meine handgemachte Liste war dreimal
+unvollständig" — **sieht seine eigenen Paradebeispiele nicht:**
+
+* `aufgaben` ist an `routes/admin/geraete.js:5418` DESTRUKTURIERT. Die Zeile
+  `aufgaben.trim()` (`:5496`), das Flaggschiff-Beispiel, enthält `req.body`
+  überhaupt nicht. Dasselbe für `name` an `:5441`, `:4981`, `:5030`, `:235`.
+* `routes/tablet-sperre.js:546` ist eine BODY-ID (`req.body.mitarbeiter_id`),
+  keine `:id`-Route. Ein Routen-Inventar findet sie nie.
+
+Ein Muster an der SENKE beantwortet eine Frage nach dem DATENFLUSS nicht —
+genau die Hausregel, die ich selbst zitiert hatte.
+
+### Zwei eigene Prämissen berichtigt
+
+* **„ID_MAX steht an EINEM Ort"** ist schon heute falsch: gemessen **11
+  Literale `2147483647` in sieben Dateien** unter `routes/`. Meine Zusicherung
+  wäre unabhängig vom Bau rot gewesen.
+* **„Der Alarmkanal ist von aussen taktbar"** war zu stark. `core/csrf-schutz.js`
+  weist jeden Nicht-GET mit fremdem `Origin`/`Referer`-Host mit **403** ab,
+  `/admin/…` ist keine Ausnahme. Erreichbar für jeden ANGEMELDETEN Admin, nicht
+  für einen fremden Dritten. **Der Defekt bleibt** (stille Falschschreibungen,
+  halb angelegte Datensätze), die Einordnung wird ehrlicher.
+
+### Die Entscheidung: KLEINER statt ein vierter Entwurf
+
+Drei Runden, 63 Befunde, immer noch nicht baureif — und fast alle hingen am
+AUSBAU, nicht an den Defekten. Nach der Hausregel „lieber ein Bündel weniger
+als zwanzig ungemessene Befunde" baut `plaene/auftrag-id-wache.md` **Fassung 2**
+nur noch:
+
+* `core/eingabe-pruefung.js` mit `istGueltigeId` (Ziffern **und** int4),
+  Coercion `String(wert)` aus dem Bestand ÜBERNOMMEN statt verschärft.
+* Vier heute gleichlautende Kopien binden; `normalisiereGeraetId` liest
+  `ID_MAX` von dort.
+* `geraete.js:337`/`:467` nachziehen (gemessen: `isNaN` lässt `1e3`, `1.5`,
+  `0x10` durch).
+* Fünf `parseInt`-Stellen nachziehen (gemessen:
+  `parseInt("2147483648",10)` ist nicht `NaN` und erreicht SQL → 22003).
+* **Drei Verhaltensänderungen, einzeln gemessen:** `"0"`, `"2147483648"`,
+  `"99999999999"` gehen von angenommen nach abgewiesen; 19 weitere Fälle
+  bleiben identisch.
+
+**NICHT gebaut:** Inventar-Wächter, Textfeldregel, ID_MAX-Zentralisierung über
+`geraete.js` hinaus. **Alle acht ausgeklammerten Fundorte stehen als offene
+Punkte (U-ID1 bis U-TX5) in `plaene/durchgang-befunde.md`** — ein
+aufgeschriebener Fundort ist besser als ein Wächter, der ihn falsch zählt.
+
+### Als Nächstes
+
+1. **Executer-Bericht abwarten**, dann Diff SELBST lesen, Suite SELBST fahren,
+   unabhängige Review, CI. Regel 6a: kein Link, bevor das durch ist.
+2. Danach `plaene/auftrag-schreibreihenfolge.md` (liegt fertig) — **Achtung:
+   es fasst `geraete.js:5485-5503` an, dieselbe Region wie der aktuelle Bau.**
+3. Dann die übrigen Beiträge aus Bündel 1, dann Bündel 2 des Durchgangs.
+4. **Die Textfeld-Wache braucht einen neuen Erfassungs-Entwurf** (AST statt
+   Muster) — `plaene/auftrag-textfeld-wache.md` ist als NICHT BAUBAR markiert,
+   seine Messungen bleiben gültig.
