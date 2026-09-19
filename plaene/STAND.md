@@ -4857,6 +4857,49 @@ der Verbrauch je Anfrage SINKT durch ihn von +182 MB auf +90 MB RSS).
 
 **Als Nächstes:** der risikoorientierte Gesamtdurchgang
 (`plaene/durchgang-risikoorientiert.md`), Betreiber-Entscheidung vom
-19.09.2026. Erster Bauauftrag davor: `tools/gegenleser-repo.js` setzt
-`store: false` nicht — bei einem Durchgang über 14 Bündel bliebe sonst der
-halbe Quelltext des Repos auf fremden Servern liegen.
+19.09.2026. Erster Bauauftrag davor: `tools/gegenleser-repo.js`.
+
+**BERICHTIGT 19.09.2026, 12:00 — der Satz, der hier stand, war falsch**
+(„setzt `store: false` nicht"). Er stammte aus einer Messung vom 18.09.; das
+Werkzeug setzt `store`, `reasoning.effort` und `truncation` seit Commit
+`738558a`. Damit ist dieselbe überholte Prämisse an DREI Orten gestanden —
+CLAUDE.md, Durchgangsplan und hier. Alle drei sind berichtigt. Die Hausregel
+„dieselbe Aussage an zwei Orten" hat genau das vorhergesagt: eine Zustands-
+aussage im Fliesstext veraltet lautlos, und zwar überall zugleich.
+
+### Takt 12:00 — Auftragspapier Gegenleser-Streaming, zwei Planprüfungen laufen
+
+Was WIRKLICH fehlt, ist `stream: true`. Das Werkzeug setzt ein Zeitlimit von
+20 Minuten (`tools/gegenleser-repo.js:569`), während der Egress-Proxy eine
+nicht-streamende Anfrage an `api.openai.com` bei **300,3 s** hart abschneidet —
+ein konfigurierter Wert, der nicht wirken kann. Die Behebung von gestern hat
+das sogar verschärft: mit `effort: xhigh` werden die Runden länger.
+
+**Vier eigene Messungen am echten Endpunkt, bevor das Papier geschrieben war**
+(zusammen unter 250 Token):
+
+* **M1** `stream:true` + Funktionswerkzeuge + `store:false` + `truncation` +
+  `metadata` zusammen: **HTTP 200**, ein Abschluss-Ereignis. Das war die eine
+  offene Annahme — der 442-s-Lauf von heute früh trug keine `tools`.
+* **M2** Das Antwortobjekt im Abschluss-Ereignis ist **formgleich** mit dem
+  heutigen Körper: `function_call`-Felder `id/type/status/arguments/call_id/
+  name`, `usage` mit `input_tokens`/`output_tokens`. Also ändert sich hinter
+  `anfragen()` **nichts** — das macht den Beitrag klein.
+* **M3** Form des `response.incomplete`: `status: incomplete`,
+  `incomplete_details {"reason":"max_output_tokens"}`, `output[]` nur
+  `["reasoning"]`.
+* **M4** Das Werkzeug liest `status` **nirgends** (0 Fundstellen). Im
+  gemessenen Fall fällt es laut aus, aber mit falscher Diagnose („kein Text"
+  statt „Budget erschöpft"). Ob eine Kürzung auch hinter einem fertigen
+  `function_call` landen kann, ist NICHT gemessen und wird nicht behauptet.
+
+`max_tool_calls` fällt bewusst weg: keine `web_search` in diesem Werkzeug, und
+eine ungemessene Obergrenze wäre genau die Klasse, die der Beitrag beseitigt.
+
+Bündel **gezählt, nicht geschätzt**: `POST /v1/responses/input_tokens` →
+**96.599 Token**, 24,1 % des Limits. (Verhältnis hier 3,55 Bytes/Token gegen
+3,71 am Prosa-Bündel — Quelltext ist dichter.)
+
+Zwei Spuren laufen parallel über dasselbe Bündel (sol und deepseek-v4-pro).
+Begründung für die zweite Spur: durch dieses Werkzeug laufen ALLE Gegenlesungen
+des kommenden Durchgangs — bricht es still, ist jede folgende Prüfung wertlos.
