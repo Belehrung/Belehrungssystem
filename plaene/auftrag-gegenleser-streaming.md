@@ -62,8 +62,10 @@ die Kostenrechnung. Wer dort etwas anfasst, hat den Auftrag missverstanden.
 findet null Stellen. Im gemessenen Fall M3 fällt es trotzdem laut aus (kein
 `function_call`, kein Text → `return 5`), aber mit FALSCHER Diagnose: es meldet
 „Das Modell hat am Ende keinen Text geliefert", während in Wahrheit das
-Ausgabebudget erschöpft war. Bei 45.000 Ausgabe-Token je Runde und `xhigh` ist
-das kein Randfall.
+Ausgabebudget erschöpft war. Der Istwert ist `MAX_ANTWORT_TOKEN = 24000`
+(`tools/gegenleser-repo.js:150`) — nicht die 45.000 aus der CLAUDE.md-
+Zielkonfiguration, die hier zuerst stand. Bei 24.000 ist die Erschöpfung sogar
+WAHRSCHEINLICHER. Der Wert wird in diesem Beitrag NICHT angehoben.
 **NICHT gemessen, und deshalb nicht behauptet:** ob eine Kürzung auch NACH einem
 fertigen `function_call` landen kann. Falls ja, liefe die Schleife still weiter
 — dieselbe Klasse, nur stumm. Der Riegel unten deckt beides ab, ohne dass die
@@ -187,3 +189,169 @@ Gesamtlimits — das wäre das, was wir eigentlich wollen. **Gemessen ist das
 nicht**, und über den Stub (der keine echten Sockets benutzt) ist es auch nicht
 billig zu messen. Es wird deshalb nicht behauptet, weder im Kommentar noch im
 Bericht. Wer die 20 Minuten anfasst, misst vorher.
+
+
+---
+
+# NACHTRAG 19.09.2026: zwei Planprüfungen, 16 Befunde, alle selbst nachgemessen
+
+Zwei Spuren über dasselbe Bündel (96.599 gezählte Token): `gpt-5.6-sol`
+(388 s, 13 Befunde) und `deepseek-v4-pro` (244 s, 3 Befunde). Die Regel vom
+18.09.2026 — „der Plan geht raus, BEVOR gebaut wird" — hat sich hier zum
+ersten Mal in ihrer stärksten Form belegt:
+
+**ZWEI der Befunde sind gar keine Planfehler, sondern bestehende Fehler im
+heutigen Code** (SOL-4, SOL-11). Beide sitzen in genau der Funktion, die
+umgebaut werden soll, beide sind von mir mit Positivkontrolle nachgemessen,
+und beide wären ohne diese Prüfung mit in den Umbau gewandert.
+
+## Die zwei bestehenden Fehler — sie sind ab jetzt Teil des Auftrags
+
+### B1 — `roh += stueck` zerstört Mehrbytezeichen an der Chunk-Grenze
+
+`tools/gegenleser-repo.js:572` lautet `antwort.on('data', (stueck) => { roh += stueck; });`.
+`roh` ist eine Zeichenkette, `stueck` ein Buffer — das `+=` dekodiert JEDEN
+Chunk EINZELN als UTF-8. Fällt eine Chunk-Grenze zwischen die Bytes eines
+Mehrbytezeichens, entstehen Ersatzzeichen.
+
+**Gemessen, dieselbe Konstruktion, Trennung auf einem Folgebyte:**
+
+    Bestandsweg (roh += stueck): "Pruefung: Groesse der Datei ��� ungueltig (ae"
+      Ersatzzeichen: true  | identisch mit Original: false
+    StringDecoder:               "Pruefung: Groesse der Datei — ungueltig (ae/o"
+      Ersatzzeichen: false | identisch mit Original: true
+
+Die Positivkontrolle steht: derselbe Eingang, derselbe Schnitt, einmal falsch
+und einmal richtig. **Unsere Berichte sind deutsch**, und ein Strom von 1,5 MB
+hat viele Chunk-Grenzen. Zu bauen: `StringDecoder('utf8')` oder Zusammenführen
+der Roh-Buffer bis zur vollständigen Zeile.
+
+Gefährlich wird es im Zusammenspiel mit B3 unten: ein so beschädigtes JSON
+scheitert am `JSON.parse` — und würde nach meiner ursprünglichen Regel
+„unlesbare Zeilen überspringen" **still** übersprungen.
+
+### B2 — der Antwortstrom kann die Promise für immer hängen lassen
+
+Die Promise löst NUR in `antwort.on('end')` auf; Listener gibt es nur auf
+`anfrage` („timeout", „error"), nicht auf dem ANTWORT-Strom. **Gemessen an
+einem Nachbau genau dieser Konstruktion, mit Wachhund:**
+
+    sauberes end               -> aufgeloest
+    close OHNE end             -> HAENGT (Wachhund nach 300ms)
+    Fehler am ANTWORTSTROM     -> HAENGT (Wachhund nach 300ms)
+
+Der erste Fall ist die Positivkontrolle — der Nachbau kann auflösen. Die
+anderen beiden nicht. Ein Socket-Zeitlimit rettet hier nicht: es greift bei
+UNTÄTIGKEIT, nicht bei einem geschlossenen Socket.
+
+Heute fällt das meist nicht auf, weil der Proxy-Abbruch bei 300,3 s als Fehler
+am ANFRAGE-Objekt ankommt. **Mit Streaming wird ein mitten im Strom sauber
+geschlossener Socket zum Regelfall der Störung** — die Klasse wird also von
+unwahrscheinlich zu wahrscheinlich, genau durch diesen Umbau.
+
+Zu bauen: Listener auf `antwort` für `error`, `aborted` und vorzeitiges
+`close`, dazu eine Abschlussfunktion, die genau EINMAL wirkt (ein normales
+`close` nach `end` darf nicht doppelt ablehnen).
+
+## Was sich am Auftrag ändert
+
+**B3 — eine kaputte `data:`-Zeile wird NICHT übersprungen.** Meine Regel
+„unlesbare Zeilen überspringen" warf zwei Dinge zusammen: `event:`- und
+Leerzeilen (dürfen ignoriert werden) und einen `data:`-Datensatz mit
+ungültigem JSON (ist ein beschädigter Protokolldatensatz und bricht den Lauf
+laut ab). Beide Spuren haben diesen einen Satz getroffen.
+
+**B4 — der Ereignistyp kommt aus dem `type`-Feld im JSON.** Gemessen über drei
+echte Ströme: **3.977 `data:`-Zeilen, davon 3.977 mit `type`-Feld; 3.977
+`event:`-Zeilen; Abweichung zwischen beiden: 0.** Der Parser liest `data:` und
+nimmt `e.type`; `event:` wird nicht gebraucht. Das gehört ins Papier, weil es
+bisher nirgends stand — nicht, weil es ein Fehler wäre.
+
+**B5 — ein ZWEITES Abschluss-Ereignis lehnt den Lauf ab.** Meine Fassung sagte
+„melden, aber weiterlaufen". Das ist die schwächere Wahl: `completed` gefolgt
+von `failed` ergäbe einen gedruckten Bericht und EXIT 0. Gemessen hatte JEDER
+der drei echten Ströme **genau ein** Abschluss-Ereignis — eine Ablehnung ist
+also nicht empfindlich, sondern schlicht nie ausgelöst.
+
+**B6 — Fehlerdiagnosen nach Form getrennt.** `incomplete_details.reason` bei
+`incomplete`; `response.error` bei `failed` (das Feld existiert — gemessen als
+`"error":null` im `response.created`-Ereignis); dazu ein Ereignis vom Typ
+`error` als sofort fatal. Kein `undefined` in einer Fehlermeldung.
+
+**B7 — die Fixtur `antwortKoerperBauen()` braucht ein Top-Level-`status`.**
+Sie liefert heute nur `{output, usage}`. Die neue Statusprüfung würde damit
+JEDEN bestehenden Selbsttestlauf ablehnen. `incomplete` und `failed` bekommen
+eigene, ausdrücklich gebaute Antwortobjekte; der Ereignistyp ist NICHT der
+Ersatz für den Objektstatus.
+
+**B8 — der Verbrauch darf beim Statusabbruch nicht verloren gehen.**
+`promptTokenSumme += …` steht bei `:1137`, also NACH `anfragen()`. Wirft die
+Funktion, meldet die Zusammenfassung bei `:1096` `Token rein: 0` und
+`Kosten geschaetzt: $0.0000` für einen Lauf, der Geld gekostet hat. Der
+Fehler trägt Status, Grund und `usage`; der Catch verbucht sie genau einmal.
+(Die Protokollzeile bei `:1016` sagt bei 0/0 bereits korrekt „Kosten
+unbekannt" — die Konsolenausgabe nicht.)
+**Damit ist mein Satz „hinter `anfragen()` ändert sich nichts" falsch:** für
+die DATENFORM stimmt er (gemessen, M2), für den KONTROLLFLUSS nicht.
+
+**B9 — der Stub muss einen MEHREREIGNIS-Strom liefern**, nicht eine einzelne
+`response.completed`-Zeile: `event:`- und Leerzeilen, `response.created`,
+mindestens ein Delta, dann erst der Abschluss. Sonst laufen 72 Fälle durch
+SSE, ohne je den echten Zustand zu sehen — und eine Implementierung, die beim
+ersten Nicht-Abschluss-Ereignis abbricht, bliebe in CI grün.
+
+**B10 — der Stub bekommt einen konfigurierbaren Statuscode.** Er hat heute
+fest `statusCode: 200`; damit ist der Nicht-200-Weg von nichts bewacht.
+
+**B11 — `metadata` bekommt feste Werte, keine abgeleiteten.** `--zweck` ist
+freier Text und fällt sonst auf den Basisnamen der Brief-Datei zurück — genau
+die Pfade und Auftragstexte, die dort nicht hingehören.
+
+**B12 — die Riegel auf `store:false`, `truncation` und `reasoning.effort` sind
+PFLICHT, nicht „wenn es ohne Ausufern geht".** Mein eigener Halbsatz hat den
+wichtigsten Datenschutzriegel des Werkzeugs zur Kür erklärt. Für `store:false`
+ist die Gegenmutation zwingend.
+
+**B13 — GP2 und GP3 bekommen wörtliche Sollwerte.** „Laut scheitern" bestünde
+auch ein `throw new Error('kaputt')`. GP2 prüft Bytes, Zahl der `data:`-Zeilen
+und letzten Ereignistyp als Literale aus der Fixtur; GP3 prüft `status` UND
+`reason`. Jedes Pflichtfeld wird einzeln entfernt und muss einzeln rot werden.
+
+**B14 — GP1 bekommt eine Mehrbyte-Fixtur**, deren Schnitt ZWISCHEN den Bytes
+eines Zeichens liegt (siehe B1). Eine ASCII-Fixtur kann diese Klasse nicht
+auslösen — Lehrbuchfall „Testdaten, die den gesuchten Unterschied gar nicht
+erzeugen können".
+
+## Was NICHT trägt, und warum es trotzdem hier steht
+
+* **DS-1 („blockierend": der Parser könne den Abschluss nicht erkennen)** —
+  **Schwere widerlegt.** Seine eigene Nachmess-Anweisung behauptet, ein nur
+  `data:` lesender Parser würde „das JSON direkt als Antwortobjekt ansehen (das
+  kein `status` hat)". Gemessen ist das Gegenteil: das JSON trägt `type` und
+  `response`. Übrig bleibt der echte Teil — mein Papier sagte nirgends, woher
+  der Typ kommt (jetzt B4). Aus blockierend wird niedrig.
+* **DS-2 (Formgleichheit zu weit verallgemeinert)** — der Hinweis ist fair,
+  das VERMUTETE Risiko löst sich aber in der Messung auf. Ich habe daraufhin
+  drei Dinge gemessen, die vorher niemand gemessen hatte: ein Abschluss mit
+  Ausgabetyp `message` (im 442-s-Lauf, 40× `reasoning` + 1× `message`); einen
+  echten ZWEI-RUNDEN-Lauf mit Streaming, bei dem das unveränderte
+  `function_call`-Element plus `function_call_output` zurückgeht (**beide
+  Runden HTTP 200**, mit `gpt-5.4` und mit `gpt-5.6-sol`); und ein echtes
+  `reasoning`-Element im `input[]` einer neuen Anfrage (**HTTP 200**). Damit
+  ist auch SOL-13 erledigt, das genau diese Messung verlangte.
+* **SOL-3** trägt in der Sache (B8), aber nicht in der Schwere: der Lauf endet
+  mit Nichtnull-Exit, er wird nicht falsch grün. Von „hoch" auf „mittel".
+
+## Was dieser Lauf für die REGEL hergibt
+
+**Überschneidung der beiden Spuren: 2 von 16.** DS-1 und SOL-10 trafen
+DENSELBEN Satz meines Papiers aus zwei Richtungen, DS-3 und SOL-9 dieselbe
+Fehlerform. Das ist ein anderes Bild als am 13.09.2026, wo zwei Spuren neun
+Befunde mit NULL Überschneidung lieferten — und es ist die ehrlichere Zahl,
+weil hier beide dasselbe Material und dieselbe Frage hatten. Eine Stichprobe
+bleibt es trotzdem.
+
+**Der Engpass war wieder das eigene Nachmessen, nicht das Finden.** Sechzehn
+Befunde, davon 14 in der Sache getragen, 2 mit falscher Schwere. Die zwei
+teuersten (B1, B2) waren keine Planfehler — sie lagen im Bestand und wären in
+jedem Bau-Durchgang unsichtbar geblieben, weil niemand nach ihnen gesucht hat.

@@ -1983,3 +1983,57 @@ gar nicht wirkt (`.threshold(0)`), einmal eine Behebung, die alle 19
 gemessenen echten Fälle abgewiesen hätte. Die Regel „der Behebungsvorschlag
 einer Gegenlesung ist selbst ein Befund, der nachgemessen gehört" hat hier
 zweimal an einem Tag den Unterschied gemacht.
+
+---
+
+## 19.09.2026 — Planprüfung `tools/gegenleser-repo.js` auf Streaming (zwei Spuren)
+
+| | Spur A | Spur B |
+|---|---|---|
+| Modell | `gpt-5.6-sol`, `effort: xhigh` | `deepseek-v4-pro` |
+| Material | identisch: Auftragspapier + vollständiges Werkzeug (2.732 Zeilen) + `ci.yml` + CLAUDE.md | identisch |
+| Bündel | **96.599 Token gezählt** (`POST /v1/responses/input_tokens`), 24,1 % des Limits | dasselbe, 103.416 vom Anbieter gezählt |
+| Dauer | 388 s, HTTP 200, 1.889.745 SSE-Bytes, 1 Abschluss-Ereignis | 244 s, HTTP 200, `finish_reason: stop` |
+| Verbrauch | 96.798 rein / 25.412 raus (davon 20.200 Denk-Token) | 103.416 rein / 19.057 raus (davon 17.093 Denk-Token) |
+| Kosten | **1,25 $** (5,00/30,00 je Mio) | **unbekannt** — `deepseek-v4-pro` steht nicht in unserer Preistabelle; eine Zahl wird nicht erfunden |
+| Befunde | 13 | 3 |
+| Nach EIGENER Nachmessung getragen | 12 in der Sache (1 Schwere korrigiert: SOL-3 hoch → mittel) | 2 in der Sache (1 Schwere widerlegt: DS-1 blockierend → niedrig) |
+
+**Gesamt 16 Befunde, 14 getragen, 2 mit falscher Schwere.**
+
+**Das Bemerkenswerte sind nicht die Planfehler, sondern zwei BESTEHENDE
+Fehler im heutigen Code**, beide in der Funktion, die umgebaut werden soll,
+beide von mir mit Positivkontrolle nachgemessen:
+
+1. **`roh += stueck` zerstört Mehrbytezeichen an der Chunk-Grenze.** Gemessen:
+   derselbe Eingang, derselbe Schnitt — Bestandsweg `"… Datei ��� ungueltig …"`
+   (Ersatzzeichen: ja), `StringDecoder` `"… Datei — ungueltig …"` (byte-gleich
+   mit dem Original). Unsere Berichte sind deutsch.
+2. **Ein Antwortstrom, der ohne `end` schliesst, lässt die Promise für immer
+   hängen.** Gemessen am Nachbau mit Wachhund: sauberes `end` → aufgelöst
+   (Positivkontrolle); `close` ohne `end` → HÄNGT; Fehler am Antwortstrom →
+   HÄNGT. Ein Socket-Zeitlimit rettet nicht — es greift bei Untätigkeit, nicht
+   bei einem geschlossenen Socket. Und der Umbau macht genau diese Störung vom
+   unwahrscheinlichen zum wahrscheinlichen Fall.
+
+**Überschneidung der Spuren: 2 von 16** (DS-1/SOL-10 trafen denselben Satz aus
+zwei Richtungen, DS-3/SOL-9 dieselbe Fehlerform). Anderes Bild als am
+13.09.2026 (null Überschneidung bei neun Befunden) — und die ehrlichere Zahl,
+weil hier beide Spuren dasselbe Material und dieselbe Frage hatten.
+
+**Eigene Messungen am echten Endpunkt im Zuge der Nachmessung** (zusammen
+unter 500 Token, sie beantworten DS-2 und SOL-13):
+`stream:true` + Funktionswerkzeuge + `store:false` + `truncation` + `metadata`
+zusammen → HTTP 200 · Abschluss-Ereignis formgleich mit dem nicht-gestreamten
+Körper · `response.incomplete` mit `{"reason":"max_output_tokens"}`, `output[]`
+nur `["reasoning"]` · ZWEI-Runden-Lauf mit zurückgeschicktem `function_call` +
+`function_call_output` → beide Runden HTTP 200 (`gpt-5.4` und `gpt-5.6-sol`) ·
+echtes `reasoning`-Element im `input[]` einer neuen Anfrage → HTTP 200 ·
+3.977 `data:`-Zeilen über drei echte Ströme, **alle** mit `type`-Feld, 0
+Abweichungen zur `event:`-Zeile.
+
+**Für die Regel vom 18.09.2026 („der Plan geht raus, BEVOR gebaut wird"): das
+ist der bisher stärkste Beleg.** Nicht weil die Planfehler teuer waren, sondern
+weil die beiden teuersten Funde gar keine Planfehler sind. Sie lagen im
+Bestand und wären in jeder Bau-Runde unsichtbar geblieben — niemand hätte nach
+ihnen gesucht.
