@@ -5488,3 +5488,54 @@ Transaktion an, nicht den überholten Tausch.
   verschluckt ein fehlgeschlagenes `unlink` vollständig. Nach dem Umbau (S3)
   ist das erlaubter Müll, aber lautlos. Auf `melde()` umzustellen wäre eine
   zweite Verhaltensänderung (Telegram-Alarm) und gehört nicht in den Beitrag.
+
+### 22:43 UTC — Fassung 3, und eine dritte Prüfspur ist dazugekommen
+
+**Der Betreiber hat einen Kimi-Schlüssel geliefert.** Gemessen (Einzelheiten
+in `plaene/kimi-k3-eignung-19-09-2026.md` und CLAUDE.md): Endpunkt
+`api.moonshot.ai`, Konto **Tier 2** (Concurrency 40, RPM 100, TPM 3 Mio),
+`kimi-k3` mit **1.048.576 Kontext von der API bestätigt**, `reasoning.effort`
+wirkt monoton (low 312 / high 598 / max 5781 Denk-Token). **Zwei Fallen:** ein
+erfundenes Feld wird mit HTTP 200 ANGENOMMEN (anders als bei OpenAI — „wird
+angenommen" sagt dort nichts), und der Egress-Proxy schneidet auch hier bei
+301 s ab, `stream: true` ist Pflicht.
+
+**Planprüfung Runde 2 über Fassung 2 — DREI Spuren, 20 Befunde, 19 getragen:**
+
+| Spur | Befunde | getragen | Kosten |
+|---|---|---|---|
+| `gpt-5.6-sol` (mit Repo-Lesezugriff) | 11 | 10 | 17,42 $ |
+| `deepseek-v4-pro` | 2 | 2 | ~0,05 $ |
+| **`kimi-k3` (A/B, wortgleich zu deepseek)** | **7** | **7** | **~0,42 $** |
+
+Der zwanzigste Befund (B9, Sessions entwerten) ist eine richtige Beobachtung,
+deren Auflösung eine **Betreiber-Entscheidung** ist — er fährt nicht mit.
+
+**Zwei Entwürfe wurden ERSETZT, nicht korrigiert:**
+
+* **S6 ohne Transaktion** (Befund B3 von sol, am Quelltext bestätigt): die
+  geplante `db.tx` hätte `mitarbeiter` → `mitarbeiter_token` gesperrt, während
+  `routes/mitarbeiter-auth.js:295-299` genau umgekehrt sperrt — `40P01`.
+  Heute gibt es den Kreis nicht, weil beide UPDATEs Autocommit sind. Gebaut
+  wird jetzt: erst Tokens entwerten, dann PIN setzen, **keine Transaktion**.
+* **S1 mit weiterer Transaktionsgrenze** (Befund K-3 von kimi, bestätigt): der
+  `kat`-SELECT bei `:5540` blieb nach dem Commit als fehlbarer Schritt stehen —
+  wörtlich das Schadensbild, das S1 beseitigen soll. Er entfällt ersatzlos,
+  weil `:5458` dieselbe Zeile schon liest.
+
+**Bemerkenswert und in CLAUDE.md eingetragen:** bei S2 ist die Transaktion
+richtig und der Reihenfolgentausch falsch, bei S6 **genau umgekehrt**. Das
+Mittel entscheidet nicht — entscheidend ist, welche anderen Transaktionen
+dieselben Zeilen anfassen.
+
+**Runde 3 läuft** (nur `kimi-k3`, ~0,42 $, eng auf die beiden Neuentwürfe
+gerichtet). Begründung: unsere eigene Regel verlangt eine zweite Lesung, wenn
+eine Behebung VERHALTEN ändert — und beide tun das.
+
+### Offen, Betreiber-Entscheidung
+
+**Soll das direkte Setzen einer PIN durch den Admin bestehende
+Tablet-Sitzungen beenden?** Heute prüfen sie `pin_hash` nicht erneut, laufen
+also weiter. Das ist eine Festlegung, keine technische Feststellung, und sie
+beträfe BEIDE PIN-Wege (auch `routes/mitarbeiter-auth.js:288-302`). Bis zur
+Antwort fährt es nicht mit.

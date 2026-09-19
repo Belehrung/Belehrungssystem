@@ -1,9 +1,19 @@
-# Auftragspapier — Schreibreihenfolge (FASSUNG 2)
+# Auftragspapier — Schreibreihenfolge (FASSUNG 3)
 
 **Fassung 1 ist überholt** und liegt als `plaene/auftrag-schreibreihenfolge-fassung1.md`
 daneben (samt ihrem Prüf-Nachtrag). Sie war nach eigener Nachmessung **nicht
 baubar**: vier Tatsachenbehauptungen falsch, der zentrale Behebungsvorschlag
 schloss seine eigene Klasse nicht.
+
+**Fassung 2 ist in diese Datei hinein überarbeitet worden** (Planprüfung Runde 2,
+drei Spuren, 20 Befunde, 19 getragen — die Nachträge am Ende führen sie
+einzeln auf). Zwei Änderungen sind keine Korrekturen, sondern andere
+Entwürfe und deshalb hier oben genannt:
+
+* **S6 wird OHNE Transaktion gebaut** — die geplante hätte einen echten
+  Verklemmungskreis mit `routes/mitarbeiter-auth.js:295-299` eingeführt.
+* **S1 zieht zusätzlich den `kat`-SELECT bei `:5540` heraus** — die
+  Transaktionsgrenze der Fassung 2 war zu eng, der Schritt blieb fehlbar.
 
 **Repo:** GymDocu (`/home/user/gymdocu`).
 **Gemessen am Stand `5a194ba`** (master nach #461), 19.09.2026.
