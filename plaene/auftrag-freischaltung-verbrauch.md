@@ -141,6 +141,17 @@ lädt sie auf oberster Ebene, `server.js:1427` lädt `routes/lageplan` ungeschü
 Ohne sharp startet der Server gar nicht. Ein neuer Ausfallweg entsteht durch
 ihre Benutzung also nicht.
 
+Nachgemessen (19.09.2026, „sharp fehlt" über einen Lade-Haken hergestellt, ohne
+`node_modules` anzufassen), mit Positivkontrolle und Negativkontrolle:
+
+    Positivkontrolle MIT sharp:  lageplan geladen
+    OHNE sharp:                  lageplan NICHT ladbar: MODULE_NOT_FOUND
+    routes/module.js OHNE sharp: "Seil-Foto-Feature inaktiv" -> geladen
+
+Die dritte Zeile ist die Gegenkontrolle: `routes/module.js` fängt denselben
+Ausfall ab und lädt weiter. Es scheitert also nicht einfach alles — nur der
+ungeschützte Weg.
+
 Verfahren: Alpha auf Weiss legen (`flatten`, das ist genau der Blick des
 Clients — der Canvas ist mit `#fff` gefüllt, `:516-517`/`:545-546`, und wird
 per `canvas.toDataURL('image/png')` verschickt, `:650`), dann Kanal 0 gegen
