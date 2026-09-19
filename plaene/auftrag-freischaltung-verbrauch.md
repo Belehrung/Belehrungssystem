@@ -256,11 +256,14 @@ zurückzugeben, das jemand vergessen kann:
       -> { tintenPixel, breite, hoehe, geprueftBreite, geprueftHoehe }
       wirft bei: nicht dekodierbar | über dem Deckel | null Tintenpixel
 
-Umsetzung genau wie in M6/M7 gemessen:
+Umsetzung wie in M6/M7 und M11 gemessen. **Gezählt wird an dem Mass, in dem
+das PDF die Unterschrift wirklich zeichnet** — nicht an einer festen Zielgrösse
+(Begründung und Zahlen in M11):
 
+    const { drawW, drawH } = zeichenmass(breite, hoehe);
     sharp(buf, { limitInputPixels: 16e6, sequentialRead: true })
         .flatten({ background: '#ffffff' })
-        .resize({ width: 2400, height: 2400, fit: 'inside', withoutEnlargement: true })
+        .resize({ width: drawW, height: drawH, fit: 'inside', withoutEnlargement: true })
         .raw().toBuffer({ resolveWithObject: true })
 
 danach `for (i = 0; i < data.length; i += info.channels) if (data[i] < 250) n++`.
@@ -268,6 +271,15 @@ danach `for (i = 0; i < data.length; i += info.channels) if (data[i] < 250) n++`
 `geprueftBreite`/`geprueftHoehe` aus `info`. Das Präfix
 `data:image/png;base64,` wird mit demselben Ausdruck abgestreift, den die Route
 heute benutzt.
+
+**`zeichenmass(breite, hoehe)` gehört in dasselbe Modul und wird von der ROUTE
+mitbenutzt.** Die Route rechnet das Mass heute inline (`routes/belehrungen.js`,
+`drawW = 250` mit Deckelung auf `drawH = 100`). Wer die Formel im Modul
+nachbaut, hat sie verdoppelt — zwei Orte derselben Aussage, und die Prüfung
+würde still an einem anderen Mass messen, als das PDF zeichnet, sobald jemand
+einen der beiden Werte ändert. Also: Formel EINMAL im Modul, Route ruft sie
+auf, und eine Zusicherung hält ihr Ergebnis gegen literal hingeschriebene
+Erwartungen.
 
 Die Schwelle 250 und der Kommentar dazu: **sie ist aus `routes/belehrungen.js:639`
 übernommen, nicht gewählt.** Schreib das als Kommentar daneben, mit Fundstelle —
@@ -325,8 +337,17 @@ sollen nach M8 unverändert grün bleiben. **Melde beide Ergebnisse ausdrücklic
    der Transaktion). Begründung als Kommentar daneben, sonst räumt es jemand
    als „doppelt" weg: Advisory-Locks sind innerhalb derselben Transaktion
    wiedereintrittsfähig, der spätere Griff in `auditAppend`
-   (`core/integritaet.js:65`) stört also nicht — und ein gegenläufiger
-   Schreibweg wird damit unmöglich, bevor es ihn gibt.
+   (`core/integritaet.js:65`) stört also nicht.
+
+   **BERICHTIGUNG (Planprüfung, Nachtrag M12): der Lock verhindert KEINEN der
+   heutigen Schreibwege.** Ein Advisory-Lock bindet nur Wege, die ihn
+   ebenfalls nehmen — alle vier bestehenden Schreibzugriffe laufen unter
+   Autocommit und nehmen ihn nicht. Das Gegenmittel gegen das Rennen aus M4
+   ist allein die Generationsprüfung aus Punkt 2. Der Lock ist VORSORGE für
+   künftige Wege, die ihn respektieren, plus eine feste Reihenfolge, damit aus
+   dem Zusammenziehen kein Kreis entsteht. Genau so gehört es in den
+   Kommentar: ein Satz, der mehr behauptet, ist gefährlicher als gar keiner,
+   weil er falsche Sicherheit erzeugt.
    Nachgemessen: alle vier Schreibzugriffe auf `belehrung_freischaltung`
    laufen heute über blankes `db.run` unter Autocommit
    (`routes/admin/mitarbeiter.js:856`, `routes/belehrungen.js:826`, `:1964`,
@@ -389,8 +410,16 @@ auszulagern macht sie prüfbar, nicht geprüft; und ein Test, der sie ANDERS
 aufruft als die Produktion, prüft einen Zweig, den es in Produktion nicht gibt):
 
 1. Beide leeren PNG → wirft.
-2. Das inkte PNG → wirft nicht, `tintenPixel` ist der GEMESSENE Wert (nicht
-   „> 0" — eine Schwelle über eine Zahl ist keine Zusicherung über eine Menge).
+2. **ZWEI verschiedene inkte PNG** → wirft nicht, und `tintenPixel` trägt je
+   den GEMESSENEN Wert (nicht „> 0" — eine Schwelle über eine Zahl ist keine
+   Zusicherung über eine Menge). **Zwei, nicht eins, und mit UNTERSCHIEDLICHER
+   Tintenmenge:** mit nur einer Fixtur erfüllt ein fest zurückgegebenes
+   `tintenPixel: <derselbe Wert>` die Zusicherung, ohne dass noch irgendetwas
+   gezählt wird. Unsere Klasse „ein Aufruf mit MEHREREN unterscheidbaren
+   Eingaben statt mehrerer Aufrufe mit je einer".
+2b. **`zeichenmass()`** liefert für mehrere literal hingeschriebene
+   Seitenverhältnisse das erwartete Mass (mindestens: quadratisch → 100×100,
+   breit 1200×800 → 150×100, sehr breit 2400×1200 → 200×100).
 3. Müll (`'x'`) → wirft, mit anderer Fehlerklasse als „leer".
 4. Über dem Deckel → wirft; knapp darunter → geht durch. **Beide Richtungen**,
    sonst belegt die Messung den Einzelfall statt der Klasse.
@@ -457,6 +486,16 @@ Zusicherung 10 fällt.
 **K7 — die Tintenschwelle ist bewacht.** Im Modul `< 250` → `< 256`. Erwartung:
 Zusicherung 1 fällt (alles gilt als unterschrieben). Gegenrichtung: `< 1`,
 Erwartung: Zusicherung 2 fällt.
+
+**K9 — die Zählung ist echt, nicht konstant.** Im Modul die Pixelschleife durch
+eine feste Rückgabe ersetzen (`tintenPixel: <Wert der ersten Fixtur>`).
+Erwartung: Zusicherung 2 fällt, und zwar an der ZWEITEN Fixtur. Fällt sie
+nicht, hatten beide Fixturen dieselbe Tintenmenge — dann ist die Fixturwahl
+der Fehler, nicht die Zusicherung.
+
+**K10 — das Zeichenmass ist bewacht.** In `zeichenmass()` die Deckelung
+`if (drawH > 100)` auf `if (drawH > 1000)` setzen. Erwartung: Zusicherung 2b
+fällt. Zweite Richtung: `drawW = 250` auf `drawW = 25`.
 
 **K8 — Positivkontrolle gegen eine leere Prüfung.** Zeige, dass der Fehlerfall
 aus Zusicherung 7 den PDF-Schritt WIRKLICH erreicht und nicht schon vorher
@@ -556,3 +595,92 @@ in B1 mit: den Zugriff absichern (Vorbild F4-N9 aus
 künftigen Fehlschlag eine Zusicherung meldet statt abzubrechen. Eine Zeile,
 eigener Commit, eigener Gegenbeweis (ohne den Schutz stürzt sie ab, mit ihm
 meldet sie FAIL).
+
+---
+
+## Nachtrag — Planprüfung, Spur DeepSeek (19.09.2026)
+
+Vier Befunde, alle vier SELBST nachgemessen. Zwei tragen und haben den Entwurf
+geändert, einer trägt in der Sache mit falschem Beispiel, einer stand schon im
+Papier.
+
+### M11 — Befund 1: minimale Tinte. TRÄGT, aber anders als gemeldet
+
+Gemeldet war: ein 1×1-PNG mit EINEM schwarzen Pixel gehe durch und erzeuge
+„ein signiertes PDF, das praktisch keine sichtbare Unterschrift enthält".
+
+**Das Beispiel trifft nicht.** Die Route rechnet `drawW = 250`, gedeckelt auf
+`drawH = 100`; ein quadratisches Bild wird also als **100×100 pt** gezeichnet —
+bei einem durchgehend schwarzen 1×1-PNG ein ausgefüllter schwarzer Block, das
+Gegenteil von unsichtbar.
+
+**Die Sache trägt trotzdem, in einer anderen Gestalt.** Gemessen:
+
+    Fall                         Pruefung@2400   Zeichenmass im PDF   Tinte@Zeichenmass
+    1x1 ganz schwarz                  1          100x100                  1  -> SICHTBAR
+    2400x1200, EIN Punkt              1          200x100                  0  -> UNSICHTBAR
+    echte Unterschrift 1200x800     600          150x100                 76  -> SICHTBAR
+
+Ein einzelner Punkt auf einem grossen Raster kommt also durch eine Prüfung bei
+2400 px, ist im PDF aber nicht mehr vorhanden.
+
+**Behebung, und sie ist HERGELEITET statt geraten:** nicht eine Mindestmenge
+festlegen (das wäre eine geratene Schwelle, wie vom Prüfer vorgeschlagen:
+„mindestens 10 Pixel oder 1 %"), sondern **an dem Mass zählen, in dem das PDF
+tatsächlich zeichnet.** Damit lautet die Zusicherung nicht mehr „genug Tinte",
+sondern „im Dokument ist etwas zu sehen" — genau der Zweck.
+
+Gegenrichtung gemessen, damit die Behebung keine echten Unterschriften
+abweist — 19 Kombinationen aus fünf Rastern und vier Strichstärken:
+
+    Raster        Zeichenmass   winziger Haken 20x2  kurzer Haken 60x2  kurz 200x2   normal 600x3
+    600x400       150x100          12 ok                32 ok            102 ok      n/a
+    1200x800      150x100           6 ok                16 ok             51 ok      152 ok
+    1800x1000     180x100           4 ok                12 ok             40 ok      120 ok
+    2048x1400     146x100           4 ok                 9 ok             29 ok       87 ok
+    2400x1200     200x100           5 ok                11 ok             35 ok      101 ok
+
+**Keine einzige Fehlabweisung**, und der knappste echte Fall (ein 20×2-Haken
+auf 2048×1400) hat noch vier Tintenpixel Abstand zur Grenze.
+
+**Was die Behebung NICHT leistet, und das bleibt benannt:** auf einem KLEINEN
+Raster überlebt ein Einzelpunkt auch das Zeichenmass (600×400 → 150×100,
+Tinte 1 → geht durch). Die Verkleinerung ist dort nur vierfach. Das ist keine
+Lücke der Umsetzung, sondern die Grenze der Fragestellung: ein Server kann
+einen absichtlichen Einzelpunkt nicht von einem echten winzigen Haken
+unterscheiden, und der Browser kann es genauso wenig. Der Unterschied zu
+vorher ist, dass der unsichtbare Fall auf normalen und grossen Rastern jetzt
+zu ist — zum Preis von null und ohne Fehlabweisung.
+
+### M12 — Befund 4: der Advisory-Lock-Satz war zu weit. TRÄGT
+
+Mein Satz „ein gegenläufiger Schreibweg wird damit unmöglich, bevor es ihn
+gibt" ist falsch. Ein Advisory-Lock bindet nur Wege, die ihn ebenfalls nehmen;
+alle vier bestehenden laufen unter Autocommit und nehmen ihn nicht. Das
+Gegenmittel gegen das Rennen ist allein die Generationsprüfung. Der Satz ist
+im Auftrag berichtigt — er ist genau unsere Klasse „ein Kommentar, der mehr
+behauptet, als gemessen ist", und er hätte einen künftigen Leser in falscher
+Sicherheit gewiegt.
+
+### Befund 2: Zusicherung 2 ist durch eine Konstante erfüllbar. TRÄGT
+
+Mit EINER inkten Fixtur erfüllt ein fest zurückgegebenes `tintenPixel: 24` die
+Zusicherung vollständig. Behoben: zwei Fixturen mit UNTERSCHIEDLICHER
+Tintenmenge, dazu die neue Gegenprobe K9.
+
+### Befund 3: Zeitstempel-Kollision. STAND SCHON IM PAPIER
+
+Der Prüfer nennt das Restrisiko, das M4 bereits benennt, und schlägt eine
+Versionsspalte oder ein Zufallstoken vor. **Nicht übernommen:** beides
+verlangt eine Migration auf einer Tabelle, deren einziger Zweck ein
+Einmal-Token ist, und der Kollisionsfall verlangt zwei Neuanforderungen
+innerhalb derselben Mikrosekunde. Das Verhältnis stimmt nicht. Bleibt als
+benanntes Restrisiko stehen.
+
+### Was der Lauf über den PRÜFER sagt
+
+Zehn Prüfungen wörtlich benannt, darunter drei, die meine eigenen Behauptungen
+am Material nachgesehen haben (Autocommit, sharp, Einbauort) — alle drei
+bestätigt, was mit meinen eigenen Messungen M6/M9 übereinstimmt. Der Prüfer
+hat KEINEN der Punkte gemeldet, die ich selbst gefunden habe (M2, M4, M7) —
+er hatte sie aber auch schon im Papier stehen.
