@@ -347,6 +347,36 @@ braucht es, auch wenn sie klein aussieht.
   Wächtern und Zusicherungen. Dort war die Ausbeute am höchsten, und dort
   tarnt sich ein Fehler als grüner Lauf.
 
+### Wie die Prüffrage gestellt wird — gemessen 19.09.2026
+
+**Eine Frage nach einem ZUSTAND findet mehr als eine Frage nach einem
+MECHANISMUS.** Gemessen über drei Runden an einem Papier:
+
+* Runde 2 fragte nach **Verklemmungen** („nenne jeden konkreten Weg, auf dem
+  die neue Transaktion mit einer bestehenden zu einem Kreis wird"). Antwort
+  für die Stelle, um die es mir ging: sauber, kein Kreis. Der Kreis lag an
+  einer Stelle, nach der ich nicht gefragt hatte.
+* Runde 3 fragte nach **Verschränkungen mit zwei benannten Wegen** (Einlösen,
+  Löschen). Der Weg, der die fraglichen Zeilen ERZEUGT, stand in keiner
+  meiner Fragen.
+* Gefunden wurde er trotzdem — durch die offen gestellte Frage **„welchen
+  Zustand erzeugt das, den es heute nicht gibt?"**
+
+Eine Mechanismusfrage („entsteht ein Deadlock?", „fehlt ein `studio_id`?")
+lenkt die Suche auf die Wege, die der FRAGENDE schon kennt. Eine Zustandsfrage
+zwingt den Prüfer, die Wege selbst zu suchen, die zu diesem Zustand führen —
+und das sind genau die, die man übersehen hat.
+
+**Deshalb enthält jeder Prüfauftrag mindestens eine Frage der Form: „welcher
+Zustand entsteht dadurch, den es vorher nicht gab?"** Die spezifischen
+Mechanismusfragen bleiben daneben — sie sind schärfer, wo man richtig geraten
+hat. Was nicht bleibt, ist ein Auftrag, der NUR aus ihnen besteht.
+
+**Dasselbe gilt für die Gegenrichtung:** „was wird durch diese Behebung
+schlechter?" findet mehr als „ist die Behebung richtig?". Über drei Fassungen
+hinweg war dreimal der BEFUND unstrittig und die BEHEBUNG die Gefahr
+(Einzelheiten unter „Transaktionen und Sperren").
+
 ### Was Astra bekommt
 
 Volles Material, keine Diffs allein — gemessen macht das den Unterschied
