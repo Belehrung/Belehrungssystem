@@ -874,6 +874,44 @@ Gemessen betroffen (`5a194ba`):
 
 ---
 
+## 3b. Der Bau wird GETEILT — drei Beiträge, je eine Datei
+
+**Entschieden 19.09.2026, nach der zweiten Planprüfung.** Das Papier
+beschreibt sechs Fundstellen in drei Dateien. Sie in EINEN Beitrag zu legen,
+wäre der bequeme Weg und der falsche: die Zusicherungen dieses Papiers
+reichen von „eine Zeile mehr in der `WHERE`" bis zu „erzeuge einen echten
+`40P01` in der Gegenrichtung". Ein Beitrag, der beides zugleich trägt, macht
+jede Gegenprobe teurer und jeden Fehlschlag mehrdeutig.
+
+**Der Schnitt folgt den DATEIEN, weil sich die Fundstellen genau so
+gruppieren — kein Beitrag fasst eine Datei an, die ein anderer auch anfasst:**
+
+| | Datei | Fundstellen | Zusicherungen |
+|---|---|---|---|
+| **B** | `routes/admin/geraete.js` | S1, S4, S4b | Z1, Z4a, Z4b, Z4c, Z4d |
+| **C** | `routes/belehrungen.js` | S2, S3 | Z2a, Z2b, Z2c, Z3 |
+| **A** | `routes/admin/mitarbeiter.js` | S5, S6 | Z5a-1, Z5a-2, Z5b, Z6a, Z6b |
+
+**S5 und S6 MÜSSEN zusammen gebaut werden** — beide fassen
+`POST /mitarbeiter/pin-direkt/:id` an, und zwar dieselben zwei Zeilen
+(`:760`, `:762`). Getrennt würde derselbe Code zweimal umgeschrieben.
+
+**Reihenfolge: B, dann C, dann A.**
+
+* **B zuerst**, weil es die geschlossenste Einheit ist und die Muster
+  einübt, die C und A brauchen (Transaktion, `rowCount`, `FOR UPDATE` plus
+  `pg_blocking_pids` bei Z4a).
+* **C danach**, weil dort der Befund liegt, der das ganze Papier ausgelöst
+  hat — Datenverlust im scheinbaren Erfolgszustand.
+* **A zuletzt**, weil Z6b die schwerste Zusicherung des Papiers ist: sie
+  verlangt, in der GEGENRICHTUNG einen echten `deadlock detected` zu
+  erzeugen. Wer das als Letztes baut, hat die beiden anderen
+  Nebenläufigkeitsproben schon hinter sich.
+
+**Jeder Beitrag geht einzeln durch das volle Prüf-Ritual** — eigene Suite,
+Dateizahl-Ritual, Lint, CI, Merge. Kein Beitrag wartet auf einen anderen;
+sie berühren keine gemeinsame Datei.
+
 ## 4. Abnahme
 
 Wie in `plaene/auftrag-id-wache.md`, Abschnitt 4: volle Suite ohne Pipe und
