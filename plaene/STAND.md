@@ -4725,3 +4725,42 @@ der Wächter und eine Nachbesserung am Wächter; eine Datei ist noch
 uncommittet. Nach der Taktregel wird in diesem Arbeitsbaum nichts angefasst,
 bis seine Benachrichtigung da ist — auch nicht lesend messen. Danach:
 vollständiges Prüf-Ritual, und erst dann eine Meldung mit Link.
+
+## 19.09.2026, 09:41 — Takt: drei Prüfungen laufen parallel
+
+Der Bau ist fertig und gepusht (`c206781`, 9 Commits auf
+`claude/freischaltung-verbrauch-rueckgabe`). Nach der Taktregel wird nichts
+angefasst, solange etwas läuft — hier laufen drei Dinge:
+
+1. **meine eigene volle Suite** (der Bericht des Executers ist kein Ersatz),
+2. **Gegenlesung Spur 1 über den fertigen Diff** (Bündel gezählt: 122.152 Token),
+3. **Gegenlesung Spur 2 über denselben Diff.**
+
+**Was ich beim eigenen Diff-Lesen gefunden habe** (beides ist bereits
+nachgebessert, Commit `c206781`):
+
+* `test_feature_signatur_verbrauch.js:518` war `ok(..., true)` — eine fest
+  verdrahtete Zusicherung, die nicht rot werden kann. Ausgerechnet die
+  Fehlerklasse, gegen die dieser Beitrag antritt. Ersatzlos gestrichen; die
+  „zweite Richtung" ist in 7b echt gemessen.
+* Ein Kommentar schrieb eine Messung MIR zu, die ich nicht gemacht hatte
+  (450 Tintenpixel). Der Wert stimmt — ich habe ihn nachgemessen —, die
+  Zuschreibung nicht.
+
+**Die Lücke, die der Executer SELBST gemeldet hat**, ist geschlossen: ein
+`catch {}` um das `t.run(DELETE …)` blieb unsichtbar, weil Zusicherung 9b nur
+den Fall „`auditAppend` wirft NACH erfolgreichem DELETE" herstellt. Jetzt gibt
+es eine zweite Verhaltensprobe, bei der das DELETE SELBST wirft. Gemessen:
+vorher schloss dort **gar nichts** (56/0 bei der Mutation), jetzt fallen drei
+von fünf neuen Teilzusicherungen.
+
+**Die riskanteste Stelle des Diffs habe ich selbst nachgemessen:** die
+Transaktion nimmt den Studio-Advisory-Lock jetzt ZUERST und die Zeilensperren
+danach — vorher umgekehrt. Über alle `db.tx`-Blöcke in `routes/` und `core/`
+geprüft: die geänderte Transaktion ist die EINZIGE, die eine der beiden
+Tabellen sperrt und darin `auditAppend` ruft; beim Mitarbeiter-Löschen liegt
+das Audit ausserhalb der Transaktion. **Kein neuer Kreis.**
+
+**Zwei eigene Vorgaben sind gefallen** (M17/M18 im Auftragspapier): meine
+Gegenprobe-Methoden K2 und K5 beruhten auf ungemessenen Behauptungen über die
+Datenbankschicht. Der Ausführende hat beide gemessen und widersprochen.
