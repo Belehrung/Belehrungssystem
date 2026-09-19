@@ -4809,3 +4809,54 @@ seine Kommentare VOR den Checks zu lesen.
 Eigener Check-in auf 11:07 geschoben, mit dem Grund im Text. Die
 Wegwerf-Datenbank `gymdocu_basis_test` steht noch und wird nach dem Merge
 abgeräumt.
+
+## 19.09.2026, 11:11 — Signaturprüfung AUSGELIEFERT
+
+Merge `4c4b729`, **Deploy-Lauf 428 mit genau diesem `head_sha` auf `success`**,
+`tools/live-check.sh` EXIT 0 (vier Punkte grün; Zertifikatslaufzeit und
+Health-Endpunkt wie immer ehrlich als „nicht von hier prüfbar" geführt).
+
+**Die Lücke, die der Beitrag schliesst:** ein angemeldeter Studio-Benutzer
+konnte ein gültiges, aber tintenfreies PNG als Unterschrift schicken — die
+Route nahm es an, erzeugte ein „signiertes" PDF und löschte die
+Belehrungspflicht. Trust Boundary (CWE-501/602).
+
+**Was der Beitrag enthält:** serverseitige Tintenprüfung in ZWEI Stufen
+(Sichtbarkeit am Zeichenmass, echte Tinte in Originalauflösung), Verbrauch der
+Einmal-Freischaltung erst nach Erfolg mit Generationsprüfung, Aufräum-DELETE
+nur für ungehashte Zeilen, und eingebettet wird das geprüfte Bild statt des
+eingeschickten. Wächter mit **82 Zusicherungen**.
+
+**Bilanz der Prüfung an diesem einen Beitrag:** vier Gegenlesungen (zwei am
+Plan, zwei am fertigen Diff), zwei Bot-P1, insgesamt **22 Befunde, jeder
+einzeln selbst nachgemessen**. Vier davon blockierend.
+
+**Drei Befunde trafen MEINE eigenen Vorgaben:**
+* eine falsche Lesereihenfolge, die die ganze Generationsprüfung wirkungslos
+  gemacht hätte (M13),
+* zwei Gegenprobe-Methoden, die ich behauptet statt gemessen hatte (M17/M18),
+* eine Gegenprobe, die nie rot werden konnte, weil die Fixtur den gesuchten
+  Unterschied gar nicht auslösen kann (M15).
+
+**Zweimal hat ein VORSCHLAG des Prüfers nicht getragen, obwohl der Befund
+zutraf** — und beide Male hätte blindes Übernehmen Schaden angerichtet:
+1. `.threshold(0)` zum Weissmachen des Bildes ist bei sharp wirkungslos (24
+   dunkle Pixel blieben). Übernommen hätte ich den blockierenden Befund als
+   widerlegt abgehakt — eine Zeile, die jede Unterschrift aus jedem
+   Nachweisdokument entfernt, bei 60 von 60 grünen Zusicherungen.
+2. Die vom Bot vorgeschlagene Dunkelheitsschwelle am Zeichenmass hätte **alle
+   19 gemessenen echten Signaturfälle abgewiesen** — aus einer
+   Sicherheitslücke wäre ein Totalausfall der Unterschriftsfunktion geworden.
+
+**Offen und ausdrücklich ausgeklammert** (jeweils eigenes Papier wert):
+`signatur_hash` bindet das Bild nicht; nach einem Rollback bleibt eine
+verwaiste PDF liegen; `/neue-version/:id` ist selbst nicht atomar und löscht
+im Fehlerfall die Datei, auf die die bereits committete Belehrungszeile zeigt;
+kein Nebenläufigkeitslimit auf dem Bildpfad (besteht unabhängig vom Beitrag —
+der Verbrauch je Anfrage SINKT durch ihn von +182 MB auf +90 MB RSS).
+
+**Als Nächstes:** der risikoorientierte Gesamtdurchgang
+(`plaene/durchgang-risikoorientiert.md`), Betreiber-Entscheidung vom
+19.09.2026. Erster Bauauftrag davor: `tools/gegenleser-repo.js` setzt
+`store: false` nicht — bei einem Durchgang über 14 Bündel bliebe sonst der
+halbe Quelltext des Repos auf fremden Servern liegen.

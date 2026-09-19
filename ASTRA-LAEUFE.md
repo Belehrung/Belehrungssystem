@@ -1964,3 +1964,22 @@ Unterschied gemacht.
 Beitrags: `signatur_hash` bindet das Bild nicht; nach einem Rollback bleibt
 eine verwaiste PDF liegen; `freigeschaltet_am` ist theoretisch NULL-fähig.
 Sie bekommen ein eigenes Papier statt einer stillen Mitnahme.
+
+### Abschluss des Beitrags (19.09.2026)
+
+Beide blockierenden Befunde der Diffprüfung sind behoben, die Gegenproben vom
+Haupt-Agenten SELBST nachgemessen: Bild-Weissmachung vorher 60/0 (nichts fiel)
+→ **70/4**; Formatprüfung → **71/3**. Dazu zwei P1 des Review-Bots: einer
+zutreffend und behoben (fast weisses Pixel), einer gegen den Endstand
+widerlegt.
+
+**Gesamt an diesem Beitrag: 22 Befunde aus vier Gegenlesungen und zwei
+Bot-Meldungen, jeder einzeln nachgemessen, vier blockierend.** Merge `4c4b729`,
+Deploy 428 `success`, live-check EXIT 0.
+
+**Der für die Regel wichtigste Befund ist keiner der 22, sondern ein Muster:**
+ZWEIMAL trug ein Befund, aber sein VORSCHLAG nicht — einmal eine Mutation, die
+gar nicht wirkt (`.threshold(0)`), einmal eine Behebung, die alle 19
+gemessenen echten Fälle abgewiesen hätte. Die Regel „der Behebungsvorschlag
+einer Gegenlesung ist selbst ein Befund, der nachgemessen gehört" hat hier
+zweimal an einem Tag den Unterschied gemacht.
