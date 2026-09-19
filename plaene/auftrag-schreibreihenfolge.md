@@ -25,7 +25,8 @@ räumt ihn auf.
 
 **Die gemeinsame Ursache ist gemessen und steht in CLAUDE.md:** `db.q` und
 `db.run` benutzen den POOL, nicht die Transaktionsverbindung
-(`core/db.js:426-433`). Jeder Aufruf ist seine eigene, abgeschlossene
+(`core/db.js:421-432` — `q` bei 421, `one` bei 426, `run` bei 431;
+Fassung 2 nannte `426-433` und schnitt `q` damit ab, B10). Jeder Aufruf ist seine eigene, abgeschlossene
 Transaktion. Eine Folge von `db.run` ist deshalb keine Folge von Schritten,
 sondern eine Folge von Tatsachen.
 
@@ -97,8 +98,14 @@ Gemessen (Nummern unverändert gegenüber Fassung 1, nachgeprüft):
 * `schalteAlleFrei()` (`:2066-2074`) ist ein blankes `db.run` mit
   `INSERT … SELECT … ON CONFLICT DO UPDATE` — jeder DB-Fehler schlägt durch.
 * `auditAppend()` (`:2175`) hat hier **KEIN** eigenes `try/catch` (anders als
-  bei S1) und kann über den Advisory-Lock in den in CLAUDE.md dokumentierten
-  Verklemmungs-Kreis laufen.
+  bei S1) und kann werfen — jeder Datenbankfehler schlägt durch, und am
+  Studio-Lock kann es warten. **BERICHTIGT nach der Gegenlesung (B11):**
+  Fassung 2 schrieb, es könne „in den dokumentierten Verklemmungs-Kreis
+  laufen". Das trägt für DIESE Stelle nicht: unter Autocommit öffnet
+  `auditAppend` seine eigene Transaktion und hält dabei keine Geschäftszeile,
+  die als Gegenkante dienen könnte. Der dokumentierte Kreis entsteht durch
+  Transaktionen, die VORHER schon Geschäftszeilen halten. Dass es werfen
+  kann, genügt für den Befund; die stärkere Begründung war falsch.
 * `req.file.path` ist genau die Datei, auf die `dateiname` jetzt zeigt
   (multer `diskStorage`: `path` voller Pfad, `filename` dessen Basisname).
 * **`schalteAlleFrei()` braucht den neuen `dateiname` NICHT.** Gemessen an der
@@ -161,9 +168,30 @@ Request**, der `dateiname` unabhängig liest. Zwischen „Mensch liest die
 Vorschau" und „Mensch unterschreibt" liegt deshalb ein Fenster, das weder die
 heutige Reihenfolge noch die neue Transaktion schliesst: wird dazwischen eine
 neue Version hochgeladen, hat der Mensch A gesehen und die Route stempelt B.
-**Das ist ein vorbestehender, hier NICHT behobener Punkt** — er fährt nicht
-mit, und dieser Beitrag darf nicht als seine Lösung gelesen werden. Als
-offener Fundort nach `plaene/durchgang-befunde.md`.
+**NACHGESCHÄRFT nach der Gegenlesung (B1) — die Folge ist schlimmer, als ich
+sie zuerst notiert hatte.** Ich hatte geschrieben „der Mensch hat A gesehen
+und gestempelt wird B". Der Prüfer hat die Ordnung zu Ende gedacht, und beim
+Nachmessen stimmt sie: bei
+
+    P(A)  <  COMMIT(W_d, W_g)  <  R1  <  R2
+
+liest der POST die **neue** Generation (R1) UND den **neuen** `dateiname`
+(R2). Er stempelt also B, und sein DELETE (`:962-965`) trifft die neue
+Generation — **die frisch entstandene Pflicht zur neuen Fassung wird
+verbraucht, obwohl der Mensch nur A gelesen hat.** Nicht bloss ein falscher
+Stempel: eine Pflicht verschwindet.
+
+**Das ändert nichts am Entwurf, aber alles an seiner Reichweite.** Die
+Transaktion schliesst das Fenster zwischen den beiden DATENBANKSCHREIBUNGEN —
+dafür ist sie da, und das leistet sie vollständig. Sie bindet **nicht** das
+AUSGELIEFERTE Dokument an die Unterschrift; dazu bräuchte es einen Versions-
+oder Prüfsummenwert, den der Client vom Vorschau-Abruf bis zum POST mitführt
+und den der Server gegen den aktuellen Stand hält.
+
+**Dieser Beitrag darf nicht als Lösung von U-SIG1 gelesen werden** — weder im
+Papier noch in einem Kommentar noch in der Commit-Botschaft. Er fährt nicht
+mit; er ist ein eigener Entwurf und steht als offener Punkt in
+`plaene/durchgang-befunde.md`.
 
 #### Behebung: EINE Transaktion, nicht eine andere Reihenfolge
 
@@ -197,12 +225,42 @@ Anweisungen und können an einem Kreis nicht teilnehmen.
 `conn = null`, benutzt `(conn || db).run` und bleibt für seinen zweiten
 Aufrufer (`:2082`, `/freischalten-alle/:belehrungId`) unverändert.
 
-**Die Merkvariable im `catch` bleibt trotzdem** (`zeileZeigtAufNeueDatei`,
-gesetzt NACH dem Commit, abgefragt vor dem `unlink`). Sie ist nach der
-Transaktion nicht mehr nötig, um den heutigen Befund zu schliessen — sie ist
-der Riegel dagegen, dass ein späterer Beitrag wieder einen committenden
-Schritt vor den `catch` schiebt. CLAUDE.md: *„ein Verdrahtungsfehler ist die
-Lücke, die eine Behebung hinterlässt."*
+#### Der `catch` darf sich NICHT auf eine Merkvariable verlassen (B8)
+
+Fassung 2 wollte eine Merkvariable `zeileZeigtAufNeueDatei` nach dem Commit
+setzen und im `catch` abfragen. **Das reicht nicht, und der Grund ist
+unangenehm:** ein Wurf aus `db.tx` beweist KEINEN Rollback. Geht die
+COMMIT-Quittung auf dem Weg verloren — Verbindung stirbt, Proxy schneidet ab —,
+hat PostgreSQL womöglich längst committet, während `db.tx` nach aussen wirft.
+`core/db.js:471` benennt genau diese Ungewissheit für den ROLLBACK-Fall
+(„ist der Client-Zustand ungewiss"). Die Merkvariable bliebe dann `false`, der
+`catch` löschte Datei B — **und die Datenbank zeigt auf B.** Exakt der Schaden,
+den S2 beseitigen soll, durch eine schmalere Tür zurück.
+
+**Gebaut wird deshalb: im Fehlerweg wird erst NACHGESEHEN, dann gelöscht.**
+
+    } catch (e) {
+        if (req.file) {
+            let darfWeg = false;
+            try {
+                const jetzt = await db.one("SELECT dateiname FROM belehrungen
+                                            WHERE studio_id=$1 AND id=$2", […]);
+                darfWeg = !jetzt || jetzt.dateiname !== req.file.filename;
+            } catch (_) { darfWeg = false; }   // ungewiss -> NICHT loeschen
+            if (darfWeg) fs.unlink(req.file.path, () => {});
+        }
+        …
+    }
+
+**Die Regel dahinter, und sie gilt über diesen Beitrag hinaus:** bei
+Ungewissheit ist eine verwaiste Datei auf der Platte (Müll, aufräumbar) immer
+besser als eine gelöschte Datei, auf die eine Zeile zeigt (Datenverlust,
+nicht aufräumbar). **Im Zweifel nicht löschen.**
+
+*(Die Stützbehauptung der Gegenlesung, ein Bestandskommentar im
+Unterschriftenweg benenne genau diesen Fall, ist von mir NICHT bestätigt
+worden — gefunden habe ich nur `core/db.js:471`. Die Sache trägt trotzdem:
+sie folgt aus dem Verbindungsverhalten, nicht aus einem Kommentar.)*
 
 **Was dabei zu MELDEN ist, nicht zu lösen:** die Transaktion hält den
 studioweiten Lock jetzt über das mehrzeilige `INSERT … SELECT` von
@@ -361,9 +419,77 @@ Scheitert (762), ist die **PIN gesetzt**, der Benutzer bekommt die Fehlerseite
 erneut ändern.** Das ist keine irreführende Rückmeldung mehr, sondern ein
 offener Anmeldeweg.
 
-**Behebung:** beide UPDATEs in EINE `db.tx`. **`bcrypt.hash` bleibt DAVOR** —
-es steht bereits davor (`:759`), und es gehört nicht in eine Transaktion:
-12 Runden bcrypt halten sonst eine Datenbankverbindung.
+**BEHEBUNG — GEÄNDERT nach der Gegenlesung (B3, selbst am Quelltext
+nachgemessen). Die Transaktion fällt WEG; stattdessen wird die Reihenfolge
+umgedreht.**
+
+Fassung 2 wollte beide UPDATEs in EINE `db.tx`. **Das hätte eine echte
+Verklemmung neu eingeführt.** Gemessen an `routes/mitarbeiter-auth.js:288-302`
+(der öffentliche Weg, mit dem ein Mitarbeiter seinen PIN über einen
+Einladungslink setzt):
+
+    await db.tx(async (tx) => {
+        await tx.run("UPDATE mitarbeiter_token … WHERE id=$2 AND verwendet=0"); // :295 TOKEN
+        if (!verbraucht.rowCount) throw …;                                      // :298
+        await tx.run("UPDATE mitarbeiter SET pin_hash=$1 … WHERE id=$3");       // :299 MITARBEITER
+        await tx.run("UPDATE mitarbeiter_token … WHERE mitarbeiter_id=$2");     // :301 TOKEN
+    });
+
+Seine Ordnung ist **`mitarbeiter_token` → `mitarbeiter`**. Die geplante
+Admin-Transaktion hätte **`mitarbeiter` → `mitarbeiter_token`** gehabt. Setzt
+ein Admin den PIN, während derselbe Mitarbeiter gerade seinen Einladungslink
+einlöst, hält der eine die Mitarbeiterzeile und wartet auf die Tokenzeile,
+der andere umgekehrt: **`ERROR: deadlock detected`, SQLSTATE 40P01.**
+
+**Heute gibt es das nicht** — und das ist der Punkt: `:760` und `:762` sind
+zwei blanke `db.run` unter Autocommit. Jede Anweisung gibt ihre Sperre am
+Anweisungsende wieder frei; der Weg hält NIE zwei Sperren gleichzeitig und
+kann an keinem Kreis teilnehmen. Die Transaktion hätte also einen echten
+Fehler gegen eine **neue Regression** getauscht.
+
+**Ein blosses „dann eben Token zuerst" reicht nicht.** Die Admin-Seite
+sperrt ALLE offenen Tokens des Mitarbeiters auf einmal, die Einlöseseite
+erst EINEN bestimmten (`:295`) und danach die übrigen (`:301`). Hält A
+Token 2 und wartet auf Token 1, während B Token 1 und die Mitarbeiterzeile
+hält und auf Token 2 wartet, entsteht derselbe Kreis eine Ebene tiefer.
+
+**Gebaut wird deshalb OHNE Transaktion, mit umgedrehter Reihenfolge:**
+
+    // 1. offene Einladungs-/Reset-Tokens ZUERST entwerten (eigener Commit)
+    await db.run("UPDATE mitarbeiter_token SET verwendet=1 WHERE studio_id=$1
+                  AND mitarbeiter_id=$2 AND verwendet=0", […]);
+    // 2. erst danach die PIN setzen (eigener Commit, rowCount aus S5)
+    const r = await db.run("UPDATE mitarbeiter SET pin_hash=$1, pin_gesetzt_am=… 
+                            WHERE id=$2 AND studio_id=$3", […]);
+    if (r.rowCount === 0) return <nicht gefunden>;
+
+**Warum das die Klasse schliesst, ohne eine neue zu öffnen:**
+
+* **Keine neue Sperrordnung.** Zwei Autocommits halten nie zwei Sperren
+  gleichzeitig. Der Kreis aus B3 kann nicht entstehen — auch nicht eine
+  Ebene tiefer.
+* **Der verbleibende Fehlerfall ist strikt harmloser als heute.** Scheitert
+  Schritt 2, sind die alten Links tot und die PIN unverändert: der
+  Mitarbeiter braucht eine neue Einladung. **Ärgerlich, behebbar, kein
+  offener Anmeldeweg.** Heute ist es umgekehrt — PIN gesetzt, alte Links
+  weiter gültig.
+* **Die Rennen mit dem Einlöseweg bleiben sauber.** Entwertet der Admin
+  zuerst, scheitert die Einlösung an ihrem eigenen `rowCount`-Riegel
+  (`:298`) und wird ordentlich abgewiesen. Löst der Mitarbeiter zuerst ein,
+  gewinnt wie heute der spätere Schreiber die PIN.
+
+**`bcrypt.hash` bleibt VOR beiden Schritten** — es steht bereits davor
+(`:759`), 12 Runden bcrypt gehören in keinen Schreibpfad hinein.
+
+**Der Kommentar `:763-767` wird berichtigt, nicht nur ergänzt.** Er sagt
+heute „Keine Transaktion hier — der Protokolleintrag darf das bereits
+erfolgte Setzen nicht scheitern lassen". Für den **`auditAppend`**
+(`:769-776`, eigenes `try/catch`) bleibt das richtig. Für die
+**Tokenentwertung** war es nie ein Protokolleintrag, und ab jetzt steht sie
+davor. Der neue Kommentar nennt BEIDE Gründe — die Reihenfolge UND warum
+hier ausdrücklich KEINE Transaktion steht (mit Verweis auf
+`mitarbeiter-auth.js:295-301`), sonst zieht sie jemand später als
+„Verbesserung" wieder ein.
 
 **Der Kommentar `:763-767` behauptet heute:** *„Keine Transaktion hier — der
 Protokolleintrag darf das bereits erfolgte Setzen nicht scheitern lassen."*
@@ -372,10 +498,11 @@ bleibt draussen). Für die **Tokenentwertung** war es nie ein Protokolleintrag.
 **Der Kommentar ist entsprechend zu berichtigen, nicht nur zu ergänzen** —
 CLAUDE.md: ein Kommentar ist eine Zusicherung.
 
-**S5 und S6 treffen sich in derselben Route.** Die `rowCount`-Prüfung aus S5
-gehört dann auf das UPDATE **innerhalb** der Transaktion, und bei `rowCount===0`
-wird die Transaktion abgebrochen (throw), damit auch die Tokenentwertung
-unterbleibt.
+**S5 und S6 treffen sich in derselben Route** — und die Reihenfolge aus S6
+entscheidet, wie sie zusammenwirken: die `rowCount`-Prüfung aus S5 sitzt auf
+Schritt 2 (dem `mitarbeiter`-UPDATE). Trifft es null Zeilen, sind die Tokens
+bereits entwertet. **Das ist gewollt und harmlos** — Tokens eines nicht
+(mehr) vorhandenen Mitarbeiters sollen ohnehin nicht gelten.
 
 ---
 
@@ -417,7 +544,8 @@ mit der Mutation nicht. „Kein Test irgendwo fängt es" ist NICHT gemessen.
 ## 3. Zusicherungen — je mit der Gegenprobe, die sie rot macht
 
 *Fassung 1 hatte den Bezeichner `Z4` doppelt vergeben. Hier ist jede
-Zusicherung eindeutig.*
+Zusicherung eindeutig — und was KEINE Zusicherung ist, steht am Ende
+dieses Abschnitts ausdrücklich als Prüfschritt, nicht als „Z7“.*
 
 ### Z1 — S1: ein Fehler in der zweiten Aufgabenzeile hinterlässt NICHTS
 
@@ -454,22 +582,58 @@ Nach dem geworfenen Lauf tragen `dateiname`, `datei_vorhanden` **und**
 dem UPDATE herausnehmen und vor die Transaktion ziehen → Z2b ROT.
 *(Ohne diese Zusicherung misst Z2a nur `dateiname`.)*
 
+**EIGENER LAUF mit unterscheidbaren Vorwerten — sonst ist ein Drittel der
+Zusicherung blind (B6).** Z2a arbeitet mit `datei_vorhanden = 1`; das UPDATE
+schreibt ebenfalls `1`. Vorher 1, nachher 1 — für genau diese Spalte KANN die
+Zusicherung nicht fallen, egal ob sie aus der Transaktion gezogen wurde.
+Genau die Krankheit aus CLAUDE.md: *„der Vorzustand erzwingt das erwartete
+Ergebnis ohnehin."*
+
+Z2b läuft deshalb gegen einen eigenen Vorzustand, in dem **jede der drei
+Spalten einen anderen, wiedererkennbaren Wert trägt** — insbesondere
+`datei_vorhanden = 0`, `dateiname = 'SENTINEL-ALT.pdf'` und ein
+`hochgeladen_am`, das im Testbestand sonst nirgends vorkommt. Dann fällt jede
+Spalte einzeln auf, und die Gegenprobe wird je Spalte einzeln gefahren.
+
 ### Z2c — S2: das Unterschriften-Rennen bleibt auf der sicheren Seite
 
 Der Beweis in §1 zeigt, dass die Transaktion das Fenster schliesst — eine
 Zusicherung, die das MISST, braucht es trotzdem, sonst hängt die Aussage an
 meiner Herleitung.
 
+**BERICHTIGT nach der Gegenlesung (DS-1, selbst nachgemessen).** Die erste
+Fassung dieser Zusicherung verlangte, ein Unterschriftenvorgang laufe
+„vollständig durch, WÄHREND die Transaktion hängt". **Das ist unmöglich:** die
+neue S2-Transaktion nimmt den studioweiten Advisory-Lock als erste Anweisung,
+und der Unterschriftenweg nimmt denselben Lock bei `:946`. Er blockiert dort,
+er kommt nicht zum Commit. Eine Zusicherung, die einen unerreichbaren Zustand
+verlangt, ist keine — sie ist eine Anweisung zum Scheitern.
+
+**Gemessen, was der Unterschriftenweg VOR dem Lock erledigt** — und das ist
+genau das, worauf es ankommt: R1 (`:793`), R2 (`:798`), PDF lesen und stempeln
+(`:861-888`), signierte Datei schreiben (`:915`), `UPDATE unterschriften SET
+pdf = …` als eigener Pool-Commit (`:918`), Kopie (`:920`). **Erst bei `:932`
+beginnt seine Transaktion, erst bei `:946` nimmt er den Lock.** Welches
+Dokument gestempelt wird, steht also längst fest, bevor irgendeine Sperre im
+Spiel ist.
+
+Die Zusicherung lautet deshalb:
+
 * Ein externer Client hält `SELECT … FOR UPDATE` auf die Belehrungszeile.
 * `/neue-version/:id` wird gestartet und blockiert nachweislich
   (`pg_blocking_pids`).
-* Ein Unterschriftenvorgang läuft vollständig durch, WÄHREND die Transaktion
-  hängt: er sieht **weder** die neue Generation **noch** den neuen
-  `dateiname` — beides, nicht nur eines.
-* Sperre lösen, beide beenden lassen; die Pflicht zur neuen Fassung besteht.
+* Ein Unterschriftenvorgang wird gestartet und läuft **bis an seinen
+  Lock-Wartepunkt**. Gemessen wird, was er dabei gelesen hat: **weder** die
+  neue Generation **noch** den neuen `dateiname` — beides, nicht nur eines.
+  Dass er wartet, wird über `pg_blocking_pids` BELEGT, nicht über eine
+  Zeitschwelle.
+* Sperre lösen, beide beenden lassen. **Erwartet:** sein DELETE
+  (`:962-965`) trifft NICHTS, weil es gegen die alte Generation läuft — die
+  Pflicht zur neuen Fassung überlebt.
 * **Gegenprobe:** die Transaktion durch zwei `db.run` in der VERTAUSCHTEN
-  Reihenfolge ersetzen → Z2c ROT.
-* **Keine Zeitschwelle als Überschneidungsbeweis.**
+  Reihenfolge ersetzen → Z2c ROT, und zwar an der überlebenden Pflicht, nicht
+  am Wartepunkt.
+* **Keine Zeitschwelle, an keiner Stelle.**
 
 ### Z3 — S3: ist die Datei weg, sagt das auch die Datenbank
 
@@ -509,9 +673,25 @@ Verdrahtung dahinter.
 ### Z4c — S4: die Mandantenbedingung überlebt den Umbau
 
 Ein Request eines FREMDEN Studios auf dieselbe `:id` → kein UPDATE, kein
-Audit-Eintrag, Zeile unverändert. **Gegenprobe:** `studio_id` aus der neuen
-`WHERE` entfernen → Z4c ROT. *(Punkt 1 der Prüfreihenfolge; Fassung 1 zitierte
-die neue Klausel ohne `studio_id`.)*
+Audit-Eintrag, Zeile unverändert.
+
+**Die naheliegende Gegenprobe trägt NICHT (B4, selbst nachgemessen).** Sie
+lautete: `studio_id` aus der neuen `WHERE` entfernen → Z4c ROT. Tatsächlich
+bleibt Z4c GRÜN, denn der Fremdstudio-Request erreicht das UPDATE gar nicht:
+der vorgelagerte SELECT (`:6381`) trägt selbst `AND studio_id=$2`, findet die
+fremde Zeile nicht, und `:6382` (`if (!g) return res.redirect(…)`) beendet die
+Route. **Eine Gegenprobe, die den mutierten Code nicht erreicht, misst
+nichts.**
+
+Z4c besteht deshalb aus ZWEI Teilen:
+
+1. **Der Verhaltenstest** oben — er bewacht den Frühausstieg, und das ist für
+   sich genommen wertvoll.
+2. **Eine STATISCHE Zusicherung auf die UPDATE-Anweisung selbst:** ihre
+   `WHERE` enthält `studio_id`. Ihre Gegenprobe ist eine reine
+   Quelltextmutation und wird zwangsläufig rot, weil sie an keinem
+   Frühausstieg vorbeimuss. **Nur Teil 2 bewacht die Mandantenbedingung der
+   Schreibabfrage.**
 
 ### Z4d — S4b: die ID-Wache greift an diesem Eintrittspunkt
 
@@ -525,7 +705,25 @@ genau dieser Ausschnitt ROT.
 Je Route ein POST mit einer **format-gültigen, nicht vergebenen** ID →
 **keine** Erfolgsmeldung, DB unverändert. **Positivkontrolle:** dieselbe Route
 mit echter ID → Erfolgsmeldung UND nachweisbare Wirkung in der DB.
-**Gegenprobe:** die `rowCount`-Abfrage entfernen → genau diese drei Fälle ROT.
+
+**Die angekündigte Gegenprobe trägt so NICHT (B5).** „`rowCount`-Abfrage
+entfernen → diese drei Fälle ROT“ gilt nicht: bei einer NIE vergebenen ID
+liefert schon der vorgelagerte SELECT `ma = null`, und die Behebung steigt
+dort aus. Entfernt man danach nur die `rowCount`-Auswertung, bleiben alle drei
+Fälle grün. **Die Zusicherung misst dann den `ma`-Frühausstieg, nicht den
+Riegel, für den `rowCount` da ist.**
+
+`rowCount` bewacht einen ANDEREN Fall: die Zeile verschwindet ZWISCHEN SELECT
+und UPDATE. Z5a zerfällt deshalb in zwei Läufe:
+
+* **Z5a-1 (Frühausstieg):** nie vergebene ID → keine Erfolgsmeldung.
+  Gegenprobe: den `ma`-Ausstieg entfernen → ROT.
+* **Z5a-2 (`rowCount`):** der SELECT liest eine ECHTE Zeile, danach wird sie
+  über eine ZWEITE Verbindung gelöscht, erst dann läuft das UPDATE.
+  **Erwartet:** keine Erfolgsmeldung. **Gegenprobe:** die
+  `rowCount`-Auswertung entfernen → NUR dieser Lauf ROT.
+
+Erst Z5a-2 unterscheidet die beiden Riegel voneinander.
 
 ### Z5b — S5: die neuen Rückmeldecodes werden auch ANGEZEIGT
 
@@ -535,18 +733,52 @@ Definitionsliste (`:60-74`) entfernen → Z5b ROT.
 *(Ohne diese Zusicherung ist ein vergessener Listeneintrag ein stiller
 Redirect, den Z5a nicht von einer Fehlermeldung unterscheidet.)*
 
-### Z6 — S6: PIN und Tokenentwertung fallen gemeinsam
+### Z6a — S6: keine PIN ohne tote Tokens
 
-* Vorzustand: Mitarbeiter mit offenem, unverbrauchtem `mitarbeiter_token`.
-* Fehler GENAU für das `mitarbeiter_token`-UPDATE stellen.
-* **Erwartet:** `pin_hash` **unverändert** (die alte PIN gilt weiter), Token
-  unverändert offen, Antwort Fehlerseite.
+*Neu geschnitten, weil S6 nach B3 ohne Transaktion gebaut wird. Die
+Zusicherung ist ab jetzt eine über die REIHENFOLGE, nicht über Atomarität.*
+
+* Vorzustand: Mitarbeiter mit offenem, unverbrauchtem `mitarbeiter_token`,
+  bekannte alte `pin_hash`.
+* Fehler GENAU für das `mitarbeiter`-UPDATE (Schritt 2) stellen.
+* **Erwartet:** `pin_hash` **unverändert**, Token **entwertet**, Antwort
+  Fehlerseite. Das ist der bewusst in Kauf genommene Zustand — ärgerlich,
+  kein offener Anmeldeweg.
+* **Der VERBOTENE Zustand bekommt eine eigene Zusicherung:** es darf NIE
+  `pin_hash` neu UND ein Token offen sein. Gegenprobe: die beiden Schritte
+  zurücktauschen (PIN zuerst) und den Tokenschritt werfen lassen → genau
+  diese Zusicherung ROT. **Das ist der heutige Bestandszustand** — die
+  Gegenprobe misst also den Befund selbst.
 * **Positivkontrolle:** ohne gestellten Fehler ist die PIN neu **und** das
   Token entwertet.
-* **Gegenprobe:** `db.tx` auflösen → Z6 ROT, und zwar an `pin_hash`, nicht nur
-  am Token.
 
-### Z7 — kein Fehler wird durch die Umstellung stumm
+### Z6b — S6: die beiden PIN-Wege verklemmen sich NICHT
+
+*Diese Zusicherung gibt es nur, weil die Gegenlesung den Kreis gefunden hat
+(B3). Sie hält fest, was der Verzicht auf die Transaktion erkauft — sonst
+zieht sie jemand später als „Verbesserung“ wieder ein.*
+
+* Ein Mitarbeiter mit MEHREREN offenen Tokens.
+* Zwei echte, gleichzeitige Vorgänge: `POST /admin/mitarbeiter/pin-direkt/:id`
+  und `POST /mitarbeiter/pin-setzen/:token` desselben Mitarbeiters. Die
+  Überschneidung wird über `pg_blocking_pids` BELEGT, nicht über eine
+  Zeitschwelle.
+* **Erwartet:** **kein** `40P01`. Einer gewinnt, der andere wird fachlich
+  über seinen `rowCount`-Riegel abgewiesen — und am Ende ist **kein Token
+  mehr offen**.
+* **Gegenprobe:** die beiden Admin-Schritte in eine `db.tx` in der Ordnung
+  `mitarbeiter` → `mitarbeiter_token` packen (also genau der Entwurf der
+  Fassung 2) → Z6b muss mit `deadlock detected` / SQLSTATE `40P01` ROT
+  werden. **Ohne diese Gegenprobe ist Z6b nur eine Behauptung, dass zwei
+  Autocommits sich nicht verklemmen können.**
+
+### KEINE Zusicherung, sondern ein PFLICHT-PRÜFSCHRITT: kein Fehler wird stumm
+
+*Stand hier bis zur Gegenlesung als „Z7" zwischen den Zusicherungen (DS-2,
+trägt). Das war falsch einsortiert: alle anderen hier haben ein
+maschinelles Rot/Grün mit Gegenprobe, dieser hat keins. Er bleibt
+verbindlich, aber als Schritt der Abnahme (§4), nicht als Test — sonst
+steht in der Liste ein Eintrag, den kein Lauf je rot machen kann.*
 
 Alle sechs Behebungen verschieben Fehlerbehandlung. **Die Gegenfrage aus
 CLAUDE.md ist für JEDE einzeln zu beantworten: welche bestehende Zusicherung
@@ -554,8 +786,17 @@ erfüllt mein neuer Fehlerweg ab jetzt, ohne dass das Bewachte noch da ist?**
 
 Vor dem Bau `grep` auf die Meldungstexte, Rückmeldecodes und Statuscodes der
 sechs Routen, und jeden Treffer im Bericht nennen — auch die nicht
-betroffenen. **Die betroffenen Testdateien sind bereits gemessen** und
-gehören ausnahmslos durchgesehen:
+betroffenen.
+
+**Die Liste unten war UNVOLLSTÄNDIG, und der Grund ist lehrreich (B7).** Ich
+hatte nach ROUTENPFADEN gesucht (`mitarbeiter/email`, `pin-direkt`, …). Damit
+fehlte `test_feature_employee_feedback.js` — nachgemessen prüft es genau die
+drei Erfolgscodes, die S5 ändert (`feedback=email_gespeichert`,
+`=pin_gesetzt`, `=name_geaendert`), nennt aber keinen Routenpfad. **Ein
+Suchmuster, das eine Form voraussetzt, misst die Form mit.** Gesucht wird
+deshalb nach BEIDEM: Routenpfaden UND Rückmeldecodes/Meldungstexten.
+
+Gemessen betroffen (`5a194ba`):
 
     neue-version        test_feature_belehrung_version.js, …multer_2_4_bestandsschutz.js,
                         …signatur_verbrauch.js, …upload_fehlerbehandlung.js
@@ -564,6 +805,8 @@ gehören ausnahmslos durchgesehen:
     pin-direkt          …audit_benutzerverwaltung_static.js, …id_wache_route.js
     umbenennen/email    …audit_mitarbeiter.js, …id_wache_route.js
     geraetewartung/geraet/neu   acht Dateien, s. eigene Messung
+    Erfolgscodes S5    test_feature_employee_feedback.js  <- fehlte in Fassung 2
+    email_fehler/name_fehler   test_feature_id_wache_route.js
 
 ---
 
@@ -610,7 +853,7 @@ das: Upload- und Löschwege laufen gegen ein Wegwerf-Verzeichnis, nicht gegen
 | 7 | nur `dateiname` | drei Spalten, Z2b | Planprüfung |
 | 8 | Z3 zweiseitig („nie gemischt") | einseitig, mit Begründung | Planprüfung |
 | 9 | neue `WHERE` ohne `studio_id` | Z4c | Planprüfung |
-| 10 | `Z4` doppelt vergeben | Z1…Z7 eindeutig | Planprüfung |
+| 10 | `Z4` doppelt vergeben | Z1…Z6 eindeutig, der Rest als Prüfschritt | Planprüfung + DS-2 |
 | 11 | Rückmeldecode delegiert | gemessen: einer da, zwei neu + Z5b | eigene Messung |
 | 12 | `schalteAlleFrei`-Abhängigkeit delegiert | gemessen: keine | eigene Messung |
 | 13 | S1-Audit nur mit Lock-Begründung | zusätzlich: kann gar nicht werfen | eigene Messung |
@@ -619,3 +862,66 @@ das: Upload- und Löschwege laufen gegen ein Wegwerf-Verzeichnis, nicht gegen
 **Dass der zentrale Vorschlag der Fassung 1 seine eigene Klasse nicht
 schliesst, hätte kein Diff-Review gefunden** — es hätte den gebauten Code
 gegen den Plan geprüft, und der Plan war falsch.
+
+---
+
+# NACHTRAG — Planprüfung Runde 2 (19.09.2026, beide Spuren)
+
+**13 Befunde** (sol 11, deepseek 2). **Alle 13 selbst nachgemessen; 12 tragen
+vollständig, einer (B9) ist eine richtige Beobachtung, deren Auflösung eine
+Betreiber-Entscheidung ist.** Die beiden deepseek-Befunde waren eine
+TEILMENGE der sol-Befunde — anders als am 13.09.2026, wo zwei Spuren NULL
+Überschneidung hatten. Eine Stichprobe, keine Umkehr.
+
+Kosten: 17,42 $ (sol, 21 Runden / 92 Suchen / 47 Lesungen) + ~0,05 $ (deepseek).
+
+| ID | Spur | Schwere (Prüfer) | Nach eigener Messung |
+|---|---|---|---|
+| B1 | sol | blockierend | **trägt** — die Folge (die neue Pflicht wird VERBRAUCHT) hatte ich nicht gezogen. Blockiert die BEHAUPTUNG, nicht den Bau |
+| B2 / DS-1 | beide | blockierend / mittel | **trägt** — Z2c verlangte einen unerreichbaren Zustand |
+| **B3** | sol | blockierend | **trägt — teuerster Befund.** Echter neuer Verklemmungskreis; S6 wurde daraufhin GANZ anders gebaut |
+| B4 | sol | sollte behoben | **trägt** — Gegenprobe erreicht das mutierte UPDATE nicht |
+| B5 | sol | sollte behoben | **trägt** — Gegenprobe misst den Frühausstieg statt `rowCount` |
+| B6 | sol | sollte behoben | **trägt** — `datei_vorhanden` 1 vorher = 1 nachher, kann nicht fallen |
+| B7 / DS-2 | beide | sollte behoben | **trägt** — Z7 ist nicht rotfähig; und meine Testliste war unvollständig |
+| B8 | sol | blockierend | **trägt in der Sache**; die Stützstelle („ein Bestandskommentar benennt den Fall") ist von mir NICHT bestätigt |
+| B9 | sol | sollte behoben | Beobachtung richtig, **Entscheidung gehört dem Betreiber** — fährt nicht mit |
+| B10 | sol | Anmerkung | **trägt** — `core/db.js` 421-432 statt 426-433 |
+| B11 | sol | Anmerkung | **trägt** — meine `auditAppend`-Begründung war zu stark |
+
+## Was daraus wirklich folgt
+
+**1. Der teuerste Befund war einer, den ich ausdrücklich gesucht hatte.** Meine
+Frage 1 im Auftrag lautete wörtlich: *„Nenne jeden konkreten Weg, auf dem die
+neue Transaktion mit einem bestehenden zu einem Kreis wird."* Für S2 kam die
+Antwort „kein Kreis" — geprüft und begründet. Für S6, wo ich gar nicht gefragt
+hatte, kam B3. **Eine gezielte Frage bringt auch dort etwas, wo man sie nicht
+gestellt hat**; sie richtet die Aufmerksamkeit aus, statt sie zu verengen.
+
+**2. Zweimal hintereinander war meine BEHEBUNG die Gefahr, nicht der Befund.**
+In Fassung 1 hätte der Reihenfolgentausch ein Rennen im Normalbetrieb
+geöffnet; in Fassung 2 hätte die Transaktion eine Verklemmung eingeführt. Der
+BEFUND war beide Male richtig. Das ist ein Muster und gehört benannt: *bei
+dieser Klasse ist die Behebung gefährlicher als der Fehler.*
+
+**3. Und die Richtung ist nicht vorhersagbar.** Bei S2 war die Transaktion
+richtig und der Tausch falsch. Bei S6 ist es GENAU UMGEKEHRT: der Tausch ist
+richtig und die Transaktion falsch. Wer aus dem einen Fall eine Regel macht,
+baut den anderen kaputt. **Was entscheidet, ist nicht das Mittel, sondern die
+Frage, welche ANDEREN Transaktionen dieselben Zeilen anfassen — und in welcher
+Reihenfolge.** Genau das ist vor jeder Behebung dieser Klasse abzuzählen.
+
+**4. Vier der elf Befunde betrafen Zusicherungen, die nicht rot werden
+können** (B4, B5, B6, B7) — Punkt 2 unserer Prüfreihenfolge, unsere teuerste
+Klasse. Alle vier hätte ein Diff-Review erst nach dem Bau gefunden, als
+fertiger Test mit grünem Lauf.
+
+## Was NICHT mitfährt, und warum
+
+* **B9 (Sessions entwerten).** Bestehende Tablet-Sitzungen prüfen `pin_hash`
+  nicht erneut; ein direktes PIN-Setzen beendet sie also nicht. Ob das
+  Setzen einer PIN durch den Admin ein Credential-Reset SEIN SOLL, ist keine
+  technische Feststellung, sondern eine Festlegung — und sie beträfe BEIDE
+  PIN-Wege, auch den öffentlichen. **Offener Punkt, Betreiber-Entscheidung.**
+* **U-SIG1** (B1) — eigener Entwurf, s. `plaene/durchgang-befunde.md`.
+* **U-DEL1** — das stille `unlink` bei `:2299`, unverändert.
