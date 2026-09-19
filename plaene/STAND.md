@@ -4976,3 +4976,56 @@ GP10-Metadatenwerte). `--selbsttest`: **104/104, EXIT 0.**
   ein Umbau des Zeilentrenners auf `\r\n|\r|\n` riskiert einen NEUEN Fehler
   an der Chunk-Grenze — genau die Klasse, die der Streaming-Umbau gerade
   behoben hat. Zeilentrenner in `anfragen()` bewusst unverändert gelassen.
+
+
+## 19.09.2026, 15:20 UTC — #45 gemergt, Streaming-Umbau abgeschlossen
+
+**Merge `812689e`.** Kein Deploy und kein live-check: der Beitrag liegt im
+Belehrungssystem-Repo, das keine Auslieferung auslöst — nur GymDocu tut das.
+
+**Ausbeute des Tages an diesem einen Beitrag: sechs Fehler**, von denen zwei
+schon im Bestand lagen (zerstörte Umlaute an der Chunk-Grenze, eine für immer
+hängende Promise) und vier falsch-grüne Zusicherungen waren — ausgerechnet im
+Beitrag gegen diese Klasse. Jede einzeln mutiert, jedes Mal 99/0 grün.
+
+**Drei Prüfspuren, drei verschiedene Klassen — und das ist der Befund, der
+für die Arbeitsweise zählt:** der Gegenleser fand die nicht-fallenden
+Zusicherungen, der Review-Bot einen P1, den keine andere Spur hatte, DeepSeek
+einen blockierenden Fehler in meinem eigenen Auftragspapier. Keine Spur hätte
+die Funde der anderen gemacht.
+
+**Dreimal an einem Tag trug ein Befund, aber sein Behebungsvorschlag nicht.**
+Beim Bot hätte sein Vorschlag die Klasse wieder eingeführt, gegen die der
+Beitrag antritt; er hat die Gegenbegründung als dauerhafte Review-Regel
+übernommen.
+
+**Eigener Messfehler, als Regel eingetragen:** die erste P1-Messung hatte den
+Wachhund-Timer IM Prüfprozess — der hält die Ereignisschleife selbst am Leben,
+das Ergebnis war mit und ohne Defekt garantiert. Von aussen neu gemessen:
+ohne `destroy()` Exit 124 nach 2006 ms, mit `destroy()` Exit 0 nach 58 ms.
+
+### Offen, Stand jetzt
+
+* **Greptile-Kontingent verbraucht** (50 Credits, Freiplan). Der Review-Bot
+  prüft bis zum Zurücksetzen nichts mehr. Betreiber-Entscheidung, ob
+  aufgestockt wird. Falls nein: bei Beiträgen an Wächtern und Zusicherungen
+  läuft künftig BEIDES — Gegenleser und DeepSeek — statt abwechselnd.
+* **Alleinstehendes CR als SSE-Zeilenende** — bewusst nicht gebaut,
+  Begründung im Abschnitt vom 14:19 UTC.
+* **Der DeepSeek-Adapter ist weitgehend hinfällig** (`plaene/auftrag-deepseek-adapter.md`):
+  DeepSeeks Responses-API ist formgleich mit OpenAIs. Was bleibt, sind
+  Basis-URL, Modellname (`deepseek-flash`, nicht die auslaufende
+  Weiterleitung) und Schlüssel. Neu zu schreiben, klein.
+* **`plaene/befund-datei-vs-commit.md`** — zwei gemessene Stellen im GymDocu-
+  Repo, an denen eine unwiderrufliche Dateiaktion auf der falschen Seite eines
+  fehlbaren Schritts steht. 25 weitere Fundorte sind FUNDORTE, nicht Befunde.
+
+### Als Nächstes
+
+Der risikoorientierte Durchgang (`plaene/durchgang-risikoorientiert.md`),
+Betreiber-Entscheidung 19.09.2026, jetzt mit der ergänzten Vorgabe: **jedes
+Bündel bekommt BEIDE Spuren mit VERSCHIEDENEN Fragen** — sol sucht erreichbare
+Zustände im Kontrollfluss, DeepSeek bekommt das ganze Teilsystem (1M Kontext)
+und die Frage „was verbietet das hier nicht, und wo geht eine Folgerung weiter
+als ihre Messung?". Mitschreiben, welche Spur was fand; nach vierzehn Bündeln
+ist das eine Messung statt einer Anekdote.
