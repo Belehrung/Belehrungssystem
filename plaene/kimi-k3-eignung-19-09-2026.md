@@ -117,3 +117,105 @@ haben.
 
 **Nötig dafür: ein Schlüssel.** Ohne den ist alles oberhalb von Abschnitt 1
 Herstellerprosa.
+
+---
+
+# NACHTRAG 19.09.2026, 22:30 UTC — der Betreiber hat einen Schlüssel geliefert
+
+Damit ist aus Herstellerprosa Messung geworden. **Alles ab hier ist am echten
+Endpunkt gemessen**, die Gegenprobe steht jeweils dabei.
+
+## 1. Zugang und Konto
+
+    GET https://api.moonshot.ai/v1/models     HTTP 200   (Schlüssel gilt)
+    GET https://api.moonshot.cn/v1/models     HTTP 401   "Invalid Authentication"
+
+Der Schlüssel gehört zum **internationalen** Endpunkt; `.cn` ist ein eigener
+Kontoraum. **Gegenprobe:** ein erfundenes Modell (`kimi-quatsch-9`) liefert
+HTTP 400 `model_not_found` — ein „200" sagt hier also etwas.
+
+**Konto gemessen** (`GET /v1/users/me`, `…/balance`):
+
+| | |
+|---|---|
+| `max_concurrency` | **40** |
+| `max_request_per_minute` | **100** |
+| `max_token_per_minute` | **3.000.000** |
+| `max_token_quota` | 124.378.100 |
+| Guthaben | **24,88 $** (19,94 bar + 4,94 Gutschein) |
+
+Das entspricht **Tier 2** der Herstellertabelle, nicht Tier 0. Parallele
+Aufrufe sind also erlaubt — die Tier-0-Zeile („Concurrency 1, RPM 3") gilt
+für dieses Konto NICHT.
+
+## 2. Die vier Modelle — aus der API, nicht aus der Doku
+
+    kimi-k3                    Kontext 1.048.576 | reasoning low/high/max (Standard max)
+                               | Bild+Video ein | dynamische Werkzeuge | denkt IMMER
+    kimi-k2.7-code             Kontext   262.144
+    kimi-k2.7-code-highspeed   Kontext   262.144
+    kimi-k2.6                  Kontext   262.144
+
+**Die 1M-Kontextangabe ist damit von der API selbst bestätigt**, nicht nur
+behauptet. `kimi-k3` ist das einzige mit 1M.
+
+## 3. Was die Schnittstelle WIRKLICH tut
+
+**`/v1/responses` UND `/v1/chat/completions` antworten beide mit HTTP 200.**
+Der Responses-Weg ist der für uns wichtige — `tools/gegenleser-repo.js` müsste
+also fast nichts ändern.
+
+**Die wichtigste Warnung, und sie unterscheidet Kimi von OpenAI:**
+
+> **Ein frei erfundenes Feld (`quatschfeld_xyz`) wird mit HTTP 200
+> ANGENOMMEN.** Bei OpenAI gibt es dafür „Unknown parameter". **Auf diesem
+> Endpunkt sagt „wird angenommen" also NICHTS über Wirkung.** Jeder Schalter
+> ist an seiner WIRKUNG zu messen.
+
+Ein Gegenbeispiel zeigt, dass es nicht pauschal alles schluckt: **`truncation`
+wird ABGELEHNT** (HTTP 400, „truncation is not supported"). Bekannte, aber
+nicht unterstützte Felder scheitern also laut — nur unbekannte fallen durch.
+
+**`reasoning: {"effort": …}` WIRKT** — an einer Aufgabe gemessen, die ohne
+Denken nicht lösbar ist (die `isNaN`/`parseInt`/int4-Frage aus #461):
+
+| effort | Denk-Token | Dauer |
+|---|---|---|
+| `low` | 312 | 21,5 s |
+| `high` | 598 | 29,0 s |
+| `max` | **5781** | **157,0 s** |
+
+Monoton, und der Sprung auf `max` ist zehnfach. **Wäre der Schalter ignoriert
+worden, wären alle drei auf dem Standardwert `max` gelandet** — sie sind es
+nicht, der Schalter wird also gelesen.
+
+**Inhaltlich war die Antwort auf allen drei Stufen richtig — und schärfer, als
+ich erwartet hatte.** Sie erkannte den Kern: `isNaN("0x10")` ist falsch, weil
+`Number("0x10") = 16`, ABER `parseInt("0x10", 10) = 0`, weil Radix 10 am `x`
+stoppt. Ebenso `"1e3"` → `Number` 1000 besteht die Prüfung, `parseInt` liefert
+1. Als Abhilfe nannte sie von sich aus `^\d+$` plus Bereichsprüfung — genau
+das, was wir in #461 gebaut haben. **`max` lieferte dieselben Antworten ohne
+Begründung, bei zehnfachem Denkaufwand und 5,4-facher Dauer.** Für diese
+Aufgabe war `high` also strikt das bessere Geschäft.
+
+**Der Egress-Proxy schneidet auch hier bei 301 s ab** (curl-Exit 56, gemessen).
+Dieselbe harte Grenze wie gegen `api.openai.com`; DeepSeek mit 518 s bleibt die
+Ausnahme. **`stream: true` ist damit Pflicht**, nicht Kür — es funktioniert und
+lief im A/B-Lauf über fünf Minuten ohne Abbruch durch.
+
+**Automatischer Präfix-Cache** (Herstellerangabe, von uns nicht nachgemessen):
+greift ab 256 Prompt-Token, TTL-Stufen 5 min und 1 h, wird gesondert berechnet.
+Die Einschränkung aus Abschnitt 3 des Hauptteils bleibt damit stehen —
+„zustandslos" ist es nicht.
+
+## 4. Der A/B-Lauf
+
+Läuft. **Wortgleich**: dasselbe `instructions`, dasselbe `input` wie der
+DeepSeek-Lauf zur selben Planprüfung; maschinell verglichen, **einziges
+abweichendes Feld ist `model`**. Zwei erzwungene Abweichungen sind zu nennen:
+`truncation` musste raus (nicht unterstützt) und `stream` dazu (Proxy-Grenze).
+Beide betreffen den Transport, nicht die Aufgabe.
+
+Die Messlatte steht fest, bevor das Ergebnis da ist: **die andere Spur (sol)
+fand an demselben Papier elf Befunde, darunter einen echten neuen
+Verklemmungskreis (B3); DeepSeek fand zwei, beide eine Teilmenge davon.**
