@@ -5276,3 +5276,37 @@ aufgeschriebener Fundort ist besser als ein Wächter, der ihn falsch zählt.
 4. **Die Textfeld-Wache braucht einen neuen Erfassungs-Entwurf** (AST statt
    Muster) — `plaene/auftrag-textfeld-wache.md` ist als NICHT BAUBAR markiert,
    seine Messungen bleiben gültig.
+
+### Papierlage zu Bündel 1 — Stand 19.09.2026, ~19:10 UTC
+
+Die neun getragenen Befunde sind jetzt in DREI Papieren untergebracht statt in
+fünf. Zwei wurden bewusst in ein vorhandenes Papier gefaltet statt eigene zu
+bekommen („kein Stapel ohne Abarbeitung"):
+
+| Papier | deckt ab | Stand |
+|---|---|---|
+| `plaene/auftrag-id-wache.md` (Fassung 2) | B1-07, B1-08 (ID-Teil) | **wird gebaut** |
+| `plaene/auftrag-schreibreihenfolge.md` | B1-03, **B1-05**, **B1-04** + F1/F2 | fertig, Planprüfung steht aus |
+| `plaene/auftrag-ladebestand.md` | B1-02 | fertig, Planprüfung steht aus |
+| `plaene/auftrag-textfeld-wache.md` | B1-08 (Text-Teil) | **NICHT BAUBAR** — Erfassung braucht AST statt Muster |
+| — | **B1-09 + B1-10 (Namensinvariante Seilgeräte)** | **noch KEIN Papier** |
+| — | B1-11 (Escaper-Kopie) | Vorlage an den Betreiber, kein Bauauftrag |
+
+**Die Lücke ist B1-09/B1-10** und sie ist die heikelste der neun: Anlegen und
+Umbenennen prüfen denselben Namen ungleich streng UND unter verschiedenen
+Sperrschlüsseln (`geraet-seilname:<studio>:<name>` mit `hashtextextended`
+gegen `seilkontrolle:<studio>:<heute>` mit `hashtext`), und es gibt kein
+`UNIQUE(studio_id, name)` als Netz. Der Zustand ist laut den eigenen
+Kommentaren der Datei unwiderruflich.
+
+**Vor diesem Papier gilt die Transaktions-Regel aus CLAUDE.md:** zählen,
+welche anderen Transaktionen dieselben Zeilen anfassen und in welcher
+Reihenfolge sie den Audit-Lock nehmen — der bestehende, nicht behobene
+Verklemmungs-Kreis liegt in derselben Gegend.
+
+### Weiter offen (Betreiber-Entscheidung)
+
+* **Greptile-Kontingent verbraucht** (50 Credits, Freiplan). Bis zur
+  Aufstockung laufen bei Beiträgen an Wächtern und Zusicherungen BEIDE
+  Gegenleser-Spuren statt abwechselnd. Das hat sich heute ohnehin bewährt —
+  in allen drei Runden lieferte jede Spur Befunde, die die andere nicht hatte.
