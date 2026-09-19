@@ -4140,3 +4140,41 @@ Lint, Dateizahl-Ritual, unabhängige Review, CI.
 **Was sich als richtig erwiesen hat:** die Umstellung auf Commit-und-Push
 nach JEDEM Punkt. Beim dritten Neustart hätte die alte Arbeitsweise alles
 verloren; so kostet ein Neustart höchstens den laufenden Punkt.
+
+## 19.09.2026, 02:15 — Bau fertig, eigener Prüfgang grün, Review läuft
+
+**Alle dreizehn Punkte gebaut**, je Punkt ein Commit, alles gepusht. HEAD
+`3eed991` auf `claude/mandantengrenze-fremd-ids`.
+
+**Selbst gemessen, nicht dem Bericht geglaubt:**
+
+| | |
+|---|---|
+| volle Suite | `SUITE_EXIT=0`, **null ✗**, alle Zähler auf 0 FAIL |
+| unsere Datei | **149 PASS / 0 FAIL** — genau die Schranke |
+| Dateizahl-Ritual | **338 = 338**, `diff` EXIT 0 |
+| `npm run lint` | **EXIT 0**, Ausgabe nur der npm-Rahmen |
+| Marker-Scan | **6**, alle Prosa |
+| `git status` | leer |
+
+**Produktivcode ist nur noch ein Kommentar** — mit den korrigierten Zahlen
+(10 Browser-`fetch`, 2 mit Header, 8 ohne) und vollständiger Fundstellenliste,
+dazu ein datierter offener Punkt, der sogar den `FormData`-Sonderfall nennt.
+
+**Eigener Befund gegen den Bau (klein, wird gebündelt nachgezogen):** die
+Zeilenangaben in der Herleitung von `MINDEST_PRUEFUNGEN` sind veraltet —
+Vorprüfung steht bei 300-305 statt 282-287, H bei 574-599 statt 549-576
+(Versatz 18 bzw. 25). Die ZAHLEN stimmen (nachgerechnet: `pruefeHFall` hat
+acht `ok()`-Zeilen, je Aufruf laufen vier, mal vier Fälle mal zwei
+Transporte = 32; Summe 149). Nur die VERWEISE nicht — und die sind der
+Grund, warum man eine Herleitung aufschreibt.
+
+**Ein Widerspruch in meinem eigenen Papier, vom Ausführenden aufgelöst:**
+Punkt A sagte „null-/fehlend-Fälle NICHT umhüllen", der Auftrag „alle M2-
+Ablehnungen umhüllen". Er umhüllt alle und sichert für null/fehlend `=== 0`
+statt `> 0` zu. Das ist besser als meine wörtliche Vorgabe — die Sorge
+hinter A war, den Befund nicht umzudrehen, und genau das tut er nicht.
+
+**Läuft:** zwei Prüfspuren (sol als Gegenleser, DeepSeek als zweite Spur),
+Bündel 29.563 Token gezählt. Meinen eigenen Befund habe ich ihnen bewusst
+VERSCHWIEGEN — als Messung, ob eine der beiden ihn selbst findet.
