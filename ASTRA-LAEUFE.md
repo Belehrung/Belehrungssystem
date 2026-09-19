@@ -1658,3 +1658,87 @@ Browser-`fetch`-Aufrufen auf eigene Endpunkte trägt genau EINER den
 repariert wurde (`routes/lageplan.js:1524`, `:2843`).
 
 **Kosten:** nicht gemessen (kein Recht auf die laufgenaue Abfrage). Token oben.
+
+---
+
+## 19.09.2026 — Runde 4, ZWEI Läufe parallel mit VERSCHIEDENEN Aufträgen
+
+Zum ersten Mal die offene Frage aus der CLAUDE.md („zwei Läufe mit
+VERSCHIEDENEN Aufträgen statt einem") tatsächlich gefahren — allerdings über
+zwei MODELLE, nicht innerhalb eines. Das beantwortet die dortige Frage also
+NICHT; es ist unsere übliche Zwei-Spuren-Praxis mit getrennten Fragestellungen.
+
+### Lauf A — PLANPRÜFUNG (`gpt-5.6-sol`, effort `xhigh`)
+
+Zweck: das Auftragspapier F5 prüfen, **bevor** gebaut wird. Die Regel steht
+seit dem 10.09. als „Punkt mit dem grössten Hebel" und wurde bei den
+Härtungsrunden 3–5 übergangen.
+
+Material: Vorspann + Auftragspapier + die zu ändernde Testdatei +
+`routes/belehrungen.js` + `core/auth.js`. **Gezählt, nicht geschätzt:
+67.489 Token** (`POST /v1/responses/input_tokens`). Verbraucht: 67.722 rein,
+16.541 raus (davon 14.472 Denken). Dauer 321 s.
+
+**Kosten nach der Preistabelle in `tools/gegenleser-repo.js` (5,00/30,00 $
+je Mio): rund 0,83 $.** Zum Vergleich: derselbe Lauf mit `gpt-6-astra` hätte
+nach derselben Tabelle rund 2,08 $ gekostet.
+
+**Befunde: 4. Nach eigener Nachmessung getragen: 3. Gefallen: 1.**
+
+| # | Befund | Verdikt |
+|---|---|---|
+| 2 | die vorgeschriebenen ID-Untergrenzen wären vom geplanten Wächter gar nicht bewacht — paarweise Verschiedenheit gilt auch bei ganz anderen Zahlen | **hält** |
+| 3 | die Löschung der Wegwerfzeilen ohne jeden Nachweis: ein unwirksames DELETE lässt die Sequenzen trotzdem vorrücken, alles bleibt grün | **hält** |
+| 4 | mein Auftrag widerspricht sich bei der Zahl der neuen Zusicherungen — damit ist die Mindestprüfzahl vor dem Lauf nicht herleitbar | **hält** |
+| 1 | zwei Abfragen ohne `studio_id` (`clock_timestamp()`, Zeitvergleich) | **fällt als Bauauftrag** |
+
+**Warum 1 fällt:** beide Abfragen haben keine `FROM`-Klausel, lesen also keine
+Tabelle und können nichts über eine Mandantengrenze hinweg lesen. Der
+vorgeschlagene Umbau — `SELECT clock_timestamp() … FROM mitarbeiter WHERE
+studio_id=$1 AND id=$2` — hängt einen sinnlosen Tabellenlesezugriff an eine
+Zeitabfrage und macht sie von Fixturzustand abhängig. Der Befund ist gegen den
+WORTLAUT der Regel richtig und in der Sache leer; er wird als datierter offener
+Punkt geführt statt gebaut.
+
+**Bemerkenswert an diesem Lauf: alle drei tragenden Befunde richten sich gegen
+meinen eigenen AUFTRAG, keiner gegen Code.** Genau dafür ist die Planprüfung
+da — am Papier kosten sie nichts, an drei Bau-Runden schon.
+
+### Lauf B — CODE-GEGENLESUNG (`deepseek-v4-pro`)
+
+Zweck: der fertige F4-Diff, zweite Spur.
+
+Material: Vorspann + Diff + Testdatei vollständig + `routes/lageplan.js` +
+`routes/belehrungen.js` + `core/auth.js`. **Gezählt: 125.851 Token.**
+Verbraucht: 136.509 rein, 24.992 raus (davon 23.184 Denken). Dauer 267 s.
+**Kosten: in unserer Preistabelle steht DeepSeek nicht — nicht ableitbar,
+Token oben.**
+
+**Befunde: 3. Nach eigener Nachmessung getragen: 2. Gefallen: 1.**
+
+| # | Befund | Verdikt |
+|---|---|---|
+| 1 | `istRequireCoreAuth` prüft die FORM, nicht die TATSACHE: `const requireAdmin = require('./core/auth')` erfüllt sie, obwohl `requireAdmin` dann das Modulobjekt statt der Middleware ist | **hält — gemessen `EXIT 0, 188 PASS / 0 FAIL`, alle drei Identitäts-Zusicherungen bleiben grün** |
+| 2 | F4-N5 kann bei nicht parsbarem `server.js` nicht rot werden (leeres Array === sauber) | **hält — gemessen: beide Zeilen grün bei `EXIT 1, 177/5`** |
+| 3 | Zeitvergleich ohne `studio_id` | **fällt**, siehe Lauf A Befund 1 |
+
+### Was die beiden Läufe ZUSAMMEN zeigen
+
+**Null Überschneidung bei den tragenden Befunden** — die drei aus Lauf A
+betreffen ausschliesslich das Auftragspapier, die zwei aus Lauf B ausschliesslich
+gebauten Wächtercode. Das ist aber KEINE Wiederholung der Messung vom
+13.09.2026: die Spuren hatten hier **verschiedene Fragen und verschiedenes
+Material**, Disjunktheit ist damit weitgehend erzwungen und nicht überraschend.
+
+**Was beide Spuren gemeinsam hatten, ist der EINZIGE gefallene Befund** — beide
+meldeten dieselbe `studio_id`-lose Zeitabfrage, beide mit einer Behebung, die
+die Lage verschlechtert hätte. Zwei unabhängige Spuren, die denselben
+Fehlalarm liefern, sind ein Hinweis auf die REGEL, nicht auf den Code: der
+Wortlaut „jede Abfrage trägt `studio_id`" unterscheidet nicht zwischen
+Tabellen- und Ausdrucksabfragen. Ob er das soll, entscheidet der Betreiber.
+
+**Und der schwerste Befund der Runde kam von keiner der beiden Spuren**,
+sondern aus dem eigenen Nachmessen einer Gegenprobe: dass auf frischer
+Datenbank Studio-, Etagen-, Mitarbeiter- und Belehrungs-ID dieselbe Zahl
+tragen. Dasselbe Muster wie am 12.09.2026 — das Nadelöhr bleibt das eigene
+Nachmessen, nicht das Finden.
