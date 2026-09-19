@@ -4453,3 +4453,53 @@ und das ist richtig so: er wird seit F6-2 **konstruktiv erzwungen**
 Ein kleiner Abstand aus Konstruktion ist sicherer als ein grosser aus Zufall.
 
 **Offen: Deploy-Lauf und `tools/live-check.sh`.**
+
+## 19.09.2026, 05:50 — AUSGELIEFERT, Runde abgeschlossen
+
+**Deploy-Lauf 427: `success`, `head_sha 6ee7b156…`** — genau der Merge-Commit,
+nicht ein älterer. **`tools/live-check.sh`: EXIT 0**, vier Punkte grün
+(Landingpage, Echtheitsprüfung, Abweisung auf der Studio-Subdomain, Handbuch
+2.9.11), zwei ehrlich als NICHT geprüft ausgewiesen: die Zertifikatslaufzeit
+(der Egress-Proxy signiert jede TLS-Verbindung aus dieser Umgebung neu, gemessen
+würde dessen eigenes Zertifikat) und der interne Health-Endpunkt (von aussen
+nicht erreichbar; serverseitig prüft ihn `ops/health-gate.sh` bei jedem Deploy).
+
+### Was diese Runde gekostet hat und was sie gelehrt hat
+
+Fünf Bau-Runden für zwei Produktivcode-Änderungen von zusammen 90 Zeilen. Die
+Absicherung drumherum wuchs auf 191 Zusicherungen — und **jede einzelne Runde
+ab der dritten wurde durch einen Fehler in MEINEM Auftragspapier ausgelöst,
+nicht durch einen Fehler im Code**:
+
+| Runde | mein Fehler | gefunden von |
+|---|---|---|
+| F4 | H-Matrix nur für M2 gebaut, dieselbe Frage für M1 nie gestellt | mir selbst, beim Nachmessen |
+| F5 v1 | Untergrenzen unbewacht, Löschung ohne Nachweis, Zahl der Zusicherungen widersprüchlich | Planprüfung (3 von 3) |
+| F5 v2 | absolute ID-Grenzen, die nur beim Einzellauf gelten | dem vollen Suite-Lauf — die Planprüfung hatte sie durchgelassen |
+| F6 v1 | die Einschränkung hätte MEHR geschwächt als behauptet | Planprüfung (4 von 5) |
+
+**Die Lehre ist nicht „Planprüfungen finden alles".** Genau die Runde, in der
+sie nichts fand (die absoluten Grenzen), hat die teuerste Nacharbeit ausgelöst.
+Eine Planprüfung findet, was am Papier erkennbar ist; eine Unverträglichkeit mit
+338 anderen Testdateien ist es nicht. Dafür gibt es nur den vollen Lauf.
+
+**Die zweite Lehre betrifft das Delegieren.** Der Ausführende der F5-Runde hat
+gebaut wie beauftragt, den Fehlschlag gemeldet und die Behebung ausdrücklich
+NICHT selbst vorgenommen, weil sie eine Entscheidung war. Genau das ist der
+Grund, warum der Fehler gefunden wurde statt geglättet.
+
+### Nächstes
+
+Die 13 bestätigten Befunde des Sicherheits-Durchgangs vom 18.09.2026
+(`plaene/sicherheits-durchgang-18-09-2026.md`) sind **alle ungemessene
+Behauptungen** und werden vor dem Bauen einzeln nachgemessen. Die zwei als
+blockierend eingestuften zuerst:
+
+* `routes/belehrungen.js:826` — die Einmal-Freischaltung wird hart gelöscht,
+  BEVOR der fehleranfällige PDF-Schritt läuft
+* `routes/admin/geraete.js:4123`
+
+Daneben offen und bewusst nicht gebaut: die acht `fetch`-Aufrufer ohne
+`Accept`, der injizierbare Logger statt des globalen `console.error`-Austauschs,
+B9 (`httpOk`-Spread-Reihenfolge), B10-Rest (138 `listen(0)`-Stellen),
+B11 (`wantsJson()`-Vereinheitlichung).
