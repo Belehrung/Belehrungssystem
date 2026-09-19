@@ -234,3 +234,32 @@ PLÄNEN gemessen, nicht an kaltem Bestandscode):
 | 15.09.2026 | ein PLAN, zwei Runden | 18 | 18 | — |
 | 18.09.2026 | ein Doku-Beitrag (#458), Review-Bot | 3 | 3 | — |
 | 19.09.2026 | ein PLAN, zwei Spuren | 11 | 9 | **null** |
+
+---
+
+## Offene Fundorte aus den Planprüfungen zu B1-07/B1-08 (19.09.2026)
+
+Das Auftragspapier `plaene/auftrag-id-wache.md` (Fassung 2) klammert sie
+ausdrücklich aus. **Sie stehen hier, damit sie nicht verschwinden** — ein
+Fundort, der aufgeschrieben ist, ist besser als ein Wächter, der ihn falsch
+zählt.
+
+| Nr. | Fundort | Stand |
+|---|---|---|
+| U-ID1 | **16 ungemessene `:id`-Routen** in `geraete.js`, `geraete-typen.js`, `ausmusterung.js`, `tablets.js` (26 gezählt, 10 bewacht) | ob ihre `:id` roh an SQL geht: NICHT gemessen |
+| U-ID2 | **acht weitere `:id`-Routen** in `routes/admin/mitarbeiter.js`, darunter drei mehrzeilige Expression-Handler (`:947-952`) | NICHT gemessen |
+| U-ID3 | **`PG_INTEGER_MAX` in sechs weiteren Dateien** — `qr-bestellung.js`, `qr-druckdaten.js`, `qr.js`, `geraete-hinweisfenster.js`, `module.js`, `sichtpruefung.js` (gemessen: 11 Literale `2147483647` in sieben Dateien unter `routes/`) | jede Zusicherung „steht nicht mehr in `routes/`" wäre unabhängig vom Bau rot |
+| U-TX1 | **Zehn `String(req.body…)`-Senken in `geraete.js`** (`:1583`, `:2379`, `:2435`, `:3102`, `:3137`, `:3525`, `:3555`, `:3852`, `:4353`, `:4355`) — koerzieren `[object Object]` bzw. `"a,b"` und SCHREIBEN es | gemessen, Behebung im eigenen Beitrag |
+| U-TX2 | **Rohe `.trim()`-Stellen in `geraete.js`**: `:235`, `:469-470`, `:4981-4982`, `:5030-5031` (ganz ohne Guard), `:5441-5445` (vor dem `try` → 500) sowie `:5490-5492`, `:5496` (im `try` → 200 **und halb angelegtes Gerät**) | gemessen |
+| U-TX3 | **Dieselbe Klasse in `mitarbeiter.js`**: `:346`, `:347`, `:671`, `:737` (`(req.body.x \|\| '').trim()` — ein Objekt überlebt das `\|\| ''`) und `:808` (vor dem `try`) | gemessen |
+| U-TX4 | **Der Scanner-Entwurf für U-TX1/2/3 ist gescheitert** — er sucht `req.body` an der SENKE, aber `aufgaben` ist an `geraete.js:5418` destrukturiert; die Zeile `aufgaben.trim()` enthält kein `req.body`. Braucht Bindungsverfolgung (AST) | Neufassung steht aus |
+| U-TX5 | **`typeof === 'object'` fängt Zahlen und Booleans nicht** — `(42).trim()` wirft, `String(42)` schreibt still `"42"`. `express.json()` ist global, CSRF prüft keinen Content-Type | gemessen |
+
+**Berichtigung zu einer eigenen Prämisse:** Die Dringlichkeit dieser Klasse
+wurde zweimal mit „der Alarmkanal ist von aussen taktbar" begründet.
+**Gemessen an `core/csrf-schutz.js` ist das zu stark:** jeder Nicht-GET mit
+fremdem `Origin`/`Referer`-Host bekommt 403, `/admin/…` ist keine Ausnahme.
+Erreichbar sind die Routen für jeden angemeldeten Admin und für jeden, der
+bereits eine Sitzung hat — nicht für einen fremden Dritten. Der Defekt bleibt
+(stille Falschschreibungen, halb angelegte Datensätze), die Einordnung ändert
+sich.
