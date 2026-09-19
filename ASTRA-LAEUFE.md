@@ -120,6 +120,8 @@ sondern falsch.
 | 18.09.2026 | **PLANPRUEFUNG** Fotoloeschung an Identitaet binden, vor der ersten Bau-Runde | Diff 1748 Zeilen, Suchen 56, Lesungen 66, Token rein 1860326, Token raus 22688, Runden 18 | 6 (1 blockierend) | **6** | 0 | 24,96 $ |
 | 18.09.2026 | **CODEPRUEFUNG** Mandantengrenze M1+M2 vor dem Merge | Diff 926 Zeilen, Suchen 32, Lesungen 44, Token rein 836548, Token raus 22085, Runden 12 | 4 | **4** | 0 | 12,11 $ |
 | 19.09.2026 | diffpruefung-streaming-umbau | Diff 757 Zeilen, Suchen 14, Lesungen 18, Token rein 323750, Token raus 27525, Runden 5 | 6 (2 als blockierend gemeldet) | **6** | 0 (1 Schwere korrigiert) | 2,44 $ |
+| 19.09.2026 | Planpruefung Eingabewache (Spur 1: was bricht der Plan) | Diff 699 Zeilen, Suchen 62, Lesungen 44, Token rein 2041937, Token raus 32995, Runden 17 | 8 | **8** | 0 | 11,20 $ |
+| 19.09.2026 | Planpruefung Eingabewache (Spur 2, `deepseek-flash`: was verspricht der Plan, das er nicht einlöst) | statisches Bündel, kein Repo-Zugriff; Token rein 14458, Token raus 34237 (davon 26768 Denken), 150 s | 9 | **9** | 0 | ~0,03 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -2154,3 +2156,40 @@ seine Prüfgrenze benennt, macht aus einer Vermutung einen Auftrag.
 `core/seilgeraete.js` und vier weitere Dateien lagen nicht im Bündel. Genau
 dort entschieden sich DS-3 und DS-4. Für den nächsten Durchlauf gehören sie
 hinein; Platz ist da (34 % von DeepSeeks Kontext genutzt).
+
+---
+
+## 19.09.2026 — Planprüfung Eingabewache, ZWEI Spuren über EIN Papier
+
+Erste Planprüfung nach der Regel „der Plan geht VOR der ersten Bau-Runde
+raus". **17 Befunde, alle 17 nach eigener Nachmessung getragen, null
+gefallen.** Spur 1 nennt ihr Urteil ausdrücklich `nicht_freigabefaehig`.
+
+Die Einzelurteile stehen in `plaene/auftrag-eingabewache-geraete.md`
+(zwei Nachträge); hier nur, was für die REGEL folgt.
+
+**Erstens: die Planprüfung ist der Hebel, und das ist jetzt zum zweiten Mal
+gemessen.** Am 15.09.2026 waren es 18 von 18 an der Ausmusterung, heute 17 von
+17. Vier der heutigen Befunde hätten eine FALSCHE REGEL in eine kanonische
+`core/`-Datei geschrieben — an genau der Stelle, an der ein Fehler danach an
+vier Orten gleichzeitig gilt.
+
+**Zweitens: DREI von siebzehn Befunden überschnitten sich.** Das ist ein
+anderes Ergebnis als am 13.09.2026 und bei Bündel 1 (dort je NULL). Die
+naheliegende Erklärung — dort war das Material Code, hier ein PAPIER, über
+dessen Schwächen beide Fragen stolpern müssen — ist eine VERMUTUNG über eine
+Stichprobe von eins und wird hier nicht als Befund geführt.
+
+**Drittens, und das ist die brauchbarste Zahl des Tages: der Unterschied war
+der REPO-LESEZUGRIFF, nicht das Modell.** Vier von Spur 1s acht Befunden
+(S-2, S-4, S-6, S-7) stützen sich auf Dateien, die im Bündel NICHT enthalten
+waren — `normalisiereGeraetId` in einer anderen Region derselben Datei,
+`parseIds()` in `ausmusterung.js`, die Spülplan-Route, `route-harness.js`.
+Spur 2 konnte sie strukturell nicht finden. Umgekehrt fand Spur 2 mit
+demselben Papier fünf Befunde, die Spur 1 nicht hatte, darunter eine
+invertierte Bauanweisung.
+
+**Viertens: der Preis sagt weiter nichts über den Ertrag — aber er sagt etwas
+über die Klasse.** 11,20 $ gegen ~0,03 $, und beide lieferten. Die teure Spur
+lieferte die vier blockierenden, die billige die vollständigere Kritik an der
+Prosa des Papiers.
