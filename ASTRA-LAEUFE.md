@@ -2116,7 +2116,7 @@ lokale Escaper-Kopie gegen die eine Quelle).
 Das ist methodisch sauberer als die Messung vom 13.09.: dort hatten die Spuren
 ungleiche Freiheiten, hier war das Material Byte für Byte dasselbe.
 
-**Nachgemessen bisher 2 von 11:**
+**Nachgemessen bisher 5 von 11:**
 
 * **DS-3 (hoch) TRÄGT.** Anlegen prüft Namenskollision mit
   `COALESCE(aktiv,1)=1` (nur aktive Geräte), Umbenennen ohne `aktiv`-Filter
@@ -2131,6 +2131,28 @@ ungleiche Freiheiten, hier war das Material Byte für Byte dasselbe.
   alle Studios". Die `studio_id`-Pflicht gilt request-bezogenen Abfragen; eine
   Migration hat weder Request noch Mandanten. Beobachtung richtig, Einordnung
   nicht.
+
+* **SOL-5 (hoch) TRÄGT — und der Kommentar darüber macht es schärfer.** Die
+  Fristbestätigung verspricht wörtlich Schutz gegen den zweiten Klick
+  („offener Tab, Doppel-Submit … stillschweigend überschreiben"), setzt ihn
+  aber als ungesichertes SELECT-dann-UPDATE über den POOL um: keine
+  Transaktion, keine Sperre, und die `WHERE` trägt KEINE Zustandsbedingung.
+  Zwei parallele Requests lesen beide `frist_festgelegt_am IS NULL`, bestehen
+  beide die Prüfung, schreiben beide — und hängen ZWEI Einträge in die
+  gehashte Audit-Kette. Behebung nach unserer eigenen Regel: Zustandsbedingung
+  in die `WHERE`, `rowCount` lesen.
+* **SOL-3 (hoch) TRÄGT.** `/geraetewartung/geraet/neu` legt das Gerät mit
+  `db.one(INSERT … RETURNING id)` an und schreibt die Aufgaben danach einzeln
+  mit `db.run`. Beide gehen über den POOL, sind also je eine eigene, bereits
+  committete Anweisung. Scheitert die zweite Aufgabenzeile, bleiben Gerät und
+  erste Aufgabe stehen — dieselbe Klasse wie die Dateilöschungen in
+  `plaene/befund-datei-vs-commit.md`.
+* **SOL-6 (hoch gemeldet) — Beobachtung richtig, SCHWERE nicht.** Der Wächter
+  fasst echtes Dateisystem an, aber umgeleitet auf ein Wegwerf-Verzeichnis
+  unter `os.tmpdir()`, und der Dateikopf begründet das über zehn Zeilen. Die
+  Regel „Tests fassen kein echtes Dateisystem an" zielt auf `pm2`, `nginx`,
+  `/var/www` auf dem Live-Server — ein eigenes Temp-Verzeichnis ist nicht diese
+  Klasse. Bleibt als bewusste, dokumentierte Abweichung stehen.
 
 **DeepSeek hat seine Prüfgrenze von selbst benannt** — `core/seilgeraete.js`
 und vier weitere Dateien lagen nicht im Bündel. Genau dort entschied sich
