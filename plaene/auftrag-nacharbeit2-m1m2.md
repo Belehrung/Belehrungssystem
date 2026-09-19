@@ -347,3 +347,152 @@ DeepSeek und sol LESEN, die Mutationsspur MISST. Der einzige Befund, der
 durch Ausführen gefunden wurde (B, die statische `return;`-Zusicherung),
 war durch Lesen nicht zu sehen; der wertvollste Lesebefund (H) durch
 Mutieren nicht.
+
+---
+
+# Fassung 3 — nach der Planprüfung, und sie hat mich mehrfach widerlegt
+
+`gpt-5.6-sol`, `effort: max`, Streaming. 44.592 rein / 45.000 raus, davon
+38.472 Denken. **`status: incomplete`** — die Antwort riss im LETZTEN Befund
+des vierten Abschnitts ab. Die vier Abschnitte sind inhaltlich durch; was
+nach dem abgeschnittenen Satz noch gekommen wäre, weiss niemand, und das
+steht hier statt einer Zahl.
+
+**Messwert fürs nächste Mal:** bei `effort: max` frisst allein das Denken
+38.472 Token. 45.000 Ausgabebudget reichen dafür NICHT. Wer `max` fährt,
+setzt `max_output_tokens` deutlich höher.
+
+## Was die Prüfung an MEINEN Behauptungen widerlegt hat
+
+**1. Mein Auftrag H schliesst seinen eigenen Befund NICHT — und wiederholt
+damit genau den Fehler, den die erste Planprüfung an Fassung 1 gefunden hat.**
+
+Ich hatte vorgeschrieben: `{ studio_id: B, mitarbeiter_id: maB }` gegen
+`belB`. Durchgerechnet: mutiert jemand NUR den Mitarbeiter-Nachschlag, wird
+`ma` unter B gefunden, `bel` unter A aber NICHT — der Wächter steigt aus,
+Redirect und Zeilenzahl stimmen, meine Probe bleibt GRÜN. Verwundbar wäre
+`maB / belA / studio_id=B`, und das prüft sie nie. Symmetrisch für den
+Belehrungs-Nachschlag. Und eine Mutation am INSERT selbst
+(`[req.body.studio_id || req.studioId, ma.id, bel.id, …]`) erreicht meine
+fremd/fremd-Probe gar nicht — dafür bräuchte es eigen/eigen mit gefälschtem
+Studio.
+
+Das ist dieselbe Klasse wie „beide fremd statt beide Grenzen einzeln", eine
+Ebene höher. **Blockierend, und es ist mein Fehler, nicht seiner.**
+
+**2. Meine Verteidigung der Sentinel-Abfragen war falsch.** Ich hatte
+geschrieben, Globalität sei „ihr Zweck, nicht ihr Fehler". Der ZWECK ist
+global — die ABFRAGE muss es nicht sein. Der Ersatz, den ich verworfen hatte,
+leistet den Nachweis ohne globale Abfrage: Zeile unter A anlegen, erzeugte
+Primär-ID merken, mit `WHERE studio_id=$1 AND id=$2` löschen, `rowCount === 1`
+prüfen. Die ID ist danach nachweislich nirgends, weil ein Primärschlüssel
+global eindeutig ist. **Mein Einwand fällt.**
+
+**3. Meine Zahlen zu den `fetch`-Aufrufen waren falsch — und mein zweiter
+Messversuch auch.** Das Papier sagte „neun Browser-`fetch`, genau EINER trägt
+den Header". Die Prüfung rechnete nach, dass meine eigene Aufzählung nur
+sieben fehlende nennt, und tippte auf acht. Nachgemessen, diesmal mit dem an
+der bekannten Fundstelle (`routes/lageplan.js:1477`) GELERNTEN Muster
+`Accept`:
+
+| | |
+|---|---|
+| Browser-`fetch` auf eigene Endpunkte | **10** |
+| davon MIT `Accept` | **2** — `getraenkeanlage.js:335`, `lageplan.js:1477` |
+| ohne | **8** — `admin/qr.js:614`, `belehrungen.js:575/598/646`, `lageplan.js:1524`, `lageplan.js:2843`, `module.js:1092/1102` |
+
+Der Zwischenversuch davor war ebenfalls falsch: er suchte `application/json`
+und traf damit auch jedes `Content-Type`. Zwei Messfehler hintereinander an
+derselben Frage — beide daher, dass ich das Suchmuster GERATEN statt an einer
+bekannten Fundstelle gelernt habe. Genau die Regel steht in der CLAUDE.md.
+
+**4. „N9 deckt drei von acht Ablehnungswegen ab" ist nicht herleitbar.**
+Nachgezählt: **14** konkrete ablehnende M2-Aufrufe (Matrix 3, N8 2, N4 3,
+N1 6), davon **3** umhüllt. Die Zahl acht stammt von mir und aus nichts.
+
+**5. Zwei weitere Abfragen ohne `studio_id` hatte ich übersehen**
+(`SELECT clock_timestamp()`, der `timestamptz`-Vergleich). Sechs sind es
+insgesamt, nicht eine. **Die Einstufung „blockierend" ist dabei überzogen:**
+beide lesen KEINE mandantengebundene Tabelle, sie können nichts verraten. Der
+Vorschlag, sie in die ohnehin mandantengebundene Zeilenabfrage zu falten, ist
+trotzdem besser und kostenlos — er wird übernommen.
+
+**6. Was die Prüfung BESTÄTIGT hat:** dass die N1-Fälle `Array` und `Objekt`
+wirklich in den `catch` laufen; und dass meine Ablehnung des Flakiness-Befunds
+richtig war (die Millisekunden-Abschneidung schiebt den Bezugspunkt nach
+früher).
+
+## Geänderte und neue Aufträge
+
+**H NEU — Matrix statt einer Probe.** Je Transport (Formular UND JSON):
+1. `maB / belA / body.studio_id=B` → Ablehnung
+2. `maA / belB / body.studio_id=B` → Ablehnung
+3. `maB / belB / body.studio_id=B` → Ablehnung
+4. ein NEUES eigenes Paar `maA2 / belA / body.studio_id=B` → Erfolg
+   ausschliesslich unter A, **keine** Änderung unter B
+Dazu DREI getrennte Gegenmutationen: nur MA-Nachschlag, nur BEL-Nachschlag,
+nur Studio im INSERT. Jede einzeln gemessen.
+
+**G NEU — Sentinels mandantengebunden erzeugen und löschen**, `rowCount === 1`
+zusichern, keine globale Kontrollabfrage. Dazu `posEigen` mit `studio_id`, und
+die beiden Zeitabfragen in die mandantengebundene Zeilenabfrage falten.
+
+**B NEU — kein Kommentar-Regex, sondern `acorn`.** Selbst nachgemessen:
+`acorn@8.18.0` ist direkte Abhängigkeit und wird im Bestand von SIEBEN
+Dateien benutzt, darunter mehrere statische Wächter — es ist Hausstil, nicht
+Neuland. Der bereits extrahierte `bindPlace()`-Ausschnitt wird als
+eigenständiges Browser-JavaScript geparst; verlangt wird ein echtes
+`ReturnStatement` im Ablehnungszweig VOR `positionen.push`. Dann sind
+Kommentare bedeutungslos. Ein Zeilenregex über ein Template-Literal würde
+`//` in Strings und URLs beschädigen.
+
+**M NEU — ebenfalls `acorn` statt `includes()`.** Über `server.js`: je Pfad
+GENAU EIN aktiver top-level `app.use` mit der Argumentfolge Pfad,
+`requireAdmin`, Router — und ausdrücklich ausgeschlossen, dass derselbe Pfad
+ein zweites Mal ungeschützt gemountet wird.
+
+**L NEU — Schnappschuss je EINZELNEM Request, nicht je Block.** Ein Block mit
+zwei Requests kann eine Änderung und ihre Rücknahme enthalten; Anfang und Ende
+gleichen sich dann. Der Schnappschuss nimmt `id` MIT auf (sonst ist Löschen
+und Neuanlegen mit denselben Fachfeldern unsichtbar) und läuft mit
+`WHERE studio_id=$1`.
+
+**J NEU — nicht passende Aufrufe unverändert weiterreichen** (mit korrektem
+`this`), und die betroffenen Tests strikt seriell halten. Die Filterung auf
+das Präfix schliesst den Poolfehler, aber `console.error` bleibt prozessweit
+ersetzt; das ist eine Verkleinerung der Trefferfläche, keine Behebung. Als
+datierter offener Punkt: ein injizierbarer Fehlerbeobachter statt der globalen
+Ersetzung.
+
+**E ERWEITERT — der `req.xhr`-Zweig ist ungeprüft.** Alle N12-Proben lösen
+JSON über den `Accept`-Header aus. Wer `req.xhr ||` entfernt, lässt alle 86
+Zusicherungen grün. Zusätzlicher Fall: halbe Admin-Sitzung, NUR
+`X-Requested-With: XMLHttpRequest`, kein JSON-`Accept` → 401 JSON und
+gelöschte Sitzung.
+
+**NEU — `MINDEST_PRUEFUNGEN` der HAUPTdatei anheben.** Sie steht bei 86
+(`test_feature_mandantengrenze_fremd_ids.js:214`). A, E, H, I, K und L bringen
+zahlreiche neue `ok()`-Aufrufe; bleibt die Schranke bei 86, lassen sich alle
+neu gebauten Zusicherungen wieder entfernen, ohne dass sie greift. Die neue
+Zahl wird VON HAND aus dem Auftrag hergeleitet, **nicht** aus `pass + fail`
+des grünen Laufs abgeschrieben.
+
+**NEU — die in DIESEM Diff neuen Listener binden auf Loopback.**
+`.listen(0, '127.0.0.1')` statt `.listen(0)`, und das `listening`-Ereignis
+abwarten. Meine Ablehnung von B10 war insgesamt richtig (138 Bestandstests
+arbeiten so, die Regel zielt auf `pm2`/`nginx`/`/var/www`) — aber sie war zu
+grob: **was dieser Beitrag NEU aufmacht, kann er auch gleich richtig
+aufmachen.** Die 138 Altstellen bleiben ein eigener Beitrag.
+
+## Was NICHT gebaut wird
+
+- **Der Flakiness-Befund bleibt gefallen** — von der Planprüfung ausdrücklich
+  bestätigt.
+- **Die acht fehlenden `Accept`-Header** bleiben ein eigener Beitrag, jetzt
+  mit der korrigierten Liste oben.
+- **B9** (Rumpf überschreibt `httpOk`) bleibt offener Punkt. Die Prüfung
+  merkt zu Recht an, dass mein „kein Endpunkt liefert das Feld" aus dem
+  MATERIAL nicht belegbar war — gemessen habe ich es im Repo, und das gehört
+  dazugeschrieben statt behauptet.
+- **Der injizierbare Logger** statt der globalen `console.error`-Ersetzung:
+  eigener Beitrag, datierter offener Punkt.
