@@ -128,6 +128,8 @@ sondern falsch.
 | 19.09.2026 | Planpruefung ID-Wache + Textfeld-Wache (Spur 2, `deepseek-flash`: was verspricht das Verfahren, das es nicht einlöst) | statisches Bündel; Token rein 19161, Token raus ~39000; 189 s | 16 (2 blockierend) | **16** | 0 | ~0,04 $ |
 | 19.09.2026 | Diffpruefung ID-Wache (Spur 1: was bricht der Diff) | Diff 1249 Zeilen, Suchen 47, Lesungen 43, Token rein 3330243, Token raus 26664, Runden 24 | 5 (2 blockierend) | **3** | **2** (beide Schwere falsch) | 17,45 $ |
 | 19.09.2026 | Diffpruefung ID-Wache (Spur 2, `deepseek-flash`: was verspricht der Diff, das er nicht einlöst) | statisches Bündel; 236 s | 12 | **9** | 3 | ~0,05 $ |
+| 19.09.2026 | Planpruefung Schreibreihenfolge (Spur 1: was bricht der Plan, welche Lock-Ordnung entsteht) | Diff 809 Zeilen, Suchen 76, Lesungen 51, Token rein 2580807, Token raus 29375, Runden 21 | 8 (3 blockierend) | **8** | 0 | 13,79 $ |
+| 19.09.2026 | Planpruefung Schreibreihenfolge (Spur 2, `deepseek-flash`: was verspricht der Plan, das er nicht einlöst) | statisches Bündel; 168 s | 9 (1 blockierend) | **9** | 0 | ~0,05 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -2340,3 +2342,38 @@ davon sieben falsche Kommentar-Behauptungen und zwei echte Testschwächen) —
 aber der teuerste Fund des Tages kostete 0 $ und kam aus einer Gegenprobe, die
 jemand nicht abgehakt, sondern gelesen hat. **Ein Ausführender, der eine
 Nebenbeobachtung MELDET, ist die billigste Prüfspur, die wir haben.**
+
+---
+
+## 19.09.2026 — Planprüfung Schreibreihenfolge: der PLAN war falsch, nicht seine Ausführung
+
+17 Befunde, **17 nach eigener Nachmessung getragen**, vier blockierend.
+Einzelurteile im Nachtrag von `plaene/auftrag-schreibreihenfolge.md`.
+
+**Der Befund, der für die REGEL zählt: der zentrale Behebungsvorschlag des
+Papiers schliesst seine eigene Fehlerklasse nicht** — und **BEIDE Spuren
+fanden das unabhängig voneinander.** Ich wollte ein committendes UPDATE hinter
+den fehlbaren Schritt ziehen; gemessen steht `auditAppend` auch danach dahinter
+und der `catch` löscht weiterhin die frisch referenzierte Datei. Mein Papier
+stellte die zwei Behebungsteile ausdrücklich als Alternativen dar („Teil 2 ist
+der bessere Entwurf") — es braucht beide.
+
+**Das hätte KEINE Diffprüfung gefunden.** Eine Diffprüfung hält den gebauten
+Code gegen den Plan; hier war der Plan falsch. Damit steht zum zweiten Mal
+gemessen, wofür die Regel „der Plan geht VOR der ersten Bau-Runde raus" da
+ist — beim ersten Mal (15.09., Ausmusterung) strich ein Befund einen ganzen
+geplanten Beitrag.
+
+**Dritter Fall an einem Tag, dass eine Tatsachenbehauptung von MIR fiel:**
+Ich schrieb, drei Mitarbeiter-Routen läsen ihre Zeile NACH dem UPDATE.
+Gemessen lesen alle drei VORHER. Ich hatte den Satz aus dem Bericht des
+Ausführenden übernommen, ohne ihn zu messen — dieselbe Klasse wie der
+`parseIds`-Auftrag zwei Stunden zuvor. **Eine Zahl oder Aussage aus einem
+Bericht ist eine Behauptung, auch wenn der Bericht sonst zuverlässig war.**
+
+**Und ein Fundort, dessen Schwere ich zu niedrig angesetzt hatte:** Bei
+`pin-direkt` committet das PIN-UPDATE, danach läuft die Token-Entwertung als
+zweiter Pool-Commit. Scheitert sie, ist die PIN gesetzt, der Benutzer sieht
+eine Fehlerseite — und alte Einladungs-/Reset-Tokens bleiben gültig und
+können die PIN später erneut ändern. Ich hatte die drei Routen als „kein
+Datenrisiko, nur irreführende Rückmeldung" geführt.
