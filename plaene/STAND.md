@@ -5426,3 +5426,65 @@ seines Auftraggebers mit einer Messung WIDERSPRICHT, ist das Wertvollste."*
 Beweise gesichtet, zwei unabhängige Spuren über den Diff, eigene volle Suite,
 Dateizahl-Ritual, Lint, Marker-Scan, CI, Merge mit eigener Botschaft
 (zurückgelesen), Deploy mit richtigem `head_sha`, Live-Check.
+
+---
+
+## 19.09.2026, ~22:00 UTC — Kimi K3 beantwortet, Schreibreihenfolge Fassung 2 raus
+
+### Betreiber-Frage Kimi K3
+
+Antwort geliefert, Einzelheiten in `plaene/kimi-k3-eignung-19-09-2026.md`.
+Kurz: **erreichbar** (`api.moonshot.ai/v1/models` HTTP 401 in 0,80 s — kein
+Schlüssel, nicht gesperrt), Rest ist Herstellerprosa (1M Kontext, 3,00/15,00 $
+je Mio, `/v1/responses` OpenAI-kompatibel, Signaturendpunkt gegen stilles
+Umrouten). **Empfehlung: nicht einführen, nicht verwerfen — EIN A/B-Lauf gegen
+ein Papier, dessen Antwort wir kennen.** Nötig dafür: ein Schlüssel.
+
+### Fassung 2 des Schreibreihenfolge-Papiers
+
+Fassung 1 lag als **nicht baubar** da (17 Planprüfungs-Befunde, vier
+blockierend). Fassung 2 ist geschrieben, alle Zeilennummern am Stand `5a194ba`
+neu gemessen, Fassung 1 als `-fassung1.md` archiviert.
+
+**Die wichtigste Änderung ist keine Korrektur, sondern ein anderer Entwurf.**
+Fassung 1 wollte bei S2 die Reihenfolge tauschen. Selbst nachgemessen ergibt
+das einen BEWEIS gegen den Tausch:
+
+Der Unterschriftenweg liest `freigeschaltet_am` (R1, `belehrungen.js:793`) vor
+`dateiname` (R2, `:798`), also immer **R1 < R2**. Der Schaden „neue Generation
+gelesen, altes Dokument unterschrieben" verlangt `R1 > W_g` und `R2 < W_d`.
+
+* heute (`W_d < W_g`): verlangt `R1 > R2` — **Widerspruch, ausgeschlossen**;
+* getauscht (`W_g < W_d`): `W_g < R1 < R2 < W_d` — **möglich**.
+
+Der Tausch hätte also einen Fehlerfall-Datenverlust gegen ein Rennen im
+NORMALBETRIEB eingetauscht. **Die Behebung ist deshalb EINE Transaktion**
+(Advisory-Lock zuerst, wie im Bestand bei `:946` schon vorgezeichnet) — vor dem
+COMMIT ist nichts sichtbar, es gibt kein Fenster, und der Beweis wird
+gegenstandslos statt auf die andere Seite zu kippen.
+
+**Vier Dinge selbst gemessen, die Fassung 1 delegiert oder behauptet hatte:**
+
+| Frage | Messung |
+|---|---|
+| Braucht `schalteAlleFrei()` den neuen `dateiname`? | **Nein** — Signatur `(studioId, belehrungId, grund)`, fasst nur `belehrung_freischaltung`/`mitarbeiter` an |
+| Lesen die drei Mitarbeiter-Routen vor oder nach dem UPDATE? | **VOR** (690/691, 758/760, 838/840) — Fassung 1 behauptete das Gegenteil |
+| Welcher Rückmeldecode passt für „nicht gefunden"? | `email_fehler` existiert wörtlich; `name_fehler` ist irreführend, `pin-direkt` hat gar keinen → zwei neue Codes **plus Listeneintrag** |
+| Ist `frist-bestaetigen/:id` ID-geprüft? | **Nein** — `istGueltigeId` in `geraete.js` nur an `:352`, `:485`, `:725`. Dreizehnter Eintrittspunkt, fährt als S4b mit |
+
+Dazu **S6 neu**: `pin-direkt` setzt die PIN (`:760`, committet) und entwertet
+danach offene Einladungs-Tokens (`:762`) als ZWEITEN Pool-Commit. Scheitert der
+zweite, ist die PIN gesetzt, der Benutzer sieht eine Fehlerseite — **und alte
+Tokens können die PIN später erneut ändern.** Kein Rückmeldefehler mehr,
+sondern ein offener Anmeldeweg.
+
+**Planprüfung Runde 2 läuft** (beide Spuren, ~37k Token Material samt erhobener
+Sperrlandschaft). Die Fragen sind ausdrücklich NEU — sie greifen die
+Transaktion an, nicht den überholten Tausch.
+
+### Neuer offener Punkt
+
+* **U-DEL1** — `belehrungen.js:2299`: `try { fs.unlinkSync(fp); } catch {}`
+  verschluckt ein fehlgeschlagenes `unlink` vollständig. Nach dem Umbau (S3)
+  ist das erlaubter Müll, aber lautlos. Auf `melde()` umzustellen wäre eine
+  zweite Verhaltensänderung (Telegram-Alarm) und gehört nicht in den Beitrag.
