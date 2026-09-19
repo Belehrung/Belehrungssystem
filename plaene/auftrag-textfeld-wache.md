@@ -1,3 +1,23 @@
+# Auftragspapier — Textfeld-Wache (FASSUNG 1 — NICHT BAUEN, Scanner-Entwurf gemessen gescheitert)
+
+> **Der Wächter aus 1.3 ist so nicht baubar** (Planprüfung Runde 3, gemessen):
+> er sucht `req.body` an der SENKE, aber `aufgaben` ist an
+> `routes/admin/geraete.js:5418` destrukturiert — die Zeile `aufgaben.trim()`,
+> das Paradebeispiel dieses Papiers, enthält `req.body` überhaupt nicht.
+> Dasselbe für `name` an `:5441`, `:4981`, `:5030` und `:235`. Ein Muster an
+> der Senke beantwortet eine Frage nach dem DATENFLUSS nicht.
+>
+> **Was gültig bleibt:** Abschnitt 0 (die Messungen), die Regel *FEHLEND ist
+> erlaubt, VORHANDEN muss Text sein*, und die Liste der Senken als
+> FUNDORTLISTE. **Was neu gedacht werden muss:** wie der Wächter die Senken
+> findet — mit Bindungsverfolgung statt mit einem Muster.
+>
+> Die 29 Befunde der dritten Runde stehen in
+> `plaene/planpruefung-wachen-runde3.md`. Gebaut wird zuerst
+> `plaene/auftrag-id-wache.md` (Fassung 2, klein).
+
+---
+
 # Auftragspapier — Textfeld-Wache: eine Regel, die auch Zahlen fängt, und ein Wächter, der die Senken SELBST zählt
 
 **Repo:** GymDocu (`/home/user/gymdocu`, Stand `4c4b729`).
