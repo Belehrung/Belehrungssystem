@@ -500,11 +500,24 @@ hält und auf Token 2 wartet, entsteht derselbe Kreis eine Ebene tiefer.
 * **Keine neue Sperrordnung.** Zwei Autocommits halten nie zwei Sperren
   gleichzeitig. Der Kreis aus B3 kann nicht entstehen — auch nicht eine
   Ebene tiefer.
-* **Der verbleibende Fehlerfall ist strikt harmloser als heute.** Scheitert
-  Schritt 2, sind die alten Links tot und die PIN unverändert: der
-  Mitarbeiter braucht eine neue Einladung. **Ärgerlich, behebbar, kein
-  offener Anmeldeweg.** Heute ist es umgekehrt — PIN gesetzt, alte Links
-  weiter gültig.
+* **Der verbleibende Fehlerfall ist harmloser als heute — aber nicht
+  kostenlos, und das gehört gesagt.** Scheitert Schritt 2, sind die alten
+  Links tot und die PIN unverändert. Selbst nachgemessen, was das für den
+  Mitarbeiter heißt:
+  * **Hatte er schon eine PIN**, meldet er sich weiter an wie bisher
+    (`routes/tablet-sperre.js:559-561` prüft nur `pin_hash`); verloren sind
+    nur die ohnehin ungenutzten Einladungslinks. Schaden: keiner.
+  * **Hatte er noch KEINE PIN** (`mitarbeiter.pin_hash` ist `TEXT`, also
+    NULL-fähig), war der Token sein einziger Weg — und der ist jetzt tot.
+    Er kommt bis zu einer neuen Einladung nicht hinein. Anmelden konnte er
+    sich vorher allerdings auch nicht (`:561` und `:595` verlangen beide
+    `pin_hash IS NOT NULL`), und der Admin, der gerade eine Fehlerseite
+    gesehen hat, löst es mit einem Klick neu ein.
+  **Dagegen steht der heutige Fehlerfall:** PIN gesetzt, alte Links weiter
+  gültig — ein offener Anmeldeweg, der niemandem auffällt und erst mit
+  `gueltig_bis` verfällt. Ein Zugangsverlust mit Ein-Klick-Behebung gegen
+  einen unbemerkten offenen Zugang: die Richtung ist eindeutig, die
+  Behauptung „strikt harmlos“ war es nicht.
 * **Die Rennen mit dem Einlöseweg bleiben sauber.** Entwertet der Admin
   zuerst, scheitert die Einlösung an ihrem eigenen `rowCount`-Riegel
   (`:298`) und wird ordentlich abgewiesen. Löst der Mitarbeiter zuerst ein,
