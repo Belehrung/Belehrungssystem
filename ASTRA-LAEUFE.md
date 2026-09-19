@@ -1742,3 +1742,46 @@ sondern aus dem eigenen Nachmessen einer Gegenprobe: dass auf frischer
 Datenbank Studio-, Etagen-, Mitarbeiter- und Belehrungs-ID dieselbe Zahl
 tragen. Dasselbe Muster wie am 12.09.2026 — das Nadelöhr bleibt das eigene
 Nachmessen, nicht das Finden.
+
+## 19.09.2026 — Planprüfung F6 (`gpt-5.6-sol`, effort `xhigh`)
+
+Zweck: das Auftragspapier F6 prüfen, BEVOR gebaut wird. Anlass war ein
+P2-Befund des Review-Bots am Beitrag, den ich zuvor selbst nachgemessen hatte.
+
+Material: Vorspann + Messungen + Auftragspapier + die Testdatei vollständig +
+`routes/lageplan.js` + `routes/belehrungen.js`. **Gezählt: 120.649 Token.**
+Verbraucht: 120.822 rein, 13.741 raus (davon 11.912 Denken). Dauer 271 s.
+**Kosten nach der Preistabelle: rund 1,02 $.**
+
+**Befunde: 5. Nach eigener Nachmessung getragen: 4. Gefallen: 1.**
+
+| # | Befund | Verdikt |
+|---|---|---|
+| 2 | F6-1 schwächt MEHR als behauptet: die heutige Mengenprüfung fängt auch `const maC = maB;` — Länge bleibt 6, Menge wird 5 | **hält, der wichtigste** |
+| 3 | F6-2 und F6-3 sind nicht getrennt grün commitfähig; der vorgeschriebene Zwischencommit wäre absichtlich ROT | **hält** |
+| 5 | „abbrechen und melden" war zweideutig — als Laufzeit-Wurf gebaut hätte es alle Prüfungen dahinter gekostet | **hält** |
+| 4 | meine Vollständigkeitsbehauptung ist wörtlich falsch (`etageA`/`maA`/`belA` stehen gemeinsam in F5-2b), und H4 ist dadurch nicht isoliert | **hält** |
+| 1 | zwei Abfragen ohne `studio_id` | **fällt — zum DRITTEN Mal** |
+
+**Warum 1 zum dritten Mal fällt, und was daran diesmal MEIN Fehler war:**
+Die Abfragen haben keine `FROM`-Klausel. Entscheidend ist aber die Ursache:
+Mein eigener Prüf-Vorspann zitierte die Regel als „JEDE Datenbankabfrage trägt
+`studio_id`" — ohne die Einschränkung auf Tabellenabfragen. Die Spur hat also
+korrekt angewandt, was ich ihr geschrieben habe. Drei Läufe lang habe ich
+denselben Fehlalarm selbst bestellt und dann als Fehlalarm verbucht.
+Der Vorspann liegt jetzt als `tools/gegenleser-vorspann.txt` im Repo und
+stellt es klar.
+
+**Was dieser Lauf über Planprüfungen zeigt — zum zweiten Mal an einem Tag:**
+**alle vier tragenden Befunde richten sich gegen mein AUFTRAGSPAPIER, keiner
+gegen Code.** Bei der Planprüfung F5 war es genauso (drei von drei). Zusammen
+mit dem 15.09.2026 (18 Befunde über zwei Planprüfungen, alle getragen) ist das
+die konsistenteste Beobachtung, die diese Datei bisher trägt. Sie ersetzt keine
+Statistik — aber sie deckt sich mit der Regel aus der CLAUDE.md, dass der
+grösste Hebel am Papier liegt und nicht am Diff.
+
+**Was sie NICHT zeigt:** dass eine Planprüfung genügt. Dieselbe Spur hat in der
+Runde davor Fassung 1 von F5 geprüft und die ABSOLUTEN Bereichsgrenzen NICHT
+beanstandet — die sind dann im vollen Suite-Lauf rot geworden. Eine
+Planprüfung findet, was am Papier erkennbar ist; die Unverträglichkeit mit 338
+anderen Testdateien war es nicht.

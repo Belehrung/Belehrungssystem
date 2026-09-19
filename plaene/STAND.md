@@ -4353,3 +4353,42 @@ auf dem aktuellen Kopf.
 eines gemessenen Suite-Fehlschlags, auf eine Zusicherung begrenzt, und trägt
 zwei unabhängige Gegenproben. Plan und Code dieser Runde waren bereits
 gegengelesen.
+
+## 19.09.2026, 04:30 — CI grün, ein Bot-Befund trägt, F6 im Bau
+
+**CI vollständig grün** auf dem aktuellen Kopf: alle fünf Checks `success`,
+einschliesslich der Isolationstests, die die volle Suite fahren.
+
+**Nicht gemergt.** Der Review-Bot hat einen P2-Befund, und er trägt —
+nachgemessen, nicht nach Schwere beurteilt. Es ist exakt das Restrisiko, das
+ich zwei Stunden vorher selbst als „bewusst getragen" in den Code geschrieben
+hatte: F5-2a verlangt Eindeutigkeit über VIER unabhängige Sequenzen, die
+PostgreSQL nicht garantiert. Drei Spuren sind unabhängig auf dieselbe Stelle
+gekommen.
+
+Gemessene Gruppenabstände im vollen Lauf:
+
+| Gruppenpaar | Abstand | vom Test gebraucht? |
+|---|---|---|
+| etagen [15–17] ↔ belehrungen [41–43] | **24** | **NEIN** |
+| belehrungen ↔ mitarbeiter [168–173] | 125 | JA |
+| etagen ↔ mitarbeiter | 151 | NEIN |
+| studios [500193–195] ↔ alles | ~500.000 | JA |
+
+Das nächstliegende Risiko sitzt auf einem Paar, das der Test nicht braucht.
+Das einzige knappe NÖTIGE Paar wird künftig kollisionsfrei konstruiert statt
+auf Abstand gehofft. Warum das vor den Merge gehört: diese Suite ist auf dem
+Live-Server Deploy-Gate — ein Fehlalarm darin blockiert Auslieferungen aus
+einem Grund, der mit dem Beitrag nichts zu tun hat.
+
+**Planprüfung F6: fünf Befunde, vier getragen** (Einzelheiten in
+`ASTRA-LAEUFE.md`). Der wichtigste war einer gegen mich: meine geplante
+Einschränkung hätte MEHR geschwächt als behauptet — die heutige Mengenprüfung
+fängt auch `const maC = maB;`, wo die Gruppenlänge gleich bleibt und nur die
+Menge schrumpft. Fassung 2 prüft deshalb zwei Ebenen.
+
+**Eigene Berichtigung:** Der Befund „Abfrage ohne `studio_id`" ist heute zum
+DRITTEN Mal gemeldet worden, und die Ursache war mein eigener Prüf-Vorspann —
+er zitierte die Regel ohne die Einschränkung auf Tabellenabfragen. Die Spuren
+haben korrekt angewandt, was ich ihnen geschrieben habe. Der Vorspann liegt
+jetzt als `tools/gegenleser-vorspann.txt` im Repo.
