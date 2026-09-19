@@ -4551,3 +4551,37 @@ Nachmessung getragen, Überschneidung, Kosten und Dauer. Vorhergesagt habe ich
 vorab: kein grosser Unterschied, weil der Auftrag eng und das Material klein
 ist. Die Vorhersage steht schriftlich, damit sie hinterher nicht angepasst
 wird.
+
+## 19.09.2026, 07:15 — Verfahren gemessen statt behauptet
+
+Drei Dinge umgesetzt (Betreiber: „dein Vorschlag umsetzen"):
+
+**1. Kreuzverhör ist jetzt BERATEND, nicht gattend** — in der CLAUDE.md
+festgeschrieben. Ich hatte es eine Stunde vorher noch als Filter vorgeschlagen
+(„nur was das überlebt, kommt zu mir"); das war falsch. Begründung steht dort
+mit der externen Messung (bis zu drei Viertel echter Befunde verworfen in
+genau unseren Klassen) und mit dem eigenen Piloten (0 von 7 widerlegt).
+
+**2. Mutation Testing gemessen, nicht diskutiert** —
+`plaene/mutation-testing-messung-19-09-2026.md`. Kurz: der erste Versuch
+scheiterte strukturell (Stryker instrumentiert die Quelle, unsere
+quelltextlesenden Wächter schlagen darauf an — betrifft acht Wächter am
+gemeinsamen Scanner). Der zweite lief: `core/2fa.js`, 130 Mutanten, 35 s,
+Mutation Score 63,8 %. **Kein einziger geprüfter Überlebender war ein
+Sicherheitsfehler**, die meisten sind äquivalent.
+
+Dabei habe ich mich selbst blamiert und es aufgeschrieben: ich hielt einen
+Überlebenden für ein falsches Negativ des Werkzeugs und hatte in Wahrheit eine
+ANDERE Teilbedingung derselben Zeile mutiert. Zeile 133 hat drei mutierbare
+Bedingungen. **Ohne Spaltenangabe ist ein Mutantenbericht nicht nachmessbar.**
+
+**3. Fachnamen festgehalten** — Mutation Testing, kompensierende Transaktion /
+Saga (Gegenmittel: Idempotenzschlüssel und Generationsnummern), Trust Boundary
+(CWE-501/602). Bemerkenswert: beide Prüfspuren haben das Saga-Gegenmittel
+unabhängig vorgeschlagen, ohne dass es ihnen jemand sagte.
+
+**Offen und unverändert:** das Auftragspapier zur Einmal-Freischaltung muss neu
+geschrieben werden. Der Blank-PNG-Befund ist scharf nachgemessen und kippt den
+bisherigen Entwurf — die Behebung muss mit der serverseitigen Signaturprüfung
+anfangen, nicht mit der Reihenfolge des Verbrauchs. `sharp` ist bereits direkte
+Abhängigkeit, eine neue Bibliothek im Sicherheitspfad braucht es also nicht.

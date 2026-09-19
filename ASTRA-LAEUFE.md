@@ -1785,3 +1785,70 @@ Runde davor Fassung 1 von F5 geprüft und die ABSOLUTEN Bereichsgrenzen NICHT
 beanstandet — die sind dann im vollen Suite-Lauf rot geworden. Eine
 Planprüfung findet, was am Papier erkennbar ist; die Unverträglichkeit mit 338
 anderen Testdateien war es nicht.
+
+---
+
+## 19.09.2026 — A/B `max` gegen `xhigh` (Betreiber-Frage „was ist besser?")
+
+Identisches Bündel, identischer Prompt, **programmatisch als byte-gleich
+belegt**; einziger Unterschied `reasoning.effort`. Auftrag: das
+Auftragspapier zur Einmal-Freischaltung ADVERSARISCH brechen. Bewertung
+blind — beide Befundlisten zusammengeführt, nach Datei/Zeile sortiert, Quelle
+erst nach dem Nachmessen aufgedeckt.
+
+| | `max` | `xhigh` |
+|---|---|---|
+| Befunde | 4 | 3 |
+| nach eigener Nachmessung getragen | **4** | **3** |
+| Denk-Token | 31.057 | 13.984 |
+| Dauer | 874 s | 439 s |
+| Kosten (Preistabelle) | **~1,26 $** | **~0,74 $** |
+
+**Überschneidung: 2 von 7.** Beide fanden die zwei strukturell wichtigsten
+Punkte (Gegenprobe K2 nicht formtreu; das geplante „Fenster schliessen"
+vergrössert in Wahrheit ein Wettlauf-Fenster). Darüber hinaus disjunkt:
+`max` zwei eigene, `xhigh` einen eigenen.
+
+**Der teuerste Fund war einer von `max`** und kippte den ganzen Entwurf: ein
+gültiges, aber tintenloses PNG läuft durch alle Prüfungen. **Scharf
+nachgemessen am echten Endpunkt** (weisses UND transparentes 1×1-PNG):
+`{"status":"ok"}`, Freischaltung 1 → 0, signierte PDF entsteht. Die geplante
+Behebung hätte fertig ausgesehen und die Lücke offengelassen.
+
+**Der eigene Fund von `xhigh`** ist ebenfalls schwer: der geplante Wächter
+verlangt nur EIN Token, deshalb überlebt `AND belehrung_id=$3` → `AND $3=$3`
+sämtliche vier vorgesehenen Gegenproben.
+
+**Was das NICHT hergibt:** ein Auftragspapier, ein Lauf je Stufe. Eine
+Beobachtung, keine Regel. **Meine schriftlich vorher festgehaltene Vorhersage
+(„kein grosser Unterschied") war falsch** — das gehört dazu, sonst misst diese
+Datei nur die eigene Zustimmung.
+
+**Was daraus folgt:** nicht „max ist besser". Sondern: beide zusammen kosteten
+2,00 $ und lieferten fünf eigenständige Befunde; jede Stufe allein hätte vier
+bzw. drei geliefert. Der billigste Weg zu allen fünf war, beide zu fahren.
+
+## 19.09.2026 — Kreuzverhör-Pilot (beide Spuren, je gegen die Befunde der anderen)
+
+Zweck: messen, ob die Widerlegungsstufe taugt — an Material, dessen Antwort
+ich schon kannte (alle sieben Behauptungen hatte ich selbst als tragend
+nachgemessen).
+
+| Spur | geprüfte Behauptungen | widerlegt | Schwere korrigiert |
+|---|---|---|---|
+| zweite Spur gegen `max` | 4 | 0 | 1 |
+| `sol` gegen `xhigh` | 3 | 0 | 1 |
+
+**0 von 7 widerlegt.** Beide Spuren stuften unabhängig voneinander DIESELBE
+Behauptung von „hoch" auf „mittel" zurück (K2 sei eine Lücke des
+Prüfverfahrens, kein Produktionsfehler) — dem habe ich zugestimmt.
+
+Zusätzlich geliefert: eine erkenntnistheoretische Einschränkung, die ich selbst
+nicht gemacht hatte, und zwei neue Tatsachen, beide von mir nachgemessen und
+beide zutreffend (`/api/offen` zählt ohne Dokumentversion; die Tinten-Prüfung
+existiert nur im Browser).
+
+**Urteil: das Kreuzverhör erhöht die Präzision, senkt aber die Messlast NICHT.**
+Deshalb steht es in der CLAUDE.md als beratend und ausdrücklich nicht als Gate —
+gestützt zusätzlich auf eine externe Messung, nach der automatische Filter in
+genau unseren Fehlerklassen bis zu drei Viertel der echten Befunde verwerfen.

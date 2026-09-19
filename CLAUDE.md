@@ -1021,6 +1021,64 @@ an der es am ehesten vergessen wird — ohne `core/db.js` und die Migration
 kann niemand beurteilen, ob eine Abfrage `studio_id` trägt, und das ist
 Punkt 1 der Prüfreihenfolge.
 
+### Kreuzverhör der Prüfspuren — BERATEND, niemals gattend (19.09.2026)
+
+Betreiber-Auftrag „nutze die beiden KI bestmöglich". Das Verfahren ist: jede
+Spur bekommt die Befunde der ANDEREN und soll sie WIDERLEGEN. Was dabei
+herauskommt, ist eine Empfehlung — **kein Befund wird verworfen, weil ein
+Widerleger das sagt.**
+
+**Warum nicht gattend, gemessen von aussen:** Eine Vergleichsstudie zu
+LLM-Agenten als Fehlalarm-Filter (arXiv 2601.22952) misst, dass der beste
+Aufbau die Fehlalarmquote von 98,3 % auf 6,3 % senkt — und dabei **22,25 % der
+ECHTEN Schwachstellen mit wegwirft.** Die Quote hängt scharf an der Klasse:
+Datenfluss-Fehler (SQL-Injection, XSS, Command-Injection) 0,4–2,4 % falsch
+verworfen, aber schwache Kryptografie 77 %, schwaches Hashing 84,5 %,
+**Trust Boundary 77 %**, Secure Cookie 50 %. Die Autoren empfehlen
+ausdrücklich: *nicht* für unbedingte automatische Unterdrückung, sondern als
+Entscheidungshilfe.
+
+**Unsere Befunde liegen fast alle in der teuren Hälfte.** Der Blank-PNG-Fund
+vom 19.09.2026 IST ein Trust-Boundary-Fehler (clientseitige Prüfung,
+serverseitig nicht erzwungen). Ein automatischer Filter hätte davon statistisch
+drei von vier verworfen.
+
+**Am eigenen Bestand gemessen (19.09.2026, Pilot):** Zwei Kreuzverhöre über
+sieben Behauptungen — **0 widerlegt**. Es hat also NICHTS gefiltert und damit
+die Messlast nicht gesenkt. Was es geleistet hat: zwei Schweren korrigiert
+(beide Spuren unabhängig dieselbe, von „hoch" auf „mittel"), eine
+erkenntnistheoretische Einschränkung ergänzt, die ich selbst nicht gemacht
+hatte, und zwei neue prüfbare Tatsachen beigesteuert, die sich beim Nachmessen
+bestätigten.
+
+**Was das heisst:** Das Kreuzverhör erhöht die PRÄZISION der Befunde, es
+verkleinert nicht die Arbeit. Wer es als Filter einsetzt, spart nichts und
+verliert Befunde.
+
+### Wie die Praxis es nennt (19.09.2026, recherchiert)
+
+Unsere Verfahren haben Fachnamen; sie zu kennen macht Befunde auffindbar:
+
+* **Gegenproben = Mutation Testing.** Werkzeug dafür: Stryker, mit
+  `@stryker-mutator/command-runner` auch für Projekte ohne Jest. Erste
+  Messung am eigenen Bestand: `plaene/mutation-testing-messung-19-09-2026.md`.
+  Kurzfassung: brauchbar für kleine Logikmodule, **unverträglich mit unseren
+  quelltextlesenden Wächtern** (Stryker instrumentiert die Quelle, die Wächter
+  lesen sie und schlagen an), und die meisten Überlebenden sind äquivalent.
+  Nicht als CI-Gate.
+* **„Einmal-Zustand vor fehlbarem Schritt verbraucht" = kompensierende
+  Transaktion / Saga.** Das Lehrbuchmittel sind **Idempotenzschlüssel und
+  Generationsnummern** — genau das, was beide Prüfspuren am 19.09.2026
+  unabhängig voneinander vorgeschlagen haben, ohne dass es ihnen jemand sagte.
+* **„Clientseitig geprüft, serverseitig nicht erzwungen" = Trust Boundary**
+  (CWE-501/602). Siehe die Miss-Raten oben — das ist ausgerechnet die Klasse,
+  bei der automatische Filter am meisten wegwerfen.
+
+**Eine Praxis-Warnung aus derselben Recherche:** HackerOne hat im März 2026 das
+Internet Bug Bounty pausiert, weil KI-verstärkte Meldungsmengen die Triage
+überrannten. Der Engpass ist das PRÜFEN, nicht das Finden — dieselbe Messung,
+die wir intern seit dem 12.09.2026 führen.
+
 ## Kosten
 
 Delegation hat Fixkosten (Auftrag formulieren, Einlesen, Bericht, Prüfung) —
