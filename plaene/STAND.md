@@ -1,4 +1,4 @@
-# Stand — 19.09.2026, ~20:35 UTC
+# Stand — 19.09.2026, ~20:45 UTC
 
 Diese Datei ist der Übergabepunkt. Der Takt-Prompt ist beim Bau von
 Beitrag 1 stehengeblieben. **Hier steht, was wirklich gilt.**
@@ -64,19 +64,18 @@ Punkt 4 ist die Lehre des Tages: Die Upload-Spur war sachlich richtig (sie
 hat ein echtes Informationsleck gefunden), aber sie ist ohne Entscheidung an
 das Programm vorbeigewachsen, und gemerkt hat es der Betreiber, nicht ich.
 
-## LÄUFT GERADE (19.09.2026, ~20:35 UTC) — nicht anfassen
+## LÄUFT GERADE (19.09.2026, ~20:45 UTC) — nicht anfassen
 
-| Was | Zweig | Stand |
-|---|---|---|
-| **CI für PR #461 (ID-Wache)** | `claude/id-wache`, Kopf `eade9c9` | vier Jobs laufen; Isolationstests dauern ~9 min |
+| Was | Stand |
+|---|---|
+| **Deploy nach dem Merge von #461** (master `5a194ba`) | wartet auf die master-CI, danach `deploy.yml` per `workflow_run` |
 
-**Kein Executer, kein Gegenleser.** Alle vier Arbeitsbäume sauber (gemessen
-20:30 UTC). Der Zweig liegt NICHT hinter master.
+**Kein Executer, kein Gegenleser, keine Suite.** Alle vier Arbeitsbäume
+sauber. PR #461 ist gemergt (Squash, eigene Botschaft ohne Modellnamen,
+zurückgelesen — sie endet genau an `-- Ende der Botschaft --`).
 
-**Vor dem Merge noch zu tun:** Review-Bot-KOMMENTARE lesen (nicht nur den
-Check), `head_sha` des grünen Laufs gegen den Zweigkopf halten, Squash mit
-EIGENER Botschaft (die drei Branch-Commits tragen Modellnamen-Trailer),
-danach Deploy-Lauf mit dem richtigen `head_sha` und `tools/live-check.sh`.
+**Noch zu tun:** Deploy-Lauf mit dem RICHTIGEN `head_sha` auf `success`
+prüfen, dann `bash tools/live-check.sh`.
 
 ## Der Gegenleser ist wieder erreichbar (18.09.2026, ~20:20 UTC)
 
@@ -5361,3 +5360,58 @@ einen Befund MELDET, ist mehr wert als einer, der immer liefert.
    den aktuellen Kopf, dann Merge.
 5. Nach dem Merge: Deploy-Lauf mit dem richtigen `head_sha` und
    `tools/live-check.sh`.
+
+---
+
+## 19.09.2026, ~20:45 UTC — ID-Wache gemergt (#461, master `5a194ba`)
+
+Erster gebauter Beitrag aus dem risikoorientierten Durchgang. Vom Befund bis
+zum Merge:
+
+| Schritt | Ergebnis |
+|---|---|
+| Bündel 1 | 11 Befunde, 9 getragen |
+| Planprüfung, drei Runden | 63 Befunde, **63 getragen**, 20 blockierend, 42,81 $ |
+| Bau | drei Commits, zwölf Eintrittspunkte |
+| Diffprüfung, zwei Spuren | 17 Befunde, 12 getragen |
+| Eigene Abnahme | Suite EXIT 0 / 0 FAIL, 342 = 342, Lint EXIT 0, Marker 6 |
+| CI | vier Jobs, alle `success` auf `eade9c9` |
+
+### Was dieser Beitrag über die Verfahren zeigt
+
+**Der teuerste Fund kostete 0 $ und kam vom AUSFÜHRENDEN.** Beim Gegenmessen
+seiner eigenen Probe fiel ihm auf, dass PostgreSQL 16 `'0x10'` als **16**
+liest statt zu werfen. Selbst nachgemessen am Cluster — es stimmt. Damit
+waren **vier Bestandskommentare seit dem 28.08.2026 falsch**, und der wahre
+Sachverhalt ist schlimmer als der behauptete: `/geraete/loeschen/0x10` hätte
+still Gerät 16 gelöscht statt zu scheitern. Die Tatsache hat jetzt eine
+ausführbare Zusicherung mit Positivkontrolle.
+
+**Der Ausführende hat einem meiner Aufträge WIDERSPROCHEN — und hatte
+recht.** Ich hatte eine int4-Prüfung in `parseIds()` verlangt, aufgebaut auf
+einem Gegenlesungs-Befund, den ich nicht selbst am AUFRUFER gemessen hatte.
+Er hat gemessen: der Aufrufer weist jede nicht gelistete ID mit 400 ab, bevor
+SQL läuft. Selbst bestätigt. Eine zusätzliche Prüfung wäre totes Vorfeld
+gewesen.
+
+**Und er hat einen zwölften Eintrittspunkt GEMELDET statt stillschweigend
+mitgebaut** (`mitarbeiter.js`, `umbenennen` — `req.params.id` ging völlig
+ungeprüft in SELECT und UPDATE). Nachgemessen, aufgenommen, gebaut.
+
+Alle drei sind genau das, was die Hausregel meint: *„einer, der der Vorgabe
+seines Auftraggebers mit einer Messung WIDERSPRICHT, ist das Wertvollste."*
+
+### Als Nächstes
+
+1. **Deploy kontrollieren** (`deploy.yml`, richtiger `head_sha`, `success`),
+   dann `tools/live-check.sh`.
+2. `plaene/auftrag-schreibreihenfolge.md` — liegt fertig, braucht die
+   Planprüfung. **Achtung:** fasst `geraete.js:5485-5503` an. Dazu kommt der
+   neue Fundort U-MA1 (drei Mitarbeiter-Routen melden Erfolg bei null
+   getroffenen Zeilen) — dieselbe Klasse, gehört dort hinein.
+3. `plaene/auftrag-ladebestand.md` — liegt fertig, braucht die Planprüfung.
+4. B1-09/B1-10 (Namensinvariante Seilgeräte) — **noch kein Papier**, braucht
+   vorher die Lock-Ordnungsanalyse.
+5. Die Textfeld-Wache braucht einen neuen Erfassungs-Entwurf (AST statt
+   Muster).
+6. Danach Bündel 2 des Durchgangs (Anmeldung und Rechte).
