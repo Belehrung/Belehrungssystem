@@ -143,6 +143,28 @@ Das blosse Vertauschen tauscht also einen Fehlerfall-Datenverlust gegen ein
 Rennen im NORMALBETRIEB. Genau die Klasse, vor der CLAUDE.md warnt: *„was
 sieht der Benutzer NACHHER, und ist das besser als vorher?"*
 
+**Was der Beweis TRÄGT — selbst nachgemessen:** `belRow.dateiname` wird bei
+`:861` benutzt, um genau diese Datei zu lesen und zu stempeln
+(`fsP.readFile(path.join(UPLOAD_DIR, belRow.dateiname))`). Die Route
+unterschreibt also wirklich das Dokument, das R2 liest — der Beweis redet
+nicht über eine Anzeige, sondern über die signierte Datei.
+
+**Und was er NICHT trägt, damit es niemand später für erledigt hält.** Es
+gibt im Bestand vier Leser von `belehrung_freischaltung`
+(`routes/admin/dashboard.js:71/216/224`, `routes/belehrungen.js:711/794/963`,
+`routes/admin/mitarbeiter.js:883`). Gemessen: **keiner von ihnen liest im
+selben Vorgang auch `dateiname`** — `:709-714` prüft nur `datei_vorhanden=1`.
+Ein dritter Leser, für den `R1 < R2` nicht gälte, existiert also nicht.
+
+Die PDF-Vorschau (`GET /vorschau/:id`, `:726-736`) ist ein **eigener
+Request**, der `dateiname` unabhängig liest. Zwischen „Mensch liest die
+Vorschau" und „Mensch unterschreibt" liegt deshalb ein Fenster, das weder die
+heutige Reihenfolge noch die neue Transaktion schliesst: wird dazwischen eine
+neue Version hochgeladen, hat der Mensch A gesehen und die Route stempelt B.
+**Das ist ein vorbestehender, hier NICHT behobener Punkt** — er fährt nicht
+mit, und dieser Beitrag darf nicht als seine Lösung gelesen werden. Als
+offener Fundort nach `plaene/durchgang-befunde.md`.
+
 #### Behebung: EINE Transaktion, nicht eine andere Reihenfolge
 
     await db.tx(async (t) => {

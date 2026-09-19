@@ -301,3 +301,23 @@ danach unbedingt läuft, behauptet etwas, das nie passiert ist."
 Ausserhalb des Auftrags, deshalb als Fundort geführt. Gehört zu
 `plaene/auftrag-schreibreihenfolge.md`, wo dieselbe Klasse schon zweimal
 vorkommt.
+
+---
+
+## Offene Fundorte aus der Planprüfung zu B1-03/B1-05 (Fassung 2, 19.09.2026)
+
+Beide beim eigenen Nachmessen für `plaene/auftrag-schreibreihenfolge.md`
+gefunden. Beide fahren ausdrücklich **NICHT** mit diesem Beitrag.
+
+| ID | Fundort | Stand |
+|---|---|---|
+| U-DEL1 | `routes/belehrungen.js:2299` — `try { fs.unlinkSync(fp); } catch {}` verschluckt ein fehlgeschlagenes `unlink` vollständig. Nach dem S3-Umbau ist das erlaubter Müll (`datei_vorhanden=0` + Datei bleibt liegen), aber **lautlos**: niemand erfährt, dass die Platte volläuft oder Rechte fehlen. | gemessen. Eine Umstellung auf `melde()` wäre eine zweite Verhaltensänderung (Telegram-Alarm für einen Fall, den derselbe Beitrag gerade als „Müll" einstuft) — eigener Beitrag, eigene Abwägung |
+| U-SIG1 | **Der Mensch liest ein anderes Dokument, als die Route stempelt.** `GET /vorschau/:id` (`routes/belehrungen.js:726-736`) liest `dateiname` in einem EIGENEN Request; der Unterschriftenweg liest ihn erneut bei `:798` und stempelt bei `:861` genau diese Datei. Wird dazwischen eine neue Version hochgeladen, hat der Mensch A gesehen und unterschrieben wird B. | gemessen. **Vorbestehend** — weder die heutige Reihenfolge noch die geplante Transaktion schliesst dieses Fenster. Eine Behebung bräuchte eine Generations- oder Prüfsummenangabe, die der Client vom Vorschau-Request bis zur Unterschrift mitführt — eigener Beitrag |
+
+**Gemessene Negativaussage, die dazugehört** (sonst liest sich U-SIG1 grösser,
+als es ist): Von den sieben Lesern von `belehrung_freischaltung`
+(`routes/admin/dashboard.js:71/216/224`, `routes/belehrungen.js:711/794/963`,
+`routes/admin/mitarbeiter.js:883`) liest **keiner im selben Vorgang auch
+`dateiname`**. Innerhalb EINES Requests gilt die Lesereihenfolge des
+Unterschriftenwegs also ausnahmslos; das Fenster von U-SIG1 liegt ZWISCHEN
+Requests, nicht in einem.
