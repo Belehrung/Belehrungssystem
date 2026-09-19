@@ -105,6 +105,71 @@ nach erfolgreichem UPDATE, bleibt eine verwaiste Datei auf der Platte — das is
 Müll, kein Datenverlust, und der bestehende `catch {}` um `unlinkSync` bleibt
 damit vertretbar.
 
+### S4 — `POST /geraetewartung/geraet/frist-bestaetigen/:id` (`routes/admin/geraete.js:6350`)
+
+**Nachgetragen 19.09.2026** aus B1-05 (SOL-5). Andere Klasse als S1-S3
+(Wettlauf statt Reihenfolge), aber dieselbe Datei und dieselbe Behebungsform —
+deshalb hier statt in einem fünften Papier.
+
+Gemessen:
+
+    const g = await db.one("SELECT kategorie_id, frist_herkunft, frist_festgelegt_am
+                            FROM wartung_geraete WHERE id=$1 AND studio_id=$2");   // :6353, POOL
+    if (g.frist_herkunft === … && !g.frist_festgelegt_am) {                        // :6355
+        await db.run("UPDATE wartung_geraete SET frist_festgelegt_am=$1,
+                      frist_festgelegt_von=$2 WHERE id=$3 AND studio_id=$4");      // :6363
+        await auditAppend(…);                                                       // :6366
+    }
+
+**Kein `db.tx`, keine Sperre, und die `WHERE` trägt KEINE Zustandsbedingung.
+`rowCount` liest niemand.** Zwei parallele Requests lesen beide
+`frist_festgelegt_am IS NULL`, bestehen beide die Prüfung, schreiben beide —
+der zweite überschreibt Datum und Namen des ersten — und hängen **ZWEI**
+Einträge in die gehashte Audit-Kette.
+
+**Der Kommentar darüber (`:6345-6349`) verspricht wörtlich das Gegenteil:**
+„sonst könnte ein zweiter Klick (offener Tab, Doppel-Submit) eine echte, schon
+bestehende Bestätigung stillschweigend überschreiben". Die Zusicherung steht
+im Kommentar, nicht im Code.
+
+**Behebung:** die Zustandsbedingung in die `WHERE`
+(`AND frist_herkunft = $ AND frist_festgelegt_am IS NULL`), `rowCount` lesen,
+und **den `auditAppend` nur bei `rowCount === 1`**. Keine neue Sperre nötig —
+die Zeilensperre des UPDATE plus die Bedingung machen es atomar. Damit
+entfällt auch das `if` davor als alleiniger Schutz.
+
+**Zusicherung Z4** (zusätzlich zu Z1-Z3 oben):
+
+* Zwei parallele Requests → **genau ein** UPDATE wirkt, **genau ein**
+  Audit-Eintrag entsteht, und der gespeicherte Name ist der des ERSTEN.
+* **Beleg, dass es überhaupt zur Überschneidung kam** (sonst ist die Probe
+  grün, wenn die eine Seite zufällig komplett vor der anderen läuft): eine
+  ORDNUNG festhalten — der zweite Request endet nach dem Commit des ersten —,
+  keine Zeitschwelle. Vorbild: `test_feature_geraete_loeschen.js`,
+  Abschnitt (11), roher `pool.connect()`-Client mit `BEGIN` und Advisory-Lock.
+* **Gegenprobe:** die Zustandsbedingung aus der `WHERE` entfernen → Z4 ROT,
+  und zwar am Audit-Zähler (2 statt 1), nicht nur am Statuscode.
+* **Zweite Gegenprobe:** `rowCount` ignorieren und den Audit unbedingt
+  schreiben → ebenfalls ROT. Sonst misst Z4 nur die `WHERE`, nicht die
+  Verdrahtung dahinter.
+
+### Mitfahrer: B1-04 (SOL-4), nur Test
+
+`test_feature_pruefbereich_kopf.js:340-351` liest `MIN(naechste_faelligkeit)`
+aus genau den Zeilen, die die Route geschrieben hat. **Gemessen:** die
+Produktionsmutation `faelligAm: plusMonate(heute, t.intervallMonate)` →
+`faelligAm: heute` lässt den Wächter bei **EXIT 0, 19 PASS / 0 FAIL** —
+identisch zum unmutierten Lauf (Positivkontrolle). Drei weitere Testdateien an
+derselben Route ebenfalls unverändert (7/0, 131/0, 49/0).
+
+**Behebung:** der erwartete Fälligkeitstag wird UNABHÄNGIG vom gespeicherten
+Ergebnis gebildet — festes Testdatum plus eigene Kalendererwartung — und erst
+danach gegen die Kopfzeile gehalten. **Gegenprobe:** dieselbe Mutation muss
+danach ROT werden.
+
+**Grenze dieser Messung, die so im Test stehen bleibt:** die VOLLE Suite lief
+mit der Mutation nicht. „Kein Test irgendwo fängt es" ist NICHT gemessen.
+
 ---
 
 ## 2. Was ausdrücklich NICHT gebaut wird
