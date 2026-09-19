@@ -4072,3 +4072,21 @@ dort ist die Gegenproben-Pflicht im Auftrag verschärft.
 
 **Danach:** volle Suite selbst, Dateizahl-Ritual, Lint wörtlich,
 unabhängige Review, CI. Erst dann der PR.
+
+### Neustart Nummer zwei — Bau-Runde neu gestartet
+
+Der Container ist innerhalb von rund anderthalb Stunden ZWEIMAL neu
+gestartet. Der erste Executer-Anlauf zur Nacharbeit 2 ist dabei gestorben.
+
+**Nichts verloren ausser Laufzeit.** Pflichtprüfung im GymDocu-Baum:
+Marker-Scan **6**, alle in `docs/offene-befunde-31-08-2026.md`;
+`git status` leer; HEAD `4c50659` und **byte-identisch mit `origin`**;
+die fünf `sich-*`-Sicherungen im Scratchpad stammen von der
+Mutationsspur des Vortags, nicht von ihm. Er war also noch vor der ersten
+Änderung. Postgres hat der SessionStart-Hook wieder hochgefahren.
+
+**Angepasst am Auftrag, als Antwort auf die gemessene Umgebung:** der
+Executer committet und pusht jetzt nach JEDEM fertigen Punkt statt einmal
+am Ende. Ein Neustart soll einen Punkt kosten, nicht die ganze Runde.
+Dazu der Marker-Scan VOR jedem Commit, damit bei einem Abbruch mitten in
+einer Gegenprobe nie ein Sabotage-Rest mitgeht.
