@@ -4701,3 +4701,27 @@ serverseitige Signaturprüfung, B2 Verbrauch ans Ende mit Generationsprüfung,
 B3 Aufräum-DELETE nur für ungehashte Zeilen, B4 kanonisches Bild einbetten)
 plus neuer Wächter mit elf Zusicherungen und dreizehn Gegenproben.
 **Solange er läuft, wird in diesem Arbeitsbaum nichts angefasst.**
+
+## 19.09.2026, 08:41 — Takt: Bau läuft, Gesamtdurchgang entschieden
+
+**Betreiber-Entscheidung (wörtlich): „aktuellen Lauf fertig machen und dann
+alles risikoorientiert."** Der Plan dafür liegt als
+`plaene/durchgang-risikoorientiert.md`: 688 Dateien / 17,2 MB ≈ 4,6 Mio Token,
+14 Bündel nach Umkehrbarkeit sortiert, sechs feste Fragen je Bündel, zwei
+Spuren. **Startbedingung ist der Merge UND die Auslieferung des laufenden
+Beitrags** — vorher wird damit nicht angefangen.
+
+Vor Bündel 1 steht ein eigener Bauauftrag: `tools/gegenleser-repo.js` setzt
+`store: false` NICHT (gemessen 18.09.2026). Bei einem Durchgang dieser Grösse
+bliebe sonst der halbe Quelltext des Repos auf fremden Servern liegen.
+
+Zwei Zahlen in der CLAUDE.md berichtigt: dort standen 502 Dateien / 11,96 MB
+(nachgezählt 688 / 17,2 MB), und das Verhältnis Bytes→Token steht jetzt als
+Messung (3,71, aus dem Bündel vom 19.09.) statt als Faustregel.
+
+**Der Executer arbeitet noch** in `/home/user/gymdocu`, Zweig
+`claude/freischaltung-verbrauch-rueckgabe`. Gepusht sind bereits B2, B3, B4,
+der Wächter und eine Nachbesserung am Wächter; eine Datei ist noch
+uncommittet. Nach der Taktregel wird in diesem Arbeitsbaum nichts angefasst,
+bis seine Benachrichtigung da ist — auch nicht lesend messen. Danach:
+vollständiges Prüf-Ritual, und erst dann eine Meldung mit Link.
