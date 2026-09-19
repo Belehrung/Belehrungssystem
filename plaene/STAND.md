@@ -4414,3 +4414,42 @@ Nach der Vorrangregel des Takt-Prompts selbst gilt die CLAUDE.md, und der
 Prompt-Text gehört nachgezogen. Ich ändere ihn nicht selbst: er ist die
 Vorgabe des Betreibers, nicht meine. Er steht hier, damit die Zahl nicht beim
 nächsten Lauf als Befund verbucht wird, der keiner ist.
+
+## 19.09.2026, 05:40 — GEMERGT
+
+Der Mandantengrenzen-Beitrag ist auf `master`. Squash-Commit `6ee7b15`,
+20 Commits, 7 Dateien, 1748+/22−. Botschaft zurückgelesen: sie endet genau an
+`-- Ende der Botschaft --`, kein Markup hineingeraten.
+
+**Mein eigener Prüfgang vor dem Merge, alles selbst gemessen:**
+
+| | |
+|---|---|
+| volle Suite | `SUITE_EXIT=0`, null Kreuze, die Datei 191/0 |
+| Dateizahl-Ritual | 338 = 338, `diff` EXIT 0 (breites Sieb) |
+| `npm run lint` | EXIT 0, keine Ausgabe |
+| Marker-Scan | keine Nicht-Prosa-Treffer |
+| `git status` | leer, Zweig nicht hinter master |
+| Bot-Kommentare | ein Thread, erledigt und überholt |
+| CI | fünf Checks `success` auf `e7a0aea` |
+
+**Zwei Gegenproben als Stichprobe selbst nachgemessen**, nicht dem Bericht
+geglaubt:
+
+* **H2b** (`const maC = maB;`) → `190 PASS / 1 FAIL`, wörtlich
+  „Länge 6 (soll 6), Menge 5, Duplikate: maB=maC=25". Genau der Fall, den
+  meine erste Auftragsfassung durchgelassen hätte und den die Planprüfung
+  gefunden hat.
+* **H4** (Kollision auf einem NICHT geprüften Paar) → `190 PASS / 1 FAIL`,
+  **F6-1 bleibt GRÜN**, die Ausgabe zeigt die Kollision wörtlich mit
+  `etageA 28` und `belA 28`. Das grüne Teilergebnis IST hier der Beleg: die
+  Einschränkung ist wirksam, nicht bloss behauptet.
+
+**Fixturlage nach der Änderung, im vollen Lauf gemessen:** studios
+500193–195, etagen 15–17, mitarbeiter 168–173, belehrungen **175–177**
+(vorher 41–43). Der Abstand `mitarbeiter ↔ belehrungen` ist damit nur noch 2 —
+und das ist richtig so: er wird seit F6-2 **konstruktiv erzwungen**
+(`belA > grösste Mitarbeiter-ID`), nicht mehr über einen Abstand gehofft.
+Ein kleiner Abstand aus Konstruktion ist sicherer als ein grosser aus Zufall.
+
+**Offen: Deploy-Lauf und `tools/live-check.sh`.**
