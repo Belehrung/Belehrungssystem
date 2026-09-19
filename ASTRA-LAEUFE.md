@@ -1862,11 +1862,40 @@ plus der IST-Zustand — `routes/belehrungen.js`, `core/db.js`,
 Auszüge (Geschwisterstellen). **Bündel GEZÄHLT statt geschätzt:
 127.232 Token** über `POST /v1/responses/input_tokens`.
 
-| Lauf | Modell | Stufe | Ergebnis | Befunde | getragen | Kosten |
+| Lauf | Modell | Stufe | Ergebnis | Befunde | getragen | Token / Kosten |
 |---|---|---|---|---|---|---|
 | a) abgebrochen | deepseek-v4-pro | — | `finish_reason: "length"` | — | — | 139.138 ein / 16.000 aus |
-| b) Wiederholung | deepseek-v4-pro | — | (läuft) | | | |
-| c) | gpt-5.6-sol | xhigh | (läuft) | | | |
+| b) Wiederholung | deepseek-v4-pro | — | `stop`, 202 s | 4 | **3** | 139.138 ein (139.136 aus dem Cache) / 15.382 aus |
+| c) | gpt-5.6-sol | xhigh | `completed`, 695 s | 7 | **6** | 127.407 ein / 27.730 aus (24.331 davon Denken) ≈ **1,47 $** |
+
+Kosten: für `gpt-5.6-sol` aus der Preistabelle in `tools/gegenleser-repo.js`
+(5,00/30,00 $ je Mio). **Für `deepseek-v4-pro` steht in unserer Tabelle kein
+Preis** — deshalb hier nur Token, keine Zahl in Dollar. Eine Kostenaussage
+gehört auf eine Rechnung, nicht auf eine Schätzung.
+
+**Null Überschneidung zwischen den beiden Spuren — elf Befunde, kein einziger
+doppelt.** Dieselbe Beobachtung wie am 13.09.2026, und diesmal an einem PLAN
+statt an einem Diff. Die Trennung hat eine erkennbare Ursache: Spur (b) las
+vor allem den Plan gegen sich selbst (Schwellen, Beispiele, Formulierungen),
+Spur (c) den Plan gegen den KONTROLLFLUSS des Bestandes (Lesereihenfolge,
+Transaktionsgrenzen, wer welchen Lock nimmt).
+
+**Neun von elf getragen, zwei gefallen** — beide aus Spur (b): das Beispiel
+eines Befundes traf nicht (ein 1×1-schwarzes PNG wird als 100×100 pt Block
+gezeichnet, also gerade nicht unsichtbar), und ein Restrisiko, das schon im
+Papier stand, wurde als neuer Befund gemeldet. Der erste zählt trotzdem
+halb: die SACHE dahinter trug und hat den Entwurf verändert, nur das Beispiel
+war falsch gewählt.
+
+**Was die Läufe am Plan geändert haben** (vorher gebaut wurde nichts):
+ein blockierender Fehler in meiner Lesereihenfolge, der die ganze
+Generationsprüfung wirkungslos gemacht hätte; eine eigene Gegenprobe, die nie
+rot werden konnte; zwei Zusicherungen, die eine Konstante erfüllt hätte; ein
+ungedeckelter Speicherverbrauch; zwei falsche Bestandsbehauptungen von mir;
+ein zusätzlicher ernster Befund für ein eigenes Papier. **Das ist der Beleg
+für die Regel vom 18.09.2026 („der Plan geht raus, BEVOR gebaut wird") an
+einem eigenen Fall** — jeder dieser Punkte hätte sonst eine Bau-Runde
+gekostet.
 
 **Lauf (a) ist ein Abbruch, keine Null.** Alle 16.000 Completion-Token gingen
 ins Nachdenken (`completion_tokens_details.reasoning_tokens: 16000`), für die
