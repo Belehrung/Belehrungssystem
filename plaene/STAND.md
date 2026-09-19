@@ -5310,3 +5310,54 @@ Verklemmungs-Kreis liegt in derselben Gegend.
   Aufstockung laufen bei Beiträgen an Wächtern und Zusicherungen BEIDE
   Gegenleser-Spuren statt abwechselnd. Das hat sich heute ohnehin bewährt —
   in allen drei Runden lieferte jede Spur Befunde, die die andere nicht hatte.
+
+---
+
+## 19.09.2026, ~19:30 UTC — ID-Wache gebaut, ZWÖLFTER Eintrittspunkt gefunden
+
+**Der Executer hat gebaut und gepusht** (`claude/id-wache`, `128732f`). Diff
+vollständig selbst gelesen, Datei für Datei — er ist sauber. Bemerkenswert:
+
+* Die **falsche Mengenaussage in `tablets.js`** („dieselbe Prüfung wie an
+  jeder anderen Stelle im Admin-Bereich", von der Planprüfung als falsch
+  gemessen) ist ERSETZT, nicht mitgeschleppt.
+* Bei den drei GETEILTEN Bindungen hat er für die Verdrahtungs-Gegenprobe ein
+  Schatten-`istGueltigeId` direkt nach dem `require` gesetzt statt eine
+  einzelne Route zu mutieren — **nur so misst die Probe die BINDUNG** statt
+  einer der Routen, die sie benutzen. Richtige Entscheidung, nicht
+  beauftragt.
+* Er hat **seine eigene erste Positivkontrolle als falsch gemeldet und
+  korrigiert** (ein Gerät ohne Mangel nimmt den Rückfallzweig „gewöhnliche
+  Deaktivierung", `ausgemustert_am` bleibt NULL — die Probe prüfte also nicht
+  den Ausmusterungspfad).
+
+### Der zwölfte Eintrittspunkt — gemeldet statt stillschweigend gebaut
+
+`routes/admin/mitarbeiter.js:818`, `POST /mitarbeiter/umbenennen/:id`:
+`req.params.id` geht **vollständig ungeprüft** in `SELECT … WHERE id=$1`
+(`:824`) und `UPDATE … WHERE id=$2` (`:826`) — weder `istGueltigeId` noch
+`isNaN` noch `parseInt`. **Selbst nachgemessen, trägt.** `"1e3"` trifft dort
+22P02, `"99999999999"` trifft 22003 — genau der Alarmweg, den dieser Beitrag
+schliesst.
+
+**Entscheidung: wird mitgebaut.** Ihn auszulassen hiesse, in genau der Datei,
+die dieser Beitrag anfasst, elf von zwölf Eintrittspunkten zu schliessen —
+die Klasse, vor der CLAUDE.md warnt. Der Nachtrag ist beauftragt (eine Zeile
+Produktivcode, ein Testabschnitt, eine Gegenprobe).
+
+**Dass er ihn gemeldet hat, statt ihn mitzunehmen, war richtig** — er stand
+nicht im Auftrag. Das ist der Agent, den die Hausregel meint: einer, der
+einen Befund MELDET, ist mehr wert als einer, der immer liefert.
+
+### Noch NICHT erledigt (Regel 6a: kein Link, bevor das durch ist)
+
+1. **Volle Suite von MIR selbst** — die Zahlen des Executers sind eine
+   Behauptung, bis ich sie gemessen habe. Läuft erst nach dem Nachtrag, sonst
+   zweimal.
+2. Dateizahl-Ritual und `npm run lint` selbst.
+3. **Vier Augen**: unabhängige Review über den Diff UND eine Gegenlesung —
+   sieben Produktivdateien sind kein trivialer Diff.
+4. PR, Review-Bot-KOMMENTARE lesen (nicht nur seinen Check), CI grün gegen
+   den aktuellen Kopf, dann Merge.
+5. Nach dem Merge: Deploy-Lauf mit dem richtigen `head_sha` und
+   `tools/live-check.sh`.
