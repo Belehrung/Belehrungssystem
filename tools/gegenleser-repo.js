@@ -1672,10 +1672,14 @@ async function selbsttest() {
     // GP10x1, B8-Ende-zu-Ende x1) = 99, dazu 5 neue Faelle aus der
     // Nacharbeit vom selben Tag (Gegenlesung des Streaming-Umbaus, sechs
     // Befunde N1-N6): GP6Bx1 (N2), GP7Ex1 (N1), N6x2 (Ereignis nach
-    // Abschluss + Positivkontrolle), GP10-Metadatenwerte x1 (N5) = 104.
-    // Von Hand hergeleitet, nicht aus dem Lauf abgeschrieben -- unten durch
-    // den tatsaechlichen Lauf bestaetigt.
-    const ERWARTETE_FAELLE = 104;
+    // Abschluss + Positivkontrolle), GP10-Metadatenwerte x1 (N5) = 104,
+    // dazu EIN Nachtrag aus dem Pruefgang ueber diese Nacharbeit:
+    // Positivkontrolle x1 (belegt, dass process.on('multipleResolves')
+    // in dieser Node-Version noch feuert -- DEP0160, ohne diesen Beleg
+    // waere GP7D/GP7E mehrdeutig) = 105. Von Hand hergeleitet, nicht aus
+    // dem Lauf abgeschrieben -- unten durch den tatsaechlichen Lauf
+    // bestaetigt.
+    const ERWARTETE_FAELLE = 105;
     let gelaufen = 0;
     let fehler = 0;
     const pruefen = (bezeichnung, bedingung) => {
@@ -2754,6 +2758,28 @@ async function selbsttest() {
             https.request = alterHttpsRequestGp7;
             pruefen(`GP7C PARTIELL + close OHNE end LEHNT KONTROLLIERT AB (78) (${ergC.art}${ergC.fehler ? ' - ' + ergC.fehler.message : ''})`,
                 ergC.art === 'abgelehnt');
+
+            // Nachtrag zur Pruefung (19.09.2026): process.on('multipleResolves')
+            // ist von NODE SELBST als DEPRECATED gekennzeichnet (DEP0160,
+            // gemessen auf v22.22.2: eine DeprecationWarning erscheint beim
+            // ERSTEN tatsaechlichen Feuern). Es feuert heute noch -- aber
+            // entfernt eine kuenftige Node-Version das Ereignis, bleibt der
+            // Zaehler in GP7D/GP7E stumm auf 0, und "0" ist dann nicht mehr
+            // von "der Riegel wirkt" zu unterscheiden -- dieselbe Klasse
+            // Zusicherung, die dieser Beitrag beseitigen soll, nur eine
+            // Ebene tiefer. Diese Positivkontrolle belegt VOR GP7D/GP7E, dass
+            // der Zaehlmechanismus in DIESER Node-Version lebt: eine
+            // Wegwerf-Promise wird absichtlich ZWEIMAL geloest, der Zaehler
+            // MUSS genau 1 zeigen. Faellt sie, sind GP7D/GP7E ab sofort
+            // wertlos -- das soll LAUT auffallen, nicht still gruen bleiben.
+            let mehrfacheAufloesungenPositivkontrolle = 0;
+            const mrHandlerPositivkontrolle = () => { mehrfacheAufloesungenPositivkontrolle++; };
+            process.on('multipleResolves', mrHandlerPositivkontrolle);
+            new Promise((erf, abl) => { erf('x'); abl(new Error('y')); }).catch(() => {});
+            await new Promise((r) => setTimeout(r, 10));
+            process.off('multipleResolves', mrHandlerPositivkontrolle);
+            pruefen(`POSITIVKONTROLLE: process.on('multipleResolves') FEUERT NOCH IN DIESER NODE-VERSION (91) (DEP0160 -- ohne diesen Beleg ist "0 zusaetzliche Settle-Versuche" in GP7D/GP7E mehrdeutig zwischen "Riegel wirkt" und "Ereignis gibt es nicht mehr": Zaehler=${mehrfacheAufloesungenPositivkontrolle})`,
+                mehrfacheAufloesungenPositivkontrolle === 1);
 
             // N1 (Gegenlesung 19.09.2026): der ENDZUSTAND der Promise kann
             // einen von zwei Settle-VERSUCHEN nicht unterscheiden -- eine
