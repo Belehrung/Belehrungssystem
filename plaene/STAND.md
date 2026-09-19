@@ -4264,3 +4264,46 @@ frischen DB zeigte 13 Kreuze statt 8.
 mehrfach übergangen wurde — **VOR** dem Bauen zur Planprüfung; parallel läuft
 die Code-Gegenlesung des F4-Diffs auf der zweiten Spur. Bündel gezählt statt
 geschätzt: 67.489 bzw. 125.851 Token.
+
+## 19.09.2026, 04:05 — F5 Fassung 2 im Bau (Takt: Agent läuft, nur Stand)
+
+**Zwei Prüfspuren mit VERSCHIEDENEN Aufträgen gefahren** — Planprüfung des
+Auftragspapiers (sol, `xhigh`) und Code-Gegenlesung des F4-Diffs (zweite Spur).
+Zahlen und Einzelurteile stehen in `ASTRA-LAEUFE.md`. **Sieben Befunde, fünf
+nach eigener Nachmessung getragen.**
+
+Die Verteilung ist das Bemerkenswerte: **alle drei tragenden Planbefunde
+richten sich gegen mein eigenes Auftragspapier**, keiner gegen Code —
+unbewachte Untergrenzen, ein Löschschritt ohne jeden Nachweis, und ein
+Widerspruch, durch den `MINDEST_PRUEFUNGEN` vor dem Lauf gar nicht herleitbar
+war. Genau dafür ist die Planprüfung da, und genau sie ist bei den letzten
+Härtungsrunden übersprungen worden.
+
+Die zwei Code-Befunde sind beide selbst nachgemessen und beide gegen Wächter
+gerichtet, die in dieser Runde erst gebaut wurden:
+
+| Befund | eigene Messung |
+|---|---|
+| `const requireAdmin = require('./core/auth')` — Modulobjekt statt Middleware | **`EXIT 0, 188 PASS / 0 FAIL`**, alle drei Identitäts-Zusicherungen grün |
+| F4-N5 kann bei kaputtem Syntaxbaum nicht rot werden | beide Zeilen grün bei `EXIT 1, 177/5` |
+
+**Fassung 2** (`feadcce`) ersetzt Fassung 1 vollständig: F5-1 bis F5-5,
+Gegenproben G1 bis G6, drei neue Zusicherungen, `MINDEST_PRUEFUNGEN` auf 191.
+Der Ausführende baut sie mit Commit-und-Push nach jedem Punkt.
+
+**Ausdrücklich NICHT gebaut** und im Papier begründet: die von BEIDEN Spuren
+gemeldete `studio_id`-lose Zeitabfrage. Sie hat keine `FROM`-Klausel, liest
+keine Tabelle und kann nichts über eine Mandantengrenze hinweg lesen; beide
+vorgeschlagenen Behebungen hätten die Lage verschlechtert. Zwei unabhängige
+Spuren mit demselben Fehlalarm deuten auf die REGELFORMULIERUNG, nicht auf den
+Code — ob „jede Abfrage trägt `studio_id`" eine ausdrückliche Ausnahme für
+Ausdrucksabfragen bekommt, ist eine Betreiber-Entscheidung.
+
+**Eigene Berichtigung am Prüf-Ritual.** Mein Dateizahl-Sieb hat die
+`test/*.sh`-Einträge auf BEIDEN Seiten übersehen — der dokumentierte Fehler
+„derselbe Sieb auf beiden Seiten prüft das Sieb nicht". Mit dem breiteren Sieb
+nachgemessen: **weiterhin 338 = 338, `diff` EXIT 0**, die Log-Seiten sind sogar
+identisch. Positivkontrolle dazu: auf diesem Zweig gibt es **gar keine**
+`test/*.sh`-Einträge in `test/run.sh` (einziger Treffer ist `test/run.sh`
+selbst, das wegfällt). Der blinde Fleck war also leer — das Ergebnis hält aus
+Glück, nicht wegen des Siebs. Ab jetzt das breitere Muster.
