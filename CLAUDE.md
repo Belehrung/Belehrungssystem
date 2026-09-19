@@ -487,30 +487,30 @@ und die **Statusprüfung bei JEDEM Aufruf**. **Und seit 18.09.2026 davor die
 Bündelzählung** über `POST /v1/responses/input_tokens` — gezählt wird, nicht
 geschätzt (Begründung im Abschnitt „Das Maximum herausholen").
 
-**ACHTUNG — `tools/gegenleser-repo.js` SETZT DIESE ZIELKONFIGURATION NICHT UM.**
-Gemessen am 18.09.2026 am Quelltext (`anfragen()`, Zeile ~510): der Request
-enthält **genau vier Felder** — `model`, `input`, `tools`, `max_output_tokens`.
-Es fehlen also `store: false`, `reasoning.effort`, `truncation`, `stream`,
-`text.format` und `metadata`. Das Werkzeug ist vom 13.09.2026, die
-Zielkonfiguration wurde danach geschärft, und niemand hat sie nachgezogen.
+**BERICHTIGT 19.09.2026 — `tools/gegenleser-repo.js` setzt die
+Zielkonfiguration inzwischen TEILWEISE um.** Der Absatz hier behauptete bis
+heute das Gegenteil und war überholt; ich war im Begriff, einen Bauauftrag auf
+dieser falschen Prämisse zu erteilen. Gemessen am Quelltext (`anfragen()`):
+`store: false`, `reasoning.effort` und `truncation: 'disabled'` sind gesetzt
+(Commit `738558a`). Der frühere Befund — der Request trug genau vier Felder —
+galt für den Stand vom 18.09.2026 und ist behoben.
 
-**Der schwerwiegende Teil ist `store`, nicht `effort`.** Gemessen mit
-Gegenprobe in beide Richtungen: ohne das Feld ist eine Antwort hinterher über
-`GET /v1/responses/<id>` **ABRUFBAR** — die Voreinstellung ist `true`, die
-Anfrage wird aufbewahrt; mit `store: false` liefert derselbe Abruf „Response
-with id … not found". **Damit liegt jeder Lauf über dieses Werkzeug auf
-fremden Servern** — und zwar ausgerechnet die materialreichsten, weil der
-Prüfer sich dort selbst Quelltext aus dem Repo holt. Das widerspricht der
-Entscheidung vom 12.09.2026 („`store: false` gewinnt") unmittelbar.
+**Was WIRKLICH noch fehlt, und der erste Punkt ist durch die Behebung
+DRINGENDER geworden:**
 
-Was dabei NICHT verletzt ist: die Datengrenze selbst. Gesendet wird weiterhin
-nur, was `git ls-files` auflistet, und der Geheimnis-Riegel läuft auf jedes
-Funktionsergebnis. Verletzt ist die Regel über das LIEGENLASSEN, nicht die
-über das Senden.
+* **`stream: true` fehlt.** Das Werkzeug setzt ein Zeitlimit von 20 Minuten
+  (`timeout: 20 * 60 * 1000`) — gegen `api.openai.com` schneidet der
+  Egress-Proxy ohne Streaming aber bei **300,3 s** hart ab (gemessen
+  18.09.2026, drei Versuche, alle drei bei 300,3 s). Das Zeitlimit ist damit
+  ein Versprechen, das nie eingelöst werden kann, und mit dem frisch
+  gesetzten `effort: xhigh` werden die Runden LÄNGER. Die Behebung des einen
+  Punktes hat den anderen verschärft.
+* `metadata` und `max_tool_calls` fehlen ebenfalls — beide weniger
+  folgenschwer: das eine macht einen Lauf wiederfindbar, das andere deckelt
+  die Suchschleife.
 
-Bis das Werkzeug nachgezogen ist, gilt: **wer `store: false` braucht, ruft die
-Schnittstelle direkt auf** (Aufrufmuster oben) und verzichtet dafür auf den
-Repo-Lesezugriff — beides zugleich gibt es derzeit nicht.
+Eine Zahl oder Zustandsaussage im Fliesstext veraltet — diese hier hat es
+innerhalb eines Tages getan.
 
 ### Welche Modelle zur Verfügung stehen — gemessen 18.09.2026
 

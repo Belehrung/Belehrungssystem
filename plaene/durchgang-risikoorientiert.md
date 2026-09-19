@@ -137,10 +137,18 @@ Token geführt.
 
 ## 8. Offen, vor Beginn zu klären
 
-* `tools/gegenleser-repo.js` setzt `store: false` NICHT (gemessen 18.09.2026).
-  Für einen Durchgang dieser Grösse gehört das Werkzeug vorher nachgezogen —
-  sonst liegt der halbe Quelltext des Repos auf fremden Servern. Das ist der
-  erste Bauauftrag des Durchgangs, noch vor Bündel 1.
+* **BERICHTIGT 19.09.2026:** hier stand „`tools/gegenleser-repo.js` setzt
+  `store: false` NICHT". Das war beim Schreiben dieses Plans schon überholt —
+  am Quelltext nachgemessen sind `store: false`, `reasoning.effort` und
+  `truncation` gesetzt (Commit `738558a`). Ich hätte auf dieser Prämisse
+  beinahe einen Bauauftrag erteilt.
+  **Der erste Bauauftrag bleibt trotzdem nötig, nur mit anderem Inhalt:**
+  `stream: true` fehlt, und das Werkzeug verspricht ein Zeitlimit von 20
+  Minuten, während der Egress-Proxy gegen `api.openai.com` ohne Streaming bei
+  **300,3 s** hart abschneidet (gemessen 18.09.2026, drei Versuche). Mit dem
+  frisch gesetzten `effort: xhigh` werden die Runden länger — die eine
+  Behebung hat die andere Lücke verschärft. Dazu fehlen `metadata` und
+  `max_tool_calls`.
 * Ob je Bündel zwei VERSCHIEDENE Aufträge mehr bringen als zweimal derselbe,
   ist seit 18.09.2026 als offene Frage notiert und lässt sich hier billig
   mitmessen — an Bündel 1 einmal so, an Bündel 2 einmal anders.
