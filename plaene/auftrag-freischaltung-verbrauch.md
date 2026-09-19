@@ -884,3 +884,58 @@ Spur las vor allem den PLAN gegen sich selbst (Schwellen, Beispiele,
 Formulierungen), die andere den Plan gegen den KONTROLLFLUSS des Bestandes
 (Lesereihenfolge, Transaktionsgrenzen, wer welchen Lock nimmt). Das sind zwei
 Suchverfahren, nicht zwei Meinungen.
+
+---
+
+## Nachtrag — was die AUSFÜHRUNG an diesem Papier berichtigt hat (19.09.2026)
+
+Der Ausführende hat zwei meiner Vorgaben nachgemessen und ihnen widersprochen.
+Beide Gegenproben fielen am Ende wie verlangt, aber über einen ANDEREN
+Mechanismus als hier beschrieben. Das gehört korrigiert, sonst baut die
+nächste Runde darauf auf.
+
+### M17 — K2: „Die Anweisung läuft weiter und liefert einen rowCount" ist falsch
+
+Vorgabe war, `mitarbeiter_id = $2` auf `mitarbeiter_id = -$2` zu mutieren, mit
+der ausdrücklichen Begründung, das sei formerhaltend. Gemessen wirft
+PostgreSQL stattdessen:
+
+    error: operator is not unique: - unknown
+
+Unäres Minus auf einem ungetypten Bind-Parameter ist mehrdeutig; die
+Transaktion bricht ab, die Antwort ist 500. Zusicherung 5 fällt trotzdem —
+aber durch einen Totalausfall, nicht durch einen stillen Nicht-Treffer. Als
+Beleg dafür, dass die Zusicherung den VERBRAUCH bewacht, ist das schwächer als
+gedacht: ein Totalausfall lässt fast jede Zusicherung fallen.
+
+**Für eine Wiederholung:** eine wirklich formerhaltende Mutation braucht einen
+getypten Ausdruck, etwa `mitarbeiter_id = $2::int * -1`, oder besser einen
+Wert, der sicher nicht trifft, ohne den Typ zu verlassen.
+
+### M18 — K5: node-postgres ignoriert überzählige Parameter NICHT
+
+Vorgabe war, `AND freigeschaltet_am = $4` zu streichen und das Bind-Array
+unverändert zu lassen. Gemessen:
+
+    error: bind message supplies 4 parameters, but prepared statement "" requires 3
+
+Auch hier 500 statt des unterstellten stillen Durchlaufens. Zusicherung 8
+fällt korrekt, wieder über den Totalausfall.
+
+**Für eine Wiederholung:** die Bedingung streichen UND den vierten Parameter
+mitentfernen — sonst misst man den Parameterzähler von node-postgres statt der
+Generationsprüfung.
+
+### Was daraus für die Arbeitsweise folgt
+
+Beide Fehler sind dieselbe Klasse und sie ist in der CLAUDE.md schon
+benannt: **wer eine Gegenprobe-METHODE vorgibt, gibt eine Behauptung vor.**
+Ich habe hier zweimal behauptet, wie sich eine Datenbankschicht verhält, ohne
+es zu messen — und beide Male lag ich falsch. Der Ausführende hat es gemessen
+und widersprochen; genau deshalb steht im Auftrag, dass er das tun soll.
+
+**Nicht davon berührt:** beide Zusicherungen sind trotzdem bewacht — K11a
+(`t.run` → `db.run`) trifft Zusicherung 9b isoliert und sauber, und die
+Generationsprüfung hat mit Zusicherung 8 eine eigene, saubere Verhaltensprobe
+über die geänderte Generation. Die beiden Totalausfall-Gegenproben sind
+Zusatz, nicht Grundlage.
