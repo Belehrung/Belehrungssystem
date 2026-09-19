@@ -11,7 +11,8 @@ Sie hätte ausserdem eine Wettlaufsituation VERBREITERT (siehe M4).
 Einordnung der Komplexität: **Standard-Executer** — jede Entscheidung
 (Schwellen, Einbauort, Modulschnitt, Fixtur-Konstanten, Form der Gegenproben)
 ist unten gemessen und festgelegt; was bleibt, ist sorgfältige Ausführung über
-fünf Dateien.
+**sieben Dateien**: neues `core/signaturbild.js`, `routes/belehrungen.js`,
+drei bestehende Fixtur-Tests, der neue Wächter und `test/run.sh`.
 
 ---
 
@@ -314,7 +315,15 @@ sollen nach M8 unverändert grün bleiben. **Melde beide Ergebnisse ausdrücklic
 
 ### B2 — Verbrauch ans Ende, mit Generationsprüfung
 
-1. **Früh lesen** (bei den anderen Nachschlägen, vor dem INSERT):
+1. **Früh lesen — und zwar VOR dem Nachschlag der Belehrung (`belRow`).**
+   Die Reihenfolge ist nicht Geschmack, sie entscheidet (Nachtrag M13): wird
+   `belRow` zuerst gelesen, kann `/neue-version/:id` dazwischenfahren, und wir
+   lesen danach die NEUE Generation, signieren aber das ALTE Dokument und
+   löschen am Ende genau die neue Pflicht. Liest man die Generation ZUERST,
+   hält man im Rennen die ALTE (oder gar keine), das DELETE trifft nichts, und
+   die neue Pflicht überlebt. Der Fehler fällt damit immer auf die sichere
+   Seite: schlimmstenfalls muss noch einmal unterschrieben werden, nie
+   verschwindet eine Pflicht.
 
        SELECT freigeschaltet_am FROM belehrung_freischaltung
         WHERE studio_id = $1 AND mitarbeiter_id = $2 AND belehrung_id = $3
@@ -366,6 +375,39 @@ sollen nach M8 unverändert grün bleiben. **Melde beide Ergebnisse ausdrücklic
 `:898` bekommt `AND signatur_hash IS NULL`. Eine Unterschrift, die ihren Hash
 schon hat (die Transaktion also durch ist), kann der Fehlerpfad danach nicht
 mehr zerstören (M5). Kommentar mit der Begründung daneben.
+
+### B4 — Das GEPRÜFTE Bild einbetten, nicht das eingeschickte
+
+Begründung und Zahlen in M16. Kurz: die Prüfung aus B1 deckelt nur ihre EIGENE
+Pipeline; `pdfDoc.embedPng()` bekäme weiterhin den Originalpuffer und
+dekodiert ihn vollständig. Damit bliebe der teure Verbraucher ungedeckelt, und
+— schlimmer — es prüfte ein anderer Parser als der, der verbraucht (M2 zeigt,
+dass sharp und pdf-lib nicht dieselbe Gültigkeitsmenge haben).
+
+`pruefeSignaturbild()` gibt deshalb zusätzlich einen **kanonisch neu kodierten
+PNG-Puffer** zurück, und die Route übergibt GENAU DIESEN an `embedPng`:
+
+    .resize({ width: 1042, height: 417, fit: 'inside', withoutEnlargement: true })
+    .png({ compressionLevel: 6 }).toBuffer()
+
+**Herleitung der Einbettgrösse, damit sie nicht geraten wirkt:** das PDF
+zeichnet die Unterschrift auf höchstens 250×100 pt. Bei 300 dpi Druckauflösung
+sind das 250·300/72 = 1042 und 100·300/72 = 417 Pixel. Mehr Pixel landen im
+Dokument nie sichtbar.
+
+Gemessen (je EIN eigener Prozess, weil RSS innerhalb eines Prozesses kumulativ
+ist und ein Rückgang sonst gar nicht messbar wäre):
+
+    heute 3900x4000   722 ms  RSS-Zuwachs 182.3 MB
+    neu    407x417    131 ms  RSS-Zuwachs  17.1 MB
+
+Die Tinte bleibt dabei exakt erhalten (am Zeichenmass gemessen: 252 gegen 252
+beim grossen Bild, 76 gegen 76 im Normalfall), und ein normales Bild kostet
+das Neukodieren 12 ms.
+
+**Die Zusicherung dazu:** das im PDF eingebettete Bild hat die Abmessungen des
+KANONISCHEN Puffers, nicht die des eingeschickten. Literal hingeschriebene
+Erwartung, nicht aus dem Produktivcode abgeleitet.
 
 ---
 
@@ -437,9 +479,23 @@ aufruft als die Produktion, prüft einen Zweig, den es in Produktion nicht gibt)
    `freigeschaltet_am` verändert (Neuanforderung nachgestellt) → die
    Freischaltung ÜBERLEBT, und die Unterschrift entsteht trotzdem.
 9. Audit trägt `freischaltung_verbraucht` und `signatur_tinte_px` mit den
-   gemessenen Werten. Baue einen Fall, in dem `freischaltung_verbraucht`
-   NICHT 1 ist (Unterschrift ohne vorhandene Freischaltung), sonst ist eine
-   fest verdrahtete `1` nicht von der Messung zu unterscheiden.
+   gemessenen Werten. **Beide brauchen ZWEI Fälle mit VERSCHIEDENEN Werten**,
+   sonst ist eine fest verdrahtete Konstante nicht von der Messung zu
+   unterscheiden:
+   * `freischaltung_verbraucht`: ein Aufruf MIT vorhandener Freischaltung
+     (erwartet 1) und einer OHNE (erwartet 0).
+   * `signatur_tinte_px`: zwei gültige PNG mit unterschiedlicher, literal
+     hingeschriebener Tintenmenge durch die ECHTE Route.
+   **Den Audit-Eintrag über `studio_id`, Ereignis UND `bezug_id` lesen**, nicht
+   „den letzten Eintrag des Studios" — sonst beschreibt die Zusicherung
+   womöglich einen anderen Aufruf als den gemessenen.
+9b. **Der Verbrauch läuft auf der TRANSAKTIONSVERBINDUNG.** Ein Fall, in dem
+   `auditAppend` NACH dem DELETE und vor dem Commit wirft (Test-Wrapper, nur
+   für einen markierten Aufruf): danach muss die Freischaltung VOLLSTÄNDIG
+   wieder da sein, es darf keine gehashte Unterschrift und keinen
+   Audit-Eintrag geben. Ohne diese Zusicherung bewacht nichts, dass das DELETE
+   überhaupt in der Transaktion liegt — `t.run` durch `db.run` zu ersetzen
+   bliebe sonst unsichtbar (Nachtrag M14).
 10. B3: eine Zeile mit gesetztem `signatur_hash` überlebt den Aufräum-DELETE,
     eine ohne nicht. Beide Richtungen.
 11. Mindestprüfzahl, von Hand aus dem Quelltext hergeleitet, mit
@@ -483,9 +539,36 @@ Erwartung: Zusicherung 8 fällt.
 **K6 — B3 wirkt.** `AND signatur_hash IS NULL` streichen. Erwartung:
 Zusicherung 10 fällt.
 
-**K7 — die Tintenschwelle ist bewacht.** Im Modul `< 250` → `< 256`. Erwartung:
-Zusicherung 1 fällt (alles gilt als unterschrieben). Gegenrichtung: `< 1`,
-Erwartung: Zusicherung 2 fällt.
+**K7 — die Tintenschwelle ist bewacht. NUR mit der Grenzfixtur.** Gemessen
+(M15): mit einem reinen Schwarz-Weiss-Bild ist die Gegenrichtung WIRKUNGSLOS —
+dessen Tintenpixel haben Kanal 0 = 0, also zählen `< 250` und `< 1` dieselben
+24. Deshalb gehört eine eigene Grenzfixtur in den Wächter, deren Kanalwerte
+beiderseits der Grenze liegen; jede Mutation landet dann auf einer ANDEREN
+Zahl:
+
+    Schwelle <256  -> 48 Tintenpixel
+    Schwelle <250  -> 24 Tintenpixel      <- der Sollwert
+    Schwelle <249  -> 16 Tintenpixel
+    Schwelle <1    ->  8 Tintenpixel
+
+    const PNG_GRENZE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAECAYAAAC6Jt6KAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAJklEQVQI12P4+fPnfxAGgV+/foExCDQ0NIAxCDAwMIAxmD34NAAArMyaaVGUpLQAAAAASUVORK5CYII=';
+
+Alle vier Mutationen einzeln fahren und je die Zusicherung über die
+Grenzfixtur rot sehen.
+
+**K11 — der Verbrauch liegt wirklich in der Transaktion.** `await t.run(<DELETE>)`
+→ `await db.run(<DELETE>)`. Erwartung: Zusicherung 9b fällt (die Freischaltung
+ist nach dem erzwungenen Audit-Wurf weg, obwohl nichts committet wurde).
+Zweite Richtung: ein `catch {}` um dasselbe DELETE legen — Erwartung:
+Zusicherung 9b fällt ebenfalls.
+
+**K12 — `signatur_tinte_px` ist gemessen, nicht konstant.** Im Audit-Payload
+`signatur_tinte_px: <gemessen>` → `signatur_tinte_px: <Wert der ersten
+Route-Fixtur>`. Erwartung: Zusicherung 9 fällt an der ZWEITEN Route-Fixtur.
+
+**K13 — das kanonische Bild wird wirklich eingebettet.** In B4 den
+`embedPng`-Aufruf wieder auf den Originalpuffer zeigen lassen. Erwartung: die
+Zusicherung aus B4 fällt.
 
 **K9 — die Zählung ist echt, nicht konstant.** Im Modul die Pixelschleife durch
 eine feste Rückgabe ersetzen (`tintenPixel: <Wert der ersten Fixtur>`).
@@ -514,6 +597,14 @@ aber draussen, damit der Beitrag prüfbar bleibt. Sie bekommen ein eigenes Papie
 * `routes/belehrungen.js` ~1455/1469 — Einweisung: `UPDATE …aktiv=0`, dann
   INSERT, beide Autocommit
 * `routes/belehrungen.js` ~1614/1641 — Ersthelfer: `inaktiv_seit`, dann INSERT
+* **`/neue-version/:id` ist selbst nicht atomar** (Planprüfung, von mir am
+  Quelltext bestätigt): `UPDATE belehrungen SET dateiname` (Autocommit), dann
+  `schalteAlleFrei()` (Autocommit), dann `auditAppend()` (eigene Transaktion).
+  Scheitert einer der späteren Schritte, ist die neue Version bereits aktiv,
+  ohne dass jemand zur Neuunterschrift verpflichtet wäre — und der `catch`
+  führt `fs.unlink(req.file.path)` aus, **obwohl die bereits committete
+  Belehrungszeile genau auf diese Datei zeigt**. Eigener, ernster Befund,
+  eigenes Papier.
 
 Ebenfalls draussen: eine Mindest-Tintenmenge über die Client-Regel hinaus
 (wäre eine geratene Schwelle, siehe M7).
@@ -684,3 +775,112 @@ am Material nachgesehen haben (Autocommit, sharp, Einbauort) — alle drei
 bestätigt, was mit meinen eigenen Messungen M6/M9 übereinstimmt. Der Prüfer
 hat KEINEN der Punkte gemeldet, die ich selbst gefunden habe (M2, M4, M7) —
 er hatte sie aber auch schon im Papier stehen.
+
+---
+
+## Nachtrag — Planprüfung, Spur gpt-5.6-sol xhigh (19.09.2026)
+
+Sieben Befunde, 10 wörtlich benannte Prüfungen, `status: completed`, 24.331
+Denk-Token. **Null Überschneidung mit der DeepSeek-Spur** — dieselbe
+Beobachtung wie am 13.09.2026, und sie ist der ganze Grund, beide zu fahren.
+Alle sieben selbst nachgemessen; **sechs tragen**, einer ist in der Sache
+richtig und im Beispiel falsch.
+
+### M13 — Befund 1 (blockierend): die Generationsprüfung schliesst das Rennen NICHT
+
+Mein Plan las `belRow` VOR `freigeschaltet_am`. Damit bleibt genau der Ablauf
+offen, gegen den die Generationsprüfung antritt: Signaturroute liest die alte
+Datei → `/neue-version` schreibt Datei und neue Generation G1 → Signaturroute
+liest G1, signiert aber die ALTE Datei und löscht am Ende genau G1.
+
+Am Quelltext bestätigt: `routes/belehrungen.js` liest `belRow.dateiname` vor
+allem Weiteren, und `/neue-version/:id` setzt `dateiname` per UPDATE und ruft
+danach `schalteAlleFrei()`, das `freigeschaltet_am = CURRENT_TIMESTAMP` neu
+setzt.
+
+**Behebung: Reihenfolge umdrehen** — Generation zuerst, `belRow` danach. Dann
+hält man im Rennen die ALTE Generation, das DELETE trifft nichts, die neue
+Pflicht überlebt. Im Auftrag als B2.1 festgeschrieben.
+
+**Nicht übernommen** wurde der stärkere Vorschlag (beim DELETE zusätzlich
+prüfen, dass `belehrungen.dateiname` noch der signierte Wert ist). Mit
+richtiger Reihenfolge fällt jedes Rennen ohnehin auf die sichere Seite; die
+zusätzliche Bedingung würde eine Unterschrift SCHEITERN lassen, wo heute nur
+eine Pflicht stehenbleibt. Das ist eine Verhaltensentscheidung, kein
+Fehlerfix, und gehört nicht in denselben Beitrag.
+
+**Ebenfalls zutreffend und übernommen:** dass der Advisory-Lock durch NICHTS
+bewacht ist. Er bleibt als Vorsorge drin, und im Auftrag steht jetzt
+ausdrücklich, dass er KEINE zugesicherte Invariante ist (siehe auch M12).
+
+### M14 — Befund 3: nichts bewacht, dass der Verbrauch in der Transaktion liegt
+
+`await t.run(<DELETE>)` → `await db.run(<DELETE>)` wäre durch keine der elf
+Zusicherungen erkennbar gewesen. `db.run` nimmt den POOL, nicht die
+Transaktionsverbindung (`core/db.js:421-432`) — das DELETE committet dann
+sofort und überlebt einen späteren Fehler. Zusicherung 7 hilft nicht, weil ihr
+PDF-Fehler zeitlich VOR dem neuen Verbrauch liegt.
+
+Übernommen als Zusicherung 9b (erzwungener Wurf aus `auditAppend` nach dem
+DELETE, davor Freischaltung muss vollständig zurück sein) und Gegenprobe K11.
+
+### M15 — Befund 5: meine eigene Gegenprobe K7 war wirkungslos
+
+Gemessen an der Fixtur, die ich selbst vorgegeben hatte:
+
+    Kanal-0-Werte: 0x24  255x104
+    Treffer bei <250: 24 | Treffer bei <1: 24
+
+Die Tintenpixel sind exakt 0, also zählen `< 250` und `< 1` dieselben 24 —
+die Gegenrichtung von K7 hätte nie rot werden können. Genau unsere Klasse
+„Testdaten, die den gesuchten Unterschied gar nicht auslösen können", und ich
+habe sie in derselben Datei vorgegeben, in der sie zweimal beschrieben steht.
+
+Behoben mit einer Grenzfixtur (Kanalwerte 0, 128, 249, 250, 255), bei der jede
+der vier Mutationen auf eine ANDERE Zahl fällt: 48 / 24 / 16 / 8.
+
+### M16 — Befund 6: der Deckel schützt den Speicher nicht
+
+Richtig: B1 deckelt nur seine eigene Pipeline, `embedPng` bekäme weiterhin das
+Original. Gemessen in je einem eigenen Prozess — **182,3 MB gegen 17,1 MB
+RSS-Zuwachs, 722 ms gegen 131 ms** — und übernommen als eigener Beitrag B4.
+Der Vorschlag ist zusätzlich deshalb gut, weil er die von M2 belegte
+Uneinigkeit der beiden Parser auflöst: geprüft und verbraucht wird ab dann
+dieselbe Darstellung.
+
+**Eigene Korrektur am Rande:** meine erste Messung dazu lief in EINEM Prozess
+und zeigte scheinbar MEHR Speicher für die bessere Variante. RSS ist innerhalb
+eines Prozesses kumulativ; ein Rückgang ist so gar nicht messbar. Erst je ein
+eigener Prozess zeigt die Richtung.
+
+### Befund 4: `signatur_tinte_px` mit einer Fixtur nicht bewacht — TRÄGT
+
+Dieselbe Klasse, die die DeepSeek-Spur am MODUL gefunden hat, hier an der
+ROUTE und am Audit-Feld. Beide Spuren fanden also dieselbe Krankheit an
+verschiedenen Stellen — und keine fand die der anderen. Übernommen als
+Zusicherung 9 mit zwei Fällen je Feld, dazu K12. Der Zusatz, den Audit-Eintrag
+über `bezug_id` statt „letzter Eintrag des Studios" zu lesen, ist übernommen.
+
+### Befund 7: zwei Bestandsbehauptungen von mir stimmen nicht — TRÄGT
+
+„über fünf Dateien" sind in Wahrheit sieben; und M8 behauptete eine
+EINZIGKEIT des Einbauorts, die nicht besteht — jede Stelle nach erfolgreichem
+`belRow` lässt die beiden genannten Wächter unverändert. Nach `maRow` ist die
+FRÜHESTE solche Stelle, und das ist der eigentliche Grund. Beides im Auftrag
+berichtigt.
+
+### Befund 2: `/neue-version/:id` ist selbst nicht atomar — TRÄGT, aber ausserhalb
+
+Am Quelltext bestätigt, einschliesslich des `catch`, der die gerade
+hochgeladene Datei löscht, obwohl die committete Belehrungszeile schon auf sie
+zeigt. In die Ausschlussliste aufgenommen — eigener Befund, eigenes Papier.
+Ihn hier mitzunehmen würde den Beitrag unprüfbar machen.
+
+### Was der Lauf über die beiden Spuren sagt
+
+Vier Befunde aus der einen Spur, sieben aus der anderen, **keine einzige
+Überschneidung**. Die Trennung hat auch hier eine erkennbare Ursache: die eine
+Spur las vor allem den PLAN gegen sich selbst (Schwellen, Beispiele,
+Formulierungen), die andere den Plan gegen den KONTROLLFLUSS des Bestandes
+(Lesereihenfolge, Transaktionsgrenzen, wer welchen Lock nimmt). Das sind zwei
+Suchverfahren, nicht zwei Meinungen.
