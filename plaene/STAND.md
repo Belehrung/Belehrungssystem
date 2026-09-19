@@ -1,4 +1,4 @@
-# Stand — 19.09.2026, ~20:45 UTC
+# Stand — 19.09.2026, ~20:50 UTC
 
 Diese Datei ist der Übergabepunkt. Der Takt-Prompt ist beim Bau von
 Beitrag 1 stehengeblieben. **Hier steht, was wirklich gilt.**
@@ -64,18 +64,13 @@ Punkt 4 ist die Lehre des Tages: Die Upload-Spur war sachlich richtig (sie
 hat ein echtes Informationsleck gefunden), aber sie ist ohne Entscheidung an
 das Programm vorbeigewachsen, und gemerkt hat es der Betreiber, nicht ich.
 
-## LÄUFT GERADE (19.09.2026, ~20:45 UTC) — nicht anfassen
+## LÄUFT GERADE (19.09.2026, ~20:50 UTC)
 
-| Was | Stand |
-|---|---|
-| **Deploy nach dem Merge von #461** (master `5a194ba`) | wartet auf die master-CI, danach `deploy.yml` per `workflow_run` |
+**NICHTS.** Kein Executer, kein Gegenleser, keine Suite, keine CI. Alle vier
+Arbeitsbäume sauber. #461 ist gemergt, ausgeliefert und kontrolliert.
 
-**Kein Executer, kein Gegenleser, keine Suite.** Alle vier Arbeitsbäume
-sauber. PR #461 ist gemergt (Squash, eigene Botschaft ohne Modellnamen,
-zurückgelesen — sie endet genau an `-- Ende der Botschaft --`).
-
-**Noch zu tun:** Deploy-Lauf mit dem RICHTIGEN `head_sha` auf `success`
-prüfen, dann `bash tools/live-check.sh`.
+**Der nächste Schritt ist frei wählbar** — die Reihenfolge steht unten unter
+„Als Nächstes".
 
 ## Der Gegenleser ist wieder erreichbar (18.09.2026, ~20:20 UTC)
 
@@ -5415,3 +5410,19 @@ seines Auftraggebers mit einer Messung WIDERSPRICHT, ist das Wertvollste."*
 5. Die Textfeld-Wache braucht einen neuen Erfassungs-Entwurf (AST statt
    Muster).
 6. Danach Bündel 2 des Durchgangs (Anmeldung und Rechte).
+
+### 20:50 UTC — Auslieferung kontrolliert, #461 ist durch
+
+* **Deploy-Lauf 429**, `head_sha 5a194ba` — **derselbe wie der Merge-Commit** —
+  `conclusion: success`.
+* **`tools/live-check.sh` EXIT 0**: Landingpage HTTP 200, Echtheitsprüfung
+  rendert, Studio-Subdomain weist mit 302 ab, Handbuch 2.9.11 ausgeliefert.
+  Zwei Punkte ehrlich als ℹ NICHT GEPRÜFT: die Zertifikatslaufzeit (der
+  Egress-Proxy signiert neu, Aussteller hier `O = Anthropic`) und der
+  interne Health-Endpunkt (von aussen nicht erreichbar; serverseitig prüft
+  ihn `ops/health-gate.sh` bei jedem Deploy).
+
+**Damit ist das Prüf-Ritual für #461 vollständig durchlaufen** — Diff gelesen,
+Beweise gesichtet, zwei unabhängige Spuren über den Diff, eigene volle Suite,
+Dateizahl-Ritual, Lint, Marker-Scan, CI, Merge mit eigener Botschaft
+(zurückgelesen), Deploy mit richtigem `head_sha`, Live-Check.
