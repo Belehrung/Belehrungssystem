@@ -119,6 +119,7 @@ sondern falsch.
 | 18.09.2026 | **PLANPRUEFUNG** Gate-Endungsausnahme, Symbol-XSS, doppelte Dekodierung | Diff 3673 Zeilen, Suchen 62, Lesungen 82, Token rein 2822763, Token raus 22255, Runden 20 | 6 (2 blockierend) | **6** | 0 | 36,95 $ |
 | 18.09.2026 | **PLANPRUEFUNG** Fotoloeschung an Identitaet binden, vor der ersten Bau-Runde | Diff 1748 Zeilen, Suchen 56, Lesungen 66, Token rein 1860326, Token raus 22688, Runden 18 | 6 (1 blockierend) | **6** | 0 | 24,96 $ |
 | 18.09.2026 | **CODEPRUEFUNG** Mandantengrenze M1+M2 vor dem Merge | Diff 926 Zeilen, Suchen 32, Lesungen 44, Token rein 836548, Token raus 22085, Runden 12 | 4 | **4** | 0 | 12,11 $ |
+| 19.09.2026 | diffpruefung-streaming-umbau | Diff 757 Zeilen, Suchen 14, Lesungen 18, Token rein 323750, Token raus 27525, Runden 5 | 6 (2 als blockierend gemeldet) | **6** | 0 (1 Schwere korrigiert) | 2,44 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -2037,3 +2038,52 @@ ist der bisher stärkste Beleg.** Nicht weil die Planfehler teuer waren, sondern
 weil die beiden teuersten Funde gar keine Planfehler sind. Sie lagen im
 Bestand und wären in jeder Bau-Runde unsichtbar geblieben — niemand hätte nach
 ihnen gesucht.
+
+
+### 19.09.2026 — der Lauf, der zugleich sein eigener Prüfstand war
+
+Dieser Lauf lief durch das **frisch umgebaute Werkzeug**, dessen Diff er prüfen
+sollte. Das ist der Beleg, den kein Selbsttest liefern kann: 5 Runden,
+323.750 Token rein, 11 Dateibereiche selbst aus dem Repo gelesen, regulärer
+Bericht, Rundenlimit nicht erreicht. Streaming trägt gegen den echten
+Endpunkt — mit Werkzeugen, über mehrere Runden, mit Repo-Lesezugriff.
+
+**Sechs Befunde, alle sechs nach eigener Nachmessung in der Sache getragen,
+einer mit falscher Schwere.**
+
+**Der teuerste Befund ist eine Ironie:** der Beitrag, der falsch-grüne
+Zusicherungen beseitigen sollte, hat VIER davon ausgeliefert. Je einzeln
+gemessen, jedes Mal **99 Haken / 0 Kreuze, EXIT 0**:
+
+* Den Einmal-Riegel (`if (fertig) return; fertig = true;`) vollständig
+  entfernt — die Zusicherung heisst „LOEST GENAU EINMAL AUF" und kann nicht
+  fallen. Grund: eine native Promise schluckt ein zweites `reject()` lautlos,
+  also unterscheidet der Endzustand niemals einen von zwei Settle-Versuchen.
+* `EFFORT` von `xhigh` auf `low` gesetzt — die Zusicherung prüft
+  `typeof === 'string' && length > 0`, also die FORM statt des WERTES.
+* `GP2_BYTES` wird mit `Buffer.byteLength(gp2Text)` aus genau der Fixtur
+  berechnet, die es bewachen soll. Der Kommentar daneben verrät den
+  Denkfehler selbst: „unabhängiges `Buffer.byteLength`, NICHT der
+  SSE-Parser" — unabhängig vom PARSER ist eben nicht unabhängig von der
+  FIXTUR.
+* GP10 sucht nur nach `--zweck` und dem Brief-DATEINAMEN, nicht nach
+  Brief-INHALT oder Diff. Eine einzeilige Produktionsmutation, die
+  `verlauf[0].content` in `metadata.zweck` kopiert, bliebe grün.
+
+**Die falsche Schwere, und wie sie auffiel:** Befund 1 („`aborted` lässt
+Nicht-200-Antworten hängen", als blockierend gemeldet) beschreibt eine echte
+Asymmetrie im Code — der `aborted`-Listener steht hinter dem frühen `return`
+und gilt nur für HTTP 200. Seine FOLGERUNG trägt aber nicht. Gemessen an
+einem echten lokalen Node-22-Server, der nach einem 400er den Socket
+zerstört: die Ereignisfolge ist **`aborted` → `error` → `close`**, und
+`error` wie `close` sind im Nicht-200-Zweig registriert. In Produktion hängt
+dort nichts.
+Was wirklich dahintersteckt, ist wertvoller als das Gemeldete: **der STUB
+sendet bei `abgebrochen` nur `aborted` und kehrt zurück** — eine Folge, die
+echtes Node nie erzeugt. Die Abbruchfälle prüfen also gegen einen
+Transportzustand, den es nicht gibt. Dieselbe Krankheit wie beim alten
+JSON-Block-Stub, nur eine Ebene feiner.
+
+**Für die Regel:** Der Lauf kostete 2,44 $ — der billigste der ganzen Tabelle
+— und fand vier Zusicherungen, die nicht fallen können. „Der Preis eines
+Laufs sagt nichts über den Ertrag" hat sich damit zum zweiten Mal bestätigt.
