@@ -60,8 +60,25 @@ Scheitert die zweite Aufgabenzeile, bleiben Gerät und erste Aufgabe stehen,
 der Benutzer sieht eine Fehlerseite und legt das Gerät vermutlich erneut an —
 danach steht es doppelt, eines davon mit halber Aufgabenliste.
 
-**Behebung:** `db.tx()` um INSERT und Schleife, `t.one`/`t.run` statt
-`db.one`/`db.run`.
+**Behebung, ZWEI Teile — der zweite ist neu (Kimi-3, selbst nachgemessen):**
+
+1. `db.tx()` um INSERT und Schleife, `t.one`/`t.run` statt `db.one`/`db.run`.
+2. **Der `kat`-SELECT bei `:5540` muss WEG.** Fassung 2 zog die Transaktion nur
+   „um INSERT und Schleife" — danach bleibt bei `:5540` ein blankes `db.one`
+   über den Pool stehen, INNERHALB des äusseren `try` (`:5512-5553`), NACH dem
+   Commit und VOR dem `res.redirect` (`:5551`). **Wirft es, greift der `catch`
+   bei `:5552` und zeigt eine Fehlerseite — während Gerät und Aufgaben bereits
+   angelegt sind.** Das ist wörtlich das Schadensbild, das S1 beseitigen soll;
+   die Transaktionsgrenze war schlicht zu eng gezogen.
+
+   **Die Behebung ist ein Wegfall, kein Zusatz:** `:5458` liest dieselbe Zeile
+   schon (`SELECT id FROM wartung_kategorien WHERE id=$1 AND studio_id=$2`) und
+   ist die Mandantenprüfung. Sie wird auf `SELECT id, name` erweitert, der
+   zweite Aufruf bei `:5540` entfällt ersatzlos, und der Audit nimmt `kat.name`
+   aus der ersten Lesung. Damit ist der fehlbare Schritt nicht verschoben,
+   sondern **verschwunden** — und eine doppelte Abfrage derselben Zeile gleich
+   mit. *(Die beiden heissen im Bestand BEIDE `kat`, der innere verdeckt den
+   äusseren; nach dem Wegfall gibt es nur noch einen.)*
 
 **Der `auditAppend` (`:5541-5549`) bleibt AUSSERHALB der Transaktion.** Zwei
 gemessene Gründe, nicht einer:
@@ -215,11 +232,16 @@ korrekt.
 billigen Ausweg, und derselbe Griff steht 1.200 Zeilen weiter oben in dieser
 Datei bereits im Bestand (`:946`, mit Begründung `:940-945`). Beide
 Transaktionen, die `belehrung_freischaltung` anfassen, nehmen ihn damit in
-DERSELBEN Reihenfolge; ein Kreis entsteht nicht. **Gemessen:** ausser diesen
-beiden gibt es nur zwei weitere Schreiber auf `belehrung_freischaltung`
-(`routes/admin/mitarbeiter.js:883`, `routes/belehrungen.js:2053`), beide
-blanke `db.run` unter Autocommit — sie halten keine Sperre über mehrere
-Anweisungen und können an einem Kreis nicht teilnehmen.
+DERSELBEN Reihenfolge; ein Kreis entsteht nicht. **Gemessen, und die Zählung ist gegenüber Fassung 2
+berichtigt (Kimi-5):** ausser diesen beiden gibt es drei weitere
+SchreibWEGE auf `belehrung_freischaltung` — `routes/admin/mitarbeiter.js:883`,
+`routes/belehrungen.js:2053` und **`:2082`, der zweite Aufrufer von
+`schalteAlleFrei()`** (`/freischalten-alle/:belehrungId`), der denselben
+INSERT bei `:2068` erreicht. Fassung 2 zählte ANWEISUNGEN statt WEGEN und kam
+deshalb auf zwei. **Die Schlussfolgerung bleibt:** alle drei laufen als blanke
+`db.run` unter Autocommit, halten keine Sperre über mehrere Anweisungen und
+können an einem Kreis nicht teilnehmen. Der Satz war trotzdem falsch, und ein
+falscher Satz mit richtigem Schluss bleibt ein falscher Satz.
 
 **`schalteAlleFrei()` bekommt einen optionalen VIERTEN Parameter**
 `conn = null`, benutzt `(conn || db).run` und bleibt für seinen zweiten
@@ -276,7 +298,7 @@ Gemessen:
 
     const row = await db.one("SELECT dateiname FROM belehrungen WHERE …");   // 2287
     if (row && row.dateiname) {
-        const andere = (await db.one("SELECT COUNT(*)::int AS c … "))c;      // 2294-2296
+        const andere = (await db.one("SELECT COUNT(*)::int AS c … ")).c;      // 2294-2296
         if (andere === 0) {
             if (fp.startsWith(UPLOAD_DIR + path.sep)) {
                 try { fs.unlinkSync(fp); } catch {}                          // 2299 LÖSCHT, still
@@ -654,8 +676,15 @@ Die Zusicherung lautet deshalb:
 * Externer Client hält `SELECT … FOR UPDATE` auf die Gerätezeile.
 * Beide Requests starten; über `pg_blocking_pids` wird BELEGT, dass beide
   UPDATEs hinter dieser Zeilensperre warten. Sperre lösen.
-* **Erwartet:** genau **ein** wirksames UPDATE, genau **ein** Audit-Eintrag,
-  gespeicherter Name der des ERSTEN.
+* **Erwartet:** genau **ein** wirksames UPDATE, genau **ein** Audit-Eintrag.
+* **NICHT erwartet: „der Name des ERSTEN“ (Kimi-4).** Fassung 2 verlangte das,
+  und es hängt an einer Ordnung, die PostgreSQL nicht zusichert: wer von zwei
+  Wartenden nach dem Lösen der Sperre zum Zug kommt, ist nicht als FIFO
+  spezifiziert. Eine Zusicherung darauf kann zufällig rot werden — oder, viel
+  schlimmer, eine Ordnung BELEGEN, die es gar nicht gibt. Geprüft wird
+  stattdessen: der gespeicherte Name gehört zu **einem der beiden** Requests,
+  und `frist_festgelegt_am` trägt genau **einen** Wert — der Verlierer hat
+  NICHTS überschrieben. Das ist die Eigenschaft, um die es geht.
 * **Gegenprobe:** die Zustandsbedingung aus der `WHERE` entfernen → Z4a ROT,
   und zwar **am Audit-Zähler (2 statt 1)**, nicht nur am Statuscode.
 
@@ -695,10 +724,22 @@ Z4c besteht deshalb aus ZWEI Teilen:
 
 ### Z4d — S4b: die ID-Wache greift an diesem Eintrittspunkt
 
-`POST …/frist-bestaetigen/0x10` → keine Wirkung auf Gerät 16, Antwort wie an
-den zwölf bestehenden Punkten. **Positivkontrolle:** dieselbe Route mit der
-echten ID wirkt. **Gegenprobe:** die Wache mit `if (false && …)` abhängen →
-genau dieser Ausschnitt ROT.
+`POST …/frist-bestaetigen/0x10` → keine Wirkung auf Gerät 16.
+
+**Die Antwortform wird HIER festgelegt, nicht dem Ausführenden überlassen
+(Kimi-7).** Fassung 2 schrieb „Antwort wie an den zwölf bestehenden Punkten“ —
+gemessen antworten die zwölf aber NICHT einheitlich: `geraete.js:352` gibt
+**400 mit „Ungültige ID.“**, `pin-direkt:748` und `umbenennen:832` geben einen
+**baren Redirect ohne feedback**, `einladen:714` einen **Redirect mit
+`feedback=einladung_fehler`**. Gegen „wie die zwölf“ ist gar nichts prüfbar.
+
+**Festgelegt: `frist-bestaetigen/:id` antwortet wie sein nächster Nachbar in
+derselben Datei** — `400` mit `Ungültige ID.`, wie `geraete.js:352/485/725`.
+Grund: die Route liefert im Erfolgsfall ebenfalls kein feedback, und ein neuer
+Code bräuchte einen Listeneintrag, den es hier nicht gibt.
+
+**Positivkontrolle:** dieselbe Route mit der echten ID wirkt. **Gegenprobe:**
+die Wache mit `if (false && …)` abhängen → genau dieser Ausschnitt ROT.
 
 ### Z5a — S5: keine Erfolgsmeldung ohne getroffene Zeile
 
@@ -925,3 +966,60 @@ fertiger Test mit grünem Lauf.
   PIN-Wege, auch den öffentlichen. **Offener Punkt, Betreiber-Entscheidung.**
 * **U-SIG1** (B1) — eigener Entwurf, s. `plaene/durchgang-befunde.md`.
 * **U-DEL1** — das stille `unlink` bei `:2299`, unverändert.
+
+---
+
+# NACHTRAG 2 — die DRITTE Spur: Kimi K3 (19.09.2026, 22:38 UTC)
+
+**Warum es diesen Lauf gibt:** Der Betreiber hat abends einen Kimi-Schlüssel
+geliefert. Der A/B-Lauf, den ich dafür vorgeschlagen hatte, ist genau dieser:
+**dasselbe Papier, wortgleiches Material, wortgleicher Auftrag** wie die
+DeepSeek-Spur — maschinell verglichen, einziges abweichendes Feld `model`.
+Zwei erzwungene Abweichungen betreffen nur den Transport: `truncation` musste
+raus (Kimi unterstützt es nicht), `stream` dazu (der Egress-Proxy schneidet
+sonst bei 301 s ab — gemessen, der erste Versuch starb genau dort).
+
+**Ergebnis: 7 Befunde, und SECHS davon hatte keine der beiden anderen Spuren.**
+Alle sieben von mir am Quelltext nachgemessen, alle sieben tragen.
+
+| # | Schwere | Befund | Nachgemessen |
+|---|---|---|---|
+| K-1 | blockierend | Z2c in der positiven Richtung undurchführbar | **trägt** — deckungsgleich mit B2/DS-1, die einzige Überschneidung |
+| K-2 | hoch | **S6 widerspricht Z5b:** `throw` bei `rowCount===0` landet im generischen `catch` (`:778-780`) → `res.send(layout)`, KEIN Redirect. Z5b verlangt aber einen Redirect mit `pin_fehler` | **trägt** gegen den eingereichten Stand. Durch den S6-Umbau (B3) bereits gegenstandslos: dort steht `return`, kein `throw` |
+| K-3 | mittel | **S1 schliesst seine eigene Klasse nicht:** der `kat`-SELECT (`:5540`, `db.one` über den Pool) steht NACH dem Commit und VOR dem Redirect, INNERHALB des äusseren `try` | **trägt** — eingearbeitet, der SELECT entfällt ersatzlos |
+| K-4 | mittel | Z4a verlangt „der Name des ERSTEN"; PostgreSQL sichert keine FIFO-Ordnung der Sperrwarteschlange zu | **trägt** — Zusicherung umformuliert |
+| K-5 | niedrig | „zwei weitere Schreiber" zählt ANWEISUNGEN statt WEGEN; `:2082` erreicht denselben INSERT | **trägt** — berichtigt, Schluss bleibt |
+| K-6 | niedrig | Codezitat `"))c;` statt `")).c;` — syntaktisch kaputt | **trägt** — berichtigt |
+| K-7 | niedrig | Z4d („Antwort wie an den zwölf Punkten") ist nicht prüfbar: die zwölf antworten in **drei** verschiedenen Formen | **trägt** — Antwortform jetzt festgelegt |
+
+## Was dieser Lauf zeigt — und was NICHT
+
+**Was er zeigt:** Eine dritte Spur mit demselben Material und demselben
+Auftrag findet ANDERES, nicht MEHR VOM SELBEN. Sechs von sieben Befunden
+hatte weder `gpt-5.6-sol` (mit Repo-Lesezugriff, 21 Runden, 92 Suchen) noch
+`deepseek-v4-pro`. Das ist dieselbe Beobachtung wie am 13.09.2026 —
+verschiedene Sucher finden verschiedene Klassen — jetzt an einem dritten
+Gegenstand.
+
+**Die Klasse, die nur Kimi traf, ist auffällig einheitlich: INNERE
+WIDERSPRÜCHE DES PAPIERS.** K-2 (S6 gegen Z5b), K-3 (S1 gegen seine eigene
+Schadensbeschreibung), K-7 (Z4d gegen den tatsächlichen Bestand), K-5 und K-6
+(Zählung und Zitat gegen den Quelltext). Es hat das Papier gegen SICH SELBST
+gelesen, nicht nur gegen den Code. Sol hat dagegen die UMGEBUNG abgesucht und
+fand dort den Verklemmungskreis (B3), den Kimi nicht hatte — es hatte den
+Quelltext von `mitarbeiter-auth.js` auch nicht im Bündel.
+
+**Was er NICHT zeigt.** Ein Papier, ein Lauf, ein Tag. Der Vergleich ist
+ausserdem NICHT gleichwertig: sol durfte im Repo LESEN und hat 47 Lesungen
+gemacht, Kimi bekam ein festes Bündel und einen Schuss. Dass Kimi mehr NEUE
+Befunde hatte, sagt damit nichts über „besser" — es sagt, dass der dritte
+Sucher eine Klasse abdeckt, die die anderen beiden nicht abdecken. Genau dafür
+ist er da.
+
+**Kosten, gerechnet aus der gemeldeten Nutzung** (44.704 rein, davon 44.544
+aus dem automatischen Präfix-Cache; 26.885 raus, davon 20.183 Denken) und den
+Herstellerpreisen (3,00 / 15,00 $ je Mio, Cache-Treffer 0,30): **rund 0,42 $.**
+Zum Vergleich derselbe Gegenstand: sol **17,42 $** (mit Repo-Zugriff),
+deepseek **~0,05 $**. Die Cache-Treffer stammen aus den beiden abgebrochenen
+Versuchen davor — **der automatische Präfix-Cache ist damit an unserem
+eigenen Material belegt**, nicht nur behauptet.
