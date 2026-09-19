@@ -914,7 +914,8 @@ sie berühren keine gemeinsame Datei.
 
 ## 4. Abnahme
 
-Wie in `plaene/auftrag-id-wache.md`, Abschnitt 4: volle Suite ohne Pipe und
+**Je Beitrag einzeln** (s. Abschnitt 3b) — nicht einmal am Ende für alle
+drei. Wie in `plaene/auftrag-id-wache.md`, Abschnitt 4: volle Suite ohne Pipe und
 ohne äusseres `flock` (`bash test/run.sh > <logdatei> 2>&1; echo
 "SUITE_EXIT=$?"`), Dateizahl-Ritual mit `diff` EXIT 0, `npm run lint`
 **wörtlich gemeldet auch bei Grün**, alle Gegenproben beidseitig, jedes
@@ -930,12 +931,18 @@ das: Upload- und Löschwege laufen gegen ein Wegwerf-Verzeichnis, nicht gegen
 ## 5. Was der Ausführende MELDEN soll, statt es zu lösen
 
 * **Die Haltedauer des Studio-Locks in S2** bei realistischer
-  Mitarbeiterzahl — gemessen, nicht geschätzt.
+  Mitarbeiterzahl — gemessen, nicht geschätzt. *(Nur Beitrag C.)*
 * Findet er eine **siebte** Stelle derselben Klasse in einer dieser drei
   Dateien: melden — meine Liste ist dann unvollständig.
 * Lässt sich ein Fehler für GENAU EINEN der DB-Aufrufe nicht stellen, ohne die
   anderen mitzutreffen: melden. Eine Probe, die alle Aufrufe trifft, misst
-  etwas anderes als Z1/Z2a/Z6.
+  etwas anderes als Z1, Z2a oder Z6a.
+* **Gelingt es nicht, in der Gegenrichtung von Z6b einen echten `40P01` zu
+  erzeugen: MELDEN, nicht die Zusicherung abschwächen.** Entweder ist der
+  Kreis anders als beschrieben — dann ist meine Begründung für den
+  Verzicht auf die Transaktion falsch und S6 gehört neu entschieden — oder
+  die Probe trifft ihn nicht. Beides ist ein Befund, keines ist ein Grund,
+  die Zusicherung weicher zu schreiben.
 * **Widerspricht eine Prämisse dieses Papiers seiner Messung, gilt seine
   Messung.** Fassung 1 hatte vier falsche Tatsachenbehauptungen; die teuerste
   Korrektur des letzten Beitrags kam aus einem Widerspruch des Ausführenden.
@@ -943,6 +950,8 @@ das: Upload- und Löschwege laufen gegen ein Wegwerf-Verzeichnis, nicht gegen
 ---
 
 ## Anhang — was sich gegenüber Fassung 1 geändert hat
+
+*(Runde 2 und 3 stehen in den Nachträgen darunter.)*
 
 | # | Fassung 1 | Fassung 2 | Quelle |
 |---|---|---|---|
