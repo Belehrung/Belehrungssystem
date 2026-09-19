@@ -4585,3 +4585,61 @@ geschrieben werden. Der Blank-PNG-Befund ist scharf nachgemessen und kippt den
 bisherigen Entwurf — die Behebung muss mit der serverseitigen Signaturprüfung
 anfangen, nicht mit der Reihenfolge des Verbrauchs. `sharp` ist bereits direkte
 Abhängigkeit, eine neue Bibliothek im Sicherheitspfad braucht es also nicht.
+
+## 19.09.2026, 07:50 — Auftragspapier neu geschrieben, zehn eigene Messungen
+
+Der Betreiber hat gefragt, ob auf dem Server etwas zu tun ist. **Nein:**
+`master` steht auf `6ee7b15`, das ist genau der Stand aus Deploy-Lauf 427
+(`success`); beide Repos sauber und gepusht, der gymdocu-Zweig noch leer.
+
+`plaene/auftrag-freischaltung-verbrauch.md` ist vollständig ersetzt (`24e05fc`,
+Nachtrag `9804591`). Die alte Fassung fing bei der Reihenfolge des Verbrauchs
+an — falsch herum: eine Behebung, die nur die Reihenfolge richtet, sieht fertig
+aus und lässt das Loch offen.
+
+**Zehn Messungen, alle selbst durchgeführt.** Drei davon haben den Entwurf
+verändert, statt ihn nur zu bestätigen:
+
+* **M2 — die vorhandene Test-Fixtur IST die Angriffsnutzlast.** Chunk-weise
+  nachgemessen: die Konstante `PNG` in drei Testdateien ist ein 1×1-RGBA-PNG,
+  vollständig durchsichtig, mit KAPUTTER IDAT-Prüfsumme (`crc=0x5ef32a3a`,
+  tatsächlich `0xa5f64540`). Die Suite führt den Angriff seit jeher vor und
+  belegt mit einer leeren Signatur den vollen Erfolgspfad. Nebenbefund: sharp
+  (libpng) lehnt sie ab, pdf-lib ignoriert CRCs und nimmt sie — die neue
+  Prüfung ist also strenger als `embedPng`, in der richtigen Richtung.
+* **M4 — das DELETE ans Ende zu ziehen VERBREITERT ein Rennen** mit
+  `schalteAlleFrei()` beim Hochladen einer neuen Dokumentversion. Gegenmittel
+  ist eine Generationsprüfung auf `freigeschaltet_am`. Gemessen, dass
+  Gleichheit dafür trägt und Ordnung nicht: die Spalte wird von zwei Wegen in
+  zwei unvereinbaren Textformaten befüllt (`2026-09-19 09:26:06` gegen
+  `2026-09-19 07:26:06.959074+00`).
+* **M7 — eine PNG-Bombe passt heute in den 1-MB-Rumpf und `embedPng` frisst
+  sie:** 6000×6000 sind 0,11 MB Datei, 1952 ms und **458 MB RSS**. Die Prüfung
+  VOR `embedPng` mit Deckel verkleinert diese vorhandene Angriffsfläche, sie
+  schafft sie nicht. Verkleinern vor dem Zählen ist dabei billiger als ein
+  voller Dekode (108 ms / 101 MB gegen 508 ms / 179 MB) und begrenzt den
+  Aufwand unabhängig von der Eingabegrösse; echte dünne Striche überleben es
+  (ein 40×2-Haken auf 6000×4000: 80 Tintenpixel voll, 24 nach dem Verkleinern).
+
+**M9 — den riskantesten Teil habe ich vorgemessen, statt ihn zu behaupten.**
+Eine Stellvertreter-Prüfung an der geplanten Stelle eingebaut und in beide
+Richtungen gemessen: `identitaet` 5/0 und `messfehler` 46/0 bleiben
+unverändert; `gelesen` fällt auf 12/14 und `version` stürzt ab; mit der inkten
+Fixtur sind beide wieder 26/0 und 17/0, `client_ip` 80/0. Damit ist belegt,
+dass der Fixtur-Tausch die vollständige Gegenmassnahme ist und nicht eine
+Abschwächung der Prüfung. Zurückgenommen aus unabhängigen `cp`-Kopien, `diff`
+EXIT 0 für alle vier Dateien, `git status` leer, Marker-Scan ohne Treffer in
+ausführbarem Code.
+
+**Planprüfung läuft, beide Spuren parallel** (gpt-5.6-sol mit `xhigh`,
+`store:false`, Streaming; deepseek-v4-pro als zweite Lesespur), Bündel
+**gezählt statt geschätzt: 127.232 Token** über
+`POST /v1/responses/input_tokens`.
+
+**Erster Messwert kam aus der Gegenlesung selbst:** DeepSeeks erster Lauf kam
+mit `finish_reason: "length"` zurück — alle 16.000 Completion-Token gingen ins
+Nachdenken, für die Antwort blieb nichts. Genau die Klasse aus der CLAUDE.md
+(„keine Befunde" heisst dann „niemand hat geprüft"). Aufgefallen nur, weil der
+Status bei JEDEM Aufruf geprüft wird. Neustart mit `max_tokens: 64000`; der
+abgebrochene Lauf bekommt in `ASTRA-LAEUFE.md` eine Zeile mit Strichen und
+seine Kosten, keine Null.
