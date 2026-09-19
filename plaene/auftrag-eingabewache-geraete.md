@@ -1,101 +1,164 @@
 # Auftragspapier — Eingabewache: EINE Quelle für ID- und Textfeldprüfung
 
+**FASSUNG 2 (19.09.2026).** Fassung 1 wurde von zwei Planprüfungen mit
+**17 Befunden** zerlegt, alle 17 selbst nachgemessen, alle 17 getragen; vier
+davon blockierend. Die Nachträge unten sind das Protokoll und bleiben stehen.
+**Diese Fassung ersetzt Fassung 1 vollständig** — wer Fassung 1 baut, baut
+vier gemessene Fehler ein.
+
 **Repo:** GymDocu (`/home/user/gymdocu`, Stand `4c4b729`).
-**Herkunft:** Bündel 1 des risikoorientierten Durchgangs, Befunde B1-07 (DS-1)
-und B1-08 (DS-2) aus `plaene/durchgang-befunde.md` — beide selbst nachgemessen.
-**Warum das vorgeht** (STAND.md, Regel 5): Es zahlt auf Punkt 3 des
-Pentest-Programms ein — eine Falscheingabe erzeugt heute HTTP 200 mit
-Fehlerseite bzw. HTTP 500 UND je einen Telegram-Alarm über `intern()`
-bzw. `errorTracker.melde()`; der Alarmkanal ist damit von aussen taktbar.
+**Herkunft:** B1-07 und B1-08 aus `plaene/durchgang-befunde.md`.
+**Warum das vorgeht** (STAND.md, Regel 5): Punkt 3 des Pentest-Programms — eine
+Falscheingabe erzeugt heute HTTP 200 mit Fehlerseite bzw. HTTP 500 und je einen
+Alarm über `intern()` bzw. `errorTracker.melde()`; der Alarmkanal ist damit von
+aussen taktbar.
 
 ---
 
-## 0. Was GEMESSEN ist (nicht vermutet)
+## 0. Was GEMESSEN ist
 
-Alles hier stammt aus eigener Messung am 19.09.2026. Zeilennummern am Stand
-`4c4b729`; **vor dem Bau neu messen** (Hausregel: Zeilennummern veralten).
+Zeilennummern am Stand `4c4b729`. **Vor dem Bau neu messen.**
 
-### 0.1 Die ID-Regel steht an VIER Orten, und keiner ist die Quelle
+### 0.1 Die ID-Regel: drei VERSCHIEDENE Begriffe, nicht eine Regel an vier Orten
 
-| Ort | Form |
+Fassung 1 zählte „vier Orte" und nannte es einen „Zitierring ohne Quelle".
+**Beides war falsch** (S-4, P-7). Gemessen, ausführbare `/^\d+$/`-Vorkommen in
+den betroffenen Dateien:
+
+| Ort | Begriff |
 |---|---|
-| `routes/admin/geraete-typen.js:232` | eigene Funktion `istGueltigeId` |
-| `routes/admin/ausmusterung.js:73` | eigene Funktion `istGueltigeId` |
-| `routes/admin/tablets.js:46` | eigene Funktion `istGueltigeId` |
-| `routes/admin/geraete.js:699` | inline `/^\d+$/.test(String(id))` |
+| `geraete-typen.js:233` | **einzelne URL-ID** (`istGueltigeId`) |
+| `ausmusterung.js:77` | **einzelne URL-ID** (`istGueltigeId`) |
+| `tablets.js:47` | **einzelne URL-ID** (`istGueltigeId`) |
+| `geraete.js:699` | **einzelne URL-ID**, inline |
+| `ausmusterung.js:92` | **ID-SAMMELFELD** (`parseIds`) — andere Funktion |
+| `geraete.js:952` | **int4-Normalisierung** (`normalisiereGeraetId`) — andere Funktion |
 
-Jede der drei Funktionen verweist im Kommentar auf eine der anderen als
-Begründung — ein Zitierring ohne Quelle. Das ist der Fall, vor dem CLAUDE.md
-warnt: „Wer eine doppelte Stelle ‚gleich hält‘, hat sie verdoppelt."
+Vier Orte tragen denselben Begriff, zwei einen anderen. **Und es ist ein Stern,
+kein Ring:** `geraete-typen.js:227-231` trägt die eigene, gemessene Begründung
+(„Befund 11, unabhängige Prüfung 28.08.2026, GEMESSEN"); `ausmusterung.js:73`
+und `tablets.js:46` zeigen beide dorthin.
 
-### 0.2 Zwei Routen derselben Datei sind NICHT nachgezogen
+### 0.2 Die vorhandene ID-Regel ist die SCHWÄCHERE von zweien (S-2, blockierend)
 
-`routes/admin/geraete.js:337` (`POST /geraete/loeschen/:id`) und `:467`
+`istGueltigeId` prüft nur die lexikalische FORM. `"99999999999"` besteht sie
+und wirft danach an der ersten INTEGER-Abfrage 22003 „out of range" — die
+Route antwortet mit ihrer 200-Fehlerseite und ruft `intern()`. **Genau der
+Alarmkanal, mit dem dieses Papier seine Dringlichkeit begründet, bliebe
+offen.**
+
+`normalisiereGeraetId` (`geraete.js:949-955`) hat die richtige Regel bereits:
+Ziffern UND `zahl > 0 && zahl <= 2147483647`, mit einer Begründung im
+Kommentar (`:941-944`), die genau diesen Fall als gemessen behoben nennt.
+
+**Kanonisiert wird die STÄRKERE Regel.**
+
+### 0.3 Zwei Routen sind nicht nachgezogen
+
+`geraete.js:337` (`POST /geraete/loeschen/:id`) und `:467`
 (`POST /geraete/umbenennen/:id`) benutzen weiter `isNaN(id)` und `res.send()`
-OHNE Status. Gemessen:
+ohne Status. Gemessen: `isNaN` ist `false` für `"1e3"`, `"1.5"`, `"0x10"`;
+`/^\d+$/` weist alle drei ab. Der Wert erreicht `t.one()`/`t.run()` für eine
+INTEGER-Spalte, PostgreSQL wirft 22P02, der äussere `catch` antwortet mit
+HTTP 200 und `intern()` alarmiert. Der Kommentar an `:688-696` beschreibt
+genau das — als Nachbesserung vom 17.09.2026, die hier nicht nachgezogen wurde.
 
-    "1e3"  isNaN: false   /^\d+$/: false
-    "1.5"  isNaN: false   /^\d+$/: false
-    "0x10" isNaN: false   /^\d+$/: false
+### 0.4 Die Textregel weist zwei von vier gefährlichen Typen NICHT ab (S-1, blockierend)
 
-Der Wert erreicht damit `t.one()`/`t.run()` für eine INTEGER-Spalte,
-PostgreSQL wirft 22P02, der äussere `catch` antwortet mit der generischen
-Fehlerseite und **HTTP 200**, und `intern()` schickt eine Meldung an den
-Fehlerkanal. Der Kommentar an `:688-696` beschreibt genau das — als
-Nachbesserung vom 17.09.2026, die an den beiden älteren Geschwisterstellen
-derselben Datei nicht nachgezogen wurde.
+`pruefeTextfelder` (`geraete-typen.js:246`) prüft `typeof wert === 'object'`.
+Gemessen:
 
-### 0.3 Eine ZWEITE, ANDERE Klasse — nicht Teil dieses Auftrags
+    typeof 42 === 'object'  ->  false        typeof true === 'object'  ->  false
+    (42).trim()   -> TypeError: 42.trim is not a function
+    (true).trim() -> TypeError: true.trim is not a function
+    String(42) = "42"        String(true) = "true"     (stille Koerzierung)
 
-Fünf weitere Stellen machen `parseInt(x, 10)` VOR der Prüfung:
-`routes/admin/mitarbeiter.js:670,703,736,835` und `routes/tablet-sperre.js:545`.
-Die erreichen SQL NIE mit einem schlechten Wert — sie handeln aber still am
-FALSCHEN Datensatz. Gemessen:
+**Und JSON erreicht diese Routen:** `server.js:162` montiert `express.json()`
+global; `core/csrf-schutz.js` prüft Origin/Referer, **keinen Content-Type**.
+Ein Körper `{"name":42}` kommt also an.
 
-    parseInt("1e3",10)=1   parseInt("2abc",10)=2   parseInt("007",10)=7
-    parseInt("0x10",10)=0  (von !id gefangen)      parseInt("abc",10)=NaN (gefangen)
+**Die kanonische Regel lautet deshalb `typeof wert === 'string'` für
+VORHANDENE Werte.** `null`/`undefined` bleiben erlaubt (Optionalfelder).
 
-`/mitarbeiter/loeschen/2abc` löscht also Mitarbeiter 2. **Das ist ein eigener
-Befund, kein Teil dieser Klasse, und es ist KEIN Rechtegewinn** — alle fünf
-Abfragen tragen `studio_id`, und wer `2abc` schicken kann, kann auch `2`
-schicken. Er wird als Fundort in `plaene/durchgang-befunde.md` geführt und
-SPÄTER eigens gemessen und entschieden. **In diesem Auftrag wird er nicht
-angefasst.**
+### 0.5 `String(...)` ist NICHT der Schutz (S-6, P-5)
 
-### 0.4 Die Textfeld-Regel: `String(...)` schützt, `|| ''` NICHT
+Fassung 1 nannte `geraete-typen.js` „nicht verwundbar, weil String()".
+Gemessen: `String({a:1})` ist `"[object Object]"`, `String(["a","b"])` ist
+`"a,b"` — beides wirft nicht und überlebt jede Leer- und Längenprüfung.
+`String()` verhindert den ABSTURZ, nicht das SCHREIBEN. Die Abweisung kommt
+allein vom `pruefeTextfelder`-AUFRUF (`geraete-typen.js:390`, `:435`).
 
-Gemessen über fünf Dateien: `.trim()`-Aufrufe auf `req.body`-Werte VOR dem
-`try` der jeweiligen Route.
+**Belegt an einer Stelle ohne diesen Aufruf:** `geraete.js:4353`
+(`POST /geraetewartung/spuelplan/stelle/neu`) macht
+`String(req.body.name || '').trim().slice(0,120)`, prüft nur
+`name.length < 2` — und schreibt `"[object Object]"` (16 Zeichen) als Namen in
+`spuel_stellen`. Kein 500, kein Alarm, eine korrupte Zeile.
 
-`server.js:161` fährt `express.urlencoded({ extended: true })`, also `qs` —
-`name[a]=x` liefert ein OBJEKT, `name=a&name=b` ein ARRAY. Beide sind truthy,
-`!wert` fängt sie nicht, und `wert.trim` ist keine Funktion. Express ist
-**5.2.1** (gemessen), reicht die abgelehnte Promise eines `async`-Handlers also
-an den globalen Fehlerbehandler `server.js:1467` durch: `errorTracker.melde()`
-(Log + gedrosselter Telegram-Alarm) und **HTTP 500**.
+Dieselbe Klasse ist im Repo als „Review-Fund U7" bekannt und für
+`routes/admin/qr.js` bereits geschlossen (Kommentar in
+`test/helfer/route-harness.js`).
 
-**Verwundbar** (roher Wert, kein `String()`):
+### 0.6 Die verwundbaren Textfeld-Stellen — vollständige Liste (S-3)
 
-| Datei:Zeile | Route | Bemerkung |
-|---|---|---|
-| `geraete.js:235` | `POST /geraete` | `!name \|\| !name.trim()` |
-| `geraete.js:469-470` | `POST /geraete/umbenennen/:id` | `neuerNameRoh.trim()` |
-| `geraete.js:4981-4982` | `POST /geraetewartung/kategorie/neu` | `name.trim()` nach `if (!name)` |
-| `geraete.js:5030-5031` | `POST /geraetewartung/kategorie/bearbeiten/:id` | **ganz ohne Guard** — ein FEHLENDES `name` wirft schon heute |
-| `geraete.js:5441-5445` | `POST /geraetewartung/geraet/neu` | `name.trim()`, `inventarnummer.trim()`, `notizen` |
+Fassung 1 listete fünf. Mein Zählskript suchte `.trim()` **vor dem ersten
+`try`** — das misst die Position der Fehlerbehandlung, nicht die
+Verwundbarkeit. Vollständig, nach Wirkung getrennt:
 
-**Nicht verwundbar, und der Grund gehört ins Vorbild:**
-`geraete-typen.js:393,394,448,450` wickelt jeden Wert in `String(...)` —
-`String({})` ist `"[object Object]"`, das wirft nicht. Daneben steht dort
-`pruefeTextfelder()` (`:246`), das den Objektfall AUSDRÜCKLICH mit 400
-abweist, damit die Abweisung ehrlich heisst „muss Text sein" statt „Name darf
-nicht leer sein".
+**(a) Wirft VOR dem `try` → HTTP 500 + `errorTracker`-Alarm:**
 
-`routes/admin/mitarbeiter.js:346,347,671,737,808` trägt dieselbe Lücke
-(`(req.body.x || '').trim()` — ein Objekt ist truthy und überlebt das `|| ''`).
-**Auch das ist NICHT Teil dieses Auftrags**, sondern ein gemessener Fundort für
-einen eigenen Beitrag: andere Datei, anderes Rückmeldeverhalten (Redirect
-statt Fehlerseite), und `mitarbeiter.js` enthält harte Löschungen.
+| Ort | Route |
+|---|---|
+| `geraete.js:235` | `POST /geraete` |
+| `geraete.js:469-470` | `POST /geraete/umbenennen/:id` |
+| `geraete.js:4981-4982` | `POST /geraetewartung/kategorie/neu` |
+| `geraete.js:5030-5031` | `POST /geraetewartung/kategorie/bearbeiten/:id` — **ganz ohne Guard**, wirft schon bei FEHLENDEM Feld |
+| `geraete.js:5441-5445` | `POST /geraetewartung/geraet/neu` (Name, Inventarnummer, Notizen) |
+
+**(b) Wirft INNERHALB des `try` → HTTP 200 „Datenbankfehler" + `intern()`:**
+
+| Ort | Besonderheit |
+|---|---|
+| `geraete.js:5490-5492` | `(monteur_name\|\|'').trim()` und zwei Geschwister, in der INSERT-Argumentliste |
+| `geraete.js:5496` | `aufgaben.trim()` — **NACH dem `INSERT … RETURNING id` in `:5485`**: das halb angelegte Gerät bleibt in der DB |
+| `POST /geraetewartung/geraet/bearbeiten/:id` | weitere rohe Trims (vor dem Bau einzeln auszählen) |
+
+**(c) Schreibt STILL einen koerzierten Wert, ohne Fehler:**
+
+| Ort | Wirkung |
+|---|---|
+| `geraete.js:4353` | `"[object Object]"` landet als `spuel_stellen.name` |
+| `geraete.js:708` | vorhandene `typeof`-Wache — die EINZIGE in dieser Datei, s. 1.4 |
+
+**`geraete.js:5496` überschneidet sich mit B1-03 (SOL-3)**, dem
+Transaktionsbefund im selben Handler. Beide Papiere fassen dieselbe Zeile an;
+**wer zuerst baut, nennt es dem anderen.**
+
+### 0.7 Zwei GEMESSENE Fundorte, die NICHT hier gebaut werden
+
+**Die `parseInt`-Klasse.** Fünf Stellen (`mitarbeiter.js:670,703,736,835`,
+`tablet-sperre.js:545`) machen `parseInt(x,10)` VOR der Prüfung. Gemessen:
+`parseInt("2abc",10)=2`, `parseInt("007",10)=7`, `parseInt("1e3",10)=1`;
+`"0x10"` und `"abc"` werden von `!id` gefangen. Sie erreichen SQL nie mit
+einem schlechten Wert, handeln aber still am FALSCHEN Datensatz.
+
+**Kein Rechtegewinn — und das ist jetzt gemessen, nicht behauptet** (S-8/P-8
+haben zu Recht beanstandet, dass Fassung 1 es nur behauptete): `tablet-sperre.js:550`
+→ `WHERE studio_id = $1 AND id=$2 AND aktiv=1`; `mitarbeiter-auth.js:173`
+(Einladungsweg) → `WHERE studio_id = $1 AND id=$2 AND aktiv=1`; E-Mail-, PIN-
+und Löschweg in `mitarbeiter.js` → je `AND studio_id`, im Löschweg auch alle
+Folgeanweisungen. Wer `2abc` schicken kann, kann auch `2` schicken.
+
+**Die Textfeldlücke in `mitarbeiter.js`.** `(req.body.x || '').trim()` an
+`:346,347,671,737` und `!name || !name.trim()` an `:808` — dieselbe Klasse,
+`:808` sogar vor dem `try`.
+
+**Der Grund fürs Ausklammern ist NICHT „harte Löschungen"** (S-8 hat das
+zu Recht zerlegt: gerade am Löschweg verhindert eine frühe Typabweisung, dass
+ein falscher Datensatz erreicht wird). Der Grund ist: **Diffgrösse und
+getrennte Prüfbarkeit.** Beide Dateien sind gross, `mitarbeiter.js` meldet über
+Redirects statt Fehlerseiten, die Zusicherungen sehen also anders aus. Sie
+bekommen einen eigenen Beitrag UNMITTELBAR nach diesem. Bis dahin stehen sie
+als OFFEN in `plaene/durchgang-befunde.md`.
 
 ---
 
@@ -103,154 +166,172 @@ statt Fehlerseite), und `mitarbeiter.js` enthält harte Löschungen.
 
 ### 1.1 EINE Quelle: `core/eingabe-pruefung.js` (neu)
 
-    istGueltigeId(wert)        -> boolean
-    pruefeTextfelder(paare)    -> string|null   // [['Name', wert], …]
+    istGueltigeId(wert)      -> boolean   // Ziffern UND 1..2147483647
+    istTextfeld(wert)        -> boolean   // typeof === 'string'
+    pruefeTextfelder(paare)  -> string|null
 
-`core/` importiert nach Repo-Regel nicht aus `routes/` — die kanonische Stelle
-gehört deshalb nach `core/`, genau wie bei `core/html-escape.js`. Der
-Dateikopf nennt die vier bzw. zwei abgelösten Orte namentlich und die
-Begründung der Regel (was `isNaN` durchlässt, was `|| ''` nicht fängt), damit
-niemand sie später als „doppelt" wieder auseinanderzieht.
+`core/` importiert nach Repo-Regel nicht aus `routes/`; die kanonische Stelle
+gehört deshalb nach `core/`, wie bei `core/html-escape.js`.
 
-**Die Regel selbst wird NICHT neu erfunden**, sondern wörtlich aus
-`geraete-typen.js:232` bzw. `:246` übernommen. Wer sie ändert, ändert Verhalten
-an vier Orten gleichzeitig — das wäre ein anderer Auftrag.
+**Der Dateikopf nennt die abgelösten Orte NAMENTLICH und macht KEINE Aussage
+über „jede andere Stelle" oder „die einzige ID-Quelle des Repos"** (S-8, P-6).
+`parseIds()` und `normalisiereGeraetId()` bleiben eigene Begriffe und werden
+im Kopf ausdrücklich als solche benannt, nicht als Kopien.
 
-### 1.2 Die drei bestehenden Kopien werden GEBUNDEN, nicht nachgezogen
+**Die Regel wird gegenüber dem Bestand VERSCHÄRFT**, an zwei genau benannten
+Stellen — das ist Absicht, nicht ein Abschreiben:
+* `istGueltigeId` bekommt die int4-Grenze aus `normalisiereGeraetId` (0.2).
+* `pruefeTextfelder` prüft `typeof === 'string'` statt `!== 'object'` (0.4).
+
+### 1.2 Die drei bestehenden Kopien werden GEBUNDEN
 
 `geraete-typen.js:232`, `ausmusterung.js:73`, `tablets.js:46` und der Inline-
-Ausdruck `geraete.js:699` rufen ab jetzt die Quelle. Ebenso
-`geraete-typen.js:246` für `pruefeTextfelder`. Die lokalen Namen dürfen
-bleiben (`const istGueltigeId = require(...).istGueltigeId`), der zweite
-Regelkörper nicht.
+Ausdruck `geraete.js:699` rufen die Quelle; ebenso `geraete-typen.js:246`.
+Lokale Namen dürfen bleiben, zweite Regelkörper nicht.
+`ausmusterung.js:92` (`parseIds`) und `geraete.js:952`
+(`normalisiereGeraetId`) bleiben **unangetastet** — andere Begriffe.
 
 ### 1.3 Die beiden nicht nachgezogenen ID-Wachen
 
-`geraete.js:337` und `:467`: `isNaN(id)` → `istGueltigeId(id)`, und
-`res.send(...)` → `res.status(400).send(...)`, wortgleich zum bereits
-umgestellten Geschwisterpfad `:699`.
+`geraete.js:337` und `:467`:
 
-### 1.4 Die fünf verwundbaren Textfeld-Stellen in `geraete.js`
+    if (!id || isNaN(id)) return res.send(…)
+    ->  if (!istGueltigeId(id)) return res.status(400).send(…)
 
-Vor jedem `.trim()` eine `pruefeTextfelder`-Vorprüfung mit
-`res.status(400)` und derselben Meldung wie im Vorbild („… muss Text sein.").
-Betroffen: die fünf Zeilen aus 0.4. Bei `:5030` ist zusätzlich der fehlende
-Leer-Guard zu ergänzen — heute wirft dort schon ein FEHLENDES Feld.
+**Beachte die Negation** (P-9): `isNaN` ist WAHR bei UNGÜLTIG,
+`istGueltigeId` ist WAHR bei GÜLTIG. `!id` entfällt, weil `istGueltigeId`
+leere und fehlende Werte selbst abweist — das ist im Helfer zuzusichern.
+
+### 1.4 Die Textfeld-Vorprüfung
+
+An JEDER Stelle aus 0.6 (a), (b) und (c) eine `pruefeTextfelder`-Vorprüfung am
+HANDLER-EINTRITT, mit `res.status(400)` und der Meldung „… muss Text sein."
+
+* Bei `:5030` zusätzlich den fehlenden Leer-Guard ergänzen.
+* Bei `POST /geraetewartung/geraet/neu` gehören **alle** rohen Textfelder ins
+  Prüfpaar: Name, Inventarnummer, Notizen, die drei Monteurfelder, Aufgaben.
+* `geraete.js:708` wird auf `pruefeTextfelder([['Inbetriebnahme',
+  req.body.inbetriebnahme_am]])` umgestellt (P-1) — damit ist die einzige
+  `typeof`-Wache dieser Datei ebenfalls gebunden.
 
 ---
 
 ## 2. Was ausdrücklich NICHT gebaut wird
 
-* **`mitarbeiter.js` und `tablet-sperre.js`** — gemessene Fundorte (0.3, 0.4),
-  eigener Beitrag. Wer sie hier mitnimmt, vergrössert den Diff um zwei grosse
-  Dateien mit harten Löschungen.
-* **Die `parseInt`-Klasse** (0.3) — andere Klasse, andere Behebung.
-* **Eine Änderung der REGEL selbst.** `/^\d+$/` bleibt `/^\d+$/`; keine obere
-  Schranke, keine Längengrenze. Das Formular beim Anlegen hat serverseitig
-  ausser „nicht leer nach trim()" ohnehin keine Längengrenze (`geraete.name`
-  ist TEXT, kein `VARCHAR(n)`) — „dieselbe Grenze wie beim Anlegen" heisst hier
-  wörtlich: keine neue erfinden.
+* **`mitarbeiter.js`, `tablet-sperre.js` und die `parseInt`-Klasse** (0.7) —
+  eigener Beitrag unmittelbar danach, Grund dort benannt.
+* **`parseIds()` und `normalisiereGeraetId()`** — andere Begriffe (0.1).
+* **Keine Transaktion um `geraete.js:5485-5503`.** Sie gehört zu B1-03 und
+  `plaene/auftrag-schreibreihenfolge.md`; hier wird nur der Eintritt bewacht.
+  **Der Ausführende nennt im Bericht, ob der andere Beitrag schon gebaut ist.**
 
 ---
 
 ## 3. Zusicherungen — je mit der Gegenprobe, die sie rot macht
 
-Jede neue Zusicherung braucht den Nachweis, dass sie fallen KANN. Der Nachweis
-ist **wörtlich zu melden**, beide Richtungen.
+### Z1 — Die ID-Wache weist ab, mit 400, an JEDER Route mit `:id`
 
-### Z1 — Die ID-Wache weist ab, und zwar mit 400
+Nicht nur an den zwei geänderten (S-5, P-3): **jede** Route mit `:id` in
+`geraete.js`, `geraete-typen.js`, `ausmusterung.js`, `tablets.js` bekommt je
+einen HTTP-Fall. Je Route:
 
-Für JEDE der beiden Routen einzeln, über den echten HTTP-Weg mit gültiger
-Admin-Sitzung:
+* `1e3`, `1.5`, `0x10` → **400**, Rumpf `Ungültige ID.`, NICHT `Datenbankfehler`.
+* **`2147483648`** → **400** (0.2). **`2147483647`** und eine echte ID →
+  der normale Erfolgsweg. **`0`** → 400.
+* **Positivkontrolle in die Gegenrichtung:** echte numerische ID → 302 und die
+  fachliche Wirkung ist in der DB nachweisbar.
 
-* `POST /admin/geraete/loeschen/1e3` → **400**, Rumpf enthält `Ungültige ID.`,
-  Rumpf enthält NICHT `Datenbankfehler`.
-* `POST /admin/geraete/umbenennen/1.5` mit `neuerName=x` → ebenso.
-* **Positivkontrolle in die Gegenrichtung** (sonst prüft die Wache nur, dass
-  sie alles abweist): `POST /admin/geraete/loeschen/<echte numerische id>` →
-  **302**, und die Zeile ist in `geraete` auf `aktiv=0`.
+**Gegenproben, je einzeln zu messen und wörtlich zu melden:**
+1. `istGueltigeId` auf `(w) => !isNaN(w)` zurückdrehen → Z1 ROT.
+2. Die int4-Grenze aus `istGueltigeId` entfernen → **nur der
+   `2147483648`-Fall** ROT (sonst prüft er nichts Eigenes).
+3. **An EINER Route `if (false && !istGueltigeId(id))`** (S-5) → genau deren
+   Fälle ROT. Bleibt alles grün, misst Z1 die Verdrahtung nicht.
 
-**Gegenprobe:** `istGueltigeId` in `core/eingabe-pruefung.js` auf
-`(w) => !isNaN(w)` zurückdrehen → Z1 muss ROT werden. Zurücknehmen → GRÜN.
+### Z2 — Objekt, Array, Zahl und Boolean werden zu 400, nicht zu 500 oder zu Text
 
-### Z2 — Das Objekt im Formularkörper wird zu 400, nicht zu 500
+Für JEDE Stelle aus 0.6 einzeln, **und je Feld einzeln** — ein Prüfpaar, aus
+dem ein optionales Feld fehlt, fällt sonst nicht auf (S-3):
 
-Für JEDE der fünf Stellen aus 0.4 einzeln:
+* `feld[a]=x` (urlencoded, Objekt) → 400, Rumpf `muss Text sein`.
+* `feld=a&feld=b` (Array) → 400.
+* **JSON-Körper `{"feld":42}` und `{"feld":true}`** → 400 (S-1). Ohne diese
+  beiden Fälle ist Z2 blind für die halbe Klasse.
+* **Danach die DB auf NULL Seiteneffekte prüfen** — bei `geraet/neu` und
+  `spuelplan/stelle/neu` besonders, dort schreibt heute etwas.
+* **Positivkontrolle:** normaler Wert → 302 und der Wert steht richtig in der DB.
 
-* `neuerName[a]=x` an `POST /admin/geraete/umbenennen/<id>` → **400**, Rumpf
-  enthält `muss Text sein`.
-* `name[a]=x` an `POST /admin/geraete` → **400**.
-* dasselbe für die drei Wartungs-Routen.
-* **Positivkontrolle:** derselbe Aufruf mit `neuerName=Neuername` → **302**,
-  und der Name steht geändert in der DB.
-* **Kontrollmessung gegen eine falsche Ursache:** der 400er darf nicht aus
-  einem vorgelagerten CSRF-/Origin-Riegel stammen. Beleg ist der Unterschied
-  zwischen den beiden Aufrufen oben — gleicher Request, nur die
-  Klammernotation verschieden, 400 gegen 302.
+**Gegenprobe:** die Vorprüfung an EINER Stelle entfernen → genau deren
+Zusicherung ROT, mit FAIL-Zeile, nicht mit Absturz. Zusätzlich
+`if (false && textfehler)` (S-5) → dasselbe.
 
-**Gegenprobe:** die Vorprüfung an EINER Stelle entfernen → genau diese
-Zusicherung muss ROT werden (und der Lauf darf dabei nicht abstürzen, sondern
-muss eine FAIL-Zeile schreiben). Zurücknehmen → GRÜN.
+### Z3 — Kein zweiter Regelkörper, an BENANNTEN Orten
 
-### Z3 — Es gibt keine zweite Regelkopie mehr
+**Der Text lautet: „in diesen vier Dateien steht kein eigener Körper der
+URL-ID-Regel und kein eigener `typeof`-Textfilter mehr"** — nicht „es gibt
+keine zweite Kopie mehr" (P-2, S-8). Ein Satz über das Repo wäre falsch,
+solange 0.7 offen ist.
 
-Statisch, ausführbar, über den Quelltext (Kommentare vorher abziehen, s.
-CLAUDE.md „Tests dürfen nicht an Prosa scheitern"):
+* Geprüft werden **benannte Funktionsdeklarationen und Aufrufstellen**, nicht
+  eine Zeichenkette (S-4). `parseIds()` und `normalisiereGeraetId()` sind
+  ausdrücklich AUSGENOMMEN und werden im Test literal aufgeführt.
+* Das Muster kennt neben `/^\d+$/` auch `isNaN(` als ID-Wache (P-3).
+* **Sollwert literal hingeschrieben**, nicht aus dem Scan abgeleitet. Er
+  lautet: vier gebundene Orte, zwei ausgenommene.
+* **Positivkontrolle für das Muster selbst:** an der HEUTIGEN Fassung gelernt,
+  es muss dort alle sechs Vorkommen aus 0.1 finden und die zwei ausgenommenen
+  korrekt aussortieren.
 
-* In `geraete-typen.js`, `ausmusterung.js`, `tablets.js` und `geraete.js`
-  steht **kein eigener Regelkörper** mehr: kein `/^\d+$/` und kein
-  `typeof … === 'object'` als Wache, sondern ein `require` auf
-  `core/eingabe-pruefung`.
-* **Positivkontrolle für das Suchmuster selbst** (Hausregel, dreimal
-  hineingelaufen am 18.09.): das Muster wird zuerst an der HEUTIGEN Fassung
-  gelernt — es muss dort die vier bzw. zwei bekannten Fundstellen FINDEN.
-  Findet es sie nicht, ist das Muster falsch, nicht der Code.
+**Z3 ersetzt Z1 nicht.** Z3 misst die Schreibweise, Z1 die Wirkung. Beides.
 
-**Diese Zusicherung gehört an den AUFRUFER, nicht in den Helfer** (CLAUDE.md,
-14.09.2026: nur der Aufrufer besitzt eine von der Helfer-Konstante unabhängige
-zweite Quelle). Der Sollwert „vier Orte" wird LITERAL hingeschrieben, nicht aus
-dem Scan abgeleitet.
+### Z4 — Der Helfer, in der PRODUKTIONSFORM aufgerufen
 
-### Z4 — Der Helfer selbst, in der PRODUKTIONSFORM aufgerufen
+Argumenttypen wie aus `req.params`/`req.body`. Mindestens: `"1e3"`, `"1.5"`,
+`"0x10"`, `"0"`, `"007"`, `"2147483647"`, `"2147483648"`, `""`, `" "`, `"12"`,
+`{}`, `[]`, `["a","b"]`, **`42`**, **`true`**, `null`, `undefined`.
 
-`istGueltigeId` und `pruefeTextfelder` bekommen eigene Fälle — aber mit
-denselben Argumenttypen, die die Routen übergeben (Zeichenketten aus
-`req.params`, rohe Werte aus `req.body`), **nicht** in einer bequemeren Form.
-Mindestens: `"1e3"`, `"1.5"`, `"0x10"`, `""`, `" "`, `"12"`, `{}`, `[]`,
-`["a","b"]`, `null`, `undefined`.
+### Z5 — Wo diese Zusicherungen NICHT hinreichen (S-7)
 
-**Wichtig:** Z4 ERSETZT Z1/Z2 nicht. Eine Hilfsfunktion isoliert zu prüfen ist
-nicht den Weg zu prüfen (CLAUDE.md) — beide braucht es.
+`test/helfer/route-harness.js:26-55` montiert `pfadKontext()`, beide Parser,
+eine gefälschte Session und die Router — **aber weder CSRF noch
+`studioContext`, `requireLogin`, `requireAdmin`, Wartungsmodus noch
+Produktionslimit**; die Sitzung hat kein `totpOk`.
+
+**Folge, und sie gehört in den Kopf der Testdatei:** Ein 400 gegen 302 in
+diesem Harness belegt, dass der ROUTENHANDLER erreicht wurde und wie er
+entscheidet. Es belegt **nichts** über CSRF, Auth oder Studio-Auflösung. Jede
+Formulierung „über den echten HTTP-Weg mit gültiger Admin-Sitzung" ist zu
+streichen.
 
 ---
 
 ## 4. Abnahme
 
-1. **Volle Suite**, ohne Pipe und ohne äusseres `flock`:
+1. **Volle Suite**, ohne Pipe, ohne äusseres `flock`:
    `bash test/run.sh > <log> 2>&1; echo "SUITE_EXIT=$?"`. EXIT 0.
-2. **Dateizahl-Ritual**: gelaufene gegen registrierte Dateien, `diff` EXIT 0.
-   Zählmuster beidseitig: `grep -oE '── [A-Za-z0-9_/.-]+\.(js|sh) ──'` aus dem
-   Log gegen `grep -oE '(test_[A-Za-z0-9_]+\.js|ops/boot-smoke\.js|test/[A-Za-z0-9_-]+\.sh)'`
+2. **Dateizahl-Ritual**, `diff` EXIT 0. Zählmuster beidseitig:
+   `grep -oE '── [A-Za-z0-9_/.-]+\.(js|sh) ──'` aus dem Log gegen
+   `grep -oE '(test_[A-Za-z0-9_]+\.js|ops/boot-smoke\.js|test/[A-Za-z0-9_-]+\.sh)'`
    aus `test/run.sh`, beide `sed 's/^[[:space:]]*//' | sort -u`, `test/run.sh`
    selbst aus der zweiten Liste streichen.
-3. **`npm run lint`** — Ergebnis **wörtlich melden, auch bei Grün**. Ein nicht
-   gelaufener Schritt ist kein bestandener.
+3. **`npm run lint`** — Ergebnis **wörtlich melden, auch bei Grün**.
 4. **Alle Gegenproben aus Abschnitt 3 wörtlich gemeldet**, beide Richtungen,
-   mit `node --check` auf jede sabotierte Datei vor dem Lauf.
-5. **Marker-Scan sauber**, Ausschluss auf dem PFAD:
-   `grep -rn --exclude-dir=node_modules --exclude-dir=.git "GEGENPROBE-DEFEKT\|SABOTAGE" .`
-   → im GymDocu-Repo genau 6 Treffer, alle in `docs/offene-befunde-31-08-2026.md`.
+   `node --check` auf jede sabotierte Datei vor dem Lauf.
+5. **Marker-Scan** mit Ausschluss auf dem PFAD → genau 6 Treffer, alle in
+   `docs/offene-befunde-31-08-2026.md`.
 6. **Commit und Push VOR dem Warten auf einen Hintergrundlauf.**
 
 ## 5. Was der Ausführende MELDEN soll, statt es zu lösen
 
-* Findet er eine SECHSTE verwundbare `.trim()`-Stelle in `geraete.js`, die in
-  0.4 fehlt: melden, nicht stillschweigend mitnehmen — meine Liste ist dann
-  unvollständig, und das ist ein Befund über den Auftrag.
-* Wird eine bestehende Zusicherung durch die Umstellung ROT, die den bisherigen
-  Status 200 bzw. 500 festschreibt: **nicht streichen**, sondern melden. Solche
-  Wächter werden fachlich umgestellt.
-* Widerspricht ihm eine Messung: der Widerspruch ist das wertvollste Ergebnis.
+* Eine weitere verwundbare Stelle, die in 0.6 fehlt — meine Liste war in
+  Fassung 1 schon zweimal unvollständig.
+* Eine bestehende Zusicherung, die durch die Umstellung ROT wird: **nicht
+  streichen**, sondern melden; solche Wächter werden fachlich umgestellt.
+* Eine Route, bei der `typeof === 'string'` einen LEGITIMEN heutigen Aufrufer
+  bricht (etwa ein Feld, das absichtlich als Array kommt). Spur 1 hat danach
+  gesucht und keinen gefunden — das ist eine Rechenschaft, keine Garantie.
+* Jeder Widerspruch zu einer Messung in diesem Papier. Der Widerspruch ist das
+  wertvollste Ergebnis.
 
 ---
 
