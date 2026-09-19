@@ -1,4 +1,4 @@
-# Stand — 19.09.2026, ~18:20 UTC
+# Stand — 19.09.2026, ~18:50 UTC
 
 Diese Datei ist der Übergabepunkt. Der Takt-Prompt ist beim Bau von
 Beitrag 1 stehengeblieben. **Hier steht, was wirklich gilt.**
@@ -64,18 +64,15 @@ Punkt 4 ist die Lehre des Tages: Die Upload-Spur war sachlich richtig (sie
 hat ein echtes Informationsleck gefunden), aber sie ist ohne Entscheidung an
 das Programm vorbeigewachsen, und gemerkt hat es der Betreiber, nicht ich.
 
-## LÄUFT GERADE (19.09.2026, ~18:20 UTC) — nicht anfassen
+## LÄUFT GERADE (19.09.2026, ~18:50 UTC) — nicht anfassen
 
-| Was | Zweig | Arbeitsbaum |
-|---|---|---|
-| **Gegenleser Spur 1 (`gpt-5.6-sol`): Planprüfung Eingabewache** — Frage „was bricht dieser Plan, das heute funktioniert?" | — | LIEST `/home/user/gymdocu` |
-| **Gegenleser Spur 2 (`deepseek-flash`): dieselbe Planprüfung** — Frage „was verspricht der Plan, das er nicht einlöst?" | — | statisches Bündel, liest nichts |
+| Was | Arbeitsbaum |
+|---|---|
+| **Gegenleser Spur 1 (`gpt-5.6-sol`): Planprüfung ID-Wache + Textfeld-Wache**, Runde 3 — Frage „wo scheitert der Inventar-Wächter?" | LIEST `/home/user/gymdocu` |
+| **Gegenleser Spur 2 (`deepseek-flash`): dieselben zwei Papiere** — Frage „was verspricht das Verfahren, das es nicht einlöst?" | statisches Bündel |
 
-**Kein Executer läuft.** Alle Arbeitsbäume sind sauber
-(`git status --short` leer in `/home/user/gymdocu`, `/workspace/gymdocu-2a`,
-`/workspace/gymdocu-sicher`, `/home/user/Belehrungssystem`, gemessen
-19.09.2026 16:50 UTC). **Solange Spur 1 läuft, wird in `/home/user/gymdocu`
-nicht geschrieben** — der Gegenleser liest das Repo während seines Laufs.
+**Kein Executer läuft**, alle vier Arbeitsbäume sauber. **Solange Spur 1
+läuft, wird in `/home/user/gymdocu` nicht geschrieben.**
 
 Die drei Arbeitsbäume aus dem 18.09. sind abgearbeitet; `/workspace/gymdocu-2a`
 und `/workspace/gymdocu-sicher` stehen weiter und können mit
@@ -5122,3 +5119,88 @@ stillschweigend mitgenommen:
 * **`plaene/befund-datei-vs-commit.md`** — zwei gemessene Stellen, an denen
   eine unwiderrufliche Dateiaktion auf der falschen Seite eines fehlbaren
   Schritts steht. Gehört zu Beitrag 2.
+
+---
+
+## 19.09.2026, ~18:50 UTC — Zwei Planprüfungsrunden, 34 getragene Befunde, METHODENÄNDERUNG
+
+### Was passiert ist
+
+Der erste Bauauftrag aus Bündel 1 (Eingabewache) ging **vor** der ersten
+Bau-Runde an beide Prüfspuren. Ergebnis über zwei Runden:
+
+| | Befunde | getragen | blockierend | Kosten |
+|---|---|---|---|---|
+| Runde 1 (Fassung 1) | 17 | **17** | 4 | 11,23 $ |
+| Runde 2 (Fassung 2) | 17 | **17** | 5 | 18,81 $ |
+
+**Gebaut wurde nichts** — und das war richtig. Die blockierenden Befunde
+hätten vier falsche Regeln in eine kanonische `core/`-Datei geschrieben, auf
+die danach vier Orte zeigen.
+
+### Die drei Befunde, die alles verschoben haben
+
+1. **Die ID-Regel, die ich kanonisieren wollte, war die SCHWÄCHERE von zwei im
+   Bestand.** `/^\d+$/` lässt `"99999999999"` durch → 22003 → Fehlerseite +
+   Alarm. Zehn Zeilen weiter steht `normalisiereGeraetId` mit der int4-Grenze.
+2. **`parseInt` fängt den int4-Überlauf NICHT.** `parseInt("2147483648",10)`
+   ist nicht `NaN`, passiert `!id || isNaN(id)` und erreicht SQL. Damit war
+   meine Begründung fürs Ausklammern von `mitarbeiter.js` und
+   `tablet-sperre.js` **falsch** — sie tragen dieselbe Alarmklasse und gehören
+   in den Auftrag. Beide Spuren fanden das unabhängig.
+3. **`typeof === 'string'` hätte einen legitimen Aufrufer gebrochen.**
+   `geraete-typen.js:431-434` gibt drei OPTIONALE Felder weiter, eines
+   ausdrücklich als freiwillig kommentiert.
+
+### Die Methodenänderung — der eigentliche Ertrag
+
+**Dreimal hintereinander war meine von Hand geschriebene Stellenliste
+unvollständig** (5 statt 8; 1 von 10 `String(req.body…)`-Senken; 10 von 26
+`:id`-Routen). **Viermal an einem Tag war ein Suchmuster von mir falsch** —
+Leerraum im `|| ''`-Idiom, `[^\n]*` beim Routen-Zählen, der Marker-Ausschluss,
+das Dateizahl-Ritual.
+
+Eine vierte Fassung mit einer vierten handgemachten Liste wäre derselbe Fehler
+zum vierten Mal gewesen. **Eine Liste, die ich pflege, ist ein Selbstnachweis
+aus dem eigenen Datenfluss.**
+
+Der Auftrag ist deshalb GETEILT und die Liste MECHANISCH:
+
+* **`plaene/auftrag-id-wache.md`** — ein Wächter zählt alle `:id`-Routen
+  selbst auf (Dateiliste aus `git ls-files`) und verlangt je Route eine Wache
+  ODER einen literalen Ausnahmeeintrag mit Grund. Die 16 ungemessenen Routen
+  kommen als Ausnahme mit dem Grund „nicht gemessen" hinein — **sichtbar statt
+  still fehlend.** Die fünf `parseInt`-Stellen sind neu IM Bau. `ID_MAX` steht
+  an EINEM Ort.
+* **`plaene/auftrag-textfeld-wache.md`** — dasselbe für `req.body`-Senken, mit
+  dem FELDNAMEN im Prüfpaar als Anker: wer ein Feld aus dem Paar streicht,
+  wird rot. Regel: *FEHLEND ist erlaubt, VORHANDEN muss Text sein.*
+
+`plaene/auftrag-eingabewache-geraete.md` ist damit **überholt und nur noch
+Protokoll**; sein Kopf sagt das.
+
+### Was das über die Verfahren sagt — mit den Einschränkungen
+
+* **Die Rundenbegrenzung aus CLAUDE.md trägt, und sie ist jetzt gemessen.**
+  Alle fünf blockierenden Befunde der zweiten Runde betreffen die
+  KORREKTUREN, nicht den ursprünglichen Plan — eine Runde hätte sie
+  strukturell nicht finden können.
+* **Überschneidung Runde 1: 3 von 17. Runde 2: 1 von 17.** Das ist ein
+  anderes Ergebnis als am 13.09. und bei Bündel 1 (je null). Erklärung
+  plausibel (dort Code, hier ein Papier), aber **nicht belegt**.
+* **Der Unterschied zwischen den Spuren war der REPO-LESEZUGRIFF, nicht das
+  Modell.** Vier von Spur 1s acht Befunden in Runde 1 stützen sich auf
+  Dateien, die nicht im Bündel lagen. Die 0,04-$-Spur fand trotzdem in beiden
+  Runden Befunde, die die 11-$-Spur nicht hatte.
+
+### Als Nächstes
+
+1. **Runde 3 läuft** über die beiden neuen Papiere, beide Spuren. Befunde
+   selbst nachmessen, dann bauen.
+2. Danach Beiträge 2–5 aus Bündel 1 (`plaene/auftrag-schreibreihenfolge.md`
+   liegt fertig, die übrigen sind zu schreiben).
+3. Danach Bündel 2 des Durchgangs (Anmeldung und Rechte).
+
+**Achtung beim Bauen:** `plaene/auftrag-textfeld-wache.md` und
+`plaene/auftrag-schreibreihenfolge.md` fassen BEIDE `routes/admin/geraete.js:5496`
+an. Wer zuerst baut, nennt es dem anderen.
