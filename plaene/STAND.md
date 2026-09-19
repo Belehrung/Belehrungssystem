@@ -1,4 +1,4 @@
-# Stand — 19.09.2026, ~18:55 UTC
+# Stand — 19.09.2026, ~20:35 UTC
 
 Diese Datei ist der Übergabepunkt. Der Takt-Prompt ist beim Bau von
 Beitrag 1 stehengeblieben. **Hier steht, was wirklich gilt.**
@@ -64,19 +64,19 @@ Punkt 4 ist die Lehre des Tages: Die Upload-Spur war sachlich richtig (sie
 hat ein echtes Informationsleck gefunden), aber sie ist ohne Entscheidung an
 das Programm vorbeigewachsen, und gemerkt hat es der Betreiber, nicht ich.
 
-## LÄUFT GERADE (19.09.2026, ~18:55 UTC) — nicht anfassen
+## LÄUFT GERADE (19.09.2026, ~20:35 UTC) — nicht anfassen
 
-| Was | Zweig | Arbeitsbaum |
+| Was | Zweig | Stand |
 |---|---|---|
-| **Executer: ID-Wache bauen** (`plaene/auftrag-id-wache.md` Fassung 2) | `claude/id-wache` (Basis `4c4b729`) | **`/home/user/gymdocu` — BELEGT** |
+| **CI für PR #461 (ID-Wache)** | `claude/id-wache`, Kopf `eade9c9` | vier Jobs laufen; Isolationstests dauern ~9 min |
 
-**In `/home/user/gymdocu` wird nicht geschrieben, solange er läuft** — und er
-ist erst fertig, wenn die BENACHRICHTIGUNG da ist, nicht wenn sein
-Hintergrundlauf durch ist. Wer ihn per SendMessage fortsetzt, macht ihn wieder
-aktiv und muss auf die NÄCHSTE Meldung warten.
+**Kein Executer, kein Gegenleser.** Alle vier Arbeitsbäume sauber (gemessen
+20:30 UTC). Der Zweig liegt NICHT hinter master.
 
-Kein Gegenleser läuft. `/workspace/gymdocu-2a` und `/workspace/gymdocu-sicher`
-stehen unbenutzt und können mit `git worktree remove` abgeräumt werden.
+**Vor dem Merge noch zu tun:** Review-Bot-KOMMENTARE lesen (nicht nur den
+Check), `head_sha` des grünen Laufs gegen den Zweigkopf halten, Squash mit
+EIGENER Botschaft (die drei Branch-Commits tragen Modellnamen-Trailer),
+danach Deploy-Lauf mit dem richtigen `head_sha` und `tools/live-check.sh`.
 
 ## Der Gegenleser ist wieder erreichbar (18.09.2026, ~20:20 UTC)
 
