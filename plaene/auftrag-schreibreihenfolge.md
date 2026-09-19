@@ -153,6 +153,43 @@ entfällt auch das `if` davor als alleiniger Schutz.
   schreiben → ebenfalls ROT. Sonst misst Z4 nur die `WHERE`, nicht die
   Verdrahtung dahinter.
 
+### S5 — Drei Mitarbeiter-Routen melden Erfolg bei NULL getroffenen Zeilen
+
+**Nachgetragen 19.09.2026**, gefunden beim Bau von #461: der Ausführende
+stellte die Grenzwert-Zusicherungen von negativ auf positiv um, musste dafür
+das tatsächliche Verhalten messen — und fand, dass drei Routen eine
+format-gültige, aber real nicht vergebene ID **lautlos als ERFOLG** behandeln:
+
+| Route | Antwort bei 0 getroffenen Zeilen |
+|---|---|
+| `POST /mitarbeiter/email/:id` | Redirect `feedback=email_gespeichert` |
+| `POST /mitarbeiter/pin-direkt/:id` | Redirect `feedback=pin_gesetzt` |
+| `POST /mitarbeiter/umbenennen/:id` | Redirect `feedback=name_geaendert` |
+
+Alle drei lesen die Zeile erst NACH dem schreibenden UPDATE und überspringen
+bei fehlender Zeile nur das AUDIT, nicht die Erfolgsmeldung.
+
+**Kein Datenrisiko** — `studio_id` steht in jeder WHERE-Klausel, es wird
+nichts Fremdes getroffen. Der Schaden ist eine **falsche Zusage an den
+Benutzer**: „PIN gesetzt" für einen Mitarbeiter, den es nicht gibt.
+
+**Dieselbe Klasse wie S4 und wie B1-05:** *ein UPDATE, dessen `rowCount`
+niemand liest, ist ein stiller No-op — und was danach unbedingt läuft,
+behauptet etwas, das nie passiert ist.* Deshalb gehört es hierher und nicht in
+ein eigenes Papier.
+
+**Behebung:** `rowCount` des UPDATE lesen und bei 0 die „nicht
+gefunden"-Antwort geben statt der Erfolgsmeldung. **Vorher messen, welchen
+Rückmeldecode diese Datei dafür schon hat** — ein neuer Code ohne Eintrag in
+der Definitionsliste bei `GET /mitarbeiter` zeigt gar nichts an (im Repo
+gemessen, 19.09.2026).
+
+**Zusicherung Z5:** je Route ein POST mit einer format-gültigen, nicht
+vergebenen ID → **keine** Erfolgsmeldung, und die DB ist unverändert.
+**Positivkontrolle:** dieselbe Route mit einer echten ID → Erfolgsmeldung UND
+nachweisbare Wirkung in der DB. **Gegenprobe:** die `rowCount`-Abfrage
+entfernen → genau diese drei Fälle ROT.
+
 ### Mitfahrer: B1-04 (SOL-4), nur Test
 
 `test_feature_pruefbereich_kopf.js:340-351` liest `MIN(naechste_faelligkeit)`
