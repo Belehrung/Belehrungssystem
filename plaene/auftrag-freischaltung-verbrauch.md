@@ -481,3 +481,67 @@ Marker-Scan mit `--exclude-dir`, `git status --short`.
 
 Melde am Ende ausdrücklich, was NICHT geklappt hat, und melde Zahlen so, wie sie
 im Log stehen — nie aus einem früheren Lauf abgeschrieben.
+
+---
+
+## Nachtrag — nach dem Absenden der Planprüfung gemessen (19.09.2026)
+
+Die beiden Gegenlesungen haben die Fassung ohne diesen Nachtrag bekommen
+(Commit `24e05fc`). Er steht hier getrennt, damit nachvollziehbar bleibt, was
+geprüft wurde und was danach dazukam.
+
+### M9 — Der Einbauort aus M8 ist nicht mehr behauptet, sondern gemessen
+
+Verfahren: unabhängige `cp`-Sicherung, Mutationsskript mit Zielpfad als
+Argument und Abbruch bei ungleich einem Treffer, `GEGENPROBE-`+`DEFEKT`-Marker,
+`node --check`, Läufe ohne Pipe gegen eine eigene Wegwerf-Datenbank
+(`gymdocu_basis_test`, NICHT `gymdocu_test`), Rücknahme aus den Kopien mit
+`diff` EXIT 0 für alle vier Dateien, danach `git status --short` leer und
+Marker-Scan mit `--exclude-dir` ohne Treffer in ausführbarem Code.
+
+Eingebaut wurde eine Stellvertreter-Prüfung an der in M8 bestimmten Stelle
+(direkt nach `if (!maRow) throw`), inhaltlich wie in B1 beschrieben, plus die
+zwei Meldungen in der `erwartet(...)`-Liste.
+
+    Wächter                                   OHNE Prüfung   MIT Prüfung,     MIT Prüfung,
+                                              (Ausgangslage) ALTE Fixtur      NEUE Fixtur
+    test_feature_belehrung_identitaet.js      EXIT 0,  5/0   EXIT 0,  5/0     —
+    test_feature_messfehler_nicht_behaupten   EXIT 0, 46/0   EXIT 0, 46/0     —
+    test_feature_belehrung_gelesen.js         EXIT 0, 26/0   EXIT 1, 12/14    EXIT 0, 26/0
+    test_feature_belehrung_version.js         EXIT 0, 17/0   EXIT 1 (Absturz) EXIT 0, 17/0
+    test_feature_client_ip.js                 —              —                EXIT 0, 80/0
+
+Damit ist in BEIDE Richtungen belegt:
+
+* Der Einbauort lässt `identitaet` und `messfehler_nicht_behaupten`
+  unverändert — die Sorge aus M8 trägt, und die gewählte Stelle löst sie.
+* Die drei Erfolgspfad-Tests fallen mit der alten Fixtur und werden mit der
+  neuen wieder grün. Der Fixtur-Tausch ist also die richtige und vollständige
+  Gegenmaßnahme, nicht eine Abschwächung der Prüfung.
+
+Gefallen sind bei `gelesen` unter anderem:
+
+      ✗ FAIL: Unterschrift gespeichert (status ok)
+      ✗ FAIL: Unterschrift-Datensatz vorhanden (PDF signiert)
+      ✗ FAIL: Audit vermerkt gelesen_bestaetigt
+      ✗ FAIL: Studio A / Max: jetzt 0 offen
+
+**Folge für den Auftrag:** B1 ist damit in seinem riskantesten Teil vorgemessen.
+Der Executer baut die endgültige Fassung (eigenes Modul `core/signaturbild.js`
+statt der Stellvertreter-Zeilen) und misst selbst nach — er übernimmt diese
+Zahlen NICHT, er reproduziert sie.
+
+### M10 — Ein ungesicherter Zugriff in `test_feature_belehrung_version.js:125`
+
+Beim Rotlauf oben meldete `version.js` keine FAIL-Zeile, sondern stürzte ab:
+
+    FEHLER: TypeError: Cannot read properties of null (reading 'pdf')
+        at /home/user/gymdocu/test_feature_belehrung_version.js:125:68
+
+Das ist unsere Klasse „eine Diagnose darf niemals Abdeckung kosten": aus „ein
+FAIL, Rest grün" wird „unbekannt", und alles nach Zeile 125 läuft nie. Nimm das
+in B1 mit: den Zugriff absichern (Vorbild F4-N9 aus
+`test_feature_mandantengrenze_fremd_ids.js`), sodass die Datei bei einem
+künftigen Fehlschlag eine Zusicherung meldet statt abzubrechen. Eine Zeile,
+eigener Commit, eigener Gegenbeweis (ohne den Schutz stürzt sie ab, mit ihm
+meldet sie FAIL).
