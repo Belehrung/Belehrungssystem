@@ -299,3 +299,120 @@ dem Warten auf einen Hintergrundlauf.
 * Lässt sich ein Fehler für GENAU EINEN der DB-Aufrufe nicht stellen, ohne die
   anderen mitzutreffen: melden. Eine Probe, die alle Aufrufe trifft, misst
   etwas anderes als Z1.
+
+---
+
+# NACHTRAG — Planprüfung 19.09.2026, beide Spuren. **Dieses Papier ist so NICHT baubar.**
+
+17 Befunde (sol 8, deepseek 9), vier blockierend. Die wichtigsten selbst
+nachgemessen. **Vier Tatsachenbehauptungen des Papiers sind falsch, und der
+zentrale Behebungsvorschlag schliesst seine eigene Klasse nicht.**
+
+Kosten: 13,79 $ (sol, 76 Suchen / 51 Lesungen / 21 Runden) + ~0,05 $ (deepseek).
+
+## N-1 (BEIDE Spuren, blockierend) — S2 Teil 2 behebt die Klasse NICHT
+
+Mein Vorschlag war: das UPDATE hinter `schalteAlleFrei()` ziehen, dann greife
+der bestehende `catch` wieder richtig. **Gemessen am heutigen Stand
+(`routes/belehrungen.js:2171-2180`): falsch.** Auch nach der Umstellung steht
+`auditAppend` (`:2175`) NACH dem UPDATE, und der `catch` (`:2180`) löscht
+weiterhin `req.file.path`. Wirft `auditAppend` — und es kann werfen, der
+Advisory-Lock-Verklemmungskreis ist im Repo dokumentiert —, zeigt die Zeile
+auf die neue Datei, und die neue Datei ist gelöscht. **Genau der Schaden, den
+S2 beseitigen soll.**
+
+Mein Papier schreibt: *„Diese beiden Teile schliessen einander aus. Teil 2 ist
+der bessere Entwurf; Teil 1 ist der Rückfall."* **Das ist die falsche
+Alternative — es braucht BEIDE:** die Reihenfolge UND die Merkvariable im
+`catch`.
+
+## N-2 (sol, blockierend) — zwischen den beiden Commits liegt ein ECHTER Leser
+
+Die Umstellung veröffentlicht die Freischaltungen VOR dem `dateiname`-UPDATE.
+Dazwischen kann ein Mitarbeiter die neue Freischaltung sehen, noch
+`dateiname = A` lesen, **A unterschreiben und damit die neue
+Freischaltungs-Generation verbrauchen** — die Pflicht zur neuen Fassung
+verschwindet, obwohl nur die alte unterschrieben wurde.
+
+Der Prüfer nennt sechs tragende Fundstellen, darunter einen
+**Bestandskommentar bei `:780-790`, der genau dieses Rennen beschreibt.** Zwei
+Autocommit-Anweisungen zu vertauschen reicht nicht; die beiden Änderungen
+müssen atomar veröffentlicht werden.
+
+## N-3 (sol, blockierend) — mein Vorbild für den Wettlauf-Beweis trägt nicht
+
+Z4 verweist auf `test_feature_geraete_loeschen.js`, Abschnitt (11). **Gemessen:
+dort funktioniert der externe Advisory-Lock nur, weil die geprüfte Löschroute
+denselben Lock VOR ihrem SELECT nimmt.** Die Frist-Route nimmt gar keinen; ihr
+Studio-Lock kommt erst im nachgelagerten `auditAppend`. Der zweite Request
+läse also schon den neuen Zustand und stiege am `if` aus — die Gegenprobe
+erreicht die UPDATE-Zeile nicht deterministisch und kann grün bleiben.
+
+Richtig: ein externer Client hält `SELECT … FOR UPDATE` auf die Zeile, beide
+Requests werden gestartet, und über `pg_blocking_pids` wird belegt, dass beide
+UPDATEs hinter dieser Zeilensperre warten. **Keine Zeitschwelle als
+Überschneidungsbeweis.**
+
+## N-4 (BEIDE Spuren) — meine S5-Behauptung ist schlicht FALSCH
+
+Ich schrieb: *„Alle drei lesen die Zeile erst NACH dem schreibenden UPDATE."*
+**Gemessen — alle drei lesen VORHER:** `email` SELECT `:690` vor UPDATE
+`:691`; `pin-direkt` SELECT `:758` vor UPDATE `:760`; `umbenennen` ebenso.
+
+Ich hatte den Satz aus dem Bericht des Ausführenden übernommen, ohne ihn zu
+messen. **Das ändert die Behebung:** `ma` ist bereits ein verlässlicher
+„nicht gefunden"-Hinweis VOR dem teuren `bcrypt`-Aufruf. `rowCount` bleibt
+trotzdem nötig — als atomare Entscheidung gegen eine Löschung zwischen SELECT
+und UPDATE.
+
+## N-5 (BEIDE Spuren) — ein SECHSTER Fundort, und er ist mehr als eine falsche Meldung
+
+`routes/admin/mitarbeiter.js:760-762`: das PIN-UPDATE committet, danach läuft
+`UPDATE mitarbeiter_token SET verwendet=1` als ZWEITER Pool-Commit. Scheitert
+der zweite, ist die PIN gesetzt, der Benutzer bekommt die Fehlerseite
+(`:778-779`) — **und alte Einladungs-/Reset-Tokens bleiben gültig und können
+die PIN später erneut ändern.**
+
+Das ist keine irreführende Rückmeldung mehr, sondern ein offener
+Anmeldeweg. Gehört als **S6** in dieses Papier, mit `db.tx` um beide UPDATEs
+und `bcrypt` davor.
+
+## N-6 (deepseek) — meine Zeilennummern für S4 sind veraltet
+
+**Gemessen:** Route `6378` (Papier: 6350), SELECT `6381` (6353), UPDATE `6391`
+(6363), `auditAppend` `6394` (6366) — rund 28 Zeilen Versatz, verursacht von
+#461. Mein Papier sagt „vor dem Bau neu messen" nur bei S1; bei S4 und S5 gar
+nicht.
+
+## Die übrigen elf
+
+Ebenfalls gelesen und überwiegend zutreffend: das verschobene Statement
+schreibt DREI Spalten, nicht nur `dateiname` (meine Entscheidungsfrage nennt
+nur eine); bei S3 verschluckt der `catch {}` ein fehlgeschlagenes `unlink`
+vollständig, sodass Z3s Invariante „nie gemischt" nicht gelten kann und aus
+einem lauten Fehler ein leiser wird; die neue WHERE bei S4 wird im Papier
+ohne `studio_id` zitiert, und keine Zusicherung schützt sie; nach Einführung
+des „nicht gefunden"-Redirects wird die bestehende Guard-Zusicherung
+mehrdeutig; und der Bezeichner `Z4` steht in meinem Papier für **zwei
+verschiedene** Zusicherungen.
+
+---
+
+## Was daraus folgt
+
+**Fassung 2 muss geschrieben werden, bevor irgendetwas gebaut wird.** Die
+Kernkorrekturen:
+
+1. **S2 bekommt BEIDE Teile** (Reihenfolge UND Merkvariable im `catch`) — und
+   muss die beiden DB-Änderungen ATOMAR veröffentlichen, sonst öffnet die
+   Umstellung das Unterschriften-Rennen aus N-2.
+2. **S4s Wettlauf-Beweis wird auf `FOR UPDATE` + `pg_blocking_pids`
+   umgestellt.**
+3. **S5 wird auf die gemessene Lesereihenfolge korrigiert.**
+4. **S6 kommt dazu** (PIN und Tokenentwertung in eine Transaktion).
+5. Alle Zeilennummern neu messen; „vor dem Bau neu messen" an JEDEN Abschnitt.
+6. Die beiden `Z4` auseinanderbenennen.
+
+**Dass der zentrale Vorschlag dieses Papiers seine eigene Klasse nicht
+schliesst, hätte kein Diff-Review gefunden** — es hätte den gebauten Code
+gegen den Plan geprüft, und der Plan war falsch.
