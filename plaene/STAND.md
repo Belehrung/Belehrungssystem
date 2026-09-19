@@ -5539,3 +5539,73 @@ Tablet-Sitzungen beenden?** Heute prüfen sie `pin_hash` nicht erneut, laufen
 also weiter. Das ist eine Festlegung, keine technische Feststellung, und sie
 beträfe BEIDE PIN-Wege (auch `routes/mitarbeiter-auth.js:288-302`). Bis zur
 Antwort fährt es nicht mit.
+
+### 23:40 UTC — Planprüfung abgeschlossen, Beitrag B im Bau
+
+**Runde 3 (nur `kimi-k3`, ~0,30 $): 8 Befunde, alle acht selbst nachgemessen,
+alle acht getragen.** Einer davon (verwaiste `Z6`-Referenz) war Minuten vorher
+schon von mir selbst gefunden — er zählt als Bestätigung, nicht als Fund.
+
+**Bilanz über das ganze Papier: drei Runden, 45 Befunde, 44 getragen,
+rund 18,19 $ — und keine Zeile Produktivcode dafür geschrieben.**
+
+**Der teuerste Befund der Runde (R3-1, am Quelltext bestätigt):** mein
+Zwei-Schritt-Entwurf für S6 sah nur den EINLÖSEweg an und übersah den Weg,
+der Tokens ERZEUGT — `sendeMitarbeiterEinladung()`
+(`routes/mitarbeiter-auth.js:172-186`, eigene `db.tx`, öffentlich über
+`/pin-vergessen` erreichbar). Committet ihr INSERT zwischen Schritt 1 und 2,
+steht am Ende **PIN neu UND ein gültiges Token offen** — genau der Zustand,
+den Z6a verbietet. **Ein dritter Schritt schliesst es** (nochmals entwerten
+nach dem PIN-UPDATE).
+
+**Zwei eigene Behauptungen zurückgenommen, beide nachgemessen:**
+
+* *„Zwei Autocommits halten nie zwei Sperren gleichzeitig"* ist **falsch** —
+  ein mehrzeiliges UPDATE hält seine Zeilensperren bis Anweisungsende
+  gleichzeitig. Tragend ist nur der schwächere Satz: sie halten keine Sperre
+  über ANWEISUNGSGRENZEN, und genau das verlangt der Kreis aus B3.
+* `JSON.stringify` lässt einen `undefined`-Schlüssel **still weg** (in `node`
+  gemessen). Vergisst der Ausführende `SELECT id, name`, verschwindet der
+  Kategoriename aus dem Audit — ohne Wurf, ohne roten Test. Z1 hat deshalb
+  jetzt eine Payload-Zusicherung.
+
+### Das Muster über drei Fassungen
+
+| Fassung | Der Befund war | Meine Behebung wäre gewesen |
+|---|---|---|
+| 1 | richtig | ein Rennen im Normalbetrieb |
+| 2 | richtig | eine echte Verklemmung (`40P01`) |
+| 3 | richtig | ein offenes Token trotz neuer PIN |
+
+Dreimal hintereinander unstrittiger Befund, dreimal die vorgeschlagene Abhilfe
+als eigentliche Gefahr. Steht als Regel in CLAUDE.md
+(„Transaktionen und Sperren").
+
+**Dazu eine zweite Regel, die daraus folgt:** eine Frage nach einem ZUSTAND
+findet mehr als eine Frage nach einem MECHANISMUS. Alle drei teuersten Funde
+lagen in Wegen, nach denen ich nicht gefragt hatte.
+
+### Läuft gerade
+
+**Beitrag B** (`routes/admin/geraete.js` — S1, S4, S4b; Zusicherungen Z1,
+Z4a–Z4d) ist beim Executer, Zweig `beitrag-b-geraete-schreibreihenfolge` von
+master `5a194ba`. **Einordnung vor dem Auftrag:** nicht „sehr komplex" — die
+Herleitung steht vollständig im Papier, die einzige Stelle mit
+Falsch-Grün-Risiko (Z4a) ist dort samt Gegenmittel benannt, und die Arbeit
+liegt in EINER Datei; daher Standard-Executer.
+
+**Solange er läuft, wird `/home/user/gymdocu` nicht angefasst** — auch nicht
+lesend für ein Gegenleser-Bündel, weil er genau die Datei umbaut, die ein
+solches Bündel bräuchte.
+
+### Danach in dieser Reihenfolge
+
+1. Beitrag B prüfen (Diff lesen, eigene Suite, Dateizahl-Ritual, Lint,
+   zwei Prüfspuren über den Diff, CI).
+2. **Beitrag C** (`routes/belehrungen.js` — S2, S3).
+3. **Beitrag A** (`routes/admin/mitarbeiter.js` — S5, S6). Vor A ist zu
+   entscheiden, ob der dritte Schritt aus R3-1 eine weitere Planlesung
+   braucht; er ändert Verhalten, also spricht die Hausregel dafür.
+4. `plaene/auftrag-ladebestand.md` — liegt fertig, braucht noch die
+   Planprüfung. Zeilennummern sind bereits auf `5a194ba` nachgezogen.
+5. B1-09/B1-10 (Namensinvariante Seilgeräte) — noch kein Papier.
