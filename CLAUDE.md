@@ -351,8 +351,11 @@ braucht es, auch wenn sie klein aussieht.
 
 Volles Material, keine Diffs allein — gemessen macht das den Unterschied
 (s. Zahlen unten). Praktisch heißt „volles Material" der betroffene
-Teilbaum, nicht das Repo: 502 getrackte Dateien sind 11,96 MB ≈ 3,2 Mio.
-Token. **Das Eingabelimit liegt bei rund 400.000, NICHT bei 922.000** — die
+Teilbaum, nicht das Repo: **688 getrackte Dateien sind 17,2 MB ≈ 4,6 Mio.
+Token** (nachgezählt 19.09.2026; hier stand bis dahin „502 Dateien, 11,96 MB,
+3,2 Mio." — das Repo ist seither gewachsen, und eine Zahl im Fließtext
+veraltet lautlos). Umrechnung Bytes→Token: **3,71**, gemessen am Bündel vom
+19.09.2026 (471.854 Bytes → 127.232 gezählte Token), nicht geschätzt. **Das Eingabelimit liegt bei rund 400.000, NICHT bei 922.000** — die
 frühere Zahl hier war falsch und hätte zu einem Bündel verleitet, das
 scheitert. Gemessen am 11.09.2026 gegen den echten Endpunkt: ~412.500 Token
 werden mit „Your input exceeds the context window" ABGELEHNT, 145.000 gehen
