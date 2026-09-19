@@ -115,3 +115,227 @@ mit einem Testlauf verkettet.
 * **KEIN echter Netzaufruf im Selbsttest** (läuft in CI bei jedem Push).
 * **Ein echter Probelauf gegen DeepSeek ist NICHT Teil der Abnahme** —
   er kostet Geld und gehört zu meiner Prüfung, nicht zu deiner.
+
+---
+
+# NACHTRAG 19.09.2026 — Planprüfung durch DeepSeek, und die Entscheidung zu WARTEN
+
+## Die drei Befunde (alle selbst am Quelltext nachgeprüft, alle tragen)
+
+**D1 (blockierend) — GP-A/GP-B verbieten keinen zweiten Lesepfad.**
+Sie prüfen, dass eine Ablehnung korrekt erfolgt, WENN der Adapter
+`werkzeugAufrufen()` benutzt. Sie erzwingen nicht, dass er es benutzt. Ein
+Adapter mit eigenem `fs.readFileSync` umginge Erlaubnisliste UND
+Geheimnis-Riegel, und beide Gegenproben blieben grün. Das ist genau der
+Fehler, den mein eigenes Papier als „macht den Beitrag hinfällig" benennt.
+**Behebung:** ein Quelltext-Wächter, der dem Adapterteil jeden direkten
+Dateisystemzugriff VERBIETET und belegt, dass jeder Modell-Werkzeugaufruf
+durch die eine gemeinsame Funktion läuft.
+
+**D2 (mittel) — GP-F nennt nur EIN verbotenes Feld.** „Kein Protokollfeldname
+in der Rundenschleife" gegen nur `antwort.output` geprüft, während `choices`,
+`messages`, `input_tokens`, `prompt_tokens`, `tool_calls`, `call_id`,
+`max_tokens` alle durchgingen. Eine Zusicherung, die einen NAMEN prüft statt
+einer MENGE — dieselbe Klasse wie „eine Zahl ist keine Menge".
+
+**D3 (niedrig, aber zeitkritisch) — der Fehlerweg für `usage` fehlt im Plan.**
+Der Adapter muss bei einem Fehlschlag `prompt_tokens`/`completion_tokens` an
+das Fehlerobjekt hängen, wie es der OpenAI-Weg über `gegenleserUsage` tut.
+Sonst meldet die Zusammenfassung „Token rein: 0" für einen bezahlten Lauf.
+
+## Warum der Adapter WARTET
+
+Drei unabhängige Gründe, keiner davon Bequemlichkeit:
+
+1. **D3 hängt an einem Mechanismus, der GERADE umgebaut wird.** Die laufende
+   Nacharbeit verschiebt den Einmal-Riegel in den äusseren Executor und ändert,
+   wie der Fehler `usage` trägt. Ein Adapter, der heute daran andockt, dockt an
+   einen Stand an, den es in einer Stunde nicht mehr gibt.
+2. **Betreiber-Meldung 19.09.2026: DeepSeek routet derzeit intern über das
+   Flash-Modell.** Von unserer Seite sind die beiden IDs unterscheidbar —
+   verschiedene Fingerprints (`a307abda…` gegen `aeb56401…`) und verschiedene
+   Denktiefe bei derselben Frage (458 gegen 146 Denk-Token). Was der Anbieter
+   intern tut, sehen wir nicht. Eine Integration auf ein bestimmtes Modell zu
+   verdrahten, während der Anbieter routet, ist schlechtes Timing.
+3. **Der grosse Hebel braucht den Adapter gar nicht — gemessen.**
+
+## Der Hebel, der SOFORT verfügbar ist
+
+**DeepSeeks Kontextgrenze ist 1.048.576 Token** (gemessen, die Fehlermeldung
+nennt sie wörtlich: „This model's maximum context length is 1048576 tokens").
+Zum Vergleich: OpenAIs `/v1/responses` liegt bei rund 400.000.
+
+**Unsere bisherigen Bündel nutzen davon 11 %** — die Planprüfung oben lief mit
+116.156 Eingabe-Token.
+
+Der ganze Nutzen des Adapters lautet „DeepSeek findet, was niemand ins Bündel
+gelegt hat". Ein **zehnfach grösseres Bündel** holt einen grossen Teil davon
+sofort — ohne neue Angriffsfläche, ohne dass ein zweiter Anbieter adaptiven
+Lesezugriff bekommt, und ohne eine Bau-Runde.
+
+**Das ist ab sofort die Regel für DeepSeek-Bündel:** Grösse VORHER zählen und
+den gewonnenen Platz in Geschwisterdateien stecken, nicht in mehr Prosa —
+dieselbe Regel wie beim OpenAI-Leser, nur mit einer Grenze, die zweieinhalbmal
+so hoch liegt.
+
+## Was der Adapter zusätzlich bekommt, wenn er gebaut wird
+
+* Die Behebung zu D1, D2, D3 oben.
+* **Ein Lesebudget je Lauf.** Beim adaptiven Lesen entscheidet das Modell, was
+  es zieht; die Erlaubnisliste begrenzt das WAS, nicht das WIEVIEL. Eine
+  Obergrenze an gelesenen Bytes je Lauf bindet die Preisgabe an einen zweiten
+  Anbieter — bei dem wir, anders als bei OpenAI, keine überprüfbare Aussage
+  über den Verbleib haben.
+
+---
+
+# BERICHTIGUNG 19.09.2026 — an der Primärquelle geprüft
+
+Der Betreiber hat die offizielle Ankündigung genannt; ich habe sie selbst
+geholt (`api-docs.deepseek.com/news/news260910/`), nicht die Zusammenfassung
+geglaubt. Wortlaut:
+
+> „Starting at 04:00 UTC on Sept 14, 2026, all `deepseek-v4-pro` requests will
+> route to V4.1-Flash at V4.1-Flash rates. This will continue until V4.1-Pro
+> launches." · „We're phasing out V4-Pro." · „Set your model to
+> `deepseek-flash`."
+
+**Mein eigener Schluss von heute war falsch.** Ich hatte aus zwei
+verschiedenen `system_fingerprint`-Werten (`a307abda…` gegen `aeb56401…`) und
+verschiedener Denktiefe (458 gegen 146 Denk-Token) gefolgert, die beiden IDs
+seien unterscheidbare Modelle. Die Dokumentation sagt, beide landen auf
+V4.1-Flash. Den Unterschied kann ich von hier nicht erklären — aber **ein
+Fingerprint ist kein Modellnachweis**, und eine Beobachtung, für die ich keine
+Erklärung habe, schlägt keine Primärquelle.
+
+**Folge für alle unsere bisherigen Zahlen:** jeder DeepSeek-Lauf seit dem
+14.09.2026 war V4.1-Flash. Das betrifft die Messung vom 18.09. („zwei Befunde,
+die keine andere Spur hatte") und beide Läufe von heute. Das macht die
+Ergebnisse **besser**, nicht schlechter: sie stammen vom Modell, das wir
+ohnehin weiter benutzen werden.
+
+## Die Preise, an der Doku geprüft (je 1M Token)
+
+| | Eingabe (Cache-Fehlschlag) | Ausgabe |
+|---|---|---|
+| off-peak | **0,15 $** | **0,60 $** |
+| peak | 0,30 $ | 1,20 $ |
+
+Peak ist 01:00–04:00 und 06:00–10:00 UTC, Montag bis Freitag. Alles andere —
+inklusive Wochenende — ist off-peak zum halben Satz. Ausgabegrenze 384K,
+Werkzeugaufrufe ✓, `json_object` ✓ (kein `json_schema`, gemessen).
+
+**Was unsere Läufe wirklich gekostet haben** (heute ist Samstag, also ganztägig
+off-peak):
+
+    Planpruefung Streaming   103.416 rein / 19.057 raus  ->  0,0269 $
+    Planpruefung Adapter     116.156 rein / 14.632 raus  ->  0,0262 $
+                                                   zusammen  0,0531 $
+
+Die beiden sol-Läufe desselben Tages kosteten **3,69 $**. Verhältnis rund
+**70:1** — und der 2,6-Cent-Lauf hat einen BLOCKIERENDEN Fehler in meinem
+eigenen Auftragspapier gefunden.
+
+## Was sich dadurch an der Arbeitsweise ändert
+
+1. **Modell-ID wird `deepseek-flash`.** `deepseek-v4-pro` ist eine
+   VORÜBERGEHENDE Weiterleitung auf ein Modell, das ausläuft. Sich darauf zu
+   stützen ist genau die Klasse, die wir heute den ganzen Tag beseitigt haben:
+   ein konfigurierter Wert, der nicht das tut, was danebensteht.
+2. **Der Grund „Routing-Unklarheit" fürs Warten ist erledigt** — er ist jetzt
+   dokumentiert beantwortet. Es bleiben zwei Gründe: der Fehlerweg für `usage`
+   wird gerade umgebaut, und der 1M-Kontext ist ohne Adapter zu haben.
+3. **DeepSeek wird zur Regel-Zweitspur, nicht zur Ausnahme.** Bei drei Cent je
+   Lauf und 1.048.576 Token Kontext gibt es keinen Kostengrund mehr, eine
+   zweite Spur wegzulassen. Die Beweislast dreht sich um: nicht mehr begründen,
+   warum man sie ruft, sondern warum nicht.
+4. **`reasoning_effort` wird gesetzt, und `max_tokens` grosszügig.** Gemessen:
+   ohne Deckel denkt das Modell das ganze Budget leer und liefert NICHTS
+   (4000 von 4000 Token ins Denken) — genau der Fehlschlag von DeepSeek-Lauf 1
+   heute früh. Mit `low`: 977 Denk-Token und eine Antwort.
+
+---
+
+# DER AUFTRAG OBEN IST GRÖSSTENTEILS HINFÄLLIG — gemessen 19.09.2026
+
+Ich habe ihn gegen `/chat/completions` geschrieben. **DeepSeek hat eine
+Responses-API, und sie ist formgleich mit der von OpenAI.** Gemessen, ein
+Aufruf mit exakt unserer Werkzeugform:
+
+    POST https://api.deepseek.com/v1/responses   ->  HTTP 200, status: completed
+    flache Werkzeugform {type,name,parameters,strict}   angenommen
+    store:false, truncation:"disabled"                  angenommen
+    output[]: ["reasoning","function_call"]
+    function_call-Felder: type,id,status,arguments,call_id,name   ← identisch
+    usage: input_tokens / output_tokens                            ← identisch
+    text.format json_schema strict:                     eingehalten (eigener Lauf)
+
+**Damit entfällt die gesamte Übersetzungsschicht aus dem Auftrag oben.** Die
+Tabelle der Protokollunterschiede (`messages` gegen `input`, verschachtelte
+Werkzeugform, `tool_calls` gegen `function_call`, `prompt_tokens` gegen
+`input_tokens`) beschreibt `/chat/completions` — an `/v1/responses` gibt es
+sie nicht.
+
+Was WIRKLICH unterschiedlich ist: die Basis-URL, der Modellname, der
+Schlüssel. Das sind ein paar Zeilen, kein Protokoll-Adapter.
+
+**Folge für die Sicherheit — sie wird BESSER, nicht schlechter.** DeepSeeks
+blockierender Befund D1 (ein zweiter Lesepfad könnte Erlaubnisliste und
+Geheimnis-Riegel umgehen) zielte auf eigenen Adaptercode. Wenn es keinen
+eigenen Adaptercode gibt, sondern nur einen anderen Endpunkt für denselben
+Weg, gibt es auch keine Stelle, an der sich ein zweiter Pfad einschleichen
+kann. Die Zusicherung bleibt trotzdem drin — sie kostet nichts und bewacht
+künftige Umbauten.
+
+**Was noch zu messen ist, bevor gebaut wird:** ob `metadata`,
+`reasoning.effort` und `max_tool_calls` an DeepSeeks Responses-API wirken
+(angenommen heisst dort nichts — unbekannte Felder werden still geschluckt,
+gemessen). Und ob der Egress-Proxy dort ohne Streaming eine harte Grenze hat;
+für `/chat/completions` sind 518 s und 244 s durchgelaufen, für
+`/v1/responses` ist es NICHT gemessen.
+
+**Der Auftrag wird neu geschrieben, sobald die Streaming-Nacharbeit gemergt
+ist.** Er wird klein.
+
+---
+
+# BETREIBER-ENTSCHEIDUNG 19.09.2026 — zwei Spuren, verschiedene Fragen
+
+Angenommen ist der Vorschlag: der risikoorientierte Durchgang bekommt bei
+jedem Bündel BEIDE Spuren, aber mit VERSCHIEDENEN Aufträgen — nicht demselben.
+Dazu: „falls mehr Token genutzt werden können, dann lass DeepSeek auch gern
+mehr prüfen. Erst wenn es mit der Belastung des Systems geht."
+
+## Aufgabenteilung (Hypothese, wird am Durchgang gemessen)
+
+| Spur | Frage | gemessene Eignung |
+|---|---|---|
+| **sol**, mit Repo-Lesezugriff | „Welchen Zustand kann der Code erreichen, den keine Fixtur herstellt?" | 13.09.: durchweg Kontrollfluss-Befunde; 19.09.: vier nicht-fallende Zusicherungen |
+| **DeepSeek**, ganzes Teilsystem im Bündel | „Was verbietet das hier NICHT? Wo geht eine Folgerung weiter als ihre Messung?" | 19.09.: der blockierende Befund gegen meine eigenen Gegenproben; DS-2 gegen meine M2-Verallgemeinerung |
+| **eigene Executer** | „Zeile zurückdrehen — bleibt es grün?" | durchgehend: gemessene Mutationen |
+
+**Das ist eine Hypothese aus einer Handvoll Läufen, keine Regel.** Nach
+vierzehn Bündeln mit mitgeschriebener Zuordnung („welche Spur fand was") ist
+es eine Messung. Vorher wird sie nicht behauptet.
+
+## Wo die Belastungsgrenze WIRKLICH liegt — gemessen
+
+**Nicht bei DeepSeek.** Die Doku nennt 2500 gleichzeitige Verbindungen für
+`deepseek-flash` (500 für pro), auf Kontoebene, darüber HTTP 429. Ein
+Ratenlimit pro Minute steht dort nicht. Wir fahren eine Verbindung.
+
+**Die Grenze ist unsere eigene, und sie ist seit dem 12.09. dieselbe: das
+Nachmessen jedes Befunds durch den Haupt-Agenten.** Drei Cent je Lauf machen
+das Prüfen von sechzehn Befunden keine Minute schneller. Daraus folgen drei
+harte Regeln für das Hochfahren:
+
+1. **Nie ein Prüflauf, während ein Executer im selben Arbeitsbaum baut.**
+   Ausweg, heute benutzt und bewährt: das Bündel aus GIT-OBJEKTEN bauen
+   (`git show <commit>:<pfad>`), nicht aus dem Arbeitsbaum — dann ist der
+   Stand stabil und der Baum bleibt unberührt.
+2. **Nicht mehr Läufe starten, als ich vor dem nächsten Takt nachmessen kann.**
+   Ein Stapel ungeprüfter Befunde ist kein Fortschritt, sondern eine Schuld.
+3. **Bündel hochfahren statt Läufe.** Der Gewinn liegt im Kontext, nicht in
+   der Anzahl: 1.048.576 Token Grenze, bisher 11 % genutzt. Der gewonnene
+   Platz geht in GESCHWISTERDATEIEN — das ganze betroffene Teilsystem statt
+   eines Ausschnitts —, nicht in mehr Prosa.
