@@ -4307,3 +4307,49 @@ identisch. Positivkontrolle dazu: auf diesem Zweig gibt es **gar keine**
 `test/*.sh`-Einträge in `test/run.sh` (einziger Treffer ist `test/run.sh`
 selbst, das wegfällt). Der blinde Fleck war also leer — das Ergebnis hält aus
 Glück, nicht wegen des Siebs. Ab jetzt das breitere Muster.
+
+## 19.09.2026, 04:40 — F5 gebaut und berichtigt, Beitrag offen (CI läuft)
+
+**Der Ausführende hat das Wertvollste getan, was ein Ausführender tun kann:
+meiner Vorgabe mit einer Messung widersprochen und NICHT selbst repariert.**
+Er baute F5-1 bis F5-5 genau wie beauftragt, alle sechs Gegenproben grün — und
+meldete dann, dass die volle Suite trotzdem rot ist, mit der Begründung, die
+Behebung sei eine Entscheidung, die ihm nicht zusteht. Sie stand ihm auch
+nicht zu.
+
+**Der Fehler war meiner.** F5-2b prüfte ABSOLUTE ID-Grenzen („alle Studio-IDs
+unter 11"). Das gilt nur, wenn die Tabellen beim Start der Datei leer sind —
+also beim Einzellauf gegen eine frische Datenbank, NICHT in der Suite:
+`test/run.sh` legt die Wegwerf-Datenbank EINMAL je Lauf an und fährt alle 338
+Dateien nacheinander dagegen. Selbst nachgemessen im Suite-Log: **genau ein
+Kreuz in der ganzen Suite**, und zwar diese Zeile, mit `A=500193, B=500194,
+C=500195` — vor dieser Datei existierten bereits 500.192 Studios.
+
+Berichtigt: geprüft wird jetzt, was vom absoluten Stand unabhängig ist — dass
+der Vorschub in der vorgeschriebenen HÖHE stattgefunden hat (10/20/30, literal)
+und dass die erste echte ID unmittelbar auf die letzte Wegwerfzeile folgt. Die
+Studio-Klausel entfällt ersatzlos; eine Kollision fängt F5-2a direkt ab.
+
+| Gegenprobe | Ergebnis |
+|---|---|
+| Vorschub belehrungen 30 → 20 | EXIT 1, **189/2** — F5-2a und F5-2b, letztere nennt „belehrungen 20x" |
+| eine Einfügung dazwischen | EXIT 1, **190/1** — NUR F5-2b, Höhe weiter 30x, aber `belA 32` statt 31 |
+| zurückgenommen | EXIT 0, **191/0** |
+| volle Suite | **`SUITE_EXIT=0`**, null Kreuze, diese Datei 191/0 |
+
+Die zweite Gegenprobe ist die wichtige: sie isoliert die neue Klausel. Höhe
+korrekt, F5-2a grün, nur die Unmittelbarkeit fällt — sie bewacht also etwas
+Eigenes und ist nicht bloß eine zweite Schreibweise von 2a.
+
+**Abschluss selbst gemessen:** Lint EXIT 0 ohne Ausgabe, Dateizahl-Ritual
+338 = 338 mit dem BREITEREN Sieb (`diff` EXIT 0), Marker-Scan nur Prosa,
+`git status` leer, Zweig liegt nicht hinter master.
+
+**Beitrag ist offen, CI läuft.** Nach Regel 6a steht hier keine Nummer, bis
+restlos alles durch ist — einschließlich Review-Bot-Kommentare und grüner CI
+auf dem aktuellen Kopf.
+
+**Keine dritte Gegenlesungsrunde** für die Berichtigung: sie ist die Korrektur
+eines gemessenen Suite-Fehlschlags, auf eine Zusicherung begrenzt, und trägt
+zwei unabhängige Gegenproben. Plan und Code dieser Runde waren bereits
+gegengelesen.
