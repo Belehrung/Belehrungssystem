@@ -4045,3 +4045,30 @@ aufgestellt habe, und ob jede vorgeschriebene Gegenprobe überhaupt rot werden
 kann.
 
 **Danach:** Bau-Runde über die dreizehn Punkte, dann Suite, dann CI.
+
+## 19.09.2026, 00:40 UTC — Bau-Runde läuft
+
+**Auftragspapier Fassung 3 ist durch die Planprüfung** und hat dabei mehrere
+meiner eigenen Anweisungen widerlegt — der schwerste: Auftrag H hätte den
+Mandanten-Bypass NICHT geschlossen (die vorgeschriebene fremd/fremd-Probe
+scheitert schon am zweiten Nachschlag, eine Mutation am ersten bleibt
+unsichtbar). H ist jetzt eine Matrix mit drei getrennten Gegenmutationen.
+
+Ebenfalls korrigiert: die Sentinel-Abfragen werden mandantengebunden erzeugt
+und gelöscht statt global abgefragt (mein Einwand fiel); `acorn` statt
+Textsuche für zwei statische Zusicherungen; Schnappschuss je Request statt je
+Block; der ungeprüfte `req.xhr`-Zweig; die Mindestprüfzahl der Hauptdatei;
+Loopback-Bindung für die NEUEN Listener.
+
+Zahlen, die ich korrigieren musste: **10** Browser-`fetch` (nicht 9), **2**
+mit `Accept` (nicht 1), **8** ohne; N9 deckt **3 von 14** konkreten
+M2-Ablehnungsaufrufen ab (nicht „3 von 8"); **6** Abfragen ohne `studio_id`
+(nicht 1).
+
+**Läuft:** Executer über alle Punkte der Fassung 3, Standard-Modell.
+Einordnung: umfangreich, aber überwiegend derselbe Handgriff — die beiden
+`acorn`-Punkte und die H-Matrix sind die Stellen mit Falsch-Grün-Gefahr,
+dort ist die Gegenproben-Pflicht im Auftrag verschärft.
+
+**Danach:** volle Suite selbst, Dateizahl-Ritual, Lint wörtlich,
+unabhängige Review, CI. Erst dann der PR.
