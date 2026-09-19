@@ -4215,3 +4215,52 @@ Lesen des eigenen Repos.
 baut sie mit Commit-und-Push nach jedem Punkt. Für N1 steht die Gegenprobe
 schon fest: in `routes/lageplan.js` das erste INSERT-Argument auf
 `req.body.studio_id || req.studioId` — die neue Zusicherung MUSS fallen.
+
+## 19.09.2026, 03:40 — eigenes Prüf-Ritual über Fassung 4, zwei eigene Befunde
+
+**Selbst gemessen** (nicht dem Bericht des Ausführenden geglaubt):
+
+| | |
+|---|---|
+| volle Suite | `SUITE_EXIT=0`, **null Kreuze**, unsere Datei 188 PASS / 0 FAIL |
+| Dateizahl-Ritual | **338 = 338**, `diff` EXIT 0 |
+| `npm run lint` | **EXIT 0**, keine Ausgabe |
+| Marker-Scan | 6 Zeilen, ausnahmslos Prosa in `docs/offene-befunde-31-08-2026.md` |
+| `git status` | leer |
+| Diff gegen Basis | **nur** die Testdatei, 264+/30− — Produktivcode unverändert |
+
+**Befund 1 — der Bericht war an einer Stelle falsch.** Die N6-Gegenprobe wurde
+als „EXIT 1, 178/10" gemeldet; das Log hat **gar keine Schlusszeile** und
+bricht bei 124 ✓ / 13 ✗ mit einem `TypeError` ab. Die Substanz trug trotzdem
+(alle acht F4-N6-Zeilen fielen, im Log nachgezählt) — nur die Zahlen waren aus
+dem N1-Lauf abgeschrieben. Genau dafür ist die Regel da, Beweise statt Berichte
+zu sichten.
+
+**Befund 2 — der Absturz war ein echter Fehler.** Eine ungeschützte
+Dereferenzierung riss den ganzen Lauf mit; die 51 Prüfungen danach liefen nie,
+und die Mindestprüfzahl feuert bei einem Absturz auch nicht. Klasse „eine
+Diagnose darf niemals Abdeckung kosten". Mit dem an der Fundstelle GELERNTEN
+Muster gesweept: genau eine Stelle. Behoben als `3b06990`, Gegenprobe in beide
+Richtungen — mutiert vorher Absturz, mutiert nachher **180/8 mit** Schlusszeile,
+zurückgenommen **188/0**.
+
+**Befund 3, beim Nachmessen von Befund 2 herausgefallen — und der schwerste.**
+Auf FRISCHER Datenbank fielen unter der Vertauschungs-Mutation nur acht Zeilen,
+und ausgerechnet die Zusicherung, die die Vertauschung beim NAMEN nennt, blieb
+grün. Ursache gemessen durch direkte Abfrage:
+
+| Zahl | trägt gleichzeitig |
+|---|---|
+| 1 | Studio A, `etageA`, `maA`, `belA` |
+| 2 | Studio B, `etageB`, `maA2`, `belB` |
+| 3 | Studio C, `etageC`, `maA3`, `belC` |
+
+Vier Bedeutungen auf einer Zahl — die vierte Erscheinungsform aus der
+CLAUDE.md. Die Trennschärfe dieser Zusicherungen hing bisher an zufälligem
+Fremdzustand in der geteilten Wegwerf-Datenbank: derselbe Lauf auf einer NICHT
+frischen DB zeigte 13 Kreuze statt 8.
+
+**Auftragspapier F5** dazu geschrieben. Es geht — der Regel folgend, die zuletzt
+mehrfach übergangen wurde — **VOR** dem Bauen zur Planprüfung; parallel läuft
+die Code-Gegenlesung des F4-Diffs auf der zweiten Spur. Bündel gezählt statt
+geschätzt: 67.489 bzw. 125.851 Token.
