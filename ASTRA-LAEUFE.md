@@ -1907,3 +1907,60 @@ Die Kosten sind angefallen und stehen deshalb in der Zeile.
 **Merkposten für künftige DeepSeek-Läufe:** `max_tokens` deckelt dort Denken
 UND Antwort gemeinsam. 16.000 reichen bei einem 127k-Bündel nicht; die
 Wiederholung fährt mit 64.000.
+
+## 19.09.2026 — Diffprüfung Signaturbild (zwei Spuren, fertiger Diff)
+
+Zweiter Lauf am selben Beitrag, diesmal über den GEBAUTEN Diff statt über den
+Plan. Material: der vollständige Diff (9 Commits), `core/signaturbild.js`,
+`routes/belehrungen.js`, der neue Wächter, `core/db.js`, `core/integritaet.js`,
+zwei Geschwisterauszüge und **die gefahrenen Gegenproben mit ihren Ausgaben**.
+Bündel gezählt: **122.152 Token**.
+
+| Lauf | Modell | Stufe | Ergebnis | Befunde | getragen | Token / Kosten |
+|---|---|---|---|---|---|---|
+| a) | gpt-5.6-sol | xhigh | `completed`, 442 s | 8 | 7 (2 blockierend) | 122.286 ein / 24.592 aus (20.718 Denken) ≈ **1,35 $** |
+| b) | deepseek-v4-pro | — | `stop`, 303 s | 1 | 1 (eng), Schwere gefallen | 133.700 ein / 27.199 aus (25.715 Denken) |
+
+**Null Überschneidung — zum DRITTEN Mal** (13.09., 19.09. am Plan, 19.09. am
+Diff). Neun Befunde, kein einziger doppelt.
+
+**Die zwei blockierenden, beide selbst nachgemessen:**
+
+1. **B4 war vollständig unbewacht.** Eine Zeile in der kanonischen
+   Bild-Pipeline (`.linear(0, 255)`) macht jede eingebettete Unterschrift
+   weiß — sie verschwindet aus dem Nachweisdokument — und **alle 60
+   Zusicherungen bleiben grün, EXIT 0**. Die Tinte wird in der ERSTEN
+   Pipeline gezählt, eingebettet wird das Ergebnis der ZWEITEN; die einzige
+   B4-Zusicherung misst die PDF-Dateigröße, und ein weißes Bild macht die
+   Datei sogar kleiner.
+2. **Die Route nimmt seit dem Beitrag JPEG, WebP und SVG an** — gemessen,
+   alle drei mit gelogenem `data:image/png;base64,`-Präfix. Das ist eine
+   ERWEITERUNG gegenüber vorher: der alte Weg gab den Puffer direkt an
+   `pdfDoc.embedPng()`, das alles außer PNG abgelehnt hätte. SVG ist dabei
+   eine eigene Parserfläche (librsvg), vorher nicht erreichbar.
+
+**Was dieser Lauf über das VERFAHREN zeigt, und es ist der wichtigere Teil:**
+Die vom Prüfer VORGESCHLAGENE Mutation für Befund 1 (`.threshold(0)`) ist bei
+sharp **wirkungslos** — 24 dunkle Pixel blieben stehen. Hätte ich sie blind
+übernommen, hätte ich den Befund als widerlegt abgehakt und einen
+blockierenden Fehler durchgewinkt. Erst die Kontrolle „ist die Mutation
+überhaupt angekommen?" und eine eigene, wirksame Mutation haben ihn belegt.
+**Ein Behebungs- oder Messvorschlag eines Prüfers ist selbst ein Befund, der
+nachgemessen gehört** — das steht so in der CLAUDE.md und hat hier genau den
+Unterschied gemacht.
+
+**Gefallen bzw. herabgestuft:**
+
+* DeepSeeks einziger Befund („9b-c erzeugt falsche Sicherheit", *hoch*) trägt
+  nur im engen Teil: `9b-a` bis `9b-d` bleiben tatsächlich grün, wenn man den
+  DELETE-Block aus der Transaktion zieht. Die Folgerung trägt NICHT — der
+  Wächter als Ganzes fällt dabei laut (**EXIT 1, 54 PASS / 6 FAIL**).
+  Übrig bleibt eine Beschriftung, die mehr behauptet, als sie misst.
+* sols Befund zur Diagnose-Robustheit des Wächters trägt in der Sache, aber
+  nicht in der Schwere: ein unerwarteter Wurf beendet den Lauf mit EXIT 1 und
+  ohne Zusammenfassung — das ist ROT und laut, nicht falsch grün.
+
+**Drei Befunde sind richtig, aber VORBESTEHEND** und damit außerhalb dieses
+Beitrags: `signatur_hash` bindet das Bild nicht; nach einem Rollback bleibt
+eine verwaiste PDF liegen; `freigeschaltet_am` ist theoretisch NULL-fähig.
+Sie bekommen ein eigenes Papier statt einer stillen Mitnahme.
