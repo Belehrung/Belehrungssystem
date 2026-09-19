@@ -2256,6 +2256,9 @@ auf die dann schon vier Orte zeigen.
 | 2 | Eingabewache Fassung 2 (die Behebungen) | 17 | 17 | 5 | 18,81 $ |
 | 3 | ID-Wache + Textfeld-Wache (der neue ENTWURF) | 29 | 29 | 11 | 12,77 $ |
 | | **Summe** | **63** | **63** | **20** | **42,81 $** |
+| 19.09.2026 | **Planprüfung Schreibreihenfolge Fassung 2** (sol, Repo-Lesezugriff) | Papier + 13 Auszüge + Sperrlandschaft, 42.838 Token; 92 Suchen / 47 Lesungen / 21 Runden | 11 | **10** | 0 (1 = Betreiber-Entscheidung) | **17,42 $** |
+| 19.09.2026 | dieselbe Planprüfung, zweite Spur (deepseek-v4-pro, ohne Repo) | wortgleich, 42.838 Token rein / 23.649 raus | 2 | **2** | 0 | ~0,05 $ |
+| 19.09.2026 | dieselbe Planprüfung, dritte Spur (**kimi-k3**, A/B) | wortgleich bis auf `model`; `truncation` raus, `stream` rein | — | — | — | — |
 
 **Das ist die mit Abstand grösste Prüfserie dieser Datei — und die einzige, in
 der KEIN einziger Befund gefallen ist.** Zum Vergleich: am 12.09. fielen drei
@@ -2378,3 +2381,33 @@ zweiter Pool-Commit. Scheitert sie, ist die PIN gesetzt, der Benutzer sieht
 eine Fehlerseite — und alte Einladungs-/Reset-Tokens bleiben gültig und
 können die PIN später erneut ändern. Ich hatte die drei Routen als „kein
 Datenrisiko, nur irreführende Rückmeldung" geführt.
+
+
+---
+
+## 19.09.2026 abends — Planprüfung Runde 2, und was sie über die Spuren sagt
+
+**Überschneidung diesmal VOLLSTÄNDIG statt null.** Beide DeepSeek-Befunde
+(Z2c unerreichbar, Z7 nicht rotfähig) waren eine echte TEILMENGE der elf
+sol-Befunde. Am 13.09.2026 hatten zwei Spuren über einen Diff **null**
+Überschneidung; heute über ein PAPIER volle. Das ist keine Umkehr der
+damaligen Messung — es ist eine zweite Stichprobe mit anderem Gegenstand
+(Plan statt Diff) und anderem Zuschnitt (sol mit Repo-Lesezugriff, deepseek
+ohne). **Wer daraus „die zweite Spur lohnt nicht" ableitet, hat aus einem
+Lauf eine Regel gemacht.** Sie kostete 0,05 $.
+
+**Der teuerste Befund war einer, nach dem ich gefragt hatte — aber an der
+falschen Stelle.** Meine Frage 1 lautete wörtlich: „Nenne jeden konkreten Weg,
+auf dem die neue Transaktion mit einem bestehenden zu einem Kreis wird." Sie
+zielte auf S2. Für S2 kam „kein Kreis", sauber begründet. Der Kreis lag bei
+**S6**, wo ich nicht gefragt hatte. Eine gezielte Frage richtet die
+Aufmerksamkeit aus; sie verengt sie nicht.
+
+**Zwei Fassungen hintereinander war meine BEHEBUNG die Gefahr, nicht der
+Befund** — und zwar in entgegengesetzte Richtungen: bei S2 war die Transaktion
+richtig und der Reihenfolgentausch falsch, bei S6 genau umgekehrt. Die Regel
+dazu steht jetzt in CLAUDE.md unter „Transaktionen und Sperren".
+
+**Vier von elf Befunden betrafen Zusicherungen, die nicht rot werden können**
+(B4, B5, B6, B7) — unsere teuerste Klasse, und alle vier an einem Papier
+gefunden, das noch keine Zeile Code hatte.
