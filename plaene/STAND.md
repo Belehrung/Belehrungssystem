@@ -4586,7 +4586,7 @@ bisherigen Entwurf — die Behebung muss mit der serverseitigen Signaturprüfung
 anfangen, nicht mit der Reihenfolge des Verbrauchs. `sharp` ist bereits direkte
 Abhängigkeit, eine neue Bibliothek im Sicherheitspfad braucht es also nicht.
 
-## 19.09.2026, 07:50 — Auftragspapier neu geschrieben, zehn eigene Messungen
+## 19.09.2026, 07:37 — Auftragspapier neu geschrieben, zehn eigene Messungen
 
 Der Betreiber hat gefragt, ob auf dem Server etwas zu tun ist. **Nein:**
 `master` steht auf `6ee7b15`, das ist genau der Stand aus Deploy-Lauf 427
@@ -4643,3 +4643,21 @@ Nachdenken, für die Antwort blieb nichts. Genau die Klasse aus der CLAUDE.md
 Status bei JEDEM Aufruf geprüft wird. Neustart mit `max_tokens: 64000`; der
 abgebrochene Lauf bekommt in `ASTRA-LAEUFE.md` eine Zeile mit Strichen und
 seine Kosten, keine Null.
+
+**Takt 07:40 — beide Gegenlesungen laufen noch** (sol 7:24 min, DeepSeek 3:12
+min Laufzeit), deshalb nach der Regel nichts angefasst ausser diesem Stand.
+Zwei Korrekturen am eigenen Eintrag oben: die Überschrift trug 07:50 und war
+damit in der Zukunft (tatsächlich 07:37); und die Zahl der Messungen ist
+inzwischen elf, nicht zehn — M6 (sharp als harte Startabhängigkeit) ist
+nachträglich gemessen statt geschlossen worden, mit Positiv- UND
+Negativkontrolle (`routes/module.js` fängt denselben Ausfall ab und lädt
+weiter, es scheitert also nicht einfach alles).
+
+Zum Marker-Scan: der Takt-Prompt nennt für dieses Repo weiterhin den Sollwert
+**2**. Maßgeblich ist die CLAUDE.md (16.09.2026): hier ist die ZAHL kein
+Sollwert, weil wir über den Marker schreiben und jede neue Notiz sie anhebt.
+Die Bedingung lautet „jeder Treffer ist Prosa, keiner steht in ausführbarem
+Code" — gemessen: 9 Dateien, ausnahmslos Prosa, keine Zeile in Code.
+
+Eine Wegwerf-Datenbank `gymdocu_basis_test` steht noch (NICHT `gymdocu_test`,
+die Suite ist davon unberührt); sie wird nach der Nacharbeit weggeräumt.
