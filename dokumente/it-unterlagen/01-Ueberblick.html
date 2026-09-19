@@ -1,0 +1,118 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
+<title>GymDocu — Überblick</title><link rel="stylesheet" href="stil.css"></head><body>
+
+<div class="titel">
+  <h1>GymDocu — die Betreiberdokumentation<br>für Fitnessstudios</h1>
+  <p class="unter">Was das System tut, wie es betrieben wird, und was ich dafür geradestehe</p>
+  <p class="stand">Stand 18. September 2026 · Überblick für das IT-Gespräch</p>
+</div>
+
+<div class="kasten">
+  <div class="kopf">In einem Satz</div>
+  <p>GymDocu führt die Dokumentationspflichten eines Fitnessstudios an einem Ort zusammen — tägliche
+  Geräteprüfung, Wartung, Verbandbuch, Belehrungen und Arbeitszeiten — bedienbar auf dem Tablet,
+  je Studio strikt getrennt, und so protokolliert, dass eine nachträgliche Änderung auffällt.</p>
+</div>
+
+<h2>Wer dahintersteht</h2>
+
+<p>Ich entwickle und betreibe GymDocu allein. Das ist für Sie Vor- und Nachteil zugleich, und ich
+sage Ihnen beides:</p>
+
+<p><strong>Der Vorteil:</strong> Es gibt keine Abstimmungsschleifen. Ein Fehler, den Sie mir heute
+melden, kann morgen behoben sein. Sie sprechen mit der Person, die den Code geschrieben hat —
+nicht mit einer Support-Stufe, die weiterleitet.</p>
+
+<p><strong>Der Nachteil:</strong> Ich bin eine Person. Wenn Sie wissen wollen, was passiert, falls
+ich ausfalle, ist das eine berechtigte Frage, und ich weiche ihr nicht aus — mögliche Antworten
+darauf stehen in der Fragenliste am Ende des Dokumentensatzes.</p>
+
+<p>Womit ich diesen Nachteil ausgleiche: mit Verfahren, die nicht von meiner Tagesform abhängen.
+Jede Änderung muss vier automatische Prüfungen bestehen, bevor sie auf den Server darf. Die
+Wiederherstellung der Sicherung wird monatlich automatisch getestet, nicht nur behauptet.
+Bekannte Schwächen führe ich in einer datierten Liste, statt sie wegzulassen.</p>
+
+<h2>Was das System abdeckt</h2>
+
+<table class="schmal">
+  <tr><td><strong>Tägliche Geräteprüfung</strong></td>
+      <td>Seilkontrolle nach DIN EN 17229, Cardio- und Kraftgeräte. Unterschrift auf dem Tablet,
+          Foto bei Defekt, automatische Sperre des Geräts bei einem Mangel.</td></tr>
+  <tr><td><strong>Wartung</strong></td>
+      <td>Fälligkeiten je Gerät, Herstellervorlagen, Sperre bei Überfälligkeit.</td></tr>
+  <tr><td><strong>Verbandbuch</strong></td>
+      <td>Geführter Assistent auf dem Tablet, Körperschema, gesetzliche Aufbewahrung.
+          Gesundheitsdaten sind besonders geschützt (dazu mehr im Sicherheitsdokument).</td></tr>
+  <tr><td><strong>Belehrungen</strong></td>
+      <td>Eigene Unterlagen hochladen, digital unterschreiben, Ablauf im Blick behalten.
+          Hinterlegte Pflichtenliste nach Arbeitsschutz-, Gefahrstoff- und Infektionsschutzrecht.</td></tr>
+  <tr><td><strong>Arbeits- und Pausenzeiten</strong></td>
+      <td>Erfassung nach Arbeitszeitgesetz.</td></tr>
+  <tr><td><strong>Nachweise für Prüfer</strong></td>
+      <td>PDF-Dokumente auf Knopfdruck, automatische Monatsarchive.</td></tr>
+  <tr><td><strong>Lageplan</strong></td>
+      <td>Etagen, Gerätepositionen, Defekte sichtbar auf der Karte.</td></tr>
+  <tr><td><strong>Mehrere Standorte</strong></td>
+      <td>Ein Portal für die Zentrale mit Ampel-Übersicht über alle Studios. Bezirksleiter sehen
+          nur die ihnen zugewiesenen Standorte.</td></tr>
+</table>
+
+<h2>Wie es im Betrieb aussieht</h2>
+
+<p>Für den Trainer im Studio sind es fünf bis zehn Minuten am Tag auf einem Tablet. Er meldet sich
+mit einer PIN an, geht die Prüfung durch und unterschreibt. Fällt das Netz aus, arbeitet das Tablet
+weiter und trägt die Einträge nach, sobald wieder Verbindung besteht.</p>
+
+<p>Für die Zentrale ist es ein Portal im Browser mit Zwei-Faktor-Anmeldung: Studios verwalten,
+Berichte ziehen, sehen wo etwas offen ist.</p>
+
+<p>Ein neues Studio richtet sich selbst ein. Server, Subdomain, Verschlüsselungszertifikat und
+Einrichtungsassistent werden automatisch bereitgestellt — ich muss dafür nichts von Hand tun, und
+ein zusätzlicher Standort erbt den vollen Funktionsstand ohne Mehraufwand.</p>
+
+<h2>Was mich von einer Tabellenlösung unterscheidet</h2>
+
+<table>
+  <tr><th>Frage</th><th>GymDocu</th><th>Übliche Praxis</th></tr>
+  <tr><td>Kann ein Eintrag nachträglich geändert werden, ohne dass es auffällt?</td>
+      <td>Nein — jede Änderung hängt kryptografisch an der vorherigen. Ein Bruch dieser Kette wird
+          wöchentlich automatisch gesucht.</td>
+      <td>Ja, in aller Regel.</td></tr>
+  <tr><td>Kann ein externer Prüfer ein Protokoll selbst überprüfen?</td>
+      <td>Ja — jedes PDF trägt einen QR-Code, über den sich die Echtheit unabhängig nachschlagen lässt.</td>
+      <td>Nein.</td></tr>
+  <tr><td>Werden Daten nach Ablauf der Frist gelöscht?</td>
+      <td>Automatisch, mit Schonfrist — und ausgesetzt, solange ein Rechtsstreit läuft.</td>
+      <td>Von Hand, wenn überhaupt.</td></tr>
+  <tr><td>Funktioniert die Sicherung wirklich?</td>
+      <td>Monatlich automatisch zurückgespielt und geprüft.</td>
+      <td>Die Sicherung läuft; ob sie sich zurückspielen lässt, weiß man im Ernstfall.</td></tr>
+  <tr><td>Sieht Standort A die Daten von Standort B?</td>
+      <td>Nein — und das wird bei jeder Änderung automatisch nachgeprüft, nicht nur einmal geglaubt.</td>
+      <td>Je nach Aufbau.</td></tr>
+</table>
+
+<h2>Wo die Daten liegen</h2>
+
+<p>Auf einem Server in einem deutschen Rechenzentrum (IONOS). Die Verbindung ist durchgehend
+verschlüsselt. Es gibt keinen Dienstleister im Ausland, der Ihre Daten zu sehen bekommt.</p>
+
+<p>Die Sicherung liegt verschlüsselt beim Rechenzentrum. Die Festplatte des Servers selbst ist
+nicht verschlüsselt — das ist eine bewusste Entscheidung, weil ein verschlüsselter Server nach jedem
+Neustart auf eine Eingabe warten würde und damit stillstünde. Stattdessen verschlüssele ich die
+Kopien, bevor sie den Server verlassen. Die vollständige Aufstellung steht im Sicherheitsdokument.</p>
+
+<h2>Einführung</h2>
+
+<ol>
+  <li><strong>Gespräch</strong> — Ihre IT und Ihr Datenschutz stellen ihre Fragen. Die Liste, die
+      ich dafür vorbereitet habe, liegt dem Dokumentensatz bei.</li>
+  <li><strong>Pilot</strong> — zwei bis drei Studios, parallel zum bisherigen Weg. Kein Bruch.</li>
+  <li><strong>Schulung</strong> — Trainer, Studioleitung, Zentrale. Für das Tablet reicht eine
+      kurze Einweisung.</li>
+  <li><strong>Umstieg</strong> — erst wenn der Pilot trägt, danach Standort für Standort.</li>
+</ol>
+
+<p class="schluss">Stand 18. September 2026.</p>
+
+</body></html>

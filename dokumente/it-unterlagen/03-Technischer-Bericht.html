@@ -1,0 +1,204 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
+<title>Technischer Bericht</title><link rel="stylesheet" href="stil.css"></head><body>
+
+<div class="titel">
+  <h1>Technischer Bericht</h1>
+  <p class="unter">Aufbau, Betrieb und Nachweise — für Architekten und technische Entscheider</p>
+  <p class="stand">Stand 18. September 2026</p>
+</div>
+
+<h2>Kurzfassung</h2>
+
+<p>GymDocu ist eine Webanwendung, die mehrere Studios auf <strong>einer</strong> Installation
+bedient und deren Daten dabei strikt voneinander trennt. Sie läuft auf einem Server in einem
+deutschen Rechenzentrum. Ich entwickle und betreibe sie allein.</p>
+
+<p>Die Trennung der Mandanten, die Fälschungssicherheit der Protokolle und die Wiederherstellbarkeit
+der Daten sind die drei Eigenschaften, an denen das System steht oder fällt. Für alle drei laufen
+bei jeder Änderung automatische Prüfungen.</p>
+
+<h2>Aufbau</h2>
+
+<table class="schmal">
+  <tr><td><strong>Anwendung</strong></td>
+      <td>Node.js mit Express. Die Seiten werden auf dem Server erzeugt und als fertiges HTML
+          ausgeliefert. <em>Kein</em> Frontend-Framework, kein Bau-Schritt, kein Container —
+          bewusst einfach gehalten, weil ich das allein betreibe.</td></tr>
+  <tr><td><strong>Datenbank</strong></td>
+      <td>PostgreSQL 16. Eine Datenbank für alle Studios, Trennung über eine Studio-Kennung in
+          jeder Tabelle und jeder Abfrage.</td></tr>
+  <tr><td><strong>Betrieb</strong></td>
+      <td>Prozessverwaltung über PM2, vorgelagerter nginx für Verschlüsselung und Zugriffsschutz,
+          Paketfilter und automatische Sperrung auffälliger Adressen.</td></tr>
+  <tr><td><strong>Tablet</strong></td>
+      <td>Arbeitet ohne Netz weiter. Einträge werden lokal gepuffert und nachgetragen — doppelte
+          Übertragung erzeugt keinen doppelten Eintrag, und ein nachgetragener Eintrag kann nicht
+          rückdatiert werden.</td></tr>
+  <tr><td><strong>Umgebungen</strong></td>
+      <td>Produktion, eine vollständig getrennte Testumgebung (eigener Prozess, eigene Datenbank,
+          eigene Zugangsdaten, <strong>niemals echte Personendaten</strong>, geplante Jobs
+          abgeschaltet) und lokale Entwicklung ohne Kundenzugriff.</td></tr>
+</table>
+
+<h2>Mandantentrennung</h2>
+
+<p>Jede Tabelle führt eine Studio-Kennung. Jede fachliche Abfrage filtert ausdrücklich darauf —
+nicht die Anwendung sortiert hinterher aus, sondern die Abfrage liefert von vornherein nur das
+Erlaubte.</p>
+
+<p>Bei jeder Änderung läuft ein eigener Testlauf, der zwei Studios anlegt und prüft, dass keines
+Daten des anderen sieht. Er ist eines von vier Toren, die eine Änderung passieren muss.</p>
+
+<p>Für Ketten gilt zusätzlich: Ein Bezirksleiter sieht ausschließlich die ihm zugewiesenen
+Standorte, und Gesundheitsdaten aus dem Verbandbuch erreichen ihn auf keinem Weg — auch nicht über
+den Monatsdownload.</p>
+
+<h2>Nachweiskraft der Protokolle</h2>
+
+<p>Jeder prüfrelevante Vorgang erzeugt einen Eintrag im Protokoll, dessen Prüfwert den vorherigen
+Eintrag einbezieht. Verändert jemand nachträglich einen alten Eintrag, passt die Kette nicht mehr.
+Ein wöchentlicher Lauf sucht genau danach und meldet einen Bruch sofort.</p>
+
+<p>Korrekturen sind eigene Datensätze mit Begründung; das Original bleibt erhalten. Jedes
+Prüfprotokoll trägt einen QR-Code, über den sich seine Echtheit unabhängig nachschlagen lässt.</p>
+
+<p>Ein Detail, das in der Praxis zählt: Die Protokollierung läuft innerhalb derselben
+Datenbanktransaktion wie die Änderung selbst. Es kann also nicht passieren, dass eine Änderung
+wirksam wird, aber ihr Protokolleintrag fehlt — oder umgekehrt.</p>
+
+<h2 class="umbruch">Zugang und Abwehr</h2>
+
+<table class="schmal">
+  <tr><td><strong>Zentrale / Ketten-Portal</strong></td>
+      <td>E-Mail und Passwort (nicht rückrechenbar gespeichert) plus zweiter Faktor aus einer
+          Authenticator-App. Auch der Download von Berichten verlangt den zweiten Faktor.
+          Wiederherstellungscodes für den Verlustfall.</td></tr>
+  <tr><td><strong>Studio-Tablet</strong></td>
+      <td>PIN je Mitarbeiter, dazu muss das Gerät selbst freigeschaltet sein.</td></tr>
+  <tr><td><strong>Ersteinrichtung</strong></td>
+      <td>Einmaliges, ablaufendes Token, das beim Einlösen in derselben Transaktion verbraucht wird.
+          Ein zweiter Einlöseversuch läuft ins Leere — es gibt keinen offenen Übernahmeweg.</td></tr>
+  <tr><td><strong>Wiederholte Fehlversuche</strong></td>
+      <td>Kontosperre, abgesichert gegen gleichzeitige Versuche, dazu Sperrung auffälliger Adressen
+          und eine Ratenbegrenzung im vorgelagerten Webserver.</td></tr>
+  <tr><td><strong>Bekannte Angriffsarten</strong></td>
+      <td>Eingeschleuste Skripte werden beim Ausgeben entschärft; Anfragen von fremden Seiten werden
+          anhand der Herkunft abgewiesen; nach einem Rechtewechsel bekommt die Sitzung eine neue
+          Kennung; Datenbankabfragen werden ausschließlich mit gebundenen Parametern gestellt;
+          Anfragegrößen sind begrenzt, große Uploads nur für angemeldete Wege.</td></tr>
+</table>
+
+<h2>Verfügbarkeit und Wiederherstellung</h2>
+
+<p>Es gibt <strong>zwei Sicherungswege, die sich ergänzen</strong> und nicht doppeln: Das
+Rechenzentrum sichert die Maschine als Ganzes (verschlüsselt, siehe Sicherheitsdokument); ich
+selbst sichere die Datenbank punktgenau. Der zweite Weg ist notwendig, weil die Sicherung des
+Rechenzentrums PostgreSQL nicht datenbankbewusst behandelt — und weil nur mein Weg monatlich auf
+Wiederherstellbarkeit getestet wird.</p>
+
+<ul class="haken">
+  <li>Tägliche Vollsicherung plus fortlaufendes Änderungsarchiv. Maximal etwa eine Stunde an
+      Eingaben steht im schlimmsten Fall im Risiko.</li>
+  <li>Wiederherstellung auf einen frei wählbaren Zeitpunkt. <strong>Monatlich automatisch
+      getestet</strong>, inklusive Prüfung der Datensätze und der Protokollkette nach dem
+      Zurückspielen.</li>
+  <li>Bleibt ein solcher Nachweis aus, meldet sich das System selbst als beeinträchtigt. „Nicht
+      geprüft" ist ausdrücklich etwas anderes als „geprüft und in Ordnung" — diese Unterscheidung
+      zieht sich durch das ganze System.</li>
+  <li>Wichtige PDF-Dateien liegen zusätzlich in einer verschlüsselten Zweitkopie. Scheitert die
+      Zweitkopie, hinterlässt das einen erkennbaren Datensatz und keine stille Lücke.</li>
+  <li>Ein gesammelter Gesundheitswert über Datenbank, Warteschlange, Zweitkopie,
+      Wiederherstellungstests, Plattenplatz und Prozesse wird überwacht; ein Statuswechsel löst
+      sofort eine Meldung aus. Diese Meldungen enthalten keine personenbezogenen Inhalte.</li>
+</ul>
+
+<h2>Datenschutz</h2>
+
+<table class="schmal">
+  <tr><td><strong>Rechtsgrundlagen</strong></td>
+      <td>Vertragserfüllung und gesetzliche Pflicht; für das Verbandbuch die Regelungen zu
+          Gesundheitsdaten.</td></tr>
+  <tr><td><strong>Gesundheitsdaten</strong></td>
+      <td>Nur für angemeldete Administratoren oder ein entsperrtes Studio-Tablet. Nicht im
+          Ketten-Monatsarchiv. Automatische Löschung nach Fristablauf.</td></tr>
+  <tr><td><strong>Aufbewahrung</strong></td>
+      <td>Nach Fristablauf: Markierung, Schonfrist, endgültige Löschung samt Dateien. Läuft ein
+          Rechtsstreit, werden Löschungen aktiv angehalten.</td></tr>
+  <tr><td><strong>Betroffenenrechte</strong></td>
+      <td>Auskunft und Datenübertragung als strukturierter Export; Passwort- und PIN-Prüfwerte sowie
+          Zwei-Faktor-Geheimnisse werden dabei automatisch entfernt. Berichtigung über die
+          Verwaltung, für Prüfprotokolle über das Korrekturblatt.</td></tr>
+  <tr><td><strong>Unterlagen</strong></td>
+      <td>Auftragsverarbeitungsvertrag, technisch-organisatorische Maßnahmen und Verzeichnis der
+          Verarbeitungstätigkeiten liegen vor.</td></tr>
+</table>
+
+<h2>Qualitätssicherung</h2>
+
+<p>Vor jeder Auslieferung müssen vier Tore passiert werden: formale Prüfung, Trennungstest, Test im
+echten Browser, automatische Prüfung der Fremdbausteine auf bekannte Schwachstellen ab
+Schweregrad „hoch". Ausgeliefert wird nur, was zusammengeführt und grün geprüft ist; danach prüft
+der Server selbst, ob er gesund hochgekommen ist.</p>
+
+<p>Diese automatische Prüfung ist keine vollständige Quelle. Deshalb kommt zusätzlich eine manuelle
+Prüfung gegen die exakt installierten Versionen mit zwei unabhängigen Quellen dazu.</p>
+
+<p>Derzeit laufen dabei <span class="zahl">335</span> Testdateien.</p>
+
+<div class="kasten">
+  <div class="kopf">Gegenproben</div>
+  <p>Ein Test, der nicht fehlschlagen kann, erzeugt Vertrauen, das er nicht trägt. Deshalb baue ich
+  zu jeder neuen Prüfung den Fehler absichtlich ein und messe, dass sie anschlägt. Erst dann
+  zählt sie.</p>
+</div>
+
+<h2>Wie Änderungen zustande kommen</h2>
+
+<p>Jede Änderung läuft über einen eigenen Zweig und eine Zusammenführung mit Prüfung. Zusätzlich
+lasse ich jede nennenswerte Änderung von <strong>zwei voneinander unabhängigen Prüfspuren</strong>
+gegenlesen. Eine misst am laufenden System, indem sie Fehler einbaut und beobachtet, ob es auffällt;
+die andere liest den Quelltext und fragt, ob eine Zusicherung das hält, was ihr Text verspricht.</p>
+
+<p>Bei drei Messungen an verschiedenen Ständen hatten diese beiden Spuren <strong>keine einzige
+Überschneidung</strong> — jede fand ausschließlich Dinge, die die andere nicht fand. Deshalb behalte
+ich beide, obwohl eine billiger wäre.</p>
+
+<h2>Leistung</h2>
+
+<ul class="haken">
+  <li>Die Datenbank ist auf die mandantengefilterten Abfragen hin indiziert.</li>
+  <li>PDF-Erzeugung läuft über eine Warteschlange mit Wiederaufnahme, damit ein Monatslauf die
+      Bedienung nicht ausbremst.</li>
+  <li>Die Verbindungen zur Datenbank laufen über einen begrenzten Vorrat, damit ein Lastspitze
+      nicht zum Ausfall führt.</li>
+</ul>
+
+<h2>Offene Punkte</h2>
+
+<p>Ich führe eine datierte Liste bekannter Schwächen. Was heute darauf steht:</p>
+
+<table class="schmal">
+  <tr><td><strong>Eigene Sicherungsdateien auf der Platte</strong></td>
+      <td>Die Sicherung des Rechenzentrums ist verschlüsselt (Backup-Paket gebucht und aktiv, nach
+          Anbieterangabe AES-256); meine eigenen Auszüge liegen daneben unverschlüsselt — eine reine
+          Betriebsmaßnahme.</td></tr>
+  <tr><td><strong>PDF-Dateien auf der Platte</strong></td>
+      <td>Das Verbandbuch-Einzeldokument wird seit 18.09.2026 flüchtig erzeugt, ausgeliefert und
+          sofort gelöscht und liegt nicht mehr dauerhaft auf der Platte. Die übrigen PDF-Dateien
+          (Prüfprotokolle, Monatsberichte) sind weiterhin unverschlüsselt; der Baustein dafür ist
+          vorhanden und wird an anderer Stelle bereits eingesetzt.</td></tr>
+  <tr><td><strong>Festplatte des Servers</strong></td>
+      <td>Nicht verschlüsselt — bewusste Abwägung zugunsten der Verfügbarkeit, begründet im
+          Sicherheitsdokument.</td></tr>
+  <tr><td><strong>Schutzrichtlinie im Browser</strong></td>
+      <td>Läuft im Beobachtungsmodus, Umstellung auf Blockieren nach Auswertung.</td></tr>
+  <tr><td><strong>Vier Restwege eines Nebenläufigkeitsproblems</strong></td>
+      <td>Beschrieben und datiert. Der Hauptweg ist geschlossen und abgesichert; die Restwege sind
+          benannt.</td></tr>
+  <tr><td><strong>Bestätigter Befund in einer Upload-Bibliothek</strong></td>
+      <td>Über die zusätzliche manuelle Prüfung erkannt; wird behoben.</td></tr>
+</table>
+
+<p class="schluss">Stand 18. September 2026.</p>
+
+</body></html>

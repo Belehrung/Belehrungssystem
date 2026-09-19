@@ -1,0 +1,86 @@
+@page { size: A4; margin: 22mm 20mm 20mm 20mm; }
+
+:root {
+  --ton:        #1d4e6f;
+  --ton-hell:   #eef4f8;
+  --linie:      #d4dde4;
+  --text:       #1b1f23;
+  --grau:       #5a6672;
+  --warn-rand:  #c9a227;
+  --warn-flaeche:#fdf8e8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: "Bitstream Charter", "Liberation Serif", serif;
+  font-size: 10.6pt;
+  line-height: 1.52;
+  color: var(--text);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, .sans { font-family: "Liberation Sans", "DejaVu Sans", sans-serif; }
+
+/* ── Titelblock ───────────────────────────────────────────── */
+.titel { border-bottom: 2.5pt solid var(--ton); padding-bottom: 9pt; margin-bottom: 20pt; }
+.titel h1 { font-size: 20pt; line-height: 1.2; margin: 0 0 5pt 0; color: var(--ton); font-weight: 700; letter-spacing: -0.2pt; }
+.titel .unter { font-size: 11pt; color: var(--grau); margin: 0; font-style: italic; }
+.titel .stand { font-family: "Liberation Sans", sans-serif; font-size: 8.4pt; color: var(--grau); margin-top: 7pt; letter-spacing: 0.3pt; }
+
+/* ── Überschriften ────────────────────────────────────────── */
+h2 {
+  font-size: 13pt; color: var(--ton); margin: 20pt 0 7pt 0; padding-bottom: 3pt;
+  border-bottom: 0.8pt solid var(--linie); font-weight: 700; break-after: avoid;
+}
+h3 { font-size: 10.8pt; margin: 13pt 0 4pt 0; font-weight: 700; color: var(--text); break-after: avoid; }
+h2:first-of-type { margin-top: 6pt; }
+
+p { margin: 0 0 7pt 0; }
+strong { font-weight: 700; }
+em { font-style: italic; }
+
+/* ── Listen ───────────────────────────────────────────────── */
+ul, ol { margin: 0 0 8pt 0; padding-left: 15pt; }
+li { margin-bottom: 3.5pt; }
+ul.haken { list-style: none; padding-left: 0; }
+ul.haken li { padding-left: 15pt; position: relative; }
+ul.haken li::before { content: "▪"; position: absolute; left: 2pt; color: var(--ton); font-size: 10pt; }
+
+/* ── Tabellen ─────────────────────────────────────────────── */
+/* Tabellen duerfen ueber Seiten laufen (sonst bleibt die Vorseite halb leer),
+   aber keine ZEILE wird zerrissen. Kopfzeile wiederholt sich auf Folgeseiten. */
+table { width: 100%; border-collapse: collapse; margin: 8pt 0 11pt 0; font-size: 9.6pt; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; }
+th {
+  font-family: "Liberation Sans", sans-serif; font-size: 8.6pt; text-transform: uppercase;
+  letter-spacing: 0.4pt; text-align: left; color: var(--ton);
+  border-bottom: 1.2pt solid var(--ton); padding: 4pt 6pt 3.5pt 0; font-weight: 700;
+}
+td { padding: 4.5pt 6pt 4.5pt 0; border-bottom: 0.5pt solid var(--linie); vertical-align: top; }
+td:last-child, th:last-child { padding-right: 0; }
+table.schmal td:first-child, table.schmal th:first-child { width: 34%; }
+
+/* ── Kästen ───────────────────────────────────────────────── */
+.kasten {
+  background: var(--ton-hell); border-left: 2.5pt solid var(--ton);
+  padding: 9pt 11pt; margin: 10pt 0 12pt 0; break-inside: avoid;
+}
+.kasten p:last-child { margin-bottom: 0; }
+.kasten .kopf { font-family: "Liberation Sans", sans-serif; font-size: 8.6pt; text-transform: uppercase; letter-spacing: 0.5pt; color: var(--ton); font-weight: 700; margin-bottom: 4pt; }
+
+.merk {
+  background: var(--warn-flaeche); border-left: 2.5pt solid var(--warn-rand);
+  padding: 9pt 11pt; margin: 10pt 0 12pt 0; break-inside: avoid;
+}
+.merk p:last-child { margin-bottom: 0; }
+.merk .kopf { font-family: "Liberation Sans", sans-serif; font-size: 8.6pt; text-transform: uppercase; letter-spacing: 0.5pt; color: #8a6d0b; font-weight: 700; margin-bottom: 4pt; }
+
+/* ── Kleinzeug ────────────────────────────────────────────── */
+.klein { font-size: 9pt; color: var(--grau); }
+.zahl { font-family: "Liberation Sans", sans-serif; font-weight: 700; color: var(--ton); }
+code { font-family: "Liberation Mono", monospace; font-size: 9pt; background: #f2f5f7; padding: 0.5pt 2.5pt; border-radius: 2pt; }
+.umbruch { break-before: page; }
+.schluss { margin-top: 22pt; padding-top: 8pt; border-top: 0.8pt solid var(--linie); font-size: 9pt; color: var(--grau); font-style: italic; }

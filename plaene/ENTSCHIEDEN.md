@@ -151,3 +151,62 @@ HTTP-Status.
   Belehrungssystem `main`.
 - **Der Betreiber mag kurze Antworten, immer auf Deutsch.** Die Freigabe
   „merge wenn grün" gilt fort.
+
+## Der Zweck des Produkts — Betreiber-Vorgabe 16.09.2026
+
+Wörtlich: *„ich möchte eigentlich nur ein software die die betreiberpflichten
+protokolliert. alles darüber hinaus ist luxus"*
+
+Das ist die schärfste Fassung des Zuschnitts, die es bisher gibt, und sie
+entscheidet Zweifelsfälle: **Was eine Betreiberpflicht dokumentiert, gehört
+dazu. Was den Betrieb bequemer macht, ist Luxus und wird einzeln begründet.**
+
+Anlass war die Orbit4-Recherche (`plaene/wettbewerb-orbit4.md`) und die Frage,
+wie weit wir deren Ideen übernehmen. Ergebnis der Anwendung dieser Regel auf
+die vier Vorschläge von dort:
+
+- **Gerätealter und Mängelhistorie an der Ausmusterung** — wird gebaut. Nicht
+  weil es bequem ist, sondern weil die Entscheidung „weiterbenutzen oder
+  ausmustern" selbst dokumentationspflichtig ist und heute ohne Grundlage
+  getroffen wird.
+- **Manuelle Zwischenstände beim Mangel** („Techniker beauftragt",
+  „Ersatzteil fehlt") — NICHT gebaut. Sie wären Mehraufwand für das Personal
+  bei geringem Nachweiswert (Betreiber-Einwand 16.09.2026).
+- **Gerätebezug für den Dienstleisterbesuch** — zurückgestellt, nicht
+  verworfen. Er kostet fast nichts, weil `dienstleister` (Firma,
+  Mitarbeiter, Ankunft, Abfahrt, Tätigkeit, Servicefallnummer, Unterschrift)
+  bereits erfasst wird und nur der Bezug zum Gerät fehlt.
+- **Anbindung an ein fremdes Ticketsystem** — Luxus, wird NICHT gebaut.
+  **Vom Betreiber ausdrücklich entschieden, 16.09.2026, wörtlich: „ok. wir
+  lassen jira weg".** Das ist eine Entscheidung, keine Empfehlung von mir —
+  nicht erneut aufrollen. Die Begründungen unten erklären sie nur.
+
+### Zur Jira-Frage — meine Behauptung war falsch, gemessen
+
+Ich hatte behauptet, Ketten nutzten Jira nicht für diesen Vorgang, wir bauten
+also „gegen das System, das die wenigsten Kunden haben". **Widerlegt am
+16.09.2026 an einer Primärquelle:** FitX (nach eigener Darstellung
+Deutschlands zweitgrösster Anbieter, 95 Studios) führt seit 2021 Jira Service
+Management als Serviceportal — wörtlich „problems, malfunctions and damage
+can be easily reported and specifically processed in all 95 fitness studios",
+Meldung durch das Studiopersonal, Bearbeitung durch mehrere Teams in der
+Zentrale (catworkx/TIMETOACT, Referenzseite).
+
+**Der Grund fiel damit weg, die Entscheidung bleibt — aus einem anderen:**
+Wo bereits in Jira gemeldet wird, wäre eine Anbindung eine ZWEITE TÜR in
+einen fremden Arbeitsablauf, und es stünde sofort die Frage im Raum, welches
+System führt. Die beiden Aufzeichnungen sind ausserdem verschieden: Jira ist
+der Betriebsablauf, wir sind der Nachweis. Dazu kommt, dass ein Zustand aus
+einem fremden System in einer gehashten Kette von niemandem stammt, den wir
+benennen können — er dürfte dort nur als „gemeldet von System X" stehen, nie
+so, als hätte ihn ein Mensch bestätigt.
+
+**Was stattdessen gilt und heute schon geht:** `dienstleister.servicefallnummer`
+existiert bereits. Eine Kette trägt dort ihren Jira-Vorgang ein; damit sind
+beide Aufzeichnungen verknüpft, ohne dass wir etwas anbinden.
+
+**Falls die Frage je wieder aufkommt**, ist der richtige Zuschnitt NICHT
+„Jira", sondern ein generischer Eingangsweg (Webhook oder Studio-Mailadresse),
+der genau eine Zeile schreibt: „externer Vorgang \<Servicefallnummer\> meldet
+Status X am \<Zeit\>". Das passt auf Jira, auf das System der Servicefirma und
+auf alles andere — und die Herkunft bleibt ehrlich. Bis dahin: nicht bauen.

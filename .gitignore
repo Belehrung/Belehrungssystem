@@ -10,3 +10,8 @@
 # Vorgaengerlaufs und wird entfernt), sie muss also nicht sichtbar bleiben.
 ASTRA-LAEUFE.md.lock
 ASTRA-LAEUFE.md.tmp-*
+
+# Generierte PDFs der IT-Unterlagen — entstehen aus den HTML-Quellen
+# daneben (dokumente/it-unterlagen/bauen.js). Zwei Orte fuer dieselbe
+# Aussage; massgeblich ist die HTML-Quelle.
+dokumente/it-unterlagen/*.pdf

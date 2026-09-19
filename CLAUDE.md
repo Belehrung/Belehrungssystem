@@ -119,6 +119,14 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
    `sed 's/^[[:space:]]*//'` nehmen, NIE `tr -d '[:space:]'`:** letzteres
    frisst auch die Zeilenumbrüche, aus 232 Zeilen wird eine, und der Vergleich
    meldet „registriert: 1" (gemessen 30.08.2026).
+   **Und BEIDE Seiten brauchen dasselbe Sieb.** Gemessen am 18.09.2026: ich
+   habe die gelaufenen Dateien mit `── test[^ ]*\.js ──` gezogen, die
+   registrierten mit `test_…\.js|ops/boot-smoke\.js` — Ergebnis 337 gegen 338
+   und ein Fehlalarm gegen einen völlig gesunden Lauf. `ops/boot-smoke.js` war
+   gelaufen (Logzeile 100), hiess nur nicht `test…`. Mit `── [^ ]+\.js ──` auf
+   der Log-Seite: **338 = 338, `diff` EXIT 0.** Ein Muster, das eine
+   NAMENSKONVENTION voraussetzt, misst die Konvention mit — und meldet jede
+   Datei als fehlend, die sich nicht daran hält.
 5. Erst dann Commit und Push.
 6. **Die CI ist die letzte Instanz, nicht der eigene Prüfstand.** Fertig
    ist, was GitHub Actions grün nennt — die lokale Suite hat schon grün
@@ -153,6 +161,25 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
    Issue-Texte und CI-Logs.
    Ein Befund, der nachgemessen NICHT trägt, wird im Zwischenstand als solcher
    benannt, nicht stillschweigend übergangen.
+   **Er ist bei TATSACHENANGABEN IN PROSA stark — gemessen 18.09.2026, und
+   das ändert, wann wir ihn überhaupt drüberlaufen lassen.** An einem REINEN
+   DOKU-Beitrag (#458, eine Markdown-Datei, kein Produktivcode) lieferte er
+   drei Befunde, und alle drei trugen nach eigener Nachmessung: eine
+   Anzahl, die ich aus meiner eigenen Ausgabe falsch abgelesen hatte
+   („vier Einzelfälle", nachgezählt fünf); eine URSACHENBEHAUPTUNG, die nicht
+   stimmte („der serverseitige Filter lehnt das ab" — er prüft nur ein
+   Präfix); und eine Zeilennummer, die auf den `try` statt auf den `catch`
+   zeigte. Alle drei als P2 eingestuft, keiner übertrieben.
+   Folge: **ein Doku-Beitrag ist den Durchlauf wert.** Bis dahin sind solche
+   Beiträge ohne besondere Aufmerksamkeit durchgegangen — eine Befunddatei
+   existiert aber, damit jemand später an die Stelle springt, und eine
+   falsche Fundstelle oder Ursache kostet genau die Zeit, die sie sparen soll.
+   Der zweite der drei hat sogar einen neuen offenen Punkt eröffnet (U8, die
+   SVG-Parserfläche), den ohne ihn niemand gesehen hätte.
+   **Was das NICHT hergibt:** drei Befunde an EINEM Beitrag an EINEM Tag.
+   Dieselbe Einschränkung wie bei Astra — eine Stichprobe trägt eine
+   Beobachtung, keine Umkehr. „Seine Bewertung ist eine Meinung" bleibt
+   stehen, und jeder Befund wird weiterhin selbst nachgemessen.
 7. **Nach dem Merge zweierlei prüfen — steht der Betrieb, und ist er
    aktuell?**
    - `bash tools/live-check.sh` beantwortet das ERSTE: Landingpage,
@@ -324,8 +351,11 @@ braucht es, auch wenn sie klein aussieht.
 
 Volles Material, keine Diffs allein — gemessen macht das den Unterschied
 (s. Zahlen unten). Praktisch heißt „volles Material" der betroffene
-Teilbaum, nicht das Repo: 502 getrackte Dateien sind 11,96 MB ≈ 3,2 Mio.
-Token. **Das Eingabelimit liegt bei rund 400.000, NICHT bei 922.000** — die
+Teilbaum, nicht das Repo: **688 getrackte Dateien sind 17,2 MB ≈ 4,6 Mio.
+Token** (nachgezählt 19.09.2026; hier stand bis dahin „502 Dateien, 11,96 MB,
+3,2 Mio." — das Repo ist seither gewachsen, und eine Zahl im Fließtext
+veraltet lautlos). Umrechnung Bytes→Token: **3,71**, gemessen am Bündel vom
+19.09.2026 (471.854 Bytes → 127.232 gezählte Token), nicht geschätzt. **Das Eingabelimit liegt bei rund 400.000, NICHT bei 922.000** — die
 frühere Zahl hier war falsch und hätte zu einem Bündel verleitet, das
 scheitert. Gemessen am 11.09.2026 gegen den echten Endpunkt: ~412.500 Token
 werden mit „Your input exceeds the context window" ABGELEHNT, 145.000 gehen
@@ -445,14 +475,119 @@ Missbrauch zeigte sich an der OpenAI-Abrechnung.
     "stream": true,          // Egress-Proxy bricht lange Läufe sonst ab
     "store": false,          // unser Quelltext bleibt nicht auf fremden Servern
     "instructions": "…",     // die Unverhandelbaren, getrennt vom Material
-    "reasoning": {"effort":"high"},
+    "reasoning": {"effort":"xhigh"},  // NICHT high — das ist die Mitte (18.09.)
     "max_tool_calls": N,     // nur mit web_search; deckelt die Suchschleife
     "metadata": {…},         // Lauf wiederfindbar machen
     "max_output_tokens": 45000,
+    "truncation": "disabled",  // laut scheitern statt still kuerzen (18.09.)
     "text": {"format": {"type":"json_schema","strict":true, …}}
 
 Dazu weiterhin die **Wiederholschleife** (ein Fehlschlag ist keine Antwort)
-und die **Statusprüfung bei JEDEM Aufruf**.
+und die **Statusprüfung bei JEDEM Aufruf**. **Und seit 18.09.2026 davor die
+Bündelzählung** über `POST /v1/responses/input_tokens` — gezählt wird, nicht
+geschätzt (Begründung im Abschnitt „Das Maximum herausholen").
+
+**BERICHTIGT 19.09.2026 — `tools/gegenleser-repo.js` setzt die
+Zielkonfiguration inzwischen TEILWEISE um.** Der Absatz hier behauptete bis
+heute das Gegenteil und war überholt; ich war im Begriff, einen Bauauftrag auf
+dieser falschen Prämisse zu erteilen. Gemessen am Quelltext (`anfragen()`):
+`store: false`, `reasoning.effort` und `truncation: 'disabled'` sind gesetzt
+(Commit `738558a`). Der frühere Befund — der Request trug genau vier Felder —
+galt für den Stand vom 18.09.2026 und ist behoben.
+
+**Was WIRKLICH noch fehlt, und der erste Punkt ist durch die Behebung
+DRINGENDER geworden:**
+
+* **`stream: true` fehlt.** Das Werkzeug setzt ein Zeitlimit von 20 Minuten
+  (`timeout: 20 * 60 * 1000`) — gegen `api.openai.com` schneidet der
+  Egress-Proxy ohne Streaming aber bei **300,3 s** hart ab (gemessen
+  18.09.2026, drei Versuche, alle drei bei 300,3 s). Das Zeitlimit ist damit
+  ein Versprechen, das nie eingelöst werden kann, und mit dem frisch
+  gesetzten `effort: xhigh` werden die Runden LÄNGER. Die Behebung des einen
+  Punktes hat den anderen verschärft.
+* `metadata` und `max_tool_calls` fehlen ebenfalls — beide weniger
+  folgenschwer: das eine macht einen Lauf wiederfindbar, das andere deckelt
+  die Suchschleife.
+
+Eine Zahl oder Zustandsaussage im Fliesstext veraltet — diese hier hat es
+innerhalb eines Tages getan.
+
+### Welche Modelle zur Verfügung stehen — gemessen 18.09.2026
+
+Anlass: Betreiber-Frage, ob auch kleinere Modelle erreichbar sind, um Astra für
+komplexe Lagen zu reservieren und Routinearbeit billiger zu erledigen.
+
+`GET /v1/models` listet **130** Modelle. **Eine Liste ist keine Verfügbarkeit** —
+das ist hier keine Theorie: `gpt-5-codex` steht darin und antwortet HTTP 404
+(gemessen 09.09.). Jedes Modell unten wurde deshalb mit einem echten Aufruf
+geprüft; die Positivkontrolle steht (`gpt-5.9-quatschmodell` →
+`model_not_found`).
+
+**Erreichbar und für uns brauchbar** (alle antworten korrekt auf eine
+Sachfrage):
+
+    gpt-6-astra                  unser Gegenleser. Denkt IMMER (kein `none`), kann als
+                                 einziges `max`. Langsamste, gründlichste Stufe.
+    gpt-5.6-terra/-sol/-luna     neuer als 5.4, können `none` bis `max`. Alle drei
+                                 denken; siehe die Berichtigung unten.
+    gpt-5.5                      denkt von sich aus, auch ohne effort-Angabe.
+    gpt-5.4, -mini, -nano        schnell; mit `effort: "none"` ganz ohne Denkphase.
+    gpt-5, -mini, -nano          ältere Generation, kein `xhigh`/`max`.
+
+**Wofür was.** Das ist eine Empfehlung aus den Messungen oben, keine Vorschrift:
+
+- **Prüfen und Gegenlesen: `gpt-5.6-sol`** — Betreiber-Entscheidung vom
+  18.09.2026, und der Grund sind die Kosten. Die Preistabelle in
+  `tools/gegenleser-repo.js` nennt 5,00/30,00 $ je Mio Token gegen 12,50/75,00 $
+  bei `gpt-6-astra`; ein Lauf, der mit astra 12,67 $ kostete, liegt damit bei
+  rund 5 $. `max` gibt es dort ebenfalls, die Stufe geht also nicht verloren.
+  **Gemessen ist bisher nur, dass der WEG trägt** (18.09.2026, `/v1/responses`
+  MIT `tools` im Request und einer ZWEITEN Runde samt zurückgeschicktem
+  `function_call_output`, `store:false` bestätigt) — die frühere Sackgasse galt
+  für `/v1/chat/completions`, nicht für diesen Endpunkt.
+  **Was NICHT gemessen ist: die PRÜFGÜTE.** Kein einziger Befund von sol ist
+  bisher durch unser Nachmessen gegangen. Wer sich darauf beruft, sol sei so
+  gut wie astra, hat eine Behauptung aufgestellt, die niemand geprüft hat —
+  und der Vergleich an EINER Frage (18.09., alle fünf Modelle antworteten
+  richtig) unterscheidet sie ausdrücklich NICHT.
+- **Zweite Lesespur bei folgenschweren Beiträgen: `deepseek-v4-pro`** —
+  Betreiber-Entscheidung 18.09.2026, gestützt auf den A/B-Lauf (acht Befunde,
+  sechs nach eigener Nachmessung getragen, **zwei davon hatte keine andere
+  Spur**; Einzelheiten in `plaene/deepseek-vs-astra-18-09-2026.md`). Sie
+  ERSETZT die vorhandenen Spuren nicht, sie kommt daneben — derselbe Grund wie
+  am 13.09.: verschiedene Sucher finden verschiedene Klassen. Ohne Websuche,
+  also nicht für das Abhängigkeits-Audit.
+- **Ein Modellwechsel ist nie die Erklärung für ein besseres Ergebnis**,
+  solange sich am selben Tag auch die Aufträge geändert haben. Das gilt nach
+  dem Wechsel genauso wie davor: wird eine Gegenlesung ab jetzt schwächer,
+  ist das ZUERST ein Verdacht gegen sol — und zwar einer, den man messen muss,
+  statt ihn zu behaupten.
+- **Routinearbeit ohne Urteil** (etwas umformulieren, eine Liste sortieren, eine
+  Datei zusammenfassen): `gpt-5.4` mit `effort: "none"` — gemessen 44 Ausgabe-
+  Token und 1,7 s gegen 198 Token und 3,1 s bei `high`.
+- **Was NICHT dorthin gehört:** jede Aussage über unseren Bestand. Die Regel
+  „jeder Befund ist eine Behauptung, bis der Haupt-Agent sie gemessen hat" gilt
+  für ein kleines Modell erst recht, und ein billiger Lauf, dessen Befunde
+  alle fallen, ist teurer als gar keiner.
+
+**BERICHTIGUNG am selben Tag, eigener Messfehler:** Oben stand zuerst, `gpt-5.6-terra`
+denke „auch mit `xhigh` nicht (denk=0) — ein Chatmodell". Das war an der Frage
+„Hauptstadt von Österreich" gemessen, die kein Denken erfordert. An einer echten
+Rechenaufgabe denkt terra sehr wohl: `medium` 33, `xhigh` 65, `max` 91 Denk-Token.
+Lehrbuchfall aus dieser Datei — **Testdaten, die den gesuchten Unterschied gar nicht
+auslösen können.** Wer ein Modell einordnet, nimmt eine Aufgabe, die ohne Denken
+nicht lösbar ist.
+
+**Und was ein Vergleich an EINER Frage NICHT hergibt.** Dieselbe echte
+Kontrollfluss-Frage aus unserem Bestand (was tut der globale Fehlerbehandler bei
+einem `MulterError`?) ging an terra, sol, luna, `gpt-6-astra` und `gpt-5.4`:
+**alle fünf antworteten richtig**, alle nannten den tragenden Grund. Der Test
+unterscheidet sie also nicht — er zeigt nur, dass für eine Frage MIT
+mitgeliefertem Kontext das billigste Modell reicht. Die Aufgabe, für die wir den
+Gegenleser brauchen, ist eine andere: im Repo SUCHEN, über viele Runden, und
+Zustände finden, die niemand beschrieben hat. **Wer aus so einem Test auf
+Prüfeignung schliesst, hat eine zweite Behauptung aufgestellt, die er nicht
+gemessen hat.**
 
 ### Drei Zusätze am Prompt (Betreiber-Entscheidung 11.09.2026)
 
@@ -546,10 +681,36 @@ wird mit „Unknown parameter" abgelehnt — ein „OK" sagt also wirklich etwas
   bekannte Schwachstellen zu den Versionen in `package.json` nachschlagen,
   statt aus dem Gedächtnis zu raten. Die Regel „nicht als Rechtsquelle"
   bleibt davon unberührt.
-- **`reasoning: {"effort": "high"}` ist das Maximum für dieses Modell.**
-  `xhigh` wird ausdrücklich abgelehnt („Supported values are: 'minimal',
-  'low', 'medium', and 'high'"). Wer mehr Tiefe will, bekommt sie nicht
-  über diesen Schalter.
+- **`reasoning.effort` — die Notiz vom 11.09. war RICHTIG, aber sie galt für
+  `gpt-5`, nicht für das Modell, das wir heute fahren. Nachgemessen am
+  18.09.2026 über elf Modelle, mit Positivkontrolle.** Sie lautete: „`high` ist
+  das Maximum, `xhigh` wird abgelehnt". Für `gpt-5`, `gpt-5-mini` und
+  `gpt-5-nano` stimmt das bis heute (`xhigh` → `unsupported_value`). Für
+  `gpt-6-astra` stimmt es nicht: dort gibt es ZWEI Stufen darüber.
+
+  Die vollständige Werteliste nennt die Fehlermeldung bei einem erfundenen Wert:
+  `none, minimal, low, medium, high, xhigh, max`. **Sie ist aber generisch —
+  jedes Modell trägt nur eine Teilmenge davon**, und wer aus dieser Liste auf
+  Verfügbarkeit schliesst, liegt falsch. Gemessen, je Modell einzeln:
+
+      gpt-6-astra                       low medium high xhigh max   (kein none/minimal)
+      gpt-5.6-terra/-sol/-luna     none low medium high xhigh max
+      gpt-5.5, gpt-5.4/-mini/-nano none low medium high xhigh       (kein max)
+      gpt-5, gpt-5-mini, gpt-5-nano     low medium high             (+minimal, kein xhigh/max)
+
+  **Und es wirkt, es wird nicht still geschluckt.** Dieselbe Frage an
+  `gpt-6-astra`, nur die Stufe verändert — Denk-Token und Dauer steigen monoton:
+  `medium` 152 / 5,5 s, `high` 259 / 7,3 s, `xhigh` 442 / 9,0 s, **`max` 748 /
+  15,1 s**. Die Positivkontrolle steht: `effort: "ultrahoch"` wird mit
+  `invalid_value` abgelehnt, ein erfundenes Modell mit `model_not_found`.
+
+  **Folge für unsere Gegenlesungen: `high` war die MITTE, nicht das Maximum.**
+  Der Betreiber hat am 18.09. „das Maximum an Unterstützung" verlangt; für
+  Prüfläufe gilt deshalb `xhigh`, bei besonders folgenschweren `max`. **Was das
+  kostet, ist NICHT gemessen** — bei der Trivialfrage verdreifachten sich die
+  Denk-Token von `high` auf `max`, und Denk-Token sind Ausgabe-Token. Der letzte
+  volle Lauf kostete mit `high` 12,67 $. Wer die erste Runde mit `max` fährt,
+  trägt die Kosten in `ASTRA-LAEUFE.md` ein, damit daraus eine Messung wird.
 - **`context_management` nimmt `[{"type":"compaction","compact_threshold":N}]`.**
   Das ist die Struktur, an der der Versuch vom 10.09.2026 scheiterte
   („expected an array of objects"). Für eine EINZELNE Gegenlesung bleibt
@@ -575,6 +736,172 @@ wird mit „Unknown parameter" abgelehnt — ein „OK" sagt also wirklich etwas
    passiert, beide Male lief der ZWEITE Versuch durch. Eine
    Wiederholschleife gehört deshalb ins Aufrufmuster; ein einzelner
    Fehlschlag ist keine Antwort.
+   **NACHGESCHÄRFT 18.09.2026 — gegen `api.openai.com` ist es KEIN Flattern,
+   sondern eine harte Grenze, und die Wiederholschleife hilft dagegen NICHT.**
+   Gemessen: drei Versuche derselben Anfrage, jeder bei **300,3 s** abgeschnitten
+   (300.313, 300.383, und der erste ebenso) — Exit 56, keine Antwortdatei.
+   Wer darauf vertraut, dass „der zweite Versuch durchläuft", verbrennt bei
+   einem langen Prüflauf drei volle Läufe und hat am Ende nichts. Der Ausweg
+   ist `"stream": true` aus der Zielkonfiguration — dann parst man die
+   SSE-Zeilen (`data: {…}`) und nimmt das Abschluss-Ereignis
+   `response.completed` / `.incomplete` / `.failed`, in dem das vollständige
+   Antwortobjekt samt `usage` steckt.
+   **Was das NICHT hergibt:** eine Aussage über den Proxy allgemein. Am selben
+   Tag lief ein Aufruf gegen `api.deepseek.com` OHNE Streaming **518 s** durch
+   und kam mit HTTP 200 zurück. Die Grenze hängt also an der Gegenstelle, nicht
+   pauschal am Proxy — wer sie für einen neuen Endpunkt behauptet, misst sie.
+
+### Nachgemessen 18.09.2026 — vier Fähigkeiten, die wir nicht kannten
+
+Anlass: Betreiber-Frage „was kann diese API noch?". Das Modell wurde mit
+Websuche danach gefragt und hat eine lange, mit Quellen belegte Liste
+geliefert. **Diese Liste ist eine BEHAUPTUNG.** Gemessen wurde davon nur, was
+hier steht; die Gegenprobe steht (`quatschfeld_xyz` → HTTP 400 „Unknown
+parameter"), ein „wird angenommen" sagt also etwas.
+
+**GEMESSEN und brauchbar:**
+
+- **`POST /v1/responses/input_tokens` gibt es und es antwortet** (HTTP 200,
+  `{"object":"response.input_tokens","input_tokens":14}`). Damit lässt sich
+  der Umfang eines Bündels VORHER zählen, statt gegen die Grenze zu raten.
+  Das schliesst die Lücke aus dem 11.09.2026, wo wir uns der Grenze mit zwei
+  Versuchen genähert haben („~412.500 abgelehnt, 145.000 gehen durch").
+- **`truncation: "disabled"` wird angenommen.** Laut Beschreibung lässt es
+  einen zu grossen Aufruf SCHEITERN, statt still älteren Inhalt zu
+  entfernen — genau unsere Regel „leeres Ergebnis ist nicht sauberes
+  Ergebnis". Dass es wirklich hart scheitert, ist von uns NICHT gemessen.
+- **`GET /v1/organization/costs` existiert**, unser Schlüssel darf nur nicht
+  darauf zugreifen: HTTP 401 mit `Missing scopes: api.usage.read` — also
+  eine Rechte-, keine Existenzfrage. Eine laufgenaue Kostenzuordnung bräuchte
+  einen Schlüssel mit diesem Recht; das ist eine Betreiber-Entscheidung, keine
+  technische Hürde. Bis dahin bleiben unsere Kostenangaben in
+  `ASTRA-LAEUFE.md` die geschätzten aus dem Werkzeug.
+
+**GEMESSEN und NICHT brauchbar — wichtig, weil es verlockend aussieht:**
+
+- **`include: ["reasoning.encrypted_content"]` wird ANGENOMMEN, liefert bei
+  uns aber NICHTS.** Die Antwort enthielt überhaupt kein `reasoning`-Element,
+  nur `message`. Der Vorschlag, damit den Zielkonflikt vom 12.09.2026 zu
+  lösen (`store:false` schliesst `previous_response_id` aus), ist also
+  **NICHT belegt**. Angenommen heisst nicht wirksam — dieselbe Unterscheidung
+  wie bei `service_tier` (429 statt Ablehnung), nur in die andere Richtung.
+  Die Entscheidung „`store: false` gewinnt, Material geht erneut mit" bleibt.
+
+**BEHAUPTET, von uns NICHT gemessen** (wer eines davon benutzen will, misst
+es zuerst): eingebaute Werkzeuge `file_search`, `code_interpreter`, `shell`,
+`apply_patch`, `mcp`; Dateien per `input_file`/`file_id` statt im Prompt;
+`prompt_cache_options` mit `ttl`; `POST /v1/batches` (50 % billiger, bis 24 h
+Laufzeit); `tool_choice` mit erzwungener Funktion und Grammatik-Ausgabe
+(`syntax: "lark"`/`regex`); `expires_after` auf hochgeladenen Dateien;
+Container mit `network_policy: {"type":"disabled"}`.
+
+**Was davon für UNS von vornherein ausscheidet:** alles, was dem Prüfer
+Ausführung oder Schreibzugriff gibt (`shell`, `apply_patch`, `code_interpreter`,
+`mcp`) — das ist dieselbe Ablehnung wie am 11.09.2026, und sie steht. Und
+alles, was unseren Quelltext auf fremden Servern LIEGEN lässt (`file_search`
+mit Vector Stores, hochgeladene Dateien, Container) verträgt sich schlecht mit
+`store: false`; die Datenschutz-Übersicht weist diese Ressourcen ausdrücklich
+NICHT als rückstandsfrei aus.
+
+### Das Maximum herausholen — Betreiber-Vorgabe 18.09.2026
+
+Wörtlich: „mir ist es wichtig, dass wir aus gpt das maximum an unterstützung
+raus holen was geht." Der Engpass war nie, was die Schnittstelle kann, sondern
+WOMIT wir sie füttern. Fünf Punkte; vier sind ab sofort verbindlich, der
+fünfte ist eine Messung, die noch aussteht.
+
+**1. Der PLAN geht raus, BEVOR gebaut wird — mit einem Auslöser, der ohne
+Tagesform funktioniert.**
+
+Die Regel steht seit dem 10.09.2026 als „Punkt mit dem grössten Hebel" in
+dieser Datei und ist seither fast nie befolgt worden. Nach der Hausregel über
+unbefolgte Regeln („wird entweder durchgesetzt oder geändert") bekommt sie
+deshalb denselben Auslöser, der beim Astra-Einsatz am 12.09. funktioniert hat:
+
+> **Jeder Bauauftrag, der Produktivcode, einen Wächter, eine Zusicherung oder
+> die Testsuite anfasst, geht VOR der ersten Bau-Runde als Auftragspapier an
+> den Gegenleser.** Wer ihn auslässt, schreibt in EINEN Satz dazu, warum — in
+> denselben Zwischenstand, in dem die Suite-Zahlen stehen.
+
+Dieselbe Umkehr der Beweislast: vorher musste man begründen, warum man ihn
+RUFT, jetzt, warum nicht.
+
+*Beleg dafür:* 15.09.2026, zwei Planprüfungen über die Ausmusterung, 18
+Befunde, alle selbst nachgemessen, alle getragen — drei widerlegten
+ausdrückliche BEHAUPTUNGEN meines eigenen Plans, einer strich einen ganzen
+geplanten Beitrag.
+*Beleg dagegen, aus demselben Repo:* Am 18.09.2026 gingen die Härtungsrunden 3,
+4 und 5 ohne Planprüfung raus. Danach kamen am fertigen Diff fünf blockierende
+Befunde (Runde 3) und noch einmal sechs (Runde 4). Mehrere davon — eine
+unvollständige Verbenliste, eine Zeilennummer als Schlüssel, ein fehlender
+Nachweis für die CSRF-Verdrahtung — standen schon im Auftragspapier falsch
+bzw. fehlten dort. Am Papier wären sie billiger gewesen als an drei Bau-Runden.
+
+**2. Vor JEDEM Lauf die Bündelgrösse ZÄHLEN, nicht schätzen.**
+
+`POST /v1/responses/input_tokens` (gemessen 18.09., s. Abschnitt darüber). Bis
+dahin haben wir klein gebündelt, weil wir die Grenze nicht kannten und sie mit
+zwei Fehlversuchen eingrenzen mussten. Ab jetzt wird gezählt — und der
+gewonnene Platz geht in **Geschwisterdateien**, nicht in mehr Prosa. Die
+Bündelwahl hat am 12.09. nachweislich über einen Befund entschieden: der
+Prüfer fand eine von zwei Stellen derselben Regelverletzung, weil die zweite
+in einer Datei lag, die nicht im Bündel war. Er KONNTE sie nicht finden.
+
+**3. Bei jeder Änderung am Aussehen geht der SCREENSHOT mit, nicht nur der
+Quelltext.**
+
+Bildeingabe ist seit 14.09.2026 gemessen, mit Positivkontrolle — und war bis
+zum 18.09. kein einziges Mal benutzt. Drei ganzseitige Tablet-Screenshots
+fielen im Verbrauch nicht auf. Ein Prüfer, der die gerenderte Seite sieht,
+beantwortet Fragen, die am Quelltext gar nicht entscheidbar sind; der offene
+Kontrastwiderspruch beim `.btn-small` (Quelltext sagt schwarz, Screenshot
+wirkt hell) ist genau so eine.
+
+**4. Das Abhängigkeits-Audit läuft gegen die EXAKTEN installierten Versionen —
+und jeder Treffer wird gegen ZWEI unabhängige Quellen gehalten.**
+
+Gemessen am 18.09.2026 über alle 253 Laufzeitpakete (Einzelheiten in
+`plaene/abhaengigkeits-audit-18-09-2026.md`, hier nur, was für die Regel
+folgt):
+
+- **`npm audit` ist KEINE vollständige Quelle.** Es hat den einzigen für uns
+  erreichbaren Befund des Tages nicht gemeldet (`multer@2.3.0`,
+  CVE-2026-88932, verwaiste Dateien bei abgebrochenen Uploads — in OSV
+  bestätigt, vier unserer sechs `multer()`-Konfigurationen benutzen den
+  betroffenen `diskStorage`-Pfad).
+- **Eine OSV-VERSIONSABFRAGE ist kein verlässliches Negativ.** Für
+  `multer@2.3.0` liefert sie 0 Treffer, obwohl der Datensatz existiert — er
+  trägt Commit- statt npm-Versionsbereiche. Wer nur so fragt, meldet „sauber"
+  und meint „falsch gefragt". Richtig ist zusätzlich die Abfrage über die
+  KENNUNG (`/v1/vulns/<id>`), und wenn die 404 liefert, über den dort
+  genannten Alias.
+- **`github.com/advisories` ist aus dieser Umgebung nicht erreichbar**
+  (HTTP 403 vom Egress-Proxy). Eine dritte Quelle steht also nicht zur
+  Verfügung; was sich aus zwei nicht bestätigen lässt, wird als UNBESTÄTIGT
+  geführt — nicht als widerlegt und nicht als Befund. Am 18.09. traf das fünf
+  gemeldete `nodemailer`-Advisories.
+- **Die ERREICHBARKEIT misst der Haupt-Agent, nicht der Prüfer.** Er schreibt
+  korrekterweise „nicht entscheidbar"; ein `grep` über die eigene
+  Konfiguration macht daraus in zwei Minuten ein Ergebnis. Genau so wurden am
+  18.09. aus zwei bestätigten `qs`-Lücken „bestätigt, aber nicht erreichbar"
+  (`comma: true` nirgends gesetzt, `qs.stringify` nirgends aufgerufen).
+
+**5. NOCH NICHT GEMESSEN, deshalb keine Regel: zwei Läufe mit VERSCHIEDENEN
+Aufträgen statt einem.**
+
+Am 13.09.2026 ist gemessen, dass zwei Prüfspuren neun Befunde mit NULL
+Überschneidung liefern — und zwar weil sie verschieden SUCHEN, nicht weil sie
+verschiedener Meinung sind. Ob sich dasselbe INNERHALB des Gegenlesers
+herstellen lässt (ein Lauf „komm an diesem Wächter vorbei", ein Lauf „was
+folgt daraus für den Betrieb"), ist eine offene Frage. Sie wird an einem
+echten Diff gemessen, bevor sie hier als Regel steht.
+
+**Was sich dadurch NICHT ändert:** Der Prüfer bekommt weiter keine Ausführung
+und keinen Schreibzugriff, und unser Quelltext bleibt nicht auf fremden
+Servern liegen. Die Schnittstelle kann beides (`shell`, `code_interpreter`,
+`apply_patch`, Datei-Upload, Vector Stores) — genau deshalb steht es im
+Abschnitt darüber als ausdrücklich ABGELEHNT und nicht als „noch nicht
+ausprobiert". Und „Astra bestätigt" heisst weiter nie „mergefähig".
 
 ### Nachgemessen 12.09.2026 — und was sich dadurch an der Arbeitsweise ändert
 
@@ -697,6 +1024,64 @@ an der es am ehesten vergessen wird — ohne `core/db.js` und die Migration
 kann niemand beurteilen, ob eine Abfrage `studio_id` trägt, und das ist
 Punkt 1 der Prüfreihenfolge.
 
+### Kreuzverhör der Prüfspuren — BERATEND, niemals gattend (19.09.2026)
+
+Betreiber-Auftrag „nutze die beiden KI bestmöglich". Das Verfahren ist: jede
+Spur bekommt die Befunde der ANDEREN und soll sie WIDERLEGEN. Was dabei
+herauskommt, ist eine Empfehlung — **kein Befund wird verworfen, weil ein
+Widerleger das sagt.**
+
+**Warum nicht gattend, gemessen von aussen:** Eine Vergleichsstudie zu
+LLM-Agenten als Fehlalarm-Filter (arXiv 2601.22952) misst, dass der beste
+Aufbau die Fehlalarmquote von 98,3 % auf 6,3 % senkt — und dabei **22,25 % der
+ECHTEN Schwachstellen mit wegwirft.** Die Quote hängt scharf an der Klasse:
+Datenfluss-Fehler (SQL-Injection, XSS, Command-Injection) 0,4–2,4 % falsch
+verworfen, aber schwache Kryptografie 77 %, schwaches Hashing 84,5 %,
+**Trust Boundary 77 %**, Secure Cookie 50 %. Die Autoren empfehlen
+ausdrücklich: *nicht* für unbedingte automatische Unterdrückung, sondern als
+Entscheidungshilfe.
+
+**Unsere Befunde liegen fast alle in der teuren Hälfte.** Der Blank-PNG-Fund
+vom 19.09.2026 IST ein Trust-Boundary-Fehler (clientseitige Prüfung,
+serverseitig nicht erzwungen). Ein automatischer Filter hätte davon statistisch
+drei von vier verworfen.
+
+**Am eigenen Bestand gemessen (19.09.2026, Pilot):** Zwei Kreuzverhöre über
+sieben Behauptungen — **0 widerlegt**. Es hat also NICHTS gefiltert und damit
+die Messlast nicht gesenkt. Was es geleistet hat: zwei Schweren korrigiert
+(beide Spuren unabhängig dieselbe, von „hoch" auf „mittel"), eine
+erkenntnistheoretische Einschränkung ergänzt, die ich selbst nicht gemacht
+hatte, und zwei neue prüfbare Tatsachen beigesteuert, die sich beim Nachmessen
+bestätigten.
+
+**Was das heisst:** Das Kreuzverhör erhöht die PRÄZISION der Befunde, es
+verkleinert nicht die Arbeit. Wer es als Filter einsetzt, spart nichts und
+verliert Befunde.
+
+### Wie die Praxis es nennt (19.09.2026, recherchiert)
+
+Unsere Verfahren haben Fachnamen; sie zu kennen macht Befunde auffindbar:
+
+* **Gegenproben = Mutation Testing.** Werkzeug dafür: Stryker, mit
+  `@stryker-mutator/command-runner` auch für Projekte ohne Jest. Erste
+  Messung am eigenen Bestand: `plaene/mutation-testing-messung-19-09-2026.md`.
+  Kurzfassung: brauchbar für kleine Logikmodule, **unverträglich mit unseren
+  quelltextlesenden Wächtern** (Stryker instrumentiert die Quelle, die Wächter
+  lesen sie und schlagen an), und die meisten Überlebenden sind äquivalent.
+  Nicht als CI-Gate.
+* **„Einmal-Zustand vor fehlbarem Schritt verbraucht" = kompensierende
+  Transaktion / Saga.** Das Lehrbuchmittel sind **Idempotenzschlüssel und
+  Generationsnummern** — genau das, was beide Prüfspuren am 19.09.2026
+  unabhängig voneinander vorgeschlagen haben, ohne dass es ihnen jemand sagte.
+* **„Clientseitig geprüft, serverseitig nicht erzwungen" = Trust Boundary**
+  (CWE-501/602). Siehe die Miss-Raten oben — das ist ausgerechnet die Klasse,
+  bei der automatische Filter am meisten wegwerfen.
+
+**Eine Praxis-Warnung aus derselben Recherche:** HackerOne hat im März 2026 das
+Internet Bug Bounty pausiert, weil KI-verstärkte Meldungsmengen die Triage
+überrannten. Der Engpass ist das PRÜFEN, nicht das Finden — dieselbe Messung,
+die wir intern seit dem 12.09.2026 führen.
+
 ## Kosten
 
 Delegation hat Fixkosten (Auftrag formulieren, Einlesen, Bericht, Prüfung) —
@@ -752,6 +1137,34 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   dieselbe Methode nachweislich ein positives liefern kann. „Nichts gefunden"
   ohne Gegenprobe heißt „nicht gesucht". In Rechercheaufträgen muss diese
   Anforderung im Prompt stehen — Subagenten lesen diese Datei nicht.
+- **Das gilt auch für ein SUCHMUSTER beim Kartieren — und genau dort wird es
+  am häufigsten übersprungen.** Gemessen am 18.09.2026 abends, **dreimal
+  hintereinander in einer Stunde**, bei einer beauftragten Lückensuche:
+  *Erstens:* Filter „steht `studio_id` im Block?" stufte den BEKANNTEN Befund
+  (`/api/position` nimmt `etage_id` ungeprüft aus dem Body) als in Ordnung
+  ein — `studio_id` stand dort, aber als eingesetzter WERT im INSERT, nicht
+  als Prüfung.
+  *Zweitens:* verschärft auf „`WHERE … studio_id … id =` im Block?" — derselbe
+  Befund wieder als geprüft gemeldet, weil eine ANDERE Abfrage im selben
+  30-Zeilen-Block eine passende Klausel hatte.
+  *Drittens:* bei der Frage, ob die acht `/intern`-Router bewacht sind, suchte
+  ich nach `superadmin|requireSuper|INTERN_TOKEN|x-intern|Bearer` und bekam
+  **sechs von acht als ungeschützt** gemeldet. Tatsächlich sind alle acht
+  bewacht; die Wache heisst `BEZIRK_EXPORT_TOKEN`/`PROVISION_TOKEN` im Header
+  `X-Bezirk-Token` über `core/bezirk-token.js`. Mit dem am echten Fall
+  GELERNTEN Muster: acht von acht bewacht.
+  **Die Reihenfolge ist der ganze Punkt: erst das Muster an einer bekannten
+  Fundstelle LERNEN, dann damit suchen — nie umgekehrt.** Ein geratenes Muster
+  liefert in beide Richtungen Unsinn: es übersieht den echten Fall (1, 2) und
+  meldet Fehlalarme (3). Wer keinen bekannten Positivfall hat, stellt einen
+  her, bevor das Ergebnis zählt.
+  **Und für eine Frage nach dem KONTROLLFLUSS taugt Textsuche grundsätzlich
+  nicht.** „Wird diese Variable geprüft, bevor sie benutzt wird?" ist keine
+  Mustersuche — vier Verdachtsfälle waren beim Lesen alle sauber, und zwei von
+  ihnen hatte der Filter nur deshalb gemeldet, weil die Prüfung NACH dem Lesen
+  statt in der WHERE-Klausel steht (`routes/admin/qr-druckdaten.js:246-249`:
+  `SELECT … WHERE id = $1`, danach `if (charge.studio_id !== studioId)`).
+  Dafür sind der Gegenleser mit Repo-Lesezugriff und das eigene Lesen da.
 - **Gegenprobe zu jeder neuen Prüfung.** Fehler herstellen, ROT messen,
   zurücknehmen, GRÜN messen — beides wörtlich melden. Ohne diesen Nachweis ist
   eine Prüfung Dekoration. Am 17.08.2026 rutschten fünf konstruierte Verstöße
@@ -1110,6 +1523,28 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   Möglichkeit getrennt (`GEGENPROBE-` und `DEFEKT` in zwei Teilen), wie wir
   es aus demselben Grund schon bei `node <testdatei>.js` in Commit-Botschaften
   tun.
+- **`| grep -v node_modules` filtert den INHALT der Zeile, nicht den PFAD — und
+  verschluckt damit genau die Treffer, die den Scan beschreiben.** Gemessen am
+  18.09.2026 im GymDocu-Repo: derselbe Marker-Scan zählt direkt in der Datei
+  **6**, über die Pipeline nur **4**. Die beiden fehlenden Zeilen zitieren das
+  Scan-Kommando selbst und tragen darin das Wort `node_modules`; mein eigener
+  Filter hat sie weggeworfen. Gefährlich ist daran nicht die zu kleine Zahl,
+  sondern die Klasse: **ein ECHTER Sabotage-Rest in einer Zeile, die
+  `node_modules` erwähnt, ist unsichtbar.** Positivkontrolle, je einzeln
+  gemessen an einer eigens angelegten Datei mit der Zeile
+  `rm -rf node_modules/foo   # GEGENPROBE-` + `DEFEKT`: altes Kommando **0
+  Treffer**, neues Kommando **1**. Gegenprobe in die andere Richtung, damit der
+  Ausschluss nicht nur wegfällt: eine echte Datei unter `node_modules/` bleibt
+  mit `--exclude-dir` draussen (**2 → 1**).
+  Der Ausschluss gehört deshalb an `grep` selbst, wo er auf den PFAD wirkt:
+
+      grep -rn --exclude-dir=node_modules --exclude-dir=.git \
+           "GEGENPROBE-DEFEKT\|SABOTAGE" .
+
+  Verallgemeinert, und das trifft jeden nachgeschalteten `grep -v`: **ein
+  Filter, der einen PFAD ausschliessen soll, aber auf ZEILEN wirkt, schliesst
+  auch Funde aus.** Wo ein Werkzeug einen eigenen Pfadausschluss mitbringt
+  (`--exclude-dir`, `:(exclude)` bei git, `--glob '!…'`), wird dieser benutzt.
 - **Eine Behebung kann Wächter BLIND machen, die vorher gesehen haben.**
   Nicht nur „kostet sie Abdeckung" — sie kann eine bestehende Zusicherung
   in eine verwandeln, die nicht mehr fallen KANN. Dreimal gemessen am
@@ -1322,9 +1757,19 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   Es gibt ZWEI Auslieferungswege, und sie verhalten sich gegensätzlich —
   wer nur einen ansieht, zieht den falschen Schluss (26.08.2026):
   `gymdocu-deploy` (`/usr/local/bin/`, von Hand) fährt `test/run.sh` auf dem
-  Server als PFLICHT-Gate (`ops/gymdocu-deploy:156`, Notausgang nur
-  `GYMDOCU_SKIP_TESTS=1`); GitHub Actions → `ops/deploy.sh` fährt sie dort
-  bewusst NICHT (Begründung im Kopf von `.github/workflows/deploy.yml`).
+  Server als PFLICHT-Gate (Notausgang nur `GYMDOCU_SKIP_TESTS=1`); GitHub
+  Actions → `ops/deploy.sh` fährt sie dort bewusst NICHT (Begründung im Kopf
+  von `.github/workflows/deploy.yml`).
+  **Die Fundstelle `ops/gymdocu-deploy:156` stand hier bis zum 18.09.2026 und
+  ist falsch: diese Datei existiert im Repo NICHT und hat nie existiert**
+  (gemessen: `test -f` negativ, `git log --diff-filter=D` leer). Das Skript
+  liegt ausschliesslich auf dem Server unter `/usr/local/bin/`. Folge, und sie
+  ist unangenehm: **aus dem Repo heraus lässt sich NICHT belegen, ob und mit
+  welchen Umgebungsvariablen die Suite dort läuft.** Wer eine Aussage darüber
+  braucht — etwa ob ein Test auf dem Server echte Dienste erreicht —, misst
+  sie auf dem Server oder führt sie als UNBESTÄTIGT. Die Regel „Tests fassen
+  keine echten Dienste an" bleibt davon unberührt; sie gilt gerade WEIL der
+  strengere Weg nicht einsehbar ist.
   Maßgeblich ist der strengere Weg: die Regel gilt.
 - **Tests dürfen nicht an Prosa scheitern.** Statische Prüfungen über Quelltext
   entfernen zuerst Kommentarzeilen — sonst schlägt der Wächter am erklärenden
@@ -1338,6 +1783,24 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   in eine Variable auswerten, dann prüfen UND ausgeben. Zwei getrennte
   Aufrufe sind zwei Messungen; bei einem flatternden Befund beschreibt die
   Diagnose dann womöglich einen anderen Durchlauf als den roten.
+- **Wer misst, ob ein Prozess von selbst endet, darf das Zeitlimit nicht IN
+  den Prozess legen.** Gemessen am 19.09.2026 an meiner eigenen Messung: Um zu
+  prüfen, ob ein nicht zerstörter Socket die Ereignisschleife am Leben hält,
+  hatte ich einen `setTimeout(..., 1200)` als Wachhund IN das Node-Skript
+  gelegt. **Dieser Timer hält die Schleife selbst am Leben** — das Ergebnis
+  „Prozess läuft noch" war damit garantiert, mit und ohne Defekt. (`wach.unref
+  && null` wertet die Eigenschaft nur aus und ruft nichts auf; auch das fiel
+  erst beim zweiten Hinsehen auf.) Der Befund stimmte trotzdem — aus Glück,
+  nicht aus Messung.
+  Mit dem Instrument AUSSERHALB des Prozesses (`timeout 2 node probe.js`, dazu
+  `unref()` auf Server und Intervall) wird es eindeutig: ohne `destroy()`
+  **Exit 124 nach 2006 ms** (vom äußeren Zeitlimit getötet), mit `destroy()`
+  **Exit 0 nach 58 ms** (von selbst beendet). Verallgemeinert: **eine Frage
+  nach der LEBENSDAUER eines Prozesses kann nicht von innen beantwortet
+  werden** — jedes Messmittel im Prozess ist Teil dessen, was ihn am Leben
+  hält. Dasselbe gilt für offene Handles, Sockets und Server: wer sie zum
+  Messen anlegt, `unref()`t sie, sonst misst er sich selbst.
+
 - **Eine Zuweisung aus einer gescheiterten Kommandosubstitution IST
   zugewiesen** — `set -u` greift nicht, die Variable ist nur leer. Unter
   `set -uo pipefail` OHNE `-e` gilt deshalb: jedes `VAR=$(mktemp -d …)`
@@ -1502,6 +1965,24 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
 - **Der erste Fehlschlag ist keine Antwort.** 503, leere Seite, Zeitüberschreitung:
   Anfang der Suche, nicht ihr Ende. Andere Endpunkte, andere Werkzeuge, andere
   Formulierung — und wenn nichts geht, wird die Lücke benannt.
+- **`read -t N </dev/null` SCHLÄFT NICHT — es ist der naheliegende Ersatz für
+  das gesperrte `sleep` und er wirkt nicht.** Gemessen am 18.09.2026:
+  `s=$(date +%s); read -t 5 </dev/null; e=$(date +%s)` ergibt **0 Sekunden**.
+  `read` trifft an `/dev/null` sofort EOF und kehrt zurück, das Zeitlimit
+  kommt gar nicht zum Tragen.
+  **Der Schaden ist keine Fehlermeldung, sondern eine falsche Diagnose.** Eine
+  Warteschleife `until grep -q SUITE_EXIT …; do read -t 5 </dev/null; done`
+  läuft ihre 110 Durchgänge in Millisekunden ab und meldet danach „läuft noch
+  (nach 550s)" — eine Zahl, die es nie gab. Ich habe daraufhin eine völlig
+  gesunde Suite für „seit 18 Minuten hängend" gehalten und angefangen, den
+  Fehler in der eigenen Änderung zu suchen. Aufgefallen ist es nur an einer
+  Nebensächlichkeit: `ps` zeigte für den angeblich 20 Minuten alten Prozess
+  eine Laufzeit von `02:20`.
+  **Richtig ist: gar nicht im Vordergrund warten.** Ein Hintergrundlauf meldet
+  sich von selbst; wer doch pollen muss, nimmt einen Hintergrundbefehl mit
+  echtem `sleep` darin. Und wer eine Wartezeit BEHAUPTET, misst sie mit
+  `date +%s` vorher und nachher — sonst steht am Ende eine erfundene Zahl in
+  der eigenen Meldung.
 - **Umlaute in `grep`:** `.` matcht ein Byte, ein Umlaut belegt in UTF-8 zwei.
   `gef.hrdungsbeurteilung` findet nichts. Ohne Umlaut suchen oder `-P`.
 - **GitHub geht NUR über die MCP-Werkzeuge.** Ein direkter API-Aufruf per
@@ -1590,6 +2071,12 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
 - **Die Marktplatz-Plugins sind in Claude-Code-Sitzungen NICHT geladen.**
   `design:critique`, `design:design-critique`, `engineering:code-review` — alle
   „Unknown skill", obwohl im Konto aktiv und aufgelistet.
+  **Der EINGEBAUTE `code-review` ist davon zu unterscheiden** und steht in
+  dieser Sitzung (18.09.2026, nach einem Container-Neustart) in der
+  Skill-Liste — anders als die gleichnamige Marktplatz-Variante. Nach unserer
+  eigenen Regel eine Zeile weiter unten ist das aber eine LISTUNG, kein Beleg:
+  er wird ausprobiert, wenn er das nächste Mal gebraucht wird, und erst dann
+  gilt er als verfügbar.
 - **Verfügbarkeit wird ausprobiert, nicht aus einer Liste geschlossen.**
   `dataviz` steht in keiner Liste und ist da; `design:critique` steht drin und
   ist es nicht. Dieselbe Positivkontrolle wie in der Recherche.

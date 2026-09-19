@@ -79,6 +79,47 @@ sondern falsch.
 | 16.09.2026 | CODE qr-zuordnung Sperrreihenfolge (Verklemmung aus Karte #233) | Diff 484 Zeilen + Repo-Lesezugriff (Suchen 25, Lesungen 31), Token rein 607.824, Token raus 9.791, Runden 9 | 5 (1 blockierend eingestuft) | **mind. 1 (B5)** | **nicht mehr einzeln rekonstruierbar** — NACHGETRAGEN 16.09.2026 abends, nachdem der Review-Bot am Doku-PR die offenen Felder gemeldet hat. Belegt ist B5: er wurde am Quelltext bestaetigt und der ausgelieferte Beitrag (`a7ea96a`) ist auf ihm gebaut. Fuer die uebrigen vier ist das Einzelurteil getragen/gefallen NIE festgehalten worden und nach der Kontextverdichtung nicht mehr zu belegen. Es wird deshalb NICHT geschaetzt: eine erfundene Zahl waere schlimmer als eine fehlende, weil diese Datei genau dagegen existiert. **Schon am Quelltext bestaetigt (B5, der schwerste):** Sperr-SELECT und UPDATE sind zwei Anweisungen mit zwei Snapshots, eine dazwischen eingefuegte Zeile ist NICHT mitgesperrt und wird vom UPDATE nachtraeglich angefordert — damit bleibt ein zweiter Verklemmungskreis. **Die tragende Annahme selbst nachgelesen und sie traegt:** `core/qr-token.js:464-479` vergibt Nummern bewusst JE BLOCK statt global fortlaufend, im Quelltext begruendet mit „sonst ist ein niedrig nummerierter Block, der NACH einem hoeheren zugestellt wurde, fuer immer unerreichbar" — eine neue Nummer kann also UNTERHALB vorhandener entstehen. **Und der Behebungsvorschlag des Pruefers hat eine Folge, die er nicht nennt:** das UPDATE auf die gesperrten Nummern einzuschraenken schickt eine spaet eingefuegte Zeile in den `throw`-Zweig bei `core/qr-zuordnung.js:611` („gebrochenes Invariant") — aus einem harmlosen Wettlauf wuerde ein 500er. Der Ausweg ist EINE Anweisung (`UPDATE … WHERE nummer IN (SELECT … ORDER BY nummer FOR UPDATE)`): ein Snapshot, kanonische Ordnung, kein neuer Fehlerpfad | 8,33 $ |
 | 16.09.2026 | CODE qr-zuordnung Sperrreihenfolge, ZWEITE Runde (Behebung hatte Verhalten geaendert) | Diff 923 Zeilen + Repo-Lesezugriff (Suchen 22, Lesungen 25), Token rein 483.452, Token raus 18.400, Runden 8 | 8 (2 blockierend) | **mind. 2 (B1, B7)** | **nicht mehr einzeln rekonstruierbar** — NACHGETRAGEN 16.09.2026 abends, s. Zeile darueber. Belegt sind die beiden blockierenden: B1 am Quelltext bestaetigt, B7 durch eigene Messung (die reine Mutation HAENGT, EXIT 124 — der Ausfuehrende hatte 308 PASS / 1 FAIL gemeldet und auf Nachfrage offengelegt, dass er in KOMBINATION mutiert hatte). Aus B7 ist der Laufzeitwaechter je Testdatei entstanden. Die sechs weiteren sind in Runde 3 und 4 allesamt behandelt worden, ein Einzelurteil wurde je Befund aber nicht protokolliert. — **Die zweite Runde war faellig und hat sich gelohnt: sie trifft genau die Stelle, an der ich selbst zufrieden war.** **B1, am Quelltext BESTAETIGT (reines Lesen genuegt):** die NACHHER-Kernprobe beweist den gemeinsamen Snapshot NICHT. Sie laesst `c` von einem dritten Studio VOLLSTAENDIG beanspruchen, bevor `b` freigegeben wird — damit haette auch die alte Zwei-Anweisungs-Fassung `c` uebersprungen, naemlich wegen ihres eigenen `AND studio_id IS NULL`, nicht wegen eines gemeinsamen Snapshots. Die Probe unterscheidet „unsichtbar" nicht von „sichtbar, aber schon vergeben"; ihre Vorbedingung entfernt genau den Unterschied, den sie zeigen soll. **B7, blockierend, NOCH ZU MESSEN und im Widerspruch zu einer Executer-Messung:** die angekuendigte Mutation (`await` vor dem ersten Aufruf in (e1)) soll laut Ausfuehrendem 308 PASS / 1 FAIL ergeben; nach Aktenlage HAENGT sie stattdessen — der Halter wartet auf ein Gate, das erst nach der Beobachtungsschleife geoeffnet wird, und `test/run.sh` startet Testdateien ohne Laufzeitgrenze. Ein Test, der haengen kann, gehoert nicht in ein Deploy-Gate. **Sechs weitere:** leere Probenschleifen gelten als bestanden (`every()` auf leerer Liste); `P1b` akzeptiert BELIEBIGE Fehler als Nachweis; G2 haengt weiter an 200 ms statt an einer Barriere; `(e1)` zaehlt zwei BELIEBIGE blockierte Verbindungen der Datenbank statt der beiden geprueften; unbehandelte Promise-Ablehnungen; nur EIN Ordnungsschnitt statt der vollen Reihenfolge. **Was daraus fuer die Arbeitsweise folgt, ist wichtiger als die Einzelbefunde:** die PRODUKTIONSaenderung ist klein und nach beiden Runden unbeanstandet (kein Mandantentrennungsbefund), das TESTGERUEST ist in zwei Runden auf ~700 Zeilen gewachsen und bindet immer noch nicht. Runde 3 baut deshalb WENIGER Geruest, nicht mehr — und jede Wartestelle bekommt eine harte Zeitgrenze | 7,42 $ |
 | 16.09.2026 | CODE qr-zuordnung, DRITTE Runde (nur die Beweise; Produktionscode unveraendert) | Diff 369 Zeilen + Repo-Lesezugriff (Suchen/Lesungen nicht protokolliert), Token rein 314.694, Token raus 12.338, Runden 6 | 3 (1 blockierend) | **3** | **0** — **Der billigste Lauf dieses Beitrags (4,86 $) und der erste mit einer ENTLASTENDEN Kernaussage:** „keine generell unerreichbare rote Sachzusicherung in dieser Datei gefunden", und P1-NACHHER bindet jetzt gegen die alte Zwei-Anweisungs-Fassung. Der Pruefer geht dafuer JEDE `ok()`-Stelle einzeln durch und nennt zu jeder die Einzeilen-Mutation, die sie fallen laesst — genau die Rechenschaft, die ein „nichts gefunden" tragfaehig macht. **SELBST AM QUELLTEXT NACHGELESEN, alle drei getragen:** (B3, blockierend) es bleiben ZWEI benannte Haengerpfade — der Halter in P1-NACHHER hat keinen eigenen Timer (`clientHold` haelt die Zeile, Freigabe nur ueber den spaeteren sequenziellen Ablauf), und `(e3)` traegt bei `test_feature_qr_zuordnung.js:2608` weiterhin ein unbegrenztes `await gate;`. Die Gate-Zeitgrenze aus Runde 3 wirkt dort, wo sie steht, nicht ueberall. (B1) Die vier bzw. fuenf NOWAIT-Proben muessen keine VERSCHIEDENEN Nummern pruefen: `Array(4).fill(nummernG3[0])` besteht Laenge, Groessenrelation und alle vier Abfragen — die Eindeutigkeitspruefung gilt nur der Gesamtliste, nicht den daraus gebildeten Teillisten. (B2) In `(e1)` wandert die Sollzahl weiter mit dem Aufbau (`const R = 2` laesst alles gruen, waehrend die Texte 40 Nummern behaupten). **Was der Lauf ausserdem leistet, und was ich ausdruecklich BESTELLT hatte:** die Gegenfrage „was ist durch das Entfernen von P1b verlorengegangen?". Antwort: die Integration ZWEIER echter `beanspruche()`-Aufrufe ueber ueberlappende Spannen. Das war MEIN Zuschnitt („was nicht bindet, fliegt raus"), kein Fehler des Ausfuehrenden — und es gehoert in den Kopfkommentar, statt unbemerkt zu verschwinden. **Wer eine Streichung anordnet, laesst auch pruefen, was mitgeflogen ist** | 4,86 $ |
+| 16.09.2026 | CODE Rechtsstand Stufe 1, Runden 1+2 zusammen | Diff 1981 Zeilen, Suchen 11, Lesungen 19, Token rein 552468, Token raus 6308, Runden 7 | 7 (2 blockierend) | **5** | **0, aber 2 UNGEMESSEN** — **Der erste Lauf, in dem der Prüfer einen Verstoß gegen eine Regel fand, die ich ihm SELBST als unverhandelbar in den Vorspann geschrieben hatte:** der neue Statusdatei-Test legt mit `mkdtempSync` echte Verzeichnisse an und löscht mit `rmSync(..., {recursive:true})` — in einer Suite, die auf dem Live-Server Deploy-Gate ist. Am Quelltext bestätigt (`test_feature_rechtsstand.js:1554/:1575`). **Der teuerste Fund, selbst nachgemessen:** bei einem Massen-Extraktionsfehler ergeben 61 Quellen mit je eigenem Grund 61 Meldungsgruppen und **14.221 Zeichen** gegen Telegrams 4096 — und der Sendeweg teilt nichts auf (`grep` auf `4096`/`slice`/`chunk`: null Treffer). Ausgerechnet im Fall, für den der Wächter existiert, erreicht KEINE Zeile den Betreiber; die Fehlerisolierung aus Runde 1 schützt die Bewertung, nicht die Zustellung. **Zwei weitere selbst bestätigt:** ein Umbruch INNERHALB des Textes verändert den Normtext und `\r` überlebt (gemessen an drei Fassungen desselben Satzes) — dieselbe Klasse wie der Hauptbefund, eine Ebene tiefer, und heute noch folgenlos (4982 geprüfte Textblöcke, null Treffer), also jetzt billig zu schliessen; und der Resilienztest stellt die intakte Quelle VOR die fehlerhafte, kann das Weiterarbeiten danach also gar nicht belegen (Reihenfolge am Quelltext gelesen). **Einer deckt sich mit der Claude-Spur** (kein Riegel über die 57 Fingerabdrücke) — dort gemessen, hier unabhängig hergeleitet. **EHRLICH: zwei Befunde habe ich NICHT nachgemessen** (1.3 Meldungstests, 3.3 Abbruch bei Schreibfehler der Statusdatei). Sie stehen deshalb nicht als getragen; 3.3 ist als bestehender Fehlerpfad ausdrücklich zurückgestellt. **Überschneidung mit der Claude-Spur: 1 von 7** | 7,38 $ |
+| 17.09.2026 | CODE Rechtsstand Stufe 1, ZWEITE Runde nach Runde 3 | Diff 2666 Zeilen, Suchen 15, Lesungen 17, Token rein 796704, Token raus 9906, Runden 8 | 7 (1 blockierend) | **7** | **0** — **Die erste zweite Runde, die sich eindeutig gelohnt hat, und der erste Lauf, in dem BEIDE Spuren denselben blockierenden Befund hatten.** Er trifft meine EIGENE Vorgabe aus Runde 3: ich hatte verlangt, die Versionsabweichung zwischen automatisch ausgeliefertem Kern und von Hand installierter Wächter-Kopie laut zu machen — und dabei gegen die NEUE Klassifizierung gemessen. Maßgeblich ist die ALTE, denn sie ist die installierte. Selbst nachgemessen, die alte Fassung wörtlich aus `master` nachgebaut: **alle SECHS neuen Lagen fallen dort auf `still`**, auch `widerspruch` und `norm_geaendert`. Im Fenster zwischen Merge und `install` meldet der Wächter also alles als unauffällig, obwohl er nichts geprüft hat — falsches Grün. Meine Formulierung „61× rot pro Woche" war damit falsch; der Fehler ist nicht laut, sondern unsichtbar. **Was den Befund beherrschbar macht, habe ich ebenfalls selbst gemessen:** der xmlText-Riegel greift VOR allen anderen Stufe-1-Zweigen, im Versionsfenster kann also keine andere neue Lage auftreten — es genügt, diese eine unter der alten Kopie laut zu machen. **Sechs weitere, alle getragen:** die Grenzprüfung der Meldungsaufteilung bezieht ihren Sollwert aus derselben Konstante wie die Implementierung; die Hash-Formatgegenproben prüfen eine eigene Kopie der Regel statt des Produktionsvalidators; ein gekennzeichnetes Kürzen kann eine HTML-Entity zerschneiden und damit die ganze Sendung ungültig machen; mehrere Teile gehen ohne Drosselung und ohne Wiederholversuch raus; die gedruckten Fingerabdrücke gehören bei einer Gruppe nur zur ERSTEN Norm; und der Strukturplatzhalter lässt sich aus der Quelle einschleusen (selbst gemessen: `A&#31;B` → `"A\nB"`). **Was dieser Lauf über die Methode sagt:** die Überschneidung mit der Claude-Spur war diesmal **5 von 7** statt 1 von 7 — beide Spuren fanden fast dasselbe. Die frühere Beobachtung „jede Spur findet Anderes" gilt also NICHT allgemein; sie hing offenbar am Material. Das ist ein Datenpunkt gegen die eigene Lieblingsthese und gehört genau deshalb hier hin | 10,70 $ |
+| 17.09.2026 | Geraetealter und Maengelhistorie an der Ausmusterung, Runde 3 | Diff 1667 Zeilen, Suchen 18, Lesungen 35, Token rein 780805, Token raus 7168, Runden 9 | 6 (2 blockierend) | **6** | **0** — **Überschneidung mit der Claude-Spur: NULL von 6.** Damit steht es bei den beiden Läufen dieses Tages 0/6 gegen 5/7 — dieselbe Methode, gegensätzliches Ergebnis. Die These „jede Spur findet Anderes" hängt also am MATERIAL, nicht am Prüfer; wer sie allgemein behauptet, hat den jeweils anderen Lauf nicht angesehen. **Der teuerste Befund ist eine falsche Sicherheitszusicherung** und trifft Punkt 1 der Prüfreihenfolge: die Zusicherung verspricht wörtlich „studio_id-Filter wirkt wirklich, beide Gruppen", die Fremddaten in Studio B tragen aber alle eine gesetzte `geraet_id` — für die namensgleich-Gruppe gilt jedoch `geraet_id IS NULL`, sie werden also schon durch die ANDERE Bedingung ausgeschlossen. Selbst nachgemessen, beide Richtungen: `studio_id` aus der Abfrage entfernt (als `$1::integer IS NOT NULL`, damit Parameterzahl und Typisierung gültig bleiben) → **Suite EXIT 0, 117 PASS / 0 FAIL**, während ein eigens angelegter Freitext-Mangel aus Studio B bei Studio A mitgezählt wird (`LECK=true`); zurückgenommen `LECK=false`, `diff` EXIT 0. **Der zweite blockierende:** die neu angezeigten Entscheidungsdaten umgehen den bestehenden Änderungsriegel — `baueAnsicht()` nimmt nur `{id, typ, name, standort, seriennummer}`, der POST-SELECT lädt `inbetriebnahme_am` gar nicht, `vergleicheAnsichten()` vergleicht drei Gerätefelder. Korrigiert jemand die Inbetriebnahme, während ein zweiter das Formular offen hat, bleibt der Fingerabdruck identisch und die UNWIDERRUFLICHE Ausmusterung fällt auf veralteter Grundlage. Gelesen, nicht vermutet. **Vier weitere, alle getragen:** `app.listen(0)` ohne Host bindet auf alle Schnittstellen und stellt damit für die Dauer des Deploy-Gates authentifizierungsfreie Admin-Endpunkte bereit (die Netzsperre der Suite kontrolliert nur AUSGEHENDE Verbindungen); die Audit-Wertetests prüfen ausschliesslich Übergänge, die bei NULL beginnen, ein fest verdrahtetes `inbetriebnahme_alt: null` bliebe grün; zwei neue Datumssätze werden nur an der Überschrift geprüft, nie am Wert („mindestens seit 01.01.1900" bliebe unbemerkt); und ein Fehler der Zusatzabfragen reisst die ganze Bestätigungsseite — das ist LAUT und damit die sichere Seite, ein Rückfall auf `{gesamt: 0}` wäre das Gegenteil, deshalb bewusst nur festgehalten. **Eigener Fehler bei der Gegenprobe, gemessen statt übersehen:** mein Standard-Mutator hängt `// GEGENPROBE-DEFEKT` an — innerhalb eines SQL-Template-Literals ist das kein Kommentar, PostgreSQL kennt `//` nicht. `node --check` merkt davon nichts, weil der JS-String gültig bleibt. Die Probe wäre am Syntaxfehler gescheitert statt an der Sache | 10,30 $ |
+| 17.09.2026 | Sammelbeitrag Rechtsstand-Waechter, Runden 1-3, vor PR | Diff 1387 Zeilen, Suchen 20, Lesungen 23, Token rein 729370, Token raus 9572, Runden 10 | 3 (1 blockierend) | **2** | **1** — **Dieser Lauf lässt sich zur Überschneidungsfrage NICHT auswerten, und daran bin ich schuld:** ich habe der Claude-Spur drei Befunde dieses Laufs im Auftrag ausdrücklich als „bereits gemessen, nicht erneut melden" ausgeschlossen. Die Spuren liefen damit nicht mehr unabhängig; jede Zahl zur Überschneidung wäre erfunden. Die Reihe 1/7 → 5/7 → 0/6 bekommt heute also KEINEN vierten Datenpunkt. **Der blockierende Befund, selbst nachgemessen:** `continue` → `break` in `fuelleUnbestaetigtZeilen()` (ops:878) ergibt **TEST_EXIT=0, 295 PASS / 0 FAIL** — genau die Schutzwirkung, die der Kommentar darüber behauptet, ist von keiner Zusicherung bewacht. Ursache ist die vierte Erscheinungsform aus der CLAUDE.md: ALLE Unerreichbar-Fixturen haben gleich lange Zeilen, `break` und `continue` sind für sie beobachtungsgleich. **Der zweite getragene ist eine falsche URSACHE in meiner eigenen Dokumentation:** der Kommentar in `standAusXml()` erklärt die falschen Werte mit einem „stillen Rückfall auf das GANZE Dokument". Selbst gemessen: `metaMatch` ist bei BEIDEN neuen Fixturen **nicht null**, der Rückfallzweig wird gar nicht betreten — der Ausdruck findet schlicht den nächsten `<metadaten>`-Block irgendwo im Dokument. Die beobachteten Werte stimmen, die Begründung nicht; den Rückfall zu entfernen hätte den Fall nicht behoben. Das ist die Klasse „eine Begründung, die schlicht nicht stimmt", und sie stand in einem Dokument, das als Entscheidungsgrundlage dient. **Der gefallene:** drei neue `fs.readFileSync` auf eigenen Repo-Quelltext als angeblicher Verstoss gegen „Tests fassen kein echtes Dateisystem an". Selbst gemessen: **92 der 326 Testdateien** tun genau das; die Regel zielt auf `pm2`, `nginx` und `/var/www`. Der Prüfer hatte selbst relativiert („ich setze diese Lesestellen nicht mit einem rekursiven Löschen gleich") — ein Prüfer, der seine eigene Einstufung dämpft, ist mehr wert als einer, der jeden Fund maximal einstuft | 9,84 $ |
+| 17.09.2026 | Sammelbeitrag Rechtsstand-Waechter, Runde 4, zweite Gegenlesung | Diff 866 Zeilen, Suchen 7, Lesungen 27, Token rein 814419, Token raus 7544, Runden 9 | 2 (0 blockierend) | **2** | **0** — **Die erste zweite Runde, die nach der Regel vom 13.09. wirklich faellig war** (die Nachbesserung aenderte VERHALTEN — drei Regex-Muster im Kern —, nicht nur Zusicherungen) **und die KEINEN blockierenden Befund brachte.** Das ist fuer die Regel ein Datenpunkt in die andere Richtung als der vom 12.09.: eine zweite Runde kann auch bestaetigen. **Der Wert lag diesmal im gezielten AUSSCHLUSS, nicht im Fund.** Mein Hauptverdacht war der neue `sicher()`-Wrapper ueber ~24 Aufrufstellen: ein gefangener Fehler, der als bestandene Zusicherung durchgeht, waere schlimmer als der Absturz, den er behebt. Der Pruefer ist JEDE Weiterverwendung des gefangenen Werts einzeln durchgegangen und hat keine solche Stelle gefunden — mit Nennung der Riegel, inklusive der beiden Registeraufbauten, wo ein gefangenes `null` ueber `normtext_unbestaetigt` zu einem FAIL fuehrt statt zu Gruen. Ein begruendetes "nichts gefunden" ist hier das Ergebnis, das ich gekauft habe. **Beide Befunde selbst nachgemessen, beide tragen, beide rein lesend messbar:** (1) die neue Abschlusszeilen-Zusicherung baut ihren Ausdruck ungebunden zusammen — `"5 von 6 ausfuehrlich gezeigt"` matcht gemessen auch in `"15 von 6 ausfuehrlich gezeigt"` (`true`), sie prueft also einen Teilstring statt der Zahl; die strenge Fassung liest korrekt 15 aus. (2) Ein quotiertes `>` INNERHALB eines Attributwerts bricht die neu gehaerteten Muster: `<standkommentar quelle="a>b">NEU</standkommentar>` liefert gemessen `b">NEU` statt `NEU`. Das ist die Grenze des Regex-Ansatzes, kein Fehler dieser Runde — der Pruefer hat ausdruecklich KEINEN solchen Fall im echten gii-XML gefunden und es selbst als Anmerkung statt als Befund eingestuft. Wird dokumentiert, nicht behoben. **Zur Ueberschneidungsfrage traegt dieser Lauf nichts bei:** es gab keine zweite Spur, ich habe nur Astra laufen lassen | 10,75 $ |
+| 17.09.2026 | Geistersperre-Rennen, drei Runden, vor PR | Diff 799 Zeilen, Suchen 28, Lesungen 34, Token rein 823799, Token raus 12369, Runden 12 | 4 (2 blockierend) | **3 gemessen, 1 ungemessen** | **0** — **Der teuerste Lauf bisher, und er trifft die eigene Arbeit derselben Stunde.** Befund 1: der statische Anker, den ich in Runde 3 EXTRA hatte bauen lassen, damit ein kuenftiger Verlust des Studio-Locks in `routes/admin/ausmusterung.js` auffaellt, sieht genau diesen Verlust NICHT. Selbst gemessen an der echten Datei, Bedingung von `SEILKONTROLLE` auf `CARDIO` verbogen (damit laeuft der Lock im Seil-Zweig gar nicht mehr): **58 PASS / 0 FAIL, EXIT 0, null gefallene Zusicherungen**. Er bindet Anzahl und Textpositionen, nicht die BEDINGUNG. Das ist die Klasse, die er verhindern sollte — und die Entscheidung, ihn ueberhaupt zu bauen, war trotzdem richtig; nur seine Form reichte nicht. Befund 2 (Tagesgrenze): selbst nachgelesen und tragend — die Loeschroute nimmt in ihrer Tx NUR den Tagesschluessel, ihr `auditAppend` laeuft erst NACH dem Commit, sie haelt den Studio-Lock also nie. Loeschen um 23:59:59 auf Tag D und Nachtrag um 00:00:00 auf D+1 teilen KEINE Sperre; der in Runde 2 ergaenzte Studio-Lock greift dort ins Leere. Nicht behoben (aendert die Granularitaet an drei weiteren Routen und beruehrt den dokumentierten Bestandskreis), datiert festgehalten. Befund 3 (Umbenennen): selbst nachgelesen und tragend — die neue Nachpruefung liest die frische Gerdaetezeile und wirft sie mit `.some(...)` weg, der INSERT nimmt weiter den Namen aus der VORpruefung, waehrend die Loeschpruefung am AKTUELLEN Namen bindet. Dritter Weg zur selben Geistersperre, wird in Runde 4 gebaut. Befund 4 (Demo-Daten-Loescher entfernt Seilgeraete hart, ohne jede Sperre): **von mir NICHT nachgemessen**, deshalb nicht als getragen gezaehlt; die Fundstellen sind plausibel, die Klasse ist eine andere (Zeile verschwindet ganz statt aktiv=0) und vorbestehend. **Was der Lauf ueber die Methode sagt:** der Pruefer hat ausdruecklich vermerkt, dass er nichts ausfuehren kann und seine Ablaeufe am Code hergeleitet sind. Drei von vier haben trotzdem gehalten — aber erst meine eigene Mutation hat aus Befund 1 eine Zahl gemacht. Ohne sie waere er eine Behauptung geblieben, die man auch haette wegdiskutieren koennen | 11,23 $ |
+| 17.09.2026 | Geistersperre-Rennen, Runde 4 (Verhaltensaenderung), vor PR | Diff 1041 Zeilen, Suchen 24, Lesungen 34, Token rein 845297, Token raus 6268, Runden 10 | 3 (1 als blockierend eingestuft) | **2 getragen, 1 in der SCHWERE falsch eingestuft** | **0** — **Zweiter vollstaendiger Messpunkt zur Ueberschneidungsfrage, und er faellt aus wie der vom 13.09.: NULL Ueberschneidung.** Zwei Spuren parallel ueber denselben Diff, Astra (nur lesend) drei Befunde, die Claude-Review (ausfuehrend) elf — **kein einziger kam in beiden vor.** Die Ursache ist dieselbe wie am 13.09. und sie ist die eigentliche Auskunft: Astras Befunde lauten „diese Zusicherung prueft einen anderen Geltungsbereich, als ihr Text verspricht", Claudes lauten „ich habe mutiert, es blieb gruen". Zwei Suchverfahren, nicht zwei Meinungen. Damit steht „beide statt eine" auf ZWEI vollstaendigen Trennungen statt auf einer. GETRAGEN 1 (Umbenennen-Schluessel): der Schluessel der ECHTEN Umbenennen-Route ist nirgends verankert — fuer Loeschen und Nachtrag gibt es je einen Anker, fuer das Umbenennen keinen, obwohl genau dessen Rennen Szenario C nachspielt. SELBST GEMESSEN: Suffix `:umbenennen` an `routes/admin/geraete.js:475` -> **74 PASS / 0 FAIL, EXIT 0**, die gemeinsame Serialisierung waere weg und nichts wird rot. GETRAGEN 2 (Geltungsbereich von `jetzt`): `quelleSicht.includes('const jetzt = jetztISO();')` prueft die GANZE Datei; SELBST GEZAEHLT: der Ausdruck steht dort **4x** (2869, 3188, 3296, 4413). Eine Aenderung allein an der Handler-Zeile bliebe gruen. Die vorgeschlagene Behebung traegt dabei NICHT wie formuliert — selbst nachgemessen: das verankerte `seil`-Fenster enthaelt den Ausdruck gar nicht (Anker 4578, Fenster bis 5424); es braucht ein HANDLER-Fenster (4392-4815), und dort kommt jede der sechs verankerten Zeichenketten genau einmal vor. SCHWERE FALSCH (listen(0) auf 0.0.0.0 mit erfundener Admin-Sitzung, eingestuft als „blockierend fuer den Einsatz als Live-Deploy-Gate"): die Tatsache stimmt — `listen(0)` bindet gemessen an `0.0.0.0` —, die Einstufung fuer DIESEN Beitrag nicht. SELBST GEZAEHLT: **411 Fundstellen in 132 Dateien**, und mindestens zehn Testdateien mounten `routes/admin`. Der Beitrag fuegt eine Instanz zu 411 hinzu. Er behebt seine eigenen zwei, die Klasse bleibt datiert offen. Eine zu hoch angesetzte Schwere ist bei uns kein Einzelfall (13.09.: dasselbe an einem anderen Befund) — der Fund selbst war trotzdem richtig und wurde gebaut | 11,04 $ |
+| 17.09.2026 | Geistersperre Runde 5: Waechter-Umbau (Inventar), nach drei blinden Runden | Diff 560 Zeilen, Suchen 24, Lesungen 24, Token rein 795307, Token raus 9250, Runden 11 | 4 (1 blockierend) | **3 gemessen getragen, 1 als Reichweiten-Anmerkung getragen** | **0** — **Der Lauf, der eine gezielte Frage beantwortet hat, und die Antwort war JA.** Ich hatte im Brief nicht "pruefe den Diff" gefragt, sondern: der Waechter war in DREI Runden hintereinander blind (58/0, 74/0, 74/0) — **ist die neue Fassung zum VIERTEN Mal blind, nur eine Ebene tiefer?** Sie war es. BEFUND 1, selbst gemessen: das "Inventar statt Mustersuche" faengt selbst mit einer Mustersuche an — `code.indexOf('pg_advisory_xact_lock(')` bindet an die unmittelbar folgende Klammer, SQL erlaubt dort Leerraum. Fuenfter Lock-Nehmer in gegenlaeufiger (verklemmender) Ordnung, geschrieben als `pg_advisory_xact_lock (hashtext($1))` — EIN Leerzeichen mehr, gueltiges SQL: **87 PASS / 0 FAIL, EXIT 0**. BEFUND 3, selbst gemessen: EIN fuehrendes Leerzeichen vor `async function ladeOffeneHinweise(` verschiebt die Fenstergrenze des Handler-Ankers um 97 Zeilen in eine fremde Funktion — **87 PASS / 0 FAIL**; das Muster erkennt Zeichenfolgen nach einem Zeilenumbruch, keine Funktionsgrenze. BEFUND 2, selbst gezaehlt: das Inventar deckt `routes/`, der Produktivkommentar behauptet "kein Bestandsweg" — ausserhalb liegen **ACHT** Lock-Stellen, darunter `core/integritaet.js:65`, die dieser Beitrag SELBST ueber `auditAppend(…, t)` aufruft. BEFUND 4 (`wirksamerBereich()` ist nur der Alias von `pruefeBereich()`, bewacht also die DEKLARIERTE Endungsliste statt ihrer Verwendung) traegt als Reichweiten-Anmerkung; der Pruefer hat ihn selbst so eingestuft und ausdruecklich dazugesagt, es sei **keine** tautologische Sollwertliste. **Was der Lauf ueber die Methode sagt:** ein Brief, der die eigene Fehlergeschichte als Frage formuliert ("ist er zum vierten Mal blind?"), liefert etwas anderes als "pruefe diesen Diff". Der Pruefer hat ausserdem von sich aus vermerkt, dass er nichts ausfuehren kann und seine Gegenproben am Quelltext hergeleitet sind — beide tragenden habe ich danach selbst gemessen, beide stimmten aufs Wort | 10,64 $ |
+| 17.09.2026 | Geistersperre Runde 7: neuer Zeichenautomat als Erkenner, letzte Bau-Runde | Diff 942 Zeilen, Suchen 6, Lesungen 16, Token rein 364543, Token raus 5919, Runden 6 | 4 (0 blockierend) | **4 gemessen, alle vier tragen** | **0** — **Der billigste Lauf bisher (5,00 $) und der mit der hoechsten Trefferquote: vier von vier.** Ein gezielter Brief auf die EINE neue Sache des Beitrags (ein Zeichenautomat, der JavaScript maskiert) schlaegt einen breiten Diff-Auftrag. BEFUND 1: der Regex-Negativfall der Fixtur prueft nichts — `/pg_advisory_(?:xact_)?lock/g` enthaelt gar keinen zusammenhaengenden Bezeichner. SELBST GEMESSEN: den GANZEN Regex-Zweig des Maskierers abgeschaltet -> **138 PASS / 0 FAIL**. Ein Fixturfall, der eine Eigenschaft benennt und sie nicht pruefen KANN, ist genau die Klasse, gegen die die Fixtur gebaut wurde. BEFUND 2 (zwei Zeilentrenner, beide in die GEFAEHRLICHE Richtung): `\` + CRLF-Fortsetzung im String -> **0 Treffer** (mit LF: 1, Kontrolle steht); `//`-Kommentar durch U+2028 beendet -> **0 Treffer**. Beide am Helfer direkt gemessen, ohne Datenbank. BEFUND 3: die Objektform `t.q({text: …})` und `db.q({text: …})` ergeben denselben Inventareintrag — die Bindung Transaktionsverbindung gegen POOL, fuer die K3 ueberhaupt gebaut wurde, ist dort weg. Kontrolle: in der einfachen Form sind sie unterschiedlich. `{text: …}` ist die Konfigurationsobjekt-Form von pg, keine erfundene Schreibweise. BEFUND 4: der Fixturkopf stuft eine Grenze falsch ein (ein GRENZE-Fall irrt gefaehrlich, nicht sicher). **Was der Lauf ueber die Methode sagt:** der Pruefer hat von sich aus vermerkt, dass er nichts ausfuehren kann und seine Gegenbeispiele hergeleitet sind — ich habe alle vier nachgemessen, alle vier stimmten. Zwei davon (F2, F3) waren am HELFER direkt messbar, ohne Suite und ohne DB: eine ausgelagerte Funktion in Produktionsform macht nicht nur den Wert eines Tests aus, sondern auch die Nachpruefung eines Befunds billig | 5,00 $ |
+| 17.09.2026 | Verschluesselung Stufe 0+1: Verbandbuch-PDF fluechtig, Retention-Differenzierung, Aufraeumskript, Health-Schluesselstand | Diff 1040 Zeilen, Suchen 19, Lesungen 40, Token rein 501336, Token raus 9504, Runden 9 | 8 (4 blockierend) | **8 getragen — einer davon von mir GEMESSEN, sieben am Quelltext geprueft** | **0** — **Der Lauf mit der bisher schaerfsten Trennung der beiden Spuren: NULL Ueberschneidung bei den blockierenden Befunden.** Parallel lief eine Claude-Review ueber denselben Diff (15 Befunde). Astras BEFUND 1 hatte sie NICHT: der qpdf-Stub im neuen Test reicht jeden unbekannten Programmnamen an die ECHTE Prozessausfuehrung durch (`if (datei !== 'qpdf') return echterExecFile(...)`) — in einer Suite, die auf dem Live-Server Deploy-Gate ist, und die Begruendung in der Ausnahmeliste des Systemeingriffs-Waechters behauptet woertlich das Gegenteil („kein echter Kindprozess“). Umgekehrt hatte die Claude-Spur die Kosten von `hatSchluessel()` je Anfrage, die Astra nicht sah. SELBST GEMESSEN habe ich BEFUND 6 (Symlink): `<root>/101/Verbandbuch` als Verzeichnis-Symlink nach aussen, scharfer Lauf meldet **„1 gefunden (29 B), 1 geloescht, 0 Fehler“** und die Datei AUSSERHALB von PDF_ROOT ist weg — `findeLoeschWurzel()` prueft nur den lexikalischen Pfad, der Kopfkommentar des Skripts behauptet das Gegenteil. **Was der Lauf ueber die Methode sagt:** Astra hat von sich aus vermerkt, dass es nichts ausfuehren kann und die uebermittelten PASS-Zahlen deshalb unbestaetigt bleiben — und hat trotzdem vier blockierende Befunde rein aus dem Kontrollfluss hergeleitet. Der teuerste Befund des Tages kam allerdings aus KEINER der beiden Spuren, sondern aus meiner eigenen stumpfen Messung am Testskript (s. B1 des Nacharbeitsauftrags: der scharfe Loeschlauf laeuft weiter, obwohl die Zusicherungen davor schon gefallen sind) | 6,98 $ |
+| 17.09.2026 | Nacharbeit Stufe 0+1, Runde 2: wirken zwei Behebungen gegeneinander? | Diff 1186 Zeilen, Suchen 42, Lesungen 42, Token rein 1326189, Token raus 10362, Runden 16 | 8 (4 blockierend) | **8 getragen — F5 hatte ich VORHER selbst gemessen, sieben am Quelltext geprüft; F6 ist statisch hergeleitet und ausdrücklich als solches gekennzeichnet** | **0** — **Der teuerste Lauf bisher (17,35 \$) und der einzige, in dem eine Gegenlesung meinen EIGENEN Behebungsvorschlag widerlegt hat.** Der Brief fragte nicht „prüfe den Diff“, sondern: **wirken zwei Behebungen gegeneinander?** — nachdem ich selbst eine solche Wechselwirkung gefunden hatte (Zufallsname aus B5 trifft weder das eingeengte Aufräum-Muster aus S7 noch den Retention-Resolver). Der Prüfer bestätigte sie als F5 UNABHÄNGIG und fügte hinzu, was ich nicht gesehen hatte: mein Behebungsgedanke „Muster einfach erweitern“ hätte während laufender Downloads gelöscht und B5 eine Ebene tiefer wieder eingeführt. Das ist die Hausregel „der Behebungsvorschlag ist selbst ein Befund“ — diesmal gegen mich. F7, ebenfalls aus der Zufallsnamen-Klasse und von mir nachgemessen: `verifyCodes.set(publicPath, …)` (core/pdf-engine.js:404) wurde beim FESTEN Namen bei jedem Abruf überschrieben, beim Zufallsnamen wächst die prozessweite Map unbegrenzt — einziger Verbraucher ist generateMonthlyPDFs.js:235, die Verbandbuch-Routen verbrauchen nie. Zwei weitere blockierende Befunde (F1, F2) gehen auf zu lasche Formulierungen in MEINEM Auftrag zurück: „genau die Attrappe gesehen“ wurde als Zahlenvergleich gebaut (drei fremde Dateien bestehen das Tor ebenfalls), „innerhalb des Test-Temp-Verzeichnisses“ als `os.tmpdir()`. **Was der Lauf über die Methode sagt:** eine zweite Runde lohnt genau dann, wenn die erste VERHALTEN geändert hat — alle acht Befunde hängen an den drei Verhaltensänderungen der Nacharbeit, keiner an den reinen Zusicherungsergänzungen. Und ein Brief, der nach WECHSELWIRKUNGEN fragt statt nach Richtigkeit, findet eine Klasse, die eine Diff-Prüfung strukturell nicht sieht | 17,35 \$ |
+| 18.09.2026 | Haertung P1+P2: vier GET-Schreibrouten auf POST, Waechter ueber CSRF-Ausnahmen | Diff 821 Zeilen, Suchen 45, Lesungen 45, Token rein 960050, Token raus 11185, Runden 13 | 3 (1 blockierend) | **3 getragen, alle am Quelltext nachgeprueft** | **0** — **Der erste Lauf, in dem BEIDE Spuren denselben blockierenden Befund unabhaengig fanden — und die andere Spur ihn AUSGEFUEHRT gemessen hat.** F1: der neu gebaute CSRF-Waechter sammelt nur aus einer selbst gewaehlten Router-Liste und wertet die gebaute App fuer seine Inventur gar nicht aus; `server.js` registriert fuenf weitere Schreibrouten direkt per `app.post` (`:196`, `:214`, `:230` loescht ein ganzes Studio, `:266`, `:652`), alle unter `/intern` und damit CSRF-ausgenommen. Die Claude-Spur hat die Datei laufen lassen: **5 PASS / 0 FAIL, gefundene Menge 8** — waehrend der Zusicherungstext „die TATSAECHLICH registrierten" behauptet. Falsche Zusicherung von Abdeckung, am Tag der Auslieferung. F2: „POST liefert die Datei" prueft bei den Wartungsrouten nur einen 302 mit passendem Namensfragment — `res.redirect('/nicht-vorhanden' + pdfPath)` bliebe gruen. F3: eine Zusicherung heisst „GENAU EINMAL" und misst `!== null`. **Was der Lauf ueber die Methode sagt:** der Brief fragte nicht „ist der Umbau richtig", sondern vier gezielte Fragen — wer erreicht die Route jetzt NICHT mehr, was macht der erstmals greifende CSRF-Schutz, greifen die Loeschpfade noch, welche Schreibweise uebersieht der Regex. Drei der vier trugen. Und Astra hat von sich aus die Verbandbuch- Loeschpfade EINZELN nachgelesen und als unversehrt bestaetigt — ein negatives Ergebnis MIT Rechenschaft, genau die Form, die der Prompt seit dem 11.09. verlangt | 12,84 $ |
+| 18.09.2026 | Haertung P1+P2 Runde 3 — Vollstaendigkeitsriegel CSRF-Waechter | Diff 777 Zeilen, Suchen 9, Lesungen 34, Token rein 437098, Token raus 10549, Runden 8 | 8 (5 blockierend) | **8 getragen, 0 gefallen** | **5** | **Der ertragreichste Lauf bisher, und der billigste unter den grossen.** Der Pruefer sagt selbst, dass er NICHTS ausgefuehrt hat und seine Laufergebnisse Vorhersagen fuer meine Nachmessung sind — genau so hat es getragen. Ich habe alle fuenf blockierenden Praemissen EINZELN nachgemessen, ohne den Arbeitsbaum anzufassen: **B2** `app.get('/a',h) === app` ist `true` (Express 5.2.1) — eine Kette `app.get(…).post(…)` registriert beide Routen, die Regex findet nur die erste. **B5** bei `router.post(['/x','/intern/y'],h)` ist `route.path` ein ARRAY, die Template-Interpolation macht daraus `/x,/intern/y`, und `istAusnahmePfad('/x,/intern/y')` ist `false`. **B4** `mountKoennteAusnahmeRoutenTragen('/')` ist `false` — ein ausdruecklicher Wurzel-Mount wird als P sauber klassifiziert und danach herausgefiltert. **B3** `istAusnahmePfad('/')` ist `false` — `app.post('/' + 'intern/blindfleck', h)` wird mit dem Pfad `/` als P gelesen. **B1** am Quelltext: die Zeilennummer ist kein eindeutiger Schluessel, und `unklassifiziert` wird zwar AUSGEGEBEN, aber von keiner Zusicherung gelesen — der Hinweis steht im Log und der Lauf bleibt gruen. Dazu die strukturelle Empfehlung, die den Ansatz aendert: **`acorn` ist bereits direkte Abhaengigkeit** (`package.json:8`, 8.18.0 — selbst nachgesehen), Teil B gehoert also in einen Syntaxbaum statt in die naechste Regex. Das loest B1/B2/B3 an der Wurzel und liefert endlich einen eindeutigen Schluessel je Registrierung. **Und er hat meinen eigenen Behebungsvorschlag begruendet zurueckgewiesen:** die Namenskonvention gegen `require('./routes/…')` schliesst die von mir gemessene Schreibweise und traegt keinen Vollstaendigkeitsbeweis — richtig, sie wird zur Rueckfallebene | 6,25 $ |
+| 18.09.2026 | PLAN Upload-Haertung (multer 2.4.0 + Dateityp/Groesse) — erste Planpruefung nach neuer Regel | Plan 152 Zeilen, Suchen 29, Lesungen 36, Token rein 501072, Token raus 9036, Runden 10 | 5 (3 blockierend) | **4 selbst nachgemessen, alle 4 getragen; der fuenfte als Fundort uebernommen** | **3** | **Der erste Lauf ueber einen PLAN statt einen Diff — und er hat MEINEN Plan zerlegt, bevor eine Zeile gebaut war.** Selbst nachgemessen: (1) es sind **sieben** multer-Konfigurationen, nicht sechs — die siebte heisst `seilMulter` (`routes/module.js:1135-1139`, Alias in einem try/catch), mein `grep "multer("` traf sie nicht; dieselbe Alias-Blindheit, die den CSRF-Waechter drei Runden lang beschaeftigt hat, diesmal in meinem eigenen Inventar. (2) **Vier** Dateien tragen einen `fileFilter`, nicht eine. (3) **Alle sieben** tragen `fileSize` — ich hatte das als offene Frage in den Plan geschrieben, es war mit einem grep beantwortbar. (4) `core/pruefbericht.js:63` traegt zusaetzlich `fieldSize: 25 MiB`, womit mein Abbruchkriterium („wenn alle Grenzen tragen, schrumpft der Beitrag") faellt. (5) Meine pauschale Aussage „jede Abfrage traegt studio_id" stimmt fuer `routes/verify.js:201` nicht — und **dort waere Nachruesten schaedlich**, weil die Sicherheitsgrenze der global eindeutige Code ist; ein Ausfuehrender haette das womoeglich brav „korrigiert". **Der schaerfste Punkt ist strukturell:** eine Konfiguration ist nicht ein Upload-Weg — aus sieben werden elf Multipart-Pfade plus drei Eingaenge ganz ohne multer (CSV ueber FileReader mit SEPARATEM Commit-Eingang, Base64-Signaturbilder). Nach Plan gebaut haette am Ende „Upload-Wege geprueft" dagestanden, und das waere falsch gewesen. **Nebenbefund, vorbestehend, von mir am Quelltext bestaetigt:** `routes/belehrungen.js:2001` loescht im gemeinsamen Fehlerausstieg die Datei, auf die das UPDATE in `:1992-1994` die Datenbank bereits zeigen laesst; Gegenmodell im Repo bei `routes/admin/geraete.js:4839`. Datiert offen, nicht hier gebaut. **Was der Lauf ueber die Methode sagt:** 6,94 $ gegen eine Bau-Runde, und die Befunde trafen nicht den Code, sondern die BEHAUPTUNGEN im Auftragspapier. Genau dafuer ist die Regel vom 18.09. da | 6,94 $ |
+| 18.09.2026 | PLANPRUEFUNG Upload-Haertung Beitrag 1 (multer 2.4.0 + Fehlerbehandlung) | **ABGEBROCHEN — das OpenAI-Guthaben ist aufgebraucht.** HTTP 429, `insufficient_quota`, `credit_balance_exhausted`: „You have no credits remaining." Material 498 Zeilen, **Suchen 0, Lesungen 0, Token rein 0, Token raus 0** — es wurde NICHTS gesendet und NICHTS geprueft. Das Werkzeug hat sich richtig verhalten: es meldet den Fehlschlag, statt einen leeren Bericht als „keine Befunde" auszugeben, und traegt hier Striche statt Nullen ein. **Folge fuer die Arbeitsweise: die Astra-Spur faellt aus, bis der Betreiber Guthaben nachlegt.** Die Regel vom 18.09. („jeder Bauauftrag geht vor der ersten Bau-Runde an den Gegenleser") ist damit nicht aus Nachlaessigkeit unerfuellt, sondern technisch unerfuellbar — ersatzweise laeuft die Claude-Spur. Das ist KEIN Gleichwertiges: nach der Messung vom 13.09. finden beide Spuren verschiedene Klassen mit NULL Ueberschneidung, die Claude-Spur misst Mutationen, Astra durchdenkt Kontrollfluss. Was Astra gefunden haette, ist damit ungeprueft, nicht sauber | **0,00 $** (nichts gesendet) |
+| 18.09.2026 | PLANPRUEFUNG Upload-Haertung Beitrag 1 — **CLAUDE-Spur als ERSATZ**, weil das OpenAI-Guthaben aufgebraucht war (Zeile darueber) | Auftragspapier 231 Zeilen + Plan, Repo-Lesezugriff auf /home/user/gymdocu, 57 Werkzeugaufrufe, ~237k Token, Laufzeit 19 min | **13 + ein Zusatzfund** | **13 von 13 selbst nachgemessen, ALLE GETRAGEN** | **0** — **der erste Lauf ohne einen einzigen gefallenen Befund**, und zugleich der erste, in dem eine Planpruefung den KERN eines Beitrags widerlegt hat statt seine Raender. Zwei blockierend, beide gegen meine eigene Tatsachenbehauptung: **(1)** Mein A2 benannte `flushingFiles` in `storage/disk.js` als CVE-Fix. Selbst nachgemessen: die WeakMap wird nur unter `if (that.flush)` befuellt, `opts.flush` ist ein NEUES FEATURE in 2.4.0 (`grep -c flush storage/disk.js` -> 2.3.0 **0**), und wir setzen es nirgends. Der echte Fix ist `abortCleanupDone`/`abortRemovedFiles` in `lib/make-middleware.js` (`grep -c` -> **0** in 2.3.0, **3** in 2.4.0). Der OSV-Text selbst geholt und woertlich bestaetigt: „file writes that complete AFTER multer has already run its abort cleanup". **(2)** Der von mir beauftragte Abbruch-Test haette den Fehler nicht finden KOENNEN: er sollte `_removeFile` selbst aufrufen, waehrend der Fehler gerade darin besteht, dass `_removeFile` NICHT gerufen wird — ein Test, der den fehlenden Aufruf nachholt, prueft einen Zweig, den es im verwundbaren Fall nicht gibt. **Meine eigene Nachmessung ging dabei weiter als die des Pruefers und faellt schaerfer aus:** acht Laeufe gegen 2.3.0, alle gruen — und die POSITIVKONTROLLE FIEL DURCH. Eine Spur zeigte `_handleFile` NIE gerufen; eine reine In-Prozess-`Readable`-Attrappe bekam selbst ein vollstaendiges gueltiges Multipart nicht durch multer. Die acht Gruen hiessen also „nichts gemessen", nicht „nicht verwundbar" — haargenau die Zusicherung, die der Beitrag geliefert haette. **Elf weitere, alle getragen:** Erfolgsweg liefert **302**, nicht die von mir beauftragten 200 (`res.redirect`, beide Wege); B3 war wOERTLICH unerfuellbar und haette sich ins Gegenteil verkehrt — `routes/lageplan.js` ist die EINZIGE der zehn Aufrufstellen ohne Fehler-Wrapper, ein geworfener Fehler geht an `next(err)`, der Handler laeuft nie, der globale Behandler ruft `errorTracker.melde` -> `telegram`, also **ein Telegram-Alarm bei jeder falschen Dateiwahl** plus 500-Seite statt einer besseren Meldung; `wrappedFileFilter` reserviert den Platz schon in 2.3.0 synchron (neu ist die RUECKGABE) und die einzige `.array`-Stelle hat gar keinen `fileFilter`, die Aenderung kann hier also nicht eintreten; die einzige Textaenderung ist `LIMIT_UNEXPECTED_FILE` -> `Unexpected file field`, an vier Stellen ueber `err.message` sichtbar, waehrend der Testbestand **null** Zusicherungen auf multer-Fehlertexte hat; `storage/memory.js` ist umgeschrieben und `concat-stream` entfaellt; `postMultipart` hat eine FESTE URL und einen festen Feldnamen, meine D-Auflage war damit per Konstruktion unerfuellbar, und daneben steht eine zweite Kopie `postAdminBericht`; die Unterschrift-Wege sind **mindestens 13**, nicht 11 (`routes/verbandbuch.js:538` ueber `b.unterschrift`, `routes/wartung.js:1050` als mehrzeilige Destrukturierung — beide fielen durch mein `grep "req.body"`, dieselbe Blindheit wie beim `seilMulter`-Alias); `routes/belehrungen.js` hat **17** gleichartige `res.send`-Stellen, mein B1 fasst sieben an; fuenf von sechs Zeilennummern waren um eins verschoben; `package.json` steht auf `^2.1.1`, „gepinnt" gab es nie. **Zusatzfund (c):** ein Datei-Eingang, der durch ALLE VIER meiner Suchmuster fiel — eine JSON-Route in `routes/lageplan.js` nimmt `req.body.modell`, rendert per `sharp` und schreibt eine Bilddatei ins SELBE Verzeichnis wie der multer-Weg. Kein multer, kein `FileReader`, kein Base64. **Der Pruefer hat zwei eigene Einschaetzungen im Lauf zurueckgenommen** und es dazugeschrieben. **Was der Lauf ueber die Methode sagt:** die eine Behauptung, die ich ausdruecklich als „meine Messung, miss sie nach" gekennzeichnet hatte, war die EINZIGE, die trug. Die Kennzeichnung gehoert an jede Tatsachenbehauptung ueber den Bestand, nicht nur an die, bei der man selbst unsicher war | — (Claude-Spur, keine OpenAI-Kosten) |
+
+| 18.09.2026 | PLANPRUEFUNG Upload-Haertung Beitrag 1, Fassung 2 (Astra-Spur, nach Guthaben-Nachlage) | Diff 608 Zeilen, Suchen 27, Lesungen 50, Token rein 960079, Token raus 8911, Runden 14 | — | — | — | 12,67 $ |
+| 18.09.2026 | PLANPRUEFUNG Upload-Haertung Beitrag 1, **Fassung 2** (Astra-Spur, nach Guthaben-Nachlage) | Auftragspapier 341 Zeilen + Plan, Repo-Lesezugriff auf einen EIGENEN Worktree (`/workspace/gymdocu-lese`, `903247b`), weil der Executer parallel im Hauptbaum schrieb; Suchen 27, Lesungen 50, Token rein 960079, Token raus 8911, Runden 14 | 7 (2 als blockierend gemeldet) | **6 von 7 selbst nachgemessen und getragen** | **1** (Schwereeinstufung) | **Der Beleg fuer „beide Spuren statt einer" — NULL Ueberschneidung mit der Claude-Spur desselben Tages, bei voellig anderem Auftrag im Brief.** Die Claude-Spur hatte Fassung 1 zerlegt (13 Befunde, Messungen und Zeilennummern); Astra bekam ausdruecklich NICHT dieselben Fragen, sondern: welcher Zustand wird nie hergestellt, was folgt fuer den BETRIEB, welcher Satz ist hergeleitet statt gemessen. Ergebnis: sieben Befunde, von denen die Claude-Spur KEINEN hatte. Selbst nachgemessen: **(1)** Mein B3.2 behauptete, `LIMIT_FILE_SIZE` bekomme im globalen Behandler „eine eigene 413-Seite". Gemessen: `new MulterError("LIMIT_FILE_SIZE")` hat weder `type` noch `status`, die Bedingung `err.type === "entity.too.large" || err.status === 413` trifft nicht zu — eine zu grosse Lageplan-Datei bekommt HEUTE SCHON 500 **plus Telegram-Alarm**. Ich wollte diesen Weg „ausdruecklich unveraendert lassen" und haette damit denselben Alarm-Ausloeser stehengelassen, den ich zwei Absaetze weiter beheben wollte. **(2)** `routes/lageplan.js` loescht im Grundriss-Upload die ALTE Datei bei `:633` — VOR dem Schreiben der neuen (`:637`) und vor dem UPDATE (`:638`). Scheitert eines davon, ist der alte Grundriss weg und die DB zeigt ins Leere; der Benutzer liest „konnte nicht verarbeitet werden". Vorbestehend, in genau dem Weg, den der Beitrag anfasst, und die CLAUDE.md verbietet es woertlich („Dateiloeschungen gehoeren NACH den Commit"). **(3)** Ein neuer `feedback`-Code allein zeigt GAR NICHTS an: die Definitionen stehen bei `:898-900`, und `core/ui-feedback.js` liefert fuer einen unbekannten Code `""` — alle meine B3-Zusicherungen waeren gruen gewesen, waehrend der Benutzer keine Erklaerung sieht. **(4)** Mein B3.4 („vier Typen einzeln, darunter PDF") laesst den PDF-Zweig `execFileSync("pdftoppm")` starten — ein ECHTER Prozess in einer Suite, die auf dem Live-Server Deploy-Gate ist. **(5)** Meine A3-Aussage „alle elf Multipart-Wege funktionieren" ist nicht gedeckt, weil Teil A laut meinem eigenen D gar keine Route anfaehrt. **(6)** „`melde` wurde NICHT gerufen" braucht eine Positivkontrolle: die Test-Apps bauen Express OHNE den globalen Behandler, die Attrappe bliebe auch bei einem faelschlichen `next(err)` unberuehrt. **GEFALLEN (1), in der Schwere:** „`EINWEISUNG_NACHWEIS_DIR`/`DEFECT_PHOTO_DIR` werden nicht umgeleitet, schon das Laden schreibt" — als blockierend gemeldet. Die Tatsache stimmt, die Schwere nicht: gemessen laden **27** bestehende Testdateien `routes/sichtpruefung.js` und **14** `routes/belehrungen.js`, und wer das Verzeichnis braucht, setzt die Variable in seiner eigenen Datei (je fuenf tun das); `einweisung-nachweise/` steht in `.gitignore`. Bestehende Suite-Eigenschaft mit etabliertem Umgang. **Das ist das DRITTE Mal, dass Astra genau diese Einstufung macht und sie faellt** (s. Lauf vom 16.09.) — ein systematischer blinder Fleck, kein Zufall. **Astra hat ausserdem eine eigene Verdachtsannahme unaufgefordert zurueckgenommen** („DB-Ausfall laesst das Fehlerlayout erneut werfen") mit Fundstellen dagegen. **Was der Lauf ueber die Methode sagt:** die Trennung der BRIEFE hat die Trennung der BEFUNDE erzeugt. Wer beiden Spuren denselben Auftrag gibt, bezahlt zweimal fuer dieselbe Klasse | **12,67 $** |
+
+| 18.09.2026 | **A/B gegen Astra: IDENTISCHES Material und Brief, nur Modell `gpt-5.6-luna` statt `gpt-6-astra`** | Material 608 Zeilen, Suchen 10, Lesungen 24, Token rein 510311, Token raus 7555, Runden 11 | 5 (2 als blockierend gemeldet) | **3 von 5 selbst nachgemessen und getragen** | **1 ganz, 1 in der Schwere** | **Der erste echte A/B nach Hausregel-Bedingungen: derselbe Auftrag woertlich, dasselbe Material, derselbe Lesebaum, nur das Modell getauscht — und ein Preisunterschied von Faktor 23 (0,56 $ gegen 12,67 $).** GETRAGEN: (1) **Ein Widerspruch, den ICH SELBST erzeugt und Astra am selben Material UEBERSEHEN hatte** — ich hatte den CVE-Ort im Auftragspapier auf `abortCleanupDone` korrigiert und den eingebetteten Plan Fassung 3 stehenlassen, wo weiter „Der CVE-Fix sitzt in `storage/disk.js`" stand. Ein Ausfuehrender, der den Grundlagentext liest, haette weiter den falschen Code kommentiert. Dieselbe Aussage an zwei Orten, eine nachgezogen, eine nicht — unsere haeufigste Fehlerquelle. Sofort behoben. (2) „alle sieben Module laden" ist ungenau: es sind sieben Konfigurationen in SECHS Dateien, und zwei davon sind bedingt aktiv (`SEIL_FOTOS_AKTIV`, `FOTOS_AKTIV`) — ein blosses `require()` beweist also weder sieben Konfigurationen noch sieben aktive Wege. (3) Die Entscheidung zur englischen multer-Meldung war nicht als pruefbarer Vertrag formuliert. **GEFALLEN (1 ganz):** Befund 1, als blockierend gemeldet — „der Auftrag aendert nur den Wrapper, nicht die Ursache `cb(null,false)`". Das Papier verlangt beides woertlich (B3, Schritt 1 nennt den geworfenen Fehler samt Vorbild-Fundstelle). Luna hat das Papier an dieser Stelle nicht genau gelesen und daraus den schwersten seiner Befunde gemacht. **GEFALLEN (1 in der Schwere):** die Testisolation der neuen Routentests — dieselbe Klasse, die bei Astra am selben Tag fiel. **WAS DER LAUF FUER DIE AUFGABENTEILUNG HERGIBT, und es ist der eigentliche Ertrag:** Luna fand ausschliesslich **PAPIER**fehler (Widersprueche, ungenaue Formulierungen, fehlende Vertraege). Astra fand am selben Material die beiden **BESTANDS**fehler, die diesen Beitrag getragen haben — dass ein `MulterError` weder `type` noch `status` traegt, und dass der Lageplan die alte Datei vor dem UPDATE loescht. Beide erforderten Graben im Repo, und genau dort liegt der Unterschied: **50 Lesungen gegen 24.** Vorlaeufige Regel, noch eine Stichprobe von EINS: Luna fuer Plan- und Textpruefungen (bei dem Preis auch zusaetzlich), Astra fuer Code und Bestand | **0,56 $** |
+| 18.09.2026 | CODE-Pruefung Upload-Haertung Beitrag 1 vor dem Merge (Astra) | **ABGEBROCHEN durch den eigenen Geheimnis-Riegel** — Diff 1104 Zeilen, Suchen 0, Lesungen 0, Token rein 0, Token raus 0, Runden 0. **Es wurde NICHTS gesendet und NICHTS geprueft.** | — | — | — | 0,00 $ — **aber der Abbruch war der Befund.** Der Riegel schlug auf `postgresql://gymdocu:PASSWORT@127.0.0.1/gymdocu_test` in der neuen Datei `test_feature_multer_2_4_bestandsschutz.js` an. **Kein echtes Geheimnis:** dort steht woertlich der Platzhalter `PASSWORT`, der Ausfuehrende hat das bewusst so gebaut, ausfuehrlich begruendet und sogar den repo-weiten Klartext-Scanner beruecksichtigt. Der Riegel unterscheidet aber keine Platzhalter — und das ist richtig so, er bricht ab statt zu warnen. **Der Befund dahinter traegt trotzdem, und ich haette ihn ohne den Abbruch nicht gesucht:** (1) `grep` ueber den Testbestand — **KEINE einzige** bestehende Testdatei traegt dieses Muster; das etablierte ist `process.env.DATABASE_URL` OHNE Fallback-Literal. (2) Der Kommentar des Ausfuehrenden sagt selbst „nie verbindet sich ohnehin niemand mit dieser URL" — das Passwort-Segment ist also schlicht ueberfluessig. (3) Die Folge ist nicht kosmetisch: die Zeile blockiert DAUERHAFT jede kuenftige Gegenlesung, die diese Datei im Diff hat. Behebung: Passwort-Segment weglassen (`postgresql://gymdocu@127.0.0.1/gymdocu_test` ist eine gueltige URL), sobald der Arbeitsbaum frei ist. **Lehre fuer die Arbeitsweise: ein Riegel, der abbricht statt zu warnen, findet Dinge, nach denen niemand gesucht hat** — der Lauf wurde mit bereinigtem Material wiederholt, siehe naechste Zeile |
+| 18.09.2026 | **CODE-Pruefung** Upload-Haertung Beitrag 1 vor dem Merge (Astra; **die Beschriftung „effort `xhigh`“ war FALSCH** — gemessen 18.09.2026 setzt `tools/gegenleser-repo.js` gar kein `reasoning`, der Lauf lief auf der Voreinstellung) | Diff 1104 Zeilen, Suchen 73, Lesungen 49, Token rein 1795110, Token raus 16628, Runden 22 | 9 (4 als blockierend gemeldet) | **bisher 6 selbst nachgemessen, 5 getragen** | **1 ganz, 1 in der Schwere** — 3 noch offen | **Der erste Lauf, bei dem die SUITE SCHON GRUEN war** (`SUITE_EXIT=0`, 0 Fehlschlaege, Dateizahl 337=337, Lint 0) — der Brief fragte deshalb nicht „laeuft es", sondern „ist es gruen aus dem RICHTIGEN Grund". GETRAGEN: **F1 (blockierend, und der teuerste):** die Zusicherung „alle SIEBEN Konfigurationen erreicht" addiert HANDGESCHRIEBENE Literale aus der `MODULE`-Liste und zaehlt damit nur, ob sechs Module geladen haben — nicht, ob sieben multer-Konstruktoren liefen. Wer `FOTOS_AKTIV` in `routes/sichtpruefung.js` abschaltet, laedt das Modul weiterhin, konstruiert aber KEINE Konfiguration, und der Test zaehlt trotzdem `anzahl: 1` und bleibt bei 7. Beide Seiten des Vergleichs stammen aus derselben Quelle — genau die Abdeckungsluege, die dieser Test verhindern sollte. **F2:** `seiteExe.text.includes("ui-banner--error")` ist IMMER wahr, weil die Zeichenkette als CSS-Regel in `core/ui-feedback.js:71` steht und ueber `UI_FEEDBACK_CSS` in jede Lageplan-Seite eingebettet wird (`routes/lageplan.js:1342`); ein `tone: "success"` statt `"error"` fiele nicht auf. Der Titel-Teil derselben UND-Verknuepfung bewacht dagegen etwas. **F4:** Isolations-Inkonsistenz INNERHALB des Beitrags — `test_feature_multer_2_4_bestandsschutz.js` leitet FUENF Verzeichnisse um (inkl. `EINWEISUNG_NACHWEIS_DIR`, `DEFECT_PHOTO_DIR`), `test_feature_upload_fehlerbehandlung.js` nur DREI; derselbe Ausfuehrende hat es einmal vollstaendig gemacht und einmal vergessen. **F5 (Schwere zu hoch):** die `pdftoppm`-Attrappe ist in der Sache wirklich ein echter Kindprozess (PATH-Attrappe, gestartet wird node statt poppler) — aber sie ist vollstaendig kontrolliert und schreibt nur nach `os.tmpdir()`; der Zweck der Regel (keine Live-Eingriffe) ist gewahrt. Was traegt, ist der KOMMENTAR, der mehr Isolation behauptet als besteht. **GEFALLEN (1 ganz): F9** — „drei neue SELECTs ohne `studio_id`", als BLOCKIEREND gemeldet. Gemessen: allein die acht haeufigsten Varianten von `SELECT … FROM … WHERE id=$1` ohne `studio_id` ergeben **133 Vorkommen** im Testbestand; es sind Fixture-Lesezugriffe auf selbst eingefuegte IDs, und die Regel zielt auf PRODUKTIVE Abfragen. Astra raeumt die Eindeutigkeit sogar selbst ein und stuft trotzdem blockierend ein. **Das ist das ZWEITE Mal, dass genau diese Einstufung faellt** (nach dem 16.09.) — zusammen mit der Testisolations-Klasse der zweite systematische blinde Fleck. NOCH OFFEN, nicht nachgemessen: F3 (Aufraeumen/Dateiintegritaet unbewacht), F6/F7/F8 (alle als VORBESTEHEND gekennzeichnet, gehoeren in die offenen Punkte, nicht in diesen Beitrag). **Zur Stufe:** `xhigh` kostete hier **23,69 $** gegen 12,67 $ bei `high` am selben Tag — der Aufpreis ist real und gehoert bei der naechsten Wahl mitgedacht | **23,69 $** |
+| 18.09.2026 | Planpruefung Upload-Haertung 2, RUNDE 2 (neuer Entwurf: Markierung an der Quelle) | Diff 235 Zeilen, Suchen 30, Lesungen 40, Token rein 909495, Token raus 9012, Runden 13 | 7 (3 blockierend) | **3 bisher, alle 3** | 0 (4 noch nicht nachgemessen) | 12,04 $ |
+| 18.09.2026 | SICHERHEIT: Fremd-ID ohne Zugehoerigkeitspruefung, systematische Suche in routes/ | Diff 2853 Zeilen, Suchen 86, Lesungen 95, Token rein 3646637, Token raus 14871, Runden 26 | 3 (F1 bekannt, **F2 neu**, F3 Anmerkung) | **3, alle** | 0 | 46,70 $ |
+| 18.09.2026 | SICHERHEIT A: Einschleusung (SQL, Kommando, Pfad, HTML) | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 1750 Zeilen, Suchen 88, Lesungen 50, Token rein 2467904, Token raus 6771, Runden 19 | — | — | — | 31,36 $ |
+| 18.09.2026 | SICHERHEIT C: Datenabfluss (Fehlerantworten, Logs, Dateien, Koepfe) | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 282 Zeilen, Suchen 74, Lesungen 95, Token rein 2747959, Token raus 11097, Runden 24 | — | — | — | 35,18 $ |
+| 18.09.2026 | SICHERHEIT B: Anmeldung, Sitzung, Token, Ratenbegrenzung | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 2058 Zeilen, Suchen 47, Lesungen 80, Token rein 2956200, Token raus 11845, Runden 20 | — | — | — | 37,84 $ |
+| 18.09.2026 | SICHERHEIT A1: SQL und Kommandos (Wiederholung, Deckel 3 MB) | Diff 1750 Zeilen, Suchen 53, Lesungen 87, Token rein 3156742, Token raus 14875, Runden 22 | 4 (0 Einschleusung, 2 Zusicherung/Fehlerweg, 2 Anmerkungen) | 4 | 0 | 40,57 $ |
+| 18.09.2026 | SICHERHEIT C: Datenabfluss (Wiederholung, Deckel 3 MB) | **abgebrochen** (HTTP 429 `insufficient_quota` — OpenAI-Guthaben erschoepft, NICHT das Mengenlimit): Diff 282 Zeilen, Suchen 47, Lesungen 91, Token rein 1923042, Token raus 13174, Runden 19 | — | — | — | mind. 25,03 $ |
+| 18.09.2026 | SICHERHEIT A2: Pfade und HTML-Ausgabe | **abgebrochen vor dem ersten Modellkontakt** (HTTP 429 `insufficient_quota` auf die ERSTE Anfrage): Buendel **gezaehlt** 52.860 Token, Suchen 0, Lesungen 0, Runden 1 | — | — | — | 0,00 $ |
+| 18.09.2026 | SICHERHEIT B: Anmeldung, Sitzung, Token (Wiederholung, Deckel 3 MB) | Diff 2058 Zeilen, Suchen 49, Lesungen 89, Token rein 2874094, Token raus 17697, Runden 20 | 10 (2 blockierend, 4 zu beheben, 2 Anmerkungen, 2 Zusicherungen) | laufend nachgemessen, s. Abschnitt | laufend | 37,25 $ |
+| 18.09.2026 | SICHERHEIT A2: Pfade und HTML-Ausgabe (Neustart nach Guthaben) | Diff 3247 Zeilen, Suchen 99, Lesungen 107, Token rein 4897220, Token raus 19066, Runden 28 | 8 (2 blockierend) | 3 bisher (H1 XSS, F4 URIError, F1 Dateiloeschung) | 0 | 62,65 $ |
+| 18.09.2026 | **PLANPRUEFUNG** Mandantengrenze Fremd-IDs, vor der ersten Bau-Runde | Diff 7036 Zeilen, Suchen 41, Lesungen 52, Token rein 2723506, Token raus 19639, Runden 15 | 6 (1 blockierend) | **6** | 0 | 35,52 $ |
+| 18.09.2026 | SICHERHEIT C: Datenabfluss (Neustart nach Guthaben) | Diff 282 Zeilen, Suchen 67, Lesungen 110, Token rein 3411776, Token raus 24910, Runden 26 | 10 (2 blockierend) | 2 bisher (D1 Gate-Umgehung, F1 Dateiloeschung) | 0 | 44,52 $ |
+| 18.09.2026 | **PLANPRUEFUNG** Zusicherung Shell/qpdf/stiller catch, vor der ersten Bau-Runde | Diff 3289 Zeilen, Suchen 31, Lesungen 56, Token rein 1606111, Token raus 24732, Runden 13 | 5 (2 blockierend) | **5** | 0 | 21,93 $ |
+| 18.09.2026 | **CODEPRUEFUNG** Upload-Haertung 2a vor dem Merge | Diff 2018 Zeilen, Suchen 26, Lesungen 38, Token rein 766614, Token raus 25127, Runden 10 | 6 (1 blockierend, 1 Regress) | **6** | 0 | 11,47 $ |
+| 18.09.2026 | **PLANPRUEFUNG** Gate-Endungsausnahme, Symbol-XSS, doppelte Dekodierung | Diff 3673 Zeilen, Suchen 62, Lesungen 82, Token rein 2822763, Token raus 22255, Runden 20 | 6 (2 blockierend) | **6** | 0 | 36,95 $ |
+| 18.09.2026 | **PLANPRUEFUNG** Fotoloeschung an Identitaet binden, vor der ersten Bau-Runde | Diff 1748 Zeilen, Suchen 56, Lesungen 66, Token rein 1860326, Token raus 22688, Runden 18 | 6 (1 blockierend) | **6** | 0 | 24,96 $ |
+| 18.09.2026 | **CODEPRUEFUNG** Mandantengrenze M1+M2 vor dem Merge | Diff 926 Zeilen, Suchen 32, Lesungen 44, Token rein 836548, Token raus 22085, Runden 12 | 4 | **4** | 0 | 12,11 $ |
+| 19.09.2026 | diffpruefung-streaming-umbau | Diff 757 Zeilen, Suchen 14, Lesungen 18, Token rein 323750, Token raus 27525, Runden 5 | 6 (2 als blockierend gemeldet) | **6** | 0 (1 Schwere korrigiert) | 2,44 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -1139,6 +1180,7 @@ zurückgenommen):
 | `test_feature_geraete_typ_filter_static.js` | **EXIT 0, 108 / 0** | 185 statt 186 |
 | `test_feature_datum_zeitzonenfalle_static.js` | **EXIT 0, 90 / 0** | 185 statt 186 |
 | die drei neuen Wächter | je EXIT 1 | 211 statt 212 |
+| 18.09.2026 | **PLANpruefung** Upload-Haertung Beitrag 2 (U1+U2), vor der ersten Bau-Runde | Auftragspapier + 6 Dateien (Kernmodul, globaler Handler, `routes/lageplan.js` ganz, 3 Waechter), **gezaehlt** 79.520 Token rein / 12.696 raus (9.840 Denken), `xhigh` | 9 (2 blockierend) | **9** | 0 | n. e. (Schluessel ohne `api.usage.read`) |
 
 Gegengezählt statt vermutet: von vier Wächtern führten drei das Feld
 **null**-mal im Vergleich — exakt die drei, die der Bot genannt hatte.
@@ -1157,3 +1199,891 @@ Mal überhaupt mit, er kostet uns nichts, und er hat in denselben vier Läufen
 sonst nichts beigetragen. Wer daraus „der Bot ersetzt eine Spur" macht, stützt
 sich auf eine Stichprobe von eins — dieselbe Falle wie beim Modellvergleich
 weiter oben in der CLAUDE.md.
+
+## Planpruefung 18.09.2026 — erster Lauf, bei dem ALLE Befunde trugen
+
+**Neun Befunde, neun nach eigener Nachmessung getragen, null gefallen.** Das
+ist bisher einmalig; am 13.09. fielen zwei von sechs, am 12.09. drei von neun.
+Eine Erklaerung dafuer draengt sich auf, ist aber NICHT gemessen: geprueft
+wurde ein PLAN, kein Diff — an einem Plan gibt es keine Implementierung, deren
+Details man falsch raten kann. Wer daraus eine Regel macht, misst es an einem
+zweiten Plan.
+
+**Zwei Befunde widerlegten den Entwurf selbst**, und beide an Stellen, an
+denen ich mir sicher war:
+
+- Der geplante Filter `req.complete === false` haette ECHTE Serverfehler
+  verschluckt. Selbst nachgemessen an einem laufenden, NICHT abgebrochenen
+  Upload: `complete:false, aborted:false, destroyed:false`. Das war genau die
+  offene Frage, die ich dem Pruefer ausdruecklich gestellt hatte — die Antwort
+  fiel gegen mich aus.
+- Meine WAECHTERKARTE war falsch. Ich hatte `test_feature_error_tracking.js`
+  als „bewacht ausschliesslich die Signatur-Schwaerzung" eingetragen;
+  nachgemessen ruft sie das echte `melde()` an sieben Stellen und prueft
+  `senden` (12x), `unterdrueckt` (6x), `_state`, Drossel und `baueText`. Mein
+  grep-Muster hatte nur einen Ausschnitt erfasst, und `grep telegram` -> 0
+  Treffer hatte ich als „keine Verhaltensabdeckung" gelesen. Ein negatives
+  Ergebnis ohne Positivkontrolle.
+
+**Ein Befund war nach eigener Messung SCHWERER als gemeldet.** Der Pruefer
+meldete, ein ausgenommener Abbruch verbrauche den Drossel-Sendeplatz. Gemessen
+stimmt das (`senden:true`, danach `senden:false, unterdrueckt:1`,
+`DROSSEL_MS = 900000` = 15 Minuten) — und die Signatur traegt KEINE studio_id
+(`Error:POST /u` fuer Studio 1 und 99 identisch). Ein Abbruch in einem Studio
+haette also echte Fehler ANDERER Studios auf derselben Route 15 Minuten stumm
+geschaltet. Das stand so nicht im Befund.
+
+**Ein Befund wandte unsere eigene Hausregel auf unseren eigenen Waechter an:**
+`test_feature_keine_stillen_fehler.js` vergleicht `alle.length` gegen
+`OBERGRENZE = 60` — eine ZAHL. Wird ein leerer catch entfernt und andernorts
+einer hinzugefuegt, bleibt der Lauf gruen. „Eine Zusicherung ueber eine ZAHL
+ist keine ueber eine MENGE" steht seit dem 13.09. in der CLAUDE.md; auf diesen
+Waechter hatte sie niemand angewandt.
+
+**Was der Lauf NICHT geleistet hat:** die Einordnung. Der Pruefer meldete den
+Telegram-Befund als blockierend; erst die eigene Messung zeigte, dass die
+Erreichbarkeit aus dem Repo gar nicht entscheidbar ist (der Hand-Deploy liegt
+auf dem Server, und die CLAUDE.md belegte ihn mit einer Datei, die es nicht
+gibt). Aus „blockierend" wurde damit „latente Waffe, kein belegter laufender
+Schaden". Das Nadeloehr bleibt das eigene Nachmessen, nicht das Finden.
+
+## Runde 2 am 18.09.2026 — und ein Befund am WERKZEUG selbst
+
+Diese Runde lief über `tools/gegenleser-repo.js` statt über einen direkten
+Aufruf, wegen des Repo-Lesezugriffs: **30 Suchen, 40 Lesungen, 909.495
+Eingabe-Token über 13 Runden** gegen 79.520 Token beim handgebündelten Lauf
+derselben Sache am Vormittag. Der Prüfer holt sich also gut das Zehnfache an
+Material — und fand damit einen BESTANDSBEFUND, den niemand im Bündel gehabt
+hätte (`POST /api/position` prüft die Zugehörigkeit der `etage_id` nicht).
+
+**Das Werkzeug setzt die Zielkonfiguration NICHT um.** Gemessen am Quelltext:
+`anfragen()` (Zeile ~510) baut genau vier Felder — `model`, `input`, `tools`,
+`max_output_tokens`. Es gibt nur EINEN Aufrufpfad (Zeile 1083), und `effort`
+wird nirgends aus argv gelesen. Es fehlen also `store: false`,
+`reasoning.effort`, `truncation`, `stream`, die erzwungene Ausgabeform und
+`metadata`.
+
+**Zwei Folgen, beide unangenehm:**
+
+1. **`store` fehlt, und die Voreinstellung ist `true`** — gemessen mit
+   Gegenprobe in beide Richtungen: ohne das Feld ist eine Antwort hinterher
+   über `GET /v1/responses/<id>` abrufbar, mit `store: false` nicht. Jeder
+   Lauf über dieses Werkzeug liegt damit auf fremden Servern, und zwar
+   ausgerechnet der materialreichste. Das widerspricht der Entscheidung vom
+   12.09.2026 unmittelbar.
+2. **Eine frühere Zeile dieser Tabelle war dadurch FALSCH BESCHRIFTET.** Sie
+   trug „effort `xhigh` — erster Lauf auf dieser Stufe" und war an ihren
+   Metriken (Suchen 73, Lesungen 49) erkennbar ein Werkzeug-Lauf; das
+   Werkzeug kann diese Stufe aber gar nicht setzen. Die Beschriftung kam aus
+   `--zweck=`, also von mir. Berichtigt.
+
+Das ist die Klasse „ein Kommentar behauptet eine Begründung, die es nicht
+gibt" — hier in einem MESSPROTOKOLL, wo sie besonders teuer ist: eine Zeile,
+die eine Einstellung behauptet, die nicht gesetzt war, entwertet jeden
+späteren Vergleich über diese Einstellung.
+
+## Sicherheitslauf 18.09.2026 — der teuerste Lauf bisher, und er hat geliefert
+
+**3.646.637 Eingabe-Token über 26 Runden, 86 Suchen, 95 Lesungen.** Das ist
+das 46-fache des handgebündelten Laufs vom selben Tag (79.520) und weit über
+allem bisherigen. Anlass war die Betreiber-Weisung „versuche mit allen Mitteln
+Lücken zu finden und zu schliessen".
+
+**Drei Befunde, alle drei selbst nachgemessen, alle drei getragen:**
+
+- **F1** `POST /api/position` — `etage_id` aus dem Body ungeprüft. War bereits
+  aus der Planprüfung bekannt; hier unabhängig bestätigt.
+- **F2 — NEU:** `POST /admin/belehrungen/freischalten/:belehrungId` nimmt
+  BEIDE Fremd-IDs ungeprüft (`mitarbeiter_id` aus dem Body, `belehrungId` aus
+  dem Pfad) und schreibt sie in einen Upsert. `belehrung_freischaltung` hat
+  **keinen** Fremdschlüssel auf Mitarbeiter oder Belehrungen — auch nicht
+  existierende IDs gehen durch.
+- **F3** Anmerkung: `ausmusterungToken.beanspruche()` setzt
+  `eintrag.verbraucht = true`, BEVOR `daten.studioId !== req.studioId` geprüft
+  wird. Wer einen fremden Token kennt, kann ihn entwerten.
+
+**Was den Lauf trägt, ist nicht die Zahl der Befunde, sondern WELCHE.** F2 ist
+genau die Stelle, die meine eigene Textsuche ZWEIMAL als „in Ordnung"
+abgehakt hatte — aus demselben Grund wie bei F1: `studio_id` steht dort, aber
+als EINGESETZTER Wert im INSERT, nicht als Prüfung. Eine Mustersuche kann
+diese Klasse nicht sehen; sie ist eine Frage nach dem Kontrollfluss.
+
+**Die Einordnung kam wieder vom eigenen Nachmessen, nicht aus dem Bericht** —
+wobei der Prüfer diesmal selbst sehr vorsichtig eingestuft hat (er nennt bei
+jedem Befund ausdrücklich, was der Angreifer NICHT erreicht). Nachgemessen
+gilt: keine der drei erlaubt das LESEN fremder Daten, und bei F2 ist
+`studio_id` Teil des Konfliktschlüssels, also gibt es kein Schreiben in fremde
+Zeilen. Es bleibt Datenintegrität, kein Datenabfluss.
+
+## 18.09.2026 — DREI Läufe am selben Deckel gescheitert, alle ohne Bericht
+
+Drei Sicherheitsläufe über den BESTAND (Einschleusung, Anmeldung/Sitzung,
+Datenabfluss) brachen **alle drei** mit derselben Meldung ab:
+
+    ABBRUCH: Gesamtausgabemenge ueber 614400 Bytes (620900 / 615640 / 616114)
+    — der Bericht ist UNVOLLSTAENDIG.
+
+**Nach unserer Hausregel haben sie NICHTS geliefert, nicht „keine Befunde".**
+Die Kosten sind trotzdem angefallen; die Zeilen oben tragen deshalb Striche,
+keine Null.
+
+**Die Ursache ist zweiteilig, und der zweite Teil ist meiner:**
+
+1. **Das Werkzeug ist für DIFFS gebaut.** `MAX_AUSGABE_BYTES` deckelt die
+   Summe aller gelesenen Ausschnitte auf 600 KiB — für einen Diff reichlich,
+   für eine Bestandssuche über 500 Dateien zu knapp. Der Prüfer las 36+
+   Dateien und war noch nicht fertig. Jetzt über
+   `GEGENLESER_MAX_AUSGABE_BYTES` hebbar, Voreinstellung unverändert
+   (Gegenprobe: mit Variable 2.500.000, ohne 614.400).
+2. **Mein Auftrag war zu breit.** Lauf A sollte VIER Klassen auf einmal prüfen
+   (SQL, Kommandos, Pfade, HTML-Ausgabe). Das ist dieselbe Krankheit wie ein
+   überladenes Bündel: er verausgabt sich, bevor er berichten kann. Aufgeteilt
+   in A1 (SQL + Kommandos) und A2 (Pfade + HTML).
+
+**Was die Fehlläufe trotzdem gezeigt haben** — als Hinweis, nicht als
+Ergebnis: Lauf C hatte die beiden bekannten Pfad-Lecks (`routes/wartung.js`,
+`routes/admin/geraete.js`) bereits erwähnt, bevor er abbrach. Die
+Positivkontrolle im Auftrag trägt also. Lauf B hatte die Anmelde-Sperre zum
+Abbruchzeitpunkt NICHT erwähnt — dort ist offen, ob der Auftrag trägt.
+
+**Lehre für den nächsten Bestandslauf:** EINE Klasse je Lauf, Deckel vorher
+heben, und die Positivkontrolle in den Auftrag schreiben — sonst ist ein
+Abbruch nicht von einem sauberen Ergebnis zu unterscheiden.
+
+## 18.09.2026, abends — der Gegenleser ist NICHT MEHR ERREICHBAR (Guthaben)
+
+**Gemessen, nicht vermutet:** Die Läufe C (Wiederholung) und A2 endeten mit
+
+    HTTP 429: {"error":{"message":"You have no credits remaining. …",
+               "type":"insufficient_quota","code":"credit_balance_exhausted"}}
+
+Das ist KEIN Mengenlimit und kein Egress-Abbruch, sondern ein leeres
+OpenAI-Konto. Die Unterscheidung ist wichtig, weil die beiden früheren
+Abbrüche desselben Tages eine ganz andere Ursache hatten (Ausgabedeckel) und
+eine andere Abhilfe brauchten.
+
+**Was das für die Arbeitsweise heisst, solange kein Guthaben nachgelegt ist:**
+
+- Die Vorgabe „der PLAN geht VOR der ersten Bau-Runde an den Gegenleser"
+  (18.09.2026, Punkt 1) ist nicht erfüllbar. Sie hat einen eingebauten
+  Ausweg — „wer ihn auslässt, schreibt in EINEN Satz dazu, warum" —, und
+  dieser Satz lautet ab jetzt: *Gegenleser nicht erreichbar, HTTP 429
+  insufficient_quota.* Er gehört in denselben Zwischenstand wie die
+  Suite-Zahlen.
+- Die zweite Prüfspur fällt damit weg. Übrig bleiben die Claude-Review über
+  den Diff, der Review-Bot am PR und das eigene Nachmessen. Am 13.09.2026 ist
+  gemessen, dass die beiden Spuren NULL Überschneidung hatten — der Wegfall
+  kostet also eine ganze Klasse, nicht nur Redundanz. Das ist zu benennen,
+  nicht zu kaschieren.
+- **Kosten des Tages, damit die Entscheidung über das Nachlegen auf Zahlen
+  steht:** sieben Bestandsläufe, davon drei am Ausgabedeckel und zwei am
+  Guthaben abgebrochen. Summe der geschätzten Kosten dieser sieben Zeilen:
+  rund 207 $. Zwei davon (A1 und B) haben einen vollständigen Bericht
+  geliefert, zusammen 14 Befunde.
+
+**Was die beiden vollständigen Läufe geliefert haben** (Einzelheiten und der
+Stand des eigenen Nachmessens stehen in `plaene/STAND.md`, nicht hier):
+
+- **A1 (SQL und Kommandos):** keine Einschleusung gefunden, mit
+  Positivkontrolle in beide Richtungen (eine korrekt parametrisierte Abfrage
+  und eine korrekte `execFile`-Stelle wörtlich benannt). Der Wert des Laufs
+  liegt woanders: er hat eine **Zusicherung gefunden, die nicht rot werden
+  kann** — ein Test behauptet wörtlich, die Argumentliste beweise, „dass GAR
+  KEINE Shell mehr beteiligt ist", prüft aber `opts.shell` nicht. Selbst
+  nachgemessen am Quelltext: `leseZipAufruf()` sieht nur Programmname,
+  `-j`, ZIP-Pfad und `opts.cwd`. Der statische Geschwisterwächter sucht
+  ebenfalls nur `exec`/`execSync`, nicht die Shell-Option.
+- **B (Anmeldung, Sitzung, Token):** die eingebaute Positivkontrolle trägt —
+  die bekannte Anmelde-Sperre wurde diesmal gefunden und wörtlich belegt
+  (`routes/auth.js:49–50`, studioscharfe Schlüssel, Advisory Lock). Beim
+  Abbruch am Vormittag hatte derselbe Auftrag sie NICHT erwähnt; der Auftrag
+  war also in Ordnung, der Lauf war zu früh zu Ende.
+
+## 18.09.2026, nach dem Nachlegen des Guthabens — was die PLANPRÜFUNG leistet
+
+**Die Regel „der Plan geht VOR der ersten Bau-Runde raus" steht seit dem
+10.09.2026 in der CLAUDE.md und war bis heute fast nie befolgt.** An diesem
+Abend wurde sie zum ersten Mal für zwei Beiträge hintereinander angewandt.
+Ergebnis, zählbar:
+
+| Lauf | Befunde | nach eigener Nachmessung getragen | davon blockierend |
+|---|---|---|---|
+| Planprüfung Mandantengrenze | 6 | **6** | 1 |
+| Planprüfung Zusicherung/qpdf | 5 | **5** | 2 |
+
+**Elf von elf getragen, null gefallen.** Das ist die höchste Trefferquote, die
+in dieser Datei steht — und der Grund ist strukturell, nicht Glück: ein Papier
+behauptet mehr als ein Diff. Es enthält Begründungen, Vorbilder,
+Abgrenzungen und Testkonzepte, und jede dieser Aussagen ist prüfbar, bevor
+sie Code geworden ist.
+
+**Drei der elf haben eine BEHEBUNG widerlegt, nicht einen Befund** — das ist
+die teuerste Sorte, weil sie sonst erst nach dem Bauen auffällt:
+
+1. Mein Testkonzept für `POST /freischalten/:belehrungId` verlangte drei
+   Zusicherungen. Die Route hat aber ZWEI unabhängig wählbare Ziel-IDs. Eine
+   Attrappe von einer Zeile — `const bel = { id: req.params.belehrungId };` —
+   hätte alle drei grün gelassen und die Grenze „eigener Mitarbeiter, fremde
+   Belehrung" offen. Die Prüfung lieferte den Einzeiler wörtlich mit.
+2. Mein qpdf-Riegel wies ein führendes `-` ab und behauptete, das mache die
+   qpdf-Fassung gleichgültig. qpdf liest Argumente aus Dateien über
+   `@dateiname` — der Riegel hätte daran vorbeigegriffen.
+3. Mein geplanter statischer Shell-Wächter durfte die mehrzeilige
+   Schreibweise als „benannte Grenze" offenlassen. Dazu übersah er einen
+   Alias, der im Bestand SCHON STEHT (`promisify(execFile)` in
+   `routes/health-intern.js`).
+
+**Was das NICHT hergibt:** zwei Läufe an einem Abend. Die Quote 11/11 ist eine
+Beobachtung, keine Statistik, und beide Papiere stammen vom selben Verfasser
+am selben Tag — ein Verfasser, der schon müde war, macht womöglich mehr
+Fehler als üblich. Wer sich darauf beruft, nennt diese Einschränkung mit.
+
+**Was es SEHR WOHL hergibt:** Die Kosten. Die beiden Planprüfungen zusammen
+kosteten 57,45 $. Eine einzige Bau-Runde des Executers für Beitrag 2a hat
+431.277 Token und 270 Werkzeugaufrufe gebraucht. Drei der elf Befunde hätten
+je eine solche Runde ausgelöst.
+
+### Eine Beobachtung zur Arbeitsteilung, die neu ist
+
+Bei zwei Befunden dieses Abends ist meine EIGENE Nachmessung über den Bericht
+hinausgegangen — nicht gegen ihn, sondern weiter:
+
+- Der Prüfer nannte **zwei** rohe Ausgabestellen des Kategorie-Symbols. Eine
+  Vollerhebung aller 18 `.symbol`-Stellen fand eine **dritte**, und
+  ausgerechnet die folgenreichste: den „Jetzt fällig"-Block der Startseite,
+  also jeden Benutzer statt nur die Admins.
+- Beim Gate-Befund nannte der Prüfer den Weg. Die Frage, ob die
+  Endungs-Ausnahme überhaupt gebraucht wird, hat erst die eigene Messung der
+  Mount-Reihenfolge beantwortet — und sie hat die Behebung von „Muster
+  verschärfen" auf „Zeile löschen" gedreht.
+
+Das ist dieselbe Trennung wie am 13.09.2026, nur andersherum: **der Prüfer
+findet den Zustand, die eigene Messung findet seinen Umfang.** Wer nur den
+Bericht umsetzt, baut beide Male das Richtige — aber zu klein.
+
+
+## 18.09.2026, spaeter Abend — die Planpruefung steht jetzt bei 17 von 17
+
+Nach zwei weiteren Laeufen (Gate-Beitrag als PLAN, Upload-Beitrag 2a als
+fertiger CODE) sieht die Bilanz des Abends so aus:
+
+| Lauf | Art | Befunde | getragen | blockierend |
+|---|---|---|---|---|
+| Mandantengrenze | Plan | 6 | 6 | 1 |
+| Zusicherung/qpdf | Plan | 5 | 5 | 2 |
+| Gate/XSS/Dekodierung | Plan | 6 | 6 | 2 |
+| Upload-Haertung 2a | Code | 6 | 6 | 1 (+1 Regress) |
+
+**23 Befunde, 23 getragen, null gefallen.** Vier von ihnen widerlegten eine
+BEHEBUNG statt eines Befunds, zwei einen Satz, der in meinem Papier als
+Tatsache stand.
+
+**Der teuerste eigene Fehler des Abends steht im Gate-Papier** und ist ein
+Lehrbuchfall aus dieser Datei: Ich hatte behauptet, keine dynamische Route
+ende auf eine Asset-Endung — gesucht hatte ich nach Routen-LITERALEN. Die
+Grundriss-Auslieferung traegt die Endung im PARAMETER
+(`tabletRouter.get("/grundriss/:datei")`, Dateien `etage_<id>_<uuid>.jpg`).
+Die Regel „erst das Muster an einer bekannten Fundstelle LERNEN, dann damit
+suchen" steht seit dem 18.09. vormittags in der CLAUDE.md, aufgeschrieben
+nach drei Fehlschlaegen derselben Art am selben Tag. Sie hat mich am selben
+Abend ein viertes Mal erwischt.
+Das Ergebnis der Nachmessung war am Ende guenstig (die einbindenden Seiten
+liegen selbst hinter dem Gate, die Ausnahme ist dort ein zweites Leck) — aber
+das war Glueck, nicht Methode.
+
+**Zwei Befunde haben die SCHWERE erhoeht, nicht nur die Begruendung:**
+
+- Der Gate-Befund betrifft auch einen SCHREIBWEG (`POST /module/seil-foto/
+  123.jpg` schreibt Datei und DB-Zeile ohne PIN). Fassung 1 nannte nur
+  Lesewege. Ein Waechter, der nur Statuscodes prueft, haette das nicht
+  gefangen — er muss null SCHREIBAUFRUFE verlangen.
+- Der Upload-Beitrag hatte einen REGRESS, den weder der Ausfuehrende noch ich
+  gesehen hatten: `ENAMETOOLONG` bei einem 244 Zeichen langen Dateinamen ist
+  weder MulterError noch Filtertext, geht also ab 2a an `next(err)` — aus
+  einer Fehlerseite wird HTTP 500 mit Telegram-Alarm, ausgeloest durch eine
+  Benutzereingabe. Selbst nachgerechnet: 27 Byte Praefix + 244 = 271 gegen
+  die 255-Byte-Grenze.
+
+**Und ein Befund war wortwoertlich fatal:** „die Regex-Zeile entfernen" haette
+ein haengendes `||` hinterlassen — Syntaxfehler. Eine Anweisung, die man
+woertlich befolgen soll, muss woertlich stimmen.
+
+
+## Nachtrag zum 18.09.2026 — der Lauf, der eine MELDUNG an den Betreiber widerlegt hat
+
+Die Planprüfung zur Fotolöschung ist der fünfte Lauf des Abends und bringt
+die Bilanz auf **29 Befunde, 29 getragen, keiner gefallen.** Sie ist aber aus
+einem anderen Grund die wichtigste.
+
+**Sie hat nicht nur meinen Plan berichtigt, sondern eine Aussage, die beim
+Betreiber schon angekommen war.** Ich hatte ihm gemeldet: ein Studio ohne
+freigeschaltetes Tablet könne nach der Änderung vom Tablet aus nicht mehr
+löschen. Der Schluss kam aus einer richtigen Beobachtung
+(`routes/tablet-sperre.js:497-499` füllt die Mitarbeiterliste nur mit
+freigeschaltetem Gerät) und einer falschen Verallgemeinerung: **keine Liste
+ist nicht keine Anmeldung.** Gemessen steht dort eine Selbstfreischaltung mit
+Namensfeld und PIN (`:262-285`, `:650`, `:697-699`).
+
+Zwei Dinge folgen daraus, und beide sind allgemeiner als dieser Fall:
+
+1. **Eine Aussage über eine ABWESENHEIT („kommt nicht zu einer Identität")
+   braucht die Suche nach dem ALTERNATIVEN Weg, nicht nur den Beleg für die
+   fehlende Variante.** Ich hatte vier Messungen gemacht und mich davon so
+   gut abgesichert gefühlt, dass ich die fünfte nicht mehr für nötig hielt.
+   Genau dort lag sie.
+2. **Was beim Betreiber angekommen ist, gehört ausdrücklich zurückgenommen,
+   nicht still im Papier korrigiert.** Ein Auftragspapier liest er nicht; die
+   Meldung hat er gelesen. Die Berichtigung ist deshalb in derselben Form
+   herausgegangen wie der Fehler.
+
+**Der blockierende Befund desselben Laufs** ist eine andere Klasse und gehört
+zu den teuersten, die wir kennen: Mein Satz „jede erfolgreiche Löschung
+schreibt ein Audit" nahm „erfolgreich" als gegeben an. Das DELETE wertet sein
+Ergebnis heute nicht aus — zwei gleichzeitige Anfragen hätten ZWEI
+Audit-Einträge für EINE Löschung erzeugt, dauerhaft und gehasht. Ein
+Protokoll, das eine Handlung beurkundet, die nicht stattgefunden hat, ist
+schlimmer als gar keines.
+
+
+## 18.09.2026, Nacht — ein Lauf, der die eigene Behauptung EINGESCHRÄNKT hat
+
+Die Codeprüfung der Mandantengrenze (vier Befunde, alle getragen) ist aus
+einem Grund bemerkenswert, der nichts mit ihrer Zahl zu tun hat.
+
+**Bei einem ihrer eigenen Befunde hat sie sich selbst korrigiert, bevor
+jemand nachgemessen hat.** Sie führte eine Mutation an
+(`SELECT id FROM belehrungen WHERE studio_id = $1 ORDER BY id LIMIT 1`) und
+schrieb dazu:
+
+> „Die Zeilenzahl-Zusicherung in Testzeile 171 bleibt grün. **Wichtig: Der
+> Redirect-Test in Zeile 169 wird rot.** Deshalb wäre die Behauptung ‚die
+> ganze Datei bleibt grün' für diese Mutation falsch."
+
+Und zog daraus den eigentlichen Schluss: nicht „kein Befund", sondern **der
+Kommentar der Testdatei ist falsch**. Dort stand, das Redirect-Ziel sei bloss
+Diagnose und die Zeilenzahl die tragende Zusicherung. Die Mutation beweist das
+Gegenteil — hier trägt das Redirect-Ziel, und die Zeilenzahl nicht.
+
+Das ist die Sorte Prüfung, die mehr wert ist als eine, die immer liefert: Sie
+hat eine Behauptung abgeschwächt, die ihr eigener Befund gestützt hätte, und
+dabei einen ANDEREN, besseren Befund gefunden.
+
+**Drei der vier Befunde sind dieselbe Klasse, und es ist unsere eigene:** eine
+Zusicherung über eine ZAHL ist keine Zusicherung über eine MENGE. Die
+Testdatei zählt Zeilen und prüft nie, WELCHE IDs gespeichert wurden. Folge,
+je einzeln hergeleitet: `bel.id` durch `ma.id` ersetzen (falsche Referenz
+gespeichert) — alle 20 Zusicherungen grün. `DO UPDATE` durch `DO NOTHING`
+ersetzen (reguläre Neufreischaltung wirkungslos) — alle 20 grün. Und eine
+Typweiche, die numerische IDs an der Besitzprüfung vorbeilässt — alle 20
+grün, weil der Test ausschliesslich Formular-POSTs schickt, also nur
+Zeichenketten.
+
+**Der vierte Befund deckt sich mit einem, den ich selbst gefunden hatte**
+(die Ununterscheidbarkeit von „fremd" und „nicht vorhanden" ist nirgends
+zugesichert, obwohl der Beitrag mit ihr die Wahl von 404 begründet). Zwei
+unabhängige Spuren, derselbe Befund — das kommt selten genug vor, um es
+festzuhalten.
+
+---
+
+## 18.09.2026, abends — A/B-Lauf DeepSeek v4-pro gegen denselben Diff
+
+**Zweck:** Betreiber-Auftrag „finde raus was es kann und vergleiche mit gpt 6,
+nutze jeweils das beste System für die Aufgaben". Kein zusätzlicher Prüflauf,
+sondern eine MESSUNG des Prüfers — derselbe Diff (Mandantengrenze M1+M2),
+dasselbe Bündel, derselbe Auftrag wörtlich wie an die beiden eigenen Spuren.
+
+**Modell/Stufe:** `deepseek-v4-pro`, `reasoning_effort: "max"`.
+**Material:** 54.477 Zeichen (Diff, Gegenproben des Ausführenden, Vorbildstelle
+`routes/getraenkeanlage.js`, Schema-Auszug aus `core/db.js`) = 18.344 Token.
+**Ausgabe:** 27.197 Denk-Token, 31.453 Ausgabe-Token gesamt, 264 s,
+`finish_reason: stop`.
+
+**Befunde: 8. Nach eigener Nachmessung getragen: 6. Gefallen: 2.**
+Davon **zwei Befunde, die KEINE der beiden eigenen Spuren hatte** (21
+ungeprüfte INSERTs; `MINDEST_PRUEFUNGEN` zählt nur die Menge). Drei Befunde
+decken sich wörtlich mit eigenen (N9, N4, N6/N11) — darunter N9, der
+schwerwiegendste Befund der eigenen Spur, mit derselben Mutation.
+
+**Die beiden gefallenen gehen auf MEINE Bündelwahl zurück, nicht auf den
+Prüfer:** `package.json` lag nicht bei (er nahm Express 4 an, wir fahren
+`^5.2.1` plus globalen Fehlerhandler `server.js:1467`), und von `core/db.js`
+lag nur ein Schema-Auszug bei, nicht die Definition `one() -> rows[0] ?? null`
+(`core/db.js:426-429`). Zwei Dateien mehr hätten beide verhindert.
+
+**Erster Versuch: ABGEBROCHEN, Striche statt Null.** `max_tokens: 16000`,
+`finish_reason: length`, 0 Zeichen Bericht bei 62.186 Zeichen Denkprotokoll.
+Geprüft hat da niemand. Kosten sind trotzdem angefallen.
+
+**Kosten:** nicht gemessen — wie bei den OpenAI-Läufen fehlt uns das Recht
+auf die laufgenaue Kostenabfrage. Token stehen oben, Geld steht auf der
+Abrechnung.
+
+---
+
+## 18.09.2026, abends — DeepSeek als ZWEITE Lesespur (Nacharbeit M1/M2)
+
+**Zweck:** Erster Einsatz nach der Betreiber-Entscheidung, DeepSeek bei
+folgenschweren Beiträgen als zweite Spur neben dem Gegenleser zu fahren.
+Geprüft: der Diff, der zwölf Befunde zweier Prüfspuren nachzieht.
+
+**Modell/Stufe:** `deepseek-v4-pro`, `reasoning_effort: "max"`, Responses-API
+(zustandslos, `store: false` in der Antwort bestätigt).
+**Material:** 136.075 Zeichen = **43.145 Token** — Diff, `package.json`,
+db-Semantik, `core/auth.js` vollständig, globaler Fehlerhandler, unveränderte
+M2-Route, BEIDE Testdateien vollständig, Test-Harness. Vorher gezählt über
+`/v1/responses/input_tokens` (38.811 ohne den Auftrag), nicht geschätzt.
+**Ausgabe:** 66.524 Token, davon 62.536 Denken. 518 s, ohne Streaming
+durchgelaufen.
+
+**Befunde: 7. Nach eigener Nachmessung getragen: 6. Gefallen: 1.**
+
+| # | Befund | Verdikt |
+|---|---|---|
+| 2 | N9-Zähler prüft nur `=== 0`, nie `> 0` — wer das `console.error` aus dem catch nimmt, macht den Mechanismus lautlos wirkungslos | **hält, blockierend** |
+| 7 | Kommentar in `core/auth.js` verallgemeinert „unsere eigenen fetch()-Aufrufe" | **hält, SCHÄRFER als gemeldet** |
+| 3 | statische Richtungsprüfung sucht im ganzen Quelltext statt im Funktionsausschnitt | hält |
+| 4 | statische Testdatei hat keine Mindest-Prüfzahl | hält |
+| 5 | halbe Admin-Session (`totpOk:false`) im N12-Test ungeprüft | hält |
+| 1 | Test-Abfrage ohne `studio_id` (`posEigen`) | hält als Hygiene, Schwere leicht überzogen |
+| 6 | Zeitvergleich `>` sei flaky | **fällt** |
+
+**Warum 6 fällt:** die Begründung läuft in die falsche Richtung. `clock_timestamp()`
+wird über JavaScript auf Millisekunden ABGESCHNITTEN, der Bezugspunkt rutscht
+also nach FRÜHER — der Vergleich wird dadurch wahrscheinlicher wahr, nicht
+unwahrscheinlicher.
+
+**Warum 7 schärfer ist als gemeldet:** selbst gezählt — von NEUN
+Browser-`fetch`-Aufrufen auf eigene Endpunkte trägt genau EINER den
+`Accept`-Header, und zwei der fehlenden stehen in derselben Datei, die gerade
+repariert wurde (`routes/lageplan.js:1524`, `:2843`).
+
+**Kosten:** nicht gemessen (kein Recht auf die laufgenaue Abfrage). Token oben.
+
+---
+
+## 19.09.2026 — Runde 4, ZWEI Läufe parallel mit VERSCHIEDENEN Aufträgen
+
+Zum ersten Mal die offene Frage aus der CLAUDE.md („zwei Läufe mit
+VERSCHIEDENEN Aufträgen statt einem") tatsächlich gefahren — allerdings über
+zwei MODELLE, nicht innerhalb eines. Das beantwortet die dortige Frage also
+NICHT; es ist unsere übliche Zwei-Spuren-Praxis mit getrennten Fragestellungen.
+
+### Lauf A — PLANPRÜFUNG (`gpt-5.6-sol`, effort `xhigh`)
+
+Zweck: das Auftragspapier F5 prüfen, **bevor** gebaut wird. Die Regel steht
+seit dem 10.09. als „Punkt mit dem grössten Hebel" und wurde bei den
+Härtungsrunden 3–5 übergangen.
+
+Material: Vorspann + Auftragspapier + die zu ändernde Testdatei +
+`routes/belehrungen.js` + `core/auth.js`. **Gezählt, nicht geschätzt:
+67.489 Token** (`POST /v1/responses/input_tokens`). Verbraucht: 67.722 rein,
+16.541 raus (davon 14.472 Denken). Dauer 321 s.
+
+**Kosten nach der Preistabelle in `tools/gegenleser-repo.js` (5,00/30,00 $
+je Mio): rund 0,83 $.** Zum Vergleich: derselbe Lauf mit `gpt-6-astra` hätte
+nach derselben Tabelle rund 2,08 $ gekostet.
+
+**Befunde: 4. Nach eigener Nachmessung getragen: 3. Gefallen: 1.**
+
+| # | Befund | Verdikt |
+|---|---|---|
+| 2 | die vorgeschriebenen ID-Untergrenzen wären vom geplanten Wächter gar nicht bewacht — paarweise Verschiedenheit gilt auch bei ganz anderen Zahlen | **hält** |
+| 3 | die Löschung der Wegwerfzeilen ohne jeden Nachweis: ein unwirksames DELETE lässt die Sequenzen trotzdem vorrücken, alles bleibt grün | **hält** |
+| 4 | mein Auftrag widerspricht sich bei der Zahl der neuen Zusicherungen — damit ist die Mindestprüfzahl vor dem Lauf nicht herleitbar | **hält** |
+| 1 | zwei Abfragen ohne `studio_id` (`clock_timestamp()`, Zeitvergleich) | **fällt als Bauauftrag** |
+
+**Warum 1 fällt:** beide Abfragen haben keine `FROM`-Klausel, lesen also keine
+Tabelle und können nichts über eine Mandantengrenze hinweg lesen. Der
+vorgeschlagene Umbau — `SELECT clock_timestamp() … FROM mitarbeiter WHERE
+studio_id=$1 AND id=$2` — hängt einen sinnlosen Tabellenlesezugriff an eine
+Zeitabfrage und macht sie von Fixturzustand abhängig. Der Befund ist gegen den
+WORTLAUT der Regel richtig und in der Sache leer; er wird als datierter offener
+Punkt geführt statt gebaut.
+
+**Bemerkenswert an diesem Lauf: alle drei tragenden Befunde richten sich gegen
+meinen eigenen AUFTRAG, keiner gegen Code.** Genau dafür ist die Planprüfung
+da — am Papier kosten sie nichts, an drei Bau-Runden schon.
+
+### Lauf B — CODE-GEGENLESUNG (`deepseek-v4-pro`)
+
+Zweck: der fertige F4-Diff, zweite Spur.
+
+Material: Vorspann + Diff + Testdatei vollständig + `routes/lageplan.js` +
+`routes/belehrungen.js` + `core/auth.js`. **Gezählt: 125.851 Token.**
+Verbraucht: 136.509 rein, 24.992 raus (davon 23.184 Denken). Dauer 267 s.
+**Kosten: in unserer Preistabelle steht DeepSeek nicht — nicht ableitbar,
+Token oben.**
+
+**Befunde: 3. Nach eigener Nachmessung getragen: 2. Gefallen: 1.**
+
+| # | Befund | Verdikt |
+|---|---|---|
+| 1 | `istRequireCoreAuth` prüft die FORM, nicht die TATSACHE: `const requireAdmin = require('./core/auth')` erfüllt sie, obwohl `requireAdmin` dann das Modulobjekt statt der Middleware ist | **hält — gemessen `EXIT 0, 188 PASS / 0 FAIL`, alle drei Identitäts-Zusicherungen bleiben grün** |
+| 2 | F4-N5 kann bei nicht parsbarem `server.js` nicht rot werden (leeres Array === sauber) | **hält — gemessen: beide Zeilen grün bei `EXIT 1, 177/5`** |
+| 3 | Zeitvergleich ohne `studio_id` | **fällt**, siehe Lauf A Befund 1 |
+
+### Was die beiden Läufe ZUSAMMEN zeigen
+
+**Null Überschneidung bei den tragenden Befunden** — die drei aus Lauf A
+betreffen ausschliesslich das Auftragspapier, die zwei aus Lauf B ausschliesslich
+gebauten Wächtercode. Das ist aber KEINE Wiederholung der Messung vom
+13.09.2026: die Spuren hatten hier **verschiedene Fragen und verschiedenes
+Material**, Disjunktheit ist damit weitgehend erzwungen und nicht überraschend.
+
+**Was beide Spuren gemeinsam hatten, ist der EINZIGE gefallene Befund** — beide
+meldeten dieselbe `studio_id`-lose Zeitabfrage, beide mit einer Behebung, die
+die Lage verschlechtert hätte. Zwei unabhängige Spuren, die denselben
+Fehlalarm liefern, sind ein Hinweis auf die REGEL, nicht auf den Code: der
+Wortlaut „jede Abfrage trägt `studio_id`" unterscheidet nicht zwischen
+Tabellen- und Ausdrucksabfragen. Ob er das soll, entscheidet der Betreiber.
+
+**Und der schwerste Befund der Runde kam von keiner der beiden Spuren**,
+sondern aus dem eigenen Nachmessen einer Gegenprobe: dass auf frischer
+Datenbank Studio-, Etagen-, Mitarbeiter- und Belehrungs-ID dieselbe Zahl
+tragen. Dasselbe Muster wie am 12.09.2026 — das Nadelöhr bleibt das eigene
+Nachmessen, nicht das Finden.
+
+## 19.09.2026 — Planprüfung F6 (`gpt-5.6-sol`, effort `xhigh`)
+
+Zweck: das Auftragspapier F6 prüfen, BEVOR gebaut wird. Anlass war ein
+P2-Befund des Review-Bots am Beitrag, den ich zuvor selbst nachgemessen hatte.
+
+Material: Vorspann + Messungen + Auftragspapier + die Testdatei vollständig +
+`routes/lageplan.js` + `routes/belehrungen.js`. **Gezählt: 120.649 Token.**
+Verbraucht: 120.822 rein, 13.741 raus (davon 11.912 Denken). Dauer 271 s.
+**Kosten nach der Preistabelle: rund 1,02 $.**
+
+**Befunde: 5. Nach eigener Nachmessung getragen: 4. Gefallen: 1.**
+
+| # | Befund | Verdikt |
+|---|---|---|
+| 2 | F6-1 schwächt MEHR als behauptet: die heutige Mengenprüfung fängt auch `const maC = maB;` — Länge bleibt 6, Menge wird 5 | **hält, der wichtigste** |
+| 3 | F6-2 und F6-3 sind nicht getrennt grün commitfähig; der vorgeschriebene Zwischencommit wäre absichtlich ROT | **hält** |
+| 5 | „abbrechen und melden" war zweideutig — als Laufzeit-Wurf gebaut hätte es alle Prüfungen dahinter gekostet | **hält** |
+| 4 | meine Vollständigkeitsbehauptung ist wörtlich falsch (`etageA`/`maA`/`belA` stehen gemeinsam in F5-2b), und H4 ist dadurch nicht isoliert | **hält** |
+| 1 | zwei Abfragen ohne `studio_id` | **fällt — zum DRITTEN Mal** |
+
+**Warum 1 zum dritten Mal fällt, und was daran diesmal MEIN Fehler war:**
+Die Abfragen haben keine `FROM`-Klausel. Entscheidend ist aber die Ursache:
+Mein eigener Prüf-Vorspann zitierte die Regel als „JEDE Datenbankabfrage trägt
+`studio_id`" — ohne die Einschränkung auf Tabellenabfragen. Die Spur hat also
+korrekt angewandt, was ich ihr geschrieben habe. Drei Läufe lang habe ich
+denselben Fehlalarm selbst bestellt und dann als Fehlalarm verbucht.
+Der Vorspann liegt jetzt als `tools/gegenleser-vorspann.txt` im Repo und
+stellt es klar.
+
+**Was dieser Lauf über Planprüfungen zeigt — zum zweiten Mal an einem Tag:**
+**alle vier tragenden Befunde richten sich gegen mein AUFTRAGSPAPIER, keiner
+gegen Code.** Bei der Planprüfung F5 war es genauso (drei von drei). Zusammen
+mit dem 15.09.2026 (18 Befunde über zwei Planprüfungen, alle getragen) ist das
+die konsistenteste Beobachtung, die diese Datei bisher trägt. Sie ersetzt keine
+Statistik — aber sie deckt sich mit der Regel aus der CLAUDE.md, dass der
+grösste Hebel am Papier liegt und nicht am Diff.
+
+**Was sie NICHT zeigt:** dass eine Planprüfung genügt. Dieselbe Spur hat in der
+Runde davor Fassung 1 von F5 geprüft und die ABSOLUTEN Bereichsgrenzen NICHT
+beanstandet — die sind dann im vollen Suite-Lauf rot geworden. Eine
+Planprüfung findet, was am Papier erkennbar ist; die Unverträglichkeit mit 338
+anderen Testdateien war es nicht.
+
+---
+
+## 19.09.2026 — A/B `max` gegen `xhigh` (Betreiber-Frage „was ist besser?")
+
+Identisches Bündel, identischer Prompt, **programmatisch als byte-gleich
+belegt**; einziger Unterschied `reasoning.effort`. Auftrag: das
+Auftragspapier zur Einmal-Freischaltung ADVERSARISCH brechen. Bewertung
+blind — beide Befundlisten zusammengeführt, nach Datei/Zeile sortiert, Quelle
+erst nach dem Nachmessen aufgedeckt.
+
+| | `max` | `xhigh` |
+|---|---|---|
+| Befunde | 4 | 3 |
+| nach eigener Nachmessung getragen | **4** | **3** |
+| Denk-Token | 31.057 | 13.984 |
+| Dauer | 874 s | 439 s |
+| Kosten (Preistabelle) | **~1,26 $** | **~0,74 $** |
+
+**Überschneidung: 2 von 7.** Beide fanden die zwei strukturell wichtigsten
+Punkte (Gegenprobe K2 nicht formtreu; das geplante „Fenster schliessen"
+vergrössert in Wahrheit ein Wettlauf-Fenster). Darüber hinaus disjunkt:
+`max` zwei eigene, `xhigh` einen eigenen.
+
+**Der teuerste Fund war einer von `max`** und kippte den ganzen Entwurf: ein
+gültiges, aber tintenloses PNG läuft durch alle Prüfungen. **Scharf
+nachgemessen am echten Endpunkt** (weisses UND transparentes 1×1-PNG):
+`{"status":"ok"}`, Freischaltung 1 → 0, signierte PDF entsteht. Die geplante
+Behebung hätte fertig ausgesehen und die Lücke offengelassen.
+
+**Der eigene Fund von `xhigh`** ist ebenfalls schwer: der geplante Wächter
+verlangt nur EIN Token, deshalb überlebt `AND belehrung_id=$3` → `AND $3=$3`
+sämtliche vier vorgesehenen Gegenproben.
+
+**Was das NICHT hergibt:** ein Auftragspapier, ein Lauf je Stufe. Eine
+Beobachtung, keine Regel. **Meine schriftlich vorher festgehaltene Vorhersage
+(„kein grosser Unterschied") war falsch** — das gehört dazu, sonst misst diese
+Datei nur die eigene Zustimmung.
+
+**Was daraus folgt:** nicht „max ist besser". Sondern: beide zusammen kosteten
+2,00 $ und lieferten fünf eigenständige Befunde; jede Stufe allein hätte vier
+bzw. drei geliefert. Der billigste Weg zu allen fünf war, beide zu fahren.
+
+## 19.09.2026 — Kreuzverhör-Pilot (beide Spuren, je gegen die Befunde der anderen)
+
+Zweck: messen, ob die Widerlegungsstufe taugt — an Material, dessen Antwort
+ich schon kannte (alle sieben Behauptungen hatte ich selbst als tragend
+nachgemessen).
+
+| Spur | geprüfte Behauptungen | widerlegt | Schwere korrigiert |
+|---|---|---|---|
+| zweite Spur gegen `max` | 4 | 0 | 1 |
+| `sol` gegen `xhigh` | 3 | 0 | 1 |
+
+**0 von 7 widerlegt.** Beide Spuren stuften unabhängig voneinander DIESELBE
+Behauptung von „hoch" auf „mittel" zurück (K2 sei eine Lücke des
+Prüfverfahrens, kein Produktionsfehler) — dem habe ich zugestimmt.
+
+Zusätzlich geliefert: eine erkenntnistheoretische Einschränkung, die ich selbst
+nicht gemacht hatte, und zwei neue Tatsachen, beide von mir nachgemessen und
+beide zutreffend (`/api/offen` zählt ohne Dokumentversion; die Tinten-Prüfung
+existiert nur im Browser).
+
+**Urteil: das Kreuzverhör erhöht die Präzision, senkt aber die Messlast NICHT.**
+Deshalb steht es in der CLAUDE.md als beratend und ausdrücklich nicht als Gate —
+gestützt zusätzlich auf eine externe Messung, nach der automatische Filter in
+genau unseren Fehlerklassen bis zu drei Viertel der echten Befunde verwerfen.
+
+## 19.09.2026 — Planprüfung Signaturbild (zwei Spuren, PLAN statt Diff)
+
+Erste Anwendung der Regel vom 18.09.2026 („der Plan geht raus, BEVOR gebaut
+wird") auf einen sicherheitsrelevanten Auftrag. Material: das Auftragspapier
+plus der IST-Zustand — `routes/belehrungen.js`, `core/db.js`,
+`core/integritaet.js`, vier betroffene Testdateien, `package.json` und vier
+Auszüge (Geschwisterstellen). **Bündel GEZÄHLT statt geschätzt:
+127.232 Token** über `POST /v1/responses/input_tokens`.
+
+| Lauf | Modell | Stufe | Ergebnis | Befunde | getragen | Token / Kosten |
+|---|---|---|---|---|---|---|
+| a) abgebrochen | deepseek-v4-pro | — | `finish_reason: "length"` | — | — | 139.138 ein / 16.000 aus |
+| b) Wiederholung | deepseek-v4-pro | — | `stop`, 202 s | 4 | **3** | 139.138 ein (139.136 aus dem Cache) / 15.382 aus |
+| c) | gpt-5.6-sol | xhigh | `completed`, 695 s | 7 | **6** | 127.407 ein / 27.730 aus (24.331 davon Denken) ≈ **1,47 $** |
+
+Kosten: für `gpt-5.6-sol` aus der Preistabelle in `tools/gegenleser-repo.js`
+(5,00/30,00 $ je Mio). **Für `deepseek-v4-pro` steht in unserer Tabelle kein
+Preis** — deshalb hier nur Token, keine Zahl in Dollar. Eine Kostenaussage
+gehört auf eine Rechnung, nicht auf eine Schätzung.
+
+**Null Überschneidung zwischen den beiden Spuren — elf Befunde, kein einziger
+doppelt.** Dieselbe Beobachtung wie am 13.09.2026, und diesmal an einem PLAN
+statt an einem Diff. Die Trennung hat eine erkennbare Ursache: Spur (b) las
+vor allem den Plan gegen sich selbst (Schwellen, Beispiele, Formulierungen),
+Spur (c) den Plan gegen den KONTROLLFLUSS des Bestandes (Lesereihenfolge,
+Transaktionsgrenzen, wer welchen Lock nimmt).
+
+**Neun von elf getragen, zwei gefallen** — beide aus Spur (b): das Beispiel
+eines Befundes traf nicht (ein 1×1-schwarzes PNG wird als 100×100 pt Block
+gezeichnet, also gerade nicht unsichtbar), und ein Restrisiko, das schon im
+Papier stand, wurde als neuer Befund gemeldet. Der erste zählt trotzdem
+halb: die SACHE dahinter trug und hat den Entwurf verändert, nur das Beispiel
+war falsch gewählt.
+
+**Was die Läufe am Plan geändert haben** (vorher gebaut wurde nichts):
+ein blockierender Fehler in meiner Lesereihenfolge, der die ganze
+Generationsprüfung wirkungslos gemacht hätte; eine eigene Gegenprobe, die nie
+rot werden konnte; zwei Zusicherungen, die eine Konstante erfüllt hätte; ein
+ungedeckelter Speicherverbrauch; zwei falsche Bestandsbehauptungen von mir;
+ein zusätzlicher ernster Befund für ein eigenes Papier. **Das ist der Beleg
+für die Regel vom 18.09.2026 („der Plan geht raus, BEVOR gebaut wird") an
+einem eigenen Fall** — jeder dieser Punkte hätte sonst eine Bau-Runde
+gekostet.
+
+**Lauf (a) ist ein Abbruch, keine Null.** Alle 16.000 Completion-Token gingen
+ins Nachdenken (`completion_tokens_details.reasoning_tokens: 16000`), für die
+Antwort blieb nichts. Das ist die Klasse aus der CLAUDE.md: wer nur den Text
+ausliest, meldet „keine Befunde" und meint „niemand hat geprüft". Aufgefallen
+ist es allein daran, dass `finish_reason` bei JEDEM Aufruf geprüft wird.
+Die Kosten sind angefallen und stehen deshalb in der Zeile.
+
+**Merkposten für künftige DeepSeek-Läufe:** `max_tokens` deckelt dort Denken
+UND Antwort gemeinsam. 16.000 reichen bei einem 127k-Bündel nicht; die
+Wiederholung fährt mit 64.000.
+
+## 19.09.2026 — Diffprüfung Signaturbild (zwei Spuren, fertiger Diff)
+
+Zweiter Lauf am selben Beitrag, diesmal über den GEBAUTEN Diff statt über den
+Plan. Material: der vollständige Diff (9 Commits), `core/signaturbild.js`,
+`routes/belehrungen.js`, der neue Wächter, `core/db.js`, `core/integritaet.js`,
+zwei Geschwisterauszüge und **die gefahrenen Gegenproben mit ihren Ausgaben**.
+Bündel gezählt: **122.152 Token**.
+
+| Lauf | Modell | Stufe | Ergebnis | Befunde | getragen | Token / Kosten |
+|---|---|---|---|---|---|---|
+| a) | gpt-5.6-sol | xhigh | `completed`, 442 s | 8 | 7 (2 blockierend) | 122.286 ein / 24.592 aus (20.718 Denken) ≈ **1,35 $** |
+| b) | deepseek-v4-pro | — | `stop`, 303 s | 1 | 1 (eng), Schwere gefallen | 133.700 ein / 27.199 aus (25.715 Denken) |
+
+**Null Überschneidung — zum DRITTEN Mal** (13.09., 19.09. am Plan, 19.09. am
+Diff). Neun Befunde, kein einziger doppelt.
+
+**Die zwei blockierenden, beide selbst nachgemessen:**
+
+1. **B4 war vollständig unbewacht.** Eine Zeile in der kanonischen
+   Bild-Pipeline (`.linear(0, 255)`) macht jede eingebettete Unterschrift
+   weiß — sie verschwindet aus dem Nachweisdokument — und **alle 60
+   Zusicherungen bleiben grün, EXIT 0**. Die Tinte wird in der ERSTEN
+   Pipeline gezählt, eingebettet wird das Ergebnis der ZWEITEN; die einzige
+   B4-Zusicherung misst die PDF-Dateigröße, und ein weißes Bild macht die
+   Datei sogar kleiner.
+2. **Die Route nimmt seit dem Beitrag JPEG, WebP und SVG an** — gemessen,
+   alle drei mit gelogenem `data:image/png;base64,`-Präfix. Das ist eine
+   ERWEITERUNG gegenüber vorher: der alte Weg gab den Puffer direkt an
+   `pdfDoc.embedPng()`, das alles außer PNG abgelehnt hätte. SVG ist dabei
+   eine eigene Parserfläche (librsvg), vorher nicht erreichbar.
+
+**Was dieser Lauf über das VERFAHREN zeigt, und es ist der wichtigere Teil:**
+Die vom Prüfer VORGESCHLAGENE Mutation für Befund 1 (`.threshold(0)`) ist bei
+sharp **wirkungslos** — 24 dunkle Pixel blieben stehen. Hätte ich sie blind
+übernommen, hätte ich den Befund als widerlegt abgehakt und einen
+blockierenden Fehler durchgewinkt. Erst die Kontrolle „ist die Mutation
+überhaupt angekommen?" und eine eigene, wirksame Mutation haben ihn belegt.
+**Ein Behebungs- oder Messvorschlag eines Prüfers ist selbst ein Befund, der
+nachgemessen gehört** — das steht so in der CLAUDE.md und hat hier genau den
+Unterschied gemacht.
+
+**Gefallen bzw. herabgestuft:**
+
+* DeepSeeks einziger Befund („9b-c erzeugt falsche Sicherheit", *hoch*) trägt
+  nur im engen Teil: `9b-a` bis `9b-d` bleiben tatsächlich grün, wenn man den
+  DELETE-Block aus der Transaktion zieht. Die Folgerung trägt NICHT — der
+  Wächter als Ganzes fällt dabei laut (**EXIT 1, 54 PASS / 6 FAIL**).
+  Übrig bleibt eine Beschriftung, die mehr behauptet, als sie misst.
+* sols Befund zur Diagnose-Robustheit des Wächters trägt in der Sache, aber
+  nicht in der Schwere: ein unerwarteter Wurf beendet den Lauf mit EXIT 1 und
+  ohne Zusammenfassung — das ist ROT und laut, nicht falsch grün.
+
+**Drei Befunde sind richtig, aber VORBESTEHEND** und damit außerhalb dieses
+Beitrags: `signatur_hash` bindet das Bild nicht; nach einem Rollback bleibt
+eine verwaiste PDF liegen; `freigeschaltet_am` ist theoretisch NULL-fähig.
+Sie bekommen ein eigenes Papier statt einer stillen Mitnahme.
+
+### Abschluss des Beitrags (19.09.2026)
+
+Beide blockierenden Befunde der Diffprüfung sind behoben, die Gegenproben vom
+Haupt-Agenten SELBST nachgemessen: Bild-Weissmachung vorher 60/0 (nichts fiel)
+→ **70/4**; Formatprüfung → **71/3**. Dazu zwei P1 des Review-Bots: einer
+zutreffend und behoben (fast weisses Pixel), einer gegen den Endstand
+widerlegt.
+
+**Gesamt an diesem Beitrag: 22 Befunde aus vier Gegenlesungen und zwei
+Bot-Meldungen, jeder einzeln nachgemessen, vier blockierend.** Merge `4c4b729`,
+Deploy 428 `success`, live-check EXIT 0.
+
+**Der für die Regel wichtigste Befund ist keiner der 22, sondern ein Muster:**
+ZWEIMAL trug ein Befund, aber sein VORSCHLAG nicht — einmal eine Mutation, die
+gar nicht wirkt (`.threshold(0)`), einmal eine Behebung, die alle 19
+gemessenen echten Fälle abgewiesen hätte. Die Regel „der Behebungsvorschlag
+einer Gegenlesung ist selbst ein Befund, der nachgemessen gehört" hat hier
+zweimal an einem Tag den Unterschied gemacht.
+
+---
+
+## 19.09.2026 — Planprüfung `tools/gegenleser-repo.js` auf Streaming (zwei Spuren)
+
+| | Spur A | Spur B |
+|---|---|---|
+| Modell | `gpt-5.6-sol`, `effort: xhigh` | `deepseek-v4-pro` |
+| Material | identisch: Auftragspapier + vollständiges Werkzeug (2.732 Zeilen) + `ci.yml` + CLAUDE.md | identisch |
+| Bündel | **96.599 Token gezählt** (`POST /v1/responses/input_tokens`), 24,1 % des Limits | dasselbe, 103.416 vom Anbieter gezählt |
+| Dauer | 388 s, HTTP 200, 1.889.745 SSE-Bytes, 1 Abschluss-Ereignis | 244 s, HTTP 200, `finish_reason: stop` |
+| Verbrauch | 96.798 rein / 25.412 raus (davon 20.200 Denk-Token) | 103.416 rein / 19.057 raus (davon 17.093 Denk-Token) |
+| Kosten | **1,25 $** (5,00/30,00 je Mio) | **unbekannt** — `deepseek-v4-pro` steht nicht in unserer Preistabelle; eine Zahl wird nicht erfunden |
+| Befunde | 13 | 3 |
+| Nach EIGENER Nachmessung getragen | 12 in der Sache (1 Schwere korrigiert: SOL-3 hoch → mittel) | 2 in der Sache (1 Schwere widerlegt: DS-1 blockierend → niedrig) |
+
+**Gesamt 16 Befunde, 14 getragen, 2 mit falscher Schwere.**
+
+**Das Bemerkenswerte sind nicht die Planfehler, sondern zwei BESTEHENDE
+Fehler im heutigen Code**, beide in der Funktion, die umgebaut werden soll,
+beide von mir mit Positivkontrolle nachgemessen:
+
+1. **`roh += stueck` zerstört Mehrbytezeichen an der Chunk-Grenze.** Gemessen:
+   derselbe Eingang, derselbe Schnitt — Bestandsweg `"… Datei ��� ungueltig …"`
+   (Ersatzzeichen: ja), `StringDecoder` `"… Datei — ungueltig …"` (byte-gleich
+   mit dem Original). Unsere Berichte sind deutsch.
+2. **Ein Antwortstrom, der ohne `end` schliesst, lässt die Promise für immer
+   hängen.** Gemessen am Nachbau mit Wachhund: sauberes `end` → aufgelöst
+   (Positivkontrolle); `close` ohne `end` → HÄNGT; Fehler am Antwortstrom →
+   HÄNGT. Ein Socket-Zeitlimit rettet nicht — es greift bei Untätigkeit, nicht
+   bei einem geschlossenen Socket. Und der Umbau macht genau diese Störung vom
+   unwahrscheinlichen zum wahrscheinlichen Fall.
+
+**Überschneidung der Spuren: 2 von 16** (DS-1/SOL-10 trafen denselben Satz aus
+zwei Richtungen, DS-3/SOL-9 dieselbe Fehlerform). Anderes Bild als am
+13.09.2026 (null Überschneidung bei neun Befunden) — und die ehrlichere Zahl,
+weil hier beide Spuren dasselbe Material und dieselbe Frage hatten.
+
+**Eigene Messungen am echten Endpunkt im Zuge der Nachmessung** (zusammen
+unter 500 Token, sie beantworten DS-2 und SOL-13):
+`stream:true` + Funktionswerkzeuge + `store:false` + `truncation` + `metadata`
+zusammen → HTTP 200 · Abschluss-Ereignis formgleich mit dem nicht-gestreamten
+Körper · `response.incomplete` mit `{"reason":"max_output_tokens"}`, `output[]`
+nur `["reasoning"]` · ZWEI-Runden-Lauf mit zurückgeschicktem `function_call` +
+`function_call_output` → beide Runden HTTP 200 (`gpt-5.4` und `gpt-5.6-sol`) ·
+echtes `reasoning`-Element im `input[]` einer neuen Anfrage → HTTP 200 ·
+3.977 `data:`-Zeilen über drei echte Ströme, **alle** mit `type`-Feld, 0
+Abweichungen zur `event:`-Zeile.
+
+**Für die Regel vom 18.09.2026 („der Plan geht raus, BEVOR gebaut wird"): das
+ist der bisher stärkste Beleg.** Nicht weil die Planfehler teuer waren, sondern
+weil die beiden teuersten Funde gar keine Planfehler sind. Sie lagen im
+Bestand und wären in jeder Bau-Runde unsichtbar geblieben — niemand hätte nach
+ihnen gesucht.
+
+
+### 19.09.2026 — der Lauf, der zugleich sein eigener Prüfstand war
+
+Dieser Lauf lief durch das **frisch umgebaute Werkzeug**, dessen Diff er prüfen
+sollte. Das ist der Beleg, den kein Selbsttest liefern kann: 5 Runden,
+323.750 Token rein, 11 Dateibereiche selbst aus dem Repo gelesen, regulärer
+Bericht, Rundenlimit nicht erreicht. Streaming trägt gegen den echten
+Endpunkt — mit Werkzeugen, über mehrere Runden, mit Repo-Lesezugriff.
+
+**Sechs Befunde, alle sechs nach eigener Nachmessung in der Sache getragen,
+einer mit falscher Schwere.**
+
+**Der teuerste Befund ist eine Ironie:** der Beitrag, der falsch-grüne
+Zusicherungen beseitigen sollte, hat VIER davon ausgeliefert. Je einzeln
+gemessen, jedes Mal **99 Haken / 0 Kreuze, EXIT 0**:
+
+* Den Einmal-Riegel (`if (fertig) return; fertig = true;`) vollständig
+  entfernt — die Zusicherung heisst „LOEST GENAU EINMAL AUF" und kann nicht
+  fallen. Grund: eine native Promise schluckt ein zweites `reject()` lautlos,
+  also unterscheidet der Endzustand niemals einen von zwei Settle-Versuchen.
+* `EFFORT` von `xhigh` auf `low` gesetzt — die Zusicherung prüft
+  `typeof === 'string' && length > 0`, also die FORM statt des WERTES.
+* `GP2_BYTES` wird mit `Buffer.byteLength(gp2Text)` aus genau der Fixtur
+  berechnet, die es bewachen soll. Der Kommentar daneben verrät den
+  Denkfehler selbst: „unabhängiges `Buffer.byteLength`, NICHT der
+  SSE-Parser" — unabhängig vom PARSER ist eben nicht unabhängig von der
+  FIXTUR.
+* GP10 sucht nur nach `--zweck` und dem Brief-DATEINAMEN, nicht nach
+  Brief-INHALT oder Diff. Eine einzeilige Produktionsmutation, die
+  `verlauf[0].content` in `metadata.zweck` kopiert, bliebe grün.
+
+**Die falsche Schwere, und wie sie auffiel:** Befund 1 („`aborted` lässt
+Nicht-200-Antworten hängen", als blockierend gemeldet) beschreibt eine echte
+Asymmetrie im Code — der `aborted`-Listener steht hinter dem frühen `return`
+und gilt nur für HTTP 200. Seine FOLGERUNG trägt aber nicht. Gemessen an
+einem echten lokalen Node-22-Server, der nach einem 400er den Socket
+zerstört: die Ereignisfolge ist **`aborted` → `error` → `close`**, und
+`error` wie `close` sind im Nicht-200-Zweig registriert. In Produktion hängt
+dort nichts.
+Was wirklich dahintersteckt, ist wertvoller als das Gemeldete: **der STUB
+sendet bei `abgebrochen` nur `aborted` und kehrt zurück** — eine Folge, die
+echtes Node nie erzeugt. Die Abbruchfälle prüfen also gegen einen
+Transportzustand, den es nicht gibt. Dieselbe Krankheit wie beim alten
+JSON-Block-Stub, nur eine Ebene feiner.
+
+**Für die Regel:** Der Lauf kostete 2,44 $ — der billigste der ganzen Tabelle
+— und fand vier Zusicherungen, die nicht fallen können. „Der Preis eines
+Laufs sagt nichts über den Ertrag" hat sich damit zum zweiten Mal bestätigt.
