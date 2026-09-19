@@ -1158,6 +1158,16 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   liefert in beide Richtungen Unsinn: es übersieht den echten Fall (1, 2) und
   meldet Fehlalarme (3). Wer keinen bekannten Positivfall hat, stellt einen
   her, bevor das Ergebnis zählt.
+  **Ein Muster kann auch an LEERRAUM scheitern, nicht nur am Begriff —
+  gemessen am 19.09.2026 an mir selbst.** Ich suchte die verwundbaren
+  `.trim()`-Stellen mit `(req\.body\.[A-Za-z_]* || '')` und bekam DREI. Der
+  Gegenleser nannte FÜNF. Nachgesehen: `mitarbeiter.js:346` schreibt
+  `(req.body.name  || '')` mit ZWEI Leerzeichen (ausgerichtete Zuweisung), und
+  `:808` benutzt eine andere Schreibweise derselben Lücke. Mein Muster hat
+  also die FORMATIERUNG mitgemessen. Wer ein Muster über Quelltext legt,
+  normalisiert den Leerraum (`[[:space:]]*` statt eines Leerzeichens) — und
+  prüft die Trefferzahl gegen eine unabhängig ermittelte, nicht gegen sein
+  eigenes Gefühl.
   **Und für eine Frage nach dem KONTROLLFLUSS taugt Textsuche grundsätzlich
   nicht.** „Wird diese Variable geprüft, bevor sie benutzt wird?" ist keine
   Mustersuche — vier Verdachtsfälle waren beim Lesen alle sauber, und zwei von
