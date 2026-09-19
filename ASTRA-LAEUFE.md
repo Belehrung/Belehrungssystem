@@ -126,6 +126,8 @@ sondern falsch.
 | 19.09.2026 | Planpruefung Eingabewache Fassung 2 (Spur 2, `deepseek-flash`: was verspricht sie, das sie nicht einlöst) | statisches Bündel; Token rein 19161, Token raus 36308; 160 s | 11 (2 blockierend) | **11** | 0 | ~0,04 $ |
 | 19.09.2026 | Planpruefung ID-Wache + Textfeld-Wache (Spur 1: wo scheitert der Inventar-Waechter) | Diff 1356 Zeilen, Suchen 86, Lesungen 39, Token rein 2315434, Token raus 38490, Runden 21 | 13 (9 blockierend) | **13** | 0 | 12,73 $ |
 | 19.09.2026 | Planpruefung ID-Wache + Textfeld-Wache (Spur 2, `deepseek-flash`: was verspricht das Verfahren, das es nicht einlöst) | statisches Bündel; Token rein 19161, Token raus ~39000; 189 s | 16 (2 blockierend) | **16** | 0 | ~0,04 $ |
+| 19.09.2026 | Diffpruefung ID-Wache (Spur 1: was bricht der Diff) | Diff 1249 Zeilen, Suchen 47, Lesungen 43, Token rein 3330243, Token raus 26664, Runden 24 | 5 (2 blockierend) | **3** | **2** (beide Schwere falsch) | 17,45 $ |
+| 19.09.2026 | Diffpruefung ID-Wache (Spur 2, `deepseek-flash`: was verspricht der Diff, das er nicht einlöst) | statisches Bündel; 236 s | 12 | **9** | 3 | ~0,05 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -2290,3 +2292,51 @@ noch einmal grösser plant, hat aus der Serie nichts gelernt.
 belegt ist: die 0,04-$-Spur lieferte in ALLEN DREI Runden Befunde, die die
 teure nicht hatte — und die teure in allen drei welche, die nur mit
 Repo-Lesezugriff erreichbar waren.
+
+---
+
+## 19.09.2026 — Diffprüfung ID-Wache: der wertvollste Befund kam vom AUSFÜHRENDEN
+
+Zwei Spuren über den fertigen Diff, 17 Befunde, **12 nach eigener Nachmessung
+getragen, 5 gefallen** (drei davon in der Schwere, zwei sachlich).
+
+**Der schärfste Befund des ganzen Beitrags stammt aber aus keiner der beiden
+Prüfspuren, sondern aus einer Nebenbeobachtung des EXECUTERS** bei seiner
+eigenen Gegenprobe: PostgreSQL 16 akzeptiert `'0x10'` als int4. Selbst
+nachgemessen am echten Cluster:
+
+    '0x10'       -> 16            (KEIN Fehler)
+    '1e3'        -> ERROR 22P02
+    '1.5'        -> ERROR 22P02
+    '2147483648' -> ERROR 22003
+    ' 12'        -> 12
+
+**Damit sind vier Produktivkommentare falsch**, die seit dem 28.08.2026
+behaupten, `0x10` werfe 22P02. Es wirft nicht — `/geraete/loeschen/0x10` hätte
+vor diesem Beitrag **still Gerät 16 gelöscht**. Das ist schlimmer als der
+dokumentierte Fehler und der eigentliche Grund für die Wache.
+
+**Spur 1 hat denselben Befund unabhängig geliefert** (B4) — und sie war die
+einzige der beiden, die ihn hatte. Spur 2 fand dafür, dass die
+Verhaltensänderung nicht „genau drei Fälle" umfasst, sondern zusätzlich jede
+reine Null-Ziffernfolge (`"00"`, `"000"`, … — gemessen: alt gültig, neu
+ungültig). Beides sind Korrekturen an MEINEN eigenen Messungen.
+
+**Was gefallen ist, und warum es zählt:**
+
+* **Zum DRITTEN Mal** hat Spur 1 einen normalen statischen Wächter als
+  blockierenden Verstoss gegen „Tests fassen kein echtes Dateisystem an"
+  gemeldet. Gemessen: **187 bestehende Testdateien** benutzen
+  `fs.readFileSync`, und `test/helfer/quelltext-scan.js` benutzt sogar
+  `git ls-files` als ausdrücklich gesegnete Referenz von aussen. Der blinde
+  Fleck ist systematisch, nicht zufällig — er steht seit dem 16.09. in dieser
+  Datei und hat sich seither zweimal wiederholt.
+* Eine geforderte Zusatzprüfung (`99999999999` je Route) fiel, weil
+  `2147483648` der SCHÄRFERE Grenzwert ist und bereits in jeder Routenmatrix
+  steht. Mehr Fälle sind nicht mehr Abdeckung.
+
+**Für die Regel:** Die Diffprüfung hat sich gelohnt (12 getragene Befunde,
+davon sieben falsche Kommentar-Behauptungen und zwei echte Testschwächen) —
+aber der teuerste Fund des Tages kostete 0 $ und kam aus einer Gegenprobe, die
+jemand nicht abgehakt, sondern gelesen hat. **Ein Ausführender, der eine
+Nebenbeobachtung MELDET, ist die billigste Prüfspur, die wir haben.**
