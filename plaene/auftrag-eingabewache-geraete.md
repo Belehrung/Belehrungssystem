@@ -424,3 +424,196 @@ hätte.
 mitgelieferten Ausschnitten gearbeitet. Das ist ein Argument für die Sorgfalt
 beim BÜNDELN, nicht für mehr Werkzeuge: fünf der neun Befunde stützen sich auf
 Zeilen, die ich selbst mitgeschickt habe.
+
+---
+
+# NACHTRAG — Planprüfung, Spur 1 (`gpt-5.6-sol`), 19.09.2026
+
+Frage: *„Was bricht dieser Plan, das heute funktioniert?"* — **acht Befunde,
+vier davon blockierend. Urteil des Prüfers: `nicht_freigabefaehig`.** Alle acht
+von mir selbst nachgemessen, **alle acht tragen.**
+
+62 Suchen, 44 Lesungen, 17 Runden, 2.041.937 rein / 32.995 raus, **11,20 $**.
+Diese Spur hatte Repo-Lesezugriff. Geschwärzt wurde eine Stelle
+(`core/db.js:334`, Verbindungszeichenfolge), abgelehnte Lesungen: keine.
+
+**Was er NICHT gefunden hat, und das gehört dazu:** keinen bestehenden
+legitimen Aufrufer, der an der schärferen ID-Prüfung bricht, und keine
+bestehende Zusicherung, die den heutigen 200-/500-Status genau der beiden
+Zielrouten festschreibt. Das war Frage 1 und 2 meines Auftrags — die Antwort
+„nichts gefunden, hier ist die Rechenschaft" ist ein Ergebnis.
+
+## S-1 (blockierend) — Die Textregel, die ich kanonisieren wollte, ist unvollständig
+
+`pruefeTextfelder` weist nur Objekte und Arrays ab. **Gemessen:**
+
+    typeof 42 === 'object'   ->  false        (passiert die Wache)
+    (42).trim()              ->  TypeError: 42.trim is not a function
+    (true).trim()            ->  TypeError: true.trim is not a function
+    String(42)  = "42"       String(true) = "true"    (stille Koerzierung)
+
+`server.js:162` montiert `express.json()` GLOBAL, und der CSRF-Schutz
+(`core/csrf-schutz.js`) prüft Origin/Referer, **keinen Content-Type** — ein
+JSON-Körper `{"name":42}` erreicht diese Routen also. Ergebnis: 500 samt
+`errorTracker`-Alarm an den rohen Stellen, ein Gerät namens `"true"` an den
+`String(...)`-Stellen.
+
+**TRÄGT, blockierend.** Ich hätte eine Regel in eine kanonische `core/`-Datei
+geschrieben, die zwei von vier gefährlichen Typen durchlässt. Entscheidung:
+die Regel lautet `typeof wert === 'string'` für vorhandene Werte; `null` und
+`undefined` bleiben für Optionalfelder erlaubt. Z2 und Z4 bekommen JSON-Zahlen
+und -Booleans.
+
+## S-2 (blockierend) — Die ID-Regel, die ich kanonisieren wollte, ist die SCHWÄCHERE von zwei im Repo
+
+`/^\d+$/` prüft nur die lexikalische Form. `"99999999999"` besteht sie und
+wirft danach an der ersten INTEGER-Abfrage 22003 „out of range" — die
+Zielrouten antworten mit ihrer 200-Fehlerseite und rufen `intern()`.
+**Damit bliebe genau der Alarmkanal offen, mit dem die Präambel dieses
+Auftrags seine Dringlichkeit begründet.**
+
+**Gemessen:** dieselbe Datei hat mit `normalisiereGeraetId`
+(`routes/admin/geraete.js:949-955`) bereits die richtige Regel — Ziffern UND
+`zahl > 0 && zahl <= 2147483647` — und ihr Kommentar (`:941-944`) nennt genau
+diesen Fall als gemessen behoben.
+
+**TRÄGT, blockierend, und es ist der schärfste Befund der Runde.** Ich war im
+Begriff, von zwei im Bestand vorhandenen Regeln die schwächere zur Quelle zu
+erklären. Entscheidung: `istGueltigeId` verlangt zusätzlich die int4-Grenze;
+Gegenproben mit `"0"`, `"2147483647"`, `"2147483648"`.
+
+## S-3 (blockierend) — Meine Liste der fünf Stellen misst eine zu enge Eigenschaft
+
+Die Liste ist vollständig für „rohes `.trim()` VOR dem äusseren `try`" — genau
+das hat mein Zählskript gesucht. Für die Klasse ist sie es nicht. **Gemessen:**
+
+* `routes/admin/geraete.js:5496` — `aufgaben.trim()` steht **NACH** dem
+  `INSERT … RETURNING id` in `:5485`. Ein Objekt dort wirft, der `catch`
+  liefert HTTP 200 mit `intern()`-Meldung, **und das halb angelegte Gerät
+  bleibt in der Datenbank.** Das ist dieselbe Stelle, die B1-03 (SOL-3) als
+  Transaktionsbefund trägt — hier trifft sie ein zweites Mal.
+* `:5490-5492` — `(monteur_name||'').trim()` und zwei Geschwister, ebenfalls
+  innerhalb des `try`.
+* `POST /geraetewartung/geraet/bearbeiten/:id` trägt weitere rohe Trims.
+
+**TRÄGT, blockierend.** Der Befund trifft nicht die Liste, sondern meine
+MESSMETHODE: ein Skript, das nur bis zum ersten `try` schaut, misst die
+Position der Fehlerbehandlung, nicht die Verwundbarkeit.
+
+## S-4 (blockierend) — „Vier Orte" ist falsch, und Z3 wäre sofort rot
+
+**Gemessen** — ausführbare `/^\d+$/`-Vorkommen in den vier genannten Dateien:
+
+    geraete-typen.js:233   tablets.js:47   ausmusterung.js:77
+    ausmusterung.js:92     geraete.js:699  geraete.js:952
+
+**Sechs, nicht vier.** Die beiden zusätzlichen sind ANDERE Funktionen:
+`parseIds()` (ein ID-SAMMELFELD) und `normalisiereGeraetId()` (int4-
+Normalisierung). Ein Z3 mit dem literalen Sollwert „vier" und dem Text „kein
+`/^\d+$/` mehr in diesen Dateien" wäre nach dem Umbau sofort rot — an zwei
+völlig legitimen Stellen.
+
+**TRÄGT, blockierend.** Entscheidung: die drei Regelbegriffe (einzelne URL-ID,
+ID-Sammelfeld, int4-Normalisierung) werden im Papier getrennt benannt, und Z3
+bindet sich an benannte Funktionsdeklarationen und Aufrufstellen statt an eine
+Zeichenkette.
+
+## S-5 (sollte behoben werden) — die Einzeilenmutation, nach der ich gefragt hatte
+
+`if (false && !istGueltigeId(id)) return …` lässt `require`, Helfer und die
+Abwesenheit von `/^\d+$/` unverändert. **Z3 bleibt grün, die Route lässt jede
+ID durch.** Dasselbe mit `if (false && textfehler)`.
+
+**TRÄGT.** Dieselbe Klasse wie P-3 aus Spur 2, aber eine andere, härtere
+Mutation: P-3 tauscht die Schreibweise, S-5 hängt die Wache ab, ohne sie
+anzufassen. Entscheidung: die Wirksamkeit wird über HTTP geprüft, nicht über
+ein Muster — für JEDE Route mit `:id` in den betroffenen Dateien.
+
+## S-6 (sollte behoben werden) — eine SIEBTE Stelle, und zwar eine stille
+
+`routes/admin/geraete.js:4353` (`POST /geraetewartung/spuelplan/stelle/neu`):
+
+    const name = String(req.body.name || '').trim().slice(0, 120);
+    if (name.length < 2) return …
+    await db.one("INSERT INTO spuel_stellen (studio_id, name, hinweis) …")
+
+Keine `pruefeTextfelder`-Wache davor. `String({a:1})` ist `"[object Object]"`
+— sechzehn Zeichen, besteht die Längenprüfung — und wird als Name
+GESPEICHERT. Kein 500, kein Alarm, eine korrupte Zeile.
+
+**TRÄGT** — und bestätigt P-5 aus Spur 2 an einer Stelle, die Spur 2 nicht
+kannte. Nebenbefund beim Nachmessen: `test/helfer/route-harness.js` nennt in
+seinem Kommentar genau diese Klasse als „Review-Fund U7", geschlossen für
+`routes/admin/qr.js`. Die Klasse ist im Repo bekannt und nur teilweise zu.
+
+## S-7 (sollte behoben werden) — „über den echten HTTP-Weg" ist eine Überbehauptung
+
+**Gemessen** an `test/helfer/route-harness.js:26-55`: `makeApp()` montiert
+`pfadKontext()`, beide Parser, eine gefälschte Session und `routes/admin` +
+`routes/module`. Es montiert **NICHT**: CSRF, `studioContext`, `requireLogin`,
+`requireAdmin`, Wartungsmodus, Produktionslimit. Die gefälschte Sitzung hat
+kein `totpOk` — sie funktioniert nur, weil `requireAdmin` gar nicht da ist.
+
+Folge für mein Papier: Z1/Z2 sagen „über den echten HTTP-Weg mit gültiger
+Admin-Sitzung", und Z2 enthält sogar eine „Kontrollmessung gegen eine falsche
+Ursache", die einen CSRF-Riegel ausschliessen soll — **in diesem Harness ist
+gar keiner montiert, die Kontrollmessung belegt dort nichts.**
+
+**TRÄGT.** Das ist die Klasse „eine Referenz von aussen belegt genau die
+Stufe, die sie misst". Entscheidung: der Wortlaut wird berichtigt auf
+„Routenhandler erreicht"; wer Auth oder CSRF zusichern will, braucht einen
+anderen Aufbau.
+
+## S-8 (sollte behoben werden) — meine Begründung fürs Ausklammern trägt nicht
+
+Die `parseInt`-Klasse getrennt zu behandeln ist vertretbar (andere Wirkung,
+andere Rückmeldung). **Nicht vertretbar ist die Überschrift „EINE Quelle"**,
+solange `parseIds()`, `normalisiereGeraetId()`, vier Mitarbeiter-Routen und
+der Tablet-Weg weitere Quellen bleiben. Und: `routes/admin/mitarbeiter.js:808`
+liegt ebenfalls VOR dem `try` und ist exakt dieselbe Typfehlerklasse — **mein
+Grund „`mitarbeiter.js` enthält harte Löschungen" begründet nicht, warum eine
+frühe Typabweisung dort riskanter wäre.** Gerade am Löschweg verhindert sie,
+dass ein falscher Datensatz erreicht wird.
+
+**TRÄGT.** Dieselbe Klasse wie P-2 aus Spur 2. Entscheidung: der Grund wird
+ersetzt (Diffgrösse und getrennte Prüfbarkeit, nicht „harte Löschungen"), und
+der Helferkommentar behauptet nicht, die einzige ID-Quelle des Repos zu sein.
+
+---
+
+## Beide Spuren zusammen — 17 Befunde, 17 getragen, DIESMAL MIT Überschneidung
+
+| | Spur 1 (`sol`) | Spur 2 (`deepseek-flash`) |
+|---|---|---|
+| Frage | was bricht der Plan? | was verspricht er, das er nicht einlöst? |
+| Repo-Zugriff | ja (62 Suchen, 44 Lesungen) | nein, statisches Bündel |
+| Verbrauch | 2.041.937 rein / 32.995 raus | 14.458 rein / 34.237 raus |
+| Kosten | **11,20 $** | **~0,03 $** |
+| Befunde | 8 (4 blockierend) | 9 (1 blockierend) |
+| davon getragen | **8** | **9** |
+
+**Überschneidung: DREI von siebzehn** — P-3/S-5 (Z3 erkennt keine
+Verdrahtung), P-5/S-6 (`String()` ist nicht der Schutz), P-2/S-8 (der Name
+sichert mehr zu als die Zusicherung misst). Jede Spur hatte trotzdem fünf bis
+sechs Befunde, die die andere nicht hatte.
+
+**Das ist ein ANDERES Ergebnis als am 13.09. und bei Bündel 1** (dort je null
+Überschneidung) und gehört so festgehalten. Die Erklärung liegt nahe: dort
+waren die Fragen verschieden UND das Material war Code; hier ist das Material
+ein PAPIER, über dessen Schwächen beide Fragen stolpern müssen. **Belegt ist
+das nicht — es ist eine Vermutung über eine Stichprobe von eins.**
+
+**Was die Kosten NICHT hergeben:** die 11,20-$-Spur lieferte die vier
+blockierenden Befunde, die 0,03-$-Spur den einzigen, der eine invertierte
+Bauanweisung fand. Der Preis eines Laufs sagt weiter nichts über den Ertrag —
+aber hier hat die teure Spur etwas geleistet, das die billige strukturell
+nicht konnte: S-2, S-4, S-6 und S-7 stützen sich ALLE auf Dateien, die nicht
+im Bündel waren. **Repo-Lesezugriff war der Unterschied, nicht das Modell.**
+
+## Folge für dieses Papier
+
+**Es ist in der vorliegenden Fassung nicht baubar.** Vier blockierende Befunde
+betreffen den KERN: die zu kanonisierende Textregel (S-1), die zu
+kanonisierende ID-Regel (S-2), die Vollständigkeit der Stellenliste (S-3, S-6)
+und den Sollwert von Z3 (S-4, P-1). Fassung 2 folgt; bis dahin wird nichts
+gebaut.
