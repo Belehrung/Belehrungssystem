@@ -77,6 +77,7 @@ const https = require('node:https');
 const path = require('node:path');
 const os = require('node:os');
 const { execFileSync } = require('node:child_process');
+const { StringDecoder } = require('node:string_decoder');
 const { pruefeGeheimnisse, entferneGeheimnisse, zeileEntferntMarker } = require('./geheimnis-riegel');
 
 const ENDPUNKT = 'https://api.openai.com/v1/responses';
@@ -531,6 +532,23 @@ function werkzeugLies(pfad, von, bis) {
 // Teil 2c): OHNE "tools" im Request KANN das Modell keine Funktion mehr
 // aufrufen, nur noch Text liefern. Vorgabe true, damit ein Aufrufer, der den
 // Parameter vergisst, nicht versehentlich den Riegel auf JEDE Runde legt.
+// Feste Metadaten fuer /v1/responses (Streaming-Umbau 19.09.2026, Punkt 2 des
+// Auftrags): ein KONSTANTER Zweckbegriff plus das Tagesdatum, macht einen
+// Lauf bei OpenAI wiederfindbar. AUSDRUECKLICH KEINE Ableitung aus --zweck,
+// dem Basisnamen der --brief-Datei oder Auftragstexten -- --zweck ist freier
+// Text und faellt ohne eigenen Wert auf genau diesen Basisnamen zurueck
+// (siehe protokollZweck() weiter unten, ein ANDERES Feld fuer ASTRA-LAEUFE.md)
+// -- das waeren Pfade und Auftragsinhalte aus dem Repo, die hier nicht
+// hinsollen (GP10 sichert das gegen einen absichtlich auffaelligen --zweck
+// UND Briefdateinamen zu).
+function metadatenBauen() {
+    return {
+        werkzeug: 'gegenleser-repo.js',
+        zweck: 'stufe-2-diff-gegenlesung',
+        datum: new Date().toISOString().slice(0, 10),
+    };
+}
+
 function anfragen(schluessel, modell, verlauf, mitWerkzeugen = true) {
     const koerper = JSON.stringify({
         model: modell,
@@ -557,6 +575,23 @@ function anfragen(schluessel, modell, verlauf, mitWerkzeugen = true) {
         // laut scheitern statt still kuerzen — unsere Regel "leeres Ergebnis
         // ist nicht sauberes Ergebnis".
         truncation: 'disabled',
+        // stream:true (Streaming-Umbau 19.09.2026). GEMESSEN 18.09.2026: eine
+        // NICHT-streamende Anfrage an GENAU DIESEN Endpunkt wird von diesem
+        // Egress-Proxy bei 300,3 s hart abgeschnitten (drei Versuche,
+        // 300.313/300.383/300.3 ms, curl-Exit 56, keine Antwortdatei) -- das
+        // Zeitlimit von 20 Minuten weiter unten kann dadurch nie wirken.
+        // GEMESSEN 19.09.2026 (PR-#460-Diffpruefung, MIT "tools" im Request):
+        // derselbe Endpunkt lief mit stream:true 442 s durch, HTTP 200,
+        // 1.519.478 SSE-Bytes, genau EIN Abschluss-Ereignis -- ein Lauf, den
+        // der nicht-streamende Weg 142 s vor dem Ergebnis weggeworfen haette.
+        // max_tool_calls wird dabei BEWUSST NICHT gesetzt: die CLAUDE.md nennt
+        // es nur fuer web_search, dieses Werkzeug bremst schon ueber
+        // --max-runden, und eine UNGEMESSENE Obergrenze wuerde genau die
+        // Klasse (ein stiller Abbruch, der wie ein Ergebnis aussieht)
+        // einfuehren, die dieser Umbau beseitigen soll.
+        stream: true,
+        // metadata -- siehe metadatenBauen() oben.
+        metadata: metadatenBauen(),
     });
     return new Promise((erfuellen, ablehnen) => {
         const anfrage = https.request(ENDPUNKT, {
@@ -568,15 +603,174 @@ function anfragen(schluessel, modell, verlauf, mitWerkzeugen = true) {
             },
             timeout: 20 * 60 * 1000,
         }, (antwort) => {
-            let roh = '';
-            antwort.on('data', (stueck) => { roh += stueck; });
-            antwort.on('end', () => {
-                if (antwort.statusCode !== 200) {
-                    ablehnen(new Error(`HTTP ${antwort.statusCode}: ${roh.slice(0, 800)}`));
+            // "genau EINMAL wirkt" (Punkt 10/B2): mehrere Ereignisse auf
+            // antwort (end, error, aborted, close) koennen sonst die Promise
+            // mehrfach ansprechen -- z. B. feuert Node nach einem normalen
+            // "end" verlaesslich zusaetzlich noch "close".
+            let fertig = false;
+            const abschliessen = (fn) => { if (fertig) return; fertig = true; fn(); };
+
+            // Punkt 11: der Statuscode wird VOR der SSE-Auswertung geprueft,
+            // wie heute -- eine Fehlerantwort ist kein SSE, sondern ein
+            // gewoehnlicher JSON-Koerper, der Rohauszug bleibt in der Meldung.
+            if (antwort.statusCode !== 200) {
+                // B1: auch hier NICHT "roh += stueck" (dekodiert jeden Chunk
+                // einzeln als UTF-8 und zerstoert Mehrbytezeichen an der
+                // Chunk-Grenze) -- derselbe StringDecoder wie im SSE-Zweig.
+                const fehlerDecoder = new StringDecoder('utf8');
+                let rohFehler = '';
+                antwort.on('data', (stueck) => { rohFehler += fehlerDecoder.write(stueck); });
+                antwort.on('end', () => {
+                    rohFehler += fehlerDecoder.end();
+                    abschliessen(() => ablehnen(new Error(`HTTP ${antwort.statusCode}: ${rohFehler.slice(0, 800)}`)));
+                });
+                antwort.on('error', (e) => abschliessen(() => ablehnen(
+                    new Error(`HTTP ${antwort.statusCode}, Fehlerantwort abgebrochen: ${e.message}`))));
+                antwort.on('close', () => abschliessen(() => ablehnen(
+                    new Error(`HTTP ${antwort.statusCode}: Verbindung geschlossen, bevor die Fehlerantwort vollstaendig war -- ${rohFehler.slice(0, 800)}`))));
+                return;
+            }
+
+            // ===== SSE-Auswertung (Punkte 5-9) =====
+            // B1: StringDecoder statt "roh += stueck" -- Buffer-Chunks werden
+            // NICHT einzeln als UTF-8 dekodiert (das zerstoert Mehrbytezeichen,
+            // deren Bytes auf zwei Chunks fallen), sondern ueber einen
+            // gemeinsamen Decoder, der einen unvollstaendigen Byte-Rest bis
+            // zum naechsten Chunk zurueckhaelt (GEMESSEN, siehe GP1 im
+            // Selbsttest und Auftragspapier B1).
+            const decoder = new StringDecoder('utf8');
+            let zeilenpuffer = '';
+            let empfangeneBytes = 0;
+            let dataZeilenAnzahl = 0;
+            let letzterEreignisTyp = null;
+            let abschlussEreignis = null;
+
+            const diagnose = () => `Empfangene Bytes: ${empfangeneBytes}, gelesene data:-Zeilen: ${dataZeilenAnzahl}, `
+                + `zuletzt gesehener Ereignistyp: ${letzterEreignisTyp || '(keiner)'}.`;
+
+            // Verarbeitet GENAU EINE vollstaendige Zeile (ohne Zeilenumbruch).
+            // Punkt 6/B4: der Ereignistyp kommt aus dem "type"-Feld im JSON
+            // der data:-Zeile, NICHT aus der event:-Zeile (gemessen: 3.977 von
+            // 3.977 data:-Zeilen trugen "type", 0 Abweichungen zu event:) --
+            // event:- und Leerzeilen werden hier deshalb schlicht ignoriert.
+            const zeileVerarbeiten = (zeileRoh) => {
+                if (fertig) return;
+                const zeile = zeileRoh.endsWith('\r') ? zeileRoh.slice(0, -1) : zeileRoh;
+                if (!zeile.startsWith('data:')) return;
+                dataZeilenAnzahl++;
+                const nutzlast = zeile.slice(5).replace(/^ /, '');
+                let ereignis;
+                try {
+                    ereignis = JSON.parse(nutzlast);
+                } catch (e) {
+                    // Punkt 7/B3: KEIN stilles Ueberspringen -- ein
+                    // beschaedigter Protokolldatensatz bricht laut ab.
+                    abschliessen(() => ablehnen(new Error(
+                        `SSE-Datensatz Nr. ${dataZeilenAnzahl} enthaelt kein gueltiges JSON (beschaedigter `
+                        + `Protokolldatensatz, wird NICHT uebersprungen): ${e.message}`)));
                     return;
                 }
-                try { erfuellen(JSON.parse(roh)); } catch (e) { ablehnen(e); }
+                if (ereignis && typeof ereignis.type === 'string') letzterEreignisTyp = ereignis.type;
+                if (ereignis && ereignis.type === 'error') {
+                    // Punkt 8/B6: ein Ereignis vom Typ error ist sofort fatal.
+                    const code = ereignis.code || (ereignis.error && ereignis.error.code) || 'unbekannt';
+                    const nachricht = ereignis.message || (ereignis.error && ereignis.error.message) || 'keine Meldung im Ereignis';
+                    const fehler = new Error(`SSE-Ereignis vom Typ "error": code=${code}, message=${nachricht}`);
+                    fehler.gegenleserStatus = 'error';
+                    fehler.gegenleserGrund = nachricht;
+                    fehler.gegenleserUsage = null;
+                    abschliessen(() => ablehnen(fehler));
+                    return;
+                }
+                if (ereignis && (ereignis.type === 'response.completed' || ereignis.type === 'response.incomplete' || ereignis.type === 'response.failed')) {
+                    if (abschlussEreignis) {
+                        // Punkt 8/B5: ein ZWEITES Abschluss-Ereignis lehnt den
+                        // Lauf ab (nicht: melden und weiterlaufen) -- gemessen
+                        // hatte jeder der drei echten Stroeme genau eines.
+                        abschliessen(() => ablehnen(new Error(
+                            `ZWEITES Abschluss-Ereignis "${ereignis.type}" erhalten, nachdem bereits `
+                            + `"${abschlussEreignis.type}" da war -- Lauf abgelehnt.`)));
+                        return;
+                    }
+                    abschlussEreignis = ereignis;
+                }
+            };
+
+            antwort.on('data', (stueck) => {
+                if (fertig) return;
+                empfangeneBytes += stueck.length;
+                zeilenpuffer += decoder.write(stueck);
+                let i;
+                while (!fertig && (i = zeilenpuffer.indexOf('\n')) !== -1) {
+                    const zeile = zeilenpuffer.slice(0, i);
+                    zeilenpuffer = zeilenpuffer.slice(i + 1);
+                    zeileVerarbeiten(zeile);
+                }
             });
+
+            antwort.on('end', () => {
+                if (fertig) return;
+                zeilenpuffer += decoder.end();
+                if (zeilenpuffer.trim()) zeileVerarbeiten(zeilenpuffer.trim());
+                if (fertig) return;
+                if (!abschlussEreignis) {
+                    // Punkt 9: kein Abschluss-Ereignis = lautes Scheitern,
+                    // NIEMALS ein leeres Ergebnis. Alle drei Angaben sind
+                    // Pflicht (GP2).
+                    abschliessen(() => ablehnen(new Error(
+                        `Stream endete OHNE Abschluss-Ereignis -- kein sauberes Ergebnis. ${diagnose()}`)));
+                    return;
+                }
+                const antwortObjekt = abschlussEreignis.response;
+                // Punkt 12: NUR bei status === "completed" wird zurueck-
+                // gegeben, sonst wird geworfen -- der Ereignistyp ist NICHT
+                // der Ersatz fuer den Objektstatus (Punkt 14).
+                if (!antwortObjekt || typeof antwortObjekt !== 'object') {
+                    abschliessen(() => ablehnen(new Error(
+                        `Abschluss-Ereignis "${abschlussEreignis.type}" ohne verwertbares response-Objekt (Protokollfehler).`)));
+                    return;
+                }
+                if (antwortObjekt.status === 'completed') {
+                    abschliessen(() => erfuellen(antwortObjekt));
+                    return;
+                }
+                // Diagnose NACH FORM getrennt (Punkt 12/B6). Kein "undefined"
+                // in der Meldung -- fehlt ein erwartetes Feld, wird das
+                // selbst als Protokollfehler benannt statt stillschweigend
+                // "undefined" auszugeben.
+                let grund;
+                if (antwortObjekt.status === 'incomplete') {
+                    grund = (antwortObjekt.incomplete_details && antwortObjekt.incomplete_details.reason)
+                        || 'unbekannt (incomplete_details.reason fehlt -- Protokollfehler)';
+                } else if (antwortObjekt.status === 'failed') {
+                    grund = antwortObjekt.error ? JSON.stringify(antwortObjekt.error) : 'unbekannt (response.error fehlt -- Protokollfehler)';
+                } else {
+                    grund = `unbekannter status "${antwortObjekt.status}" (Protokollfehler)`;
+                }
+                // Punkt 13/B8: der geworfene Fehler traegt usage, Status und
+                // Grund, damit die Rundenschleife den bereits bezahlten
+                // Verbrauch nicht verliert.
+                const fehler = new Error(`Anfrage nicht abgeschlossen: status="${antwortObjekt.status}", Grund: ${grund}`);
+                fehler.gegenleserStatus = antwortObjekt.status;
+                fehler.gegenleserGrund = grund;
+                fehler.gegenleserUsage = antwortObjekt.usage || null;
+                abschliessen(() => ablehnen(fehler));
+            });
+
+            // Punkt 10/B2: Listener auf dem ANTWORT-Strom fuer error,
+            // aborted und vorzeitiges close -- heute (ohne diese Listener)
+            // haengt die Promise in diesen Faellen FUER IMMER, weil sie nur
+            // in "end" aufloest (GEMESSEN am Nachbau, siehe Papier B2: close
+            // ohne end und ein Fehler am Antwortstrom hingen beide, ein
+            // Wachhund nach 300ms zeigte es). Mit Streaming wird ein mitten
+            // im Strom sauber geschlossener Socket zum REGELFALL der
+            // Stoerung, nicht zur Ausnahme.
+            antwort.on('error', (e) => abschliessen(() => ablehnen(
+                new Error(`Fehler am Antwortstrom (SSE): ${e.message}. ${diagnose()}`))));
+            antwort.on('aborted', () => abschliessen(() => ablehnen(
+                new Error(`Antwortstrom (SSE) wurde abgebrochen (aborted), bevor ein Abschluss-Ereignis kam. ${diagnose()}`))));
+            antwort.on('close', () => abschliessen(() => ablehnen(
+                new Error(`Antwortstrom (SSE) wurde vorzeitig geschlossen, bevor ein Abschluss-Ereignis kam. ${diagnose()}`))));
         });
         anfrage.on('timeout', () => { anfrage.destroy(new Error('Zeitueberschreitung nach 20 Minuten')); });
         anfrage.on('error', ablehnen);
@@ -1126,6 +1320,18 @@ async function main(argvUeberschreibung) {
             try {
                 antwort = await anfragen(schluessel, optionen.modell, verlauf, !istLetzteZweiRunden);
             } catch (e) {
+                // Punkt 13/B8: der Verbrauch aus einem Fehlschlag darf nicht
+                // verloren gehen -- sonst meldet die Zusammenfassung "Token
+                // rein: 0" und "Kosten geschaetzt: $0.0000" fuer einen Lauf,
+                // der Geld gekostet hat. GENAU EINMAL verbuchen, bevor die
+                // Zusammenfassung ausgegeben wird. e.gegenleserUsage ist nur
+                // bei einem Status-Abbruch aus anfragen() gesetzt (Punkt 12);
+                // ein gewoehnlicher Netz-/Protokollfehler traegt es nicht und
+                // aendert hier nichts (Verhalten wie vor diesem Umbau).
+                if (e.gegenleserUsage) {
+                    promptTokenSumme += e.gegenleserUsage.input_tokens || 0;
+                    completionTokenSumme += e.gegenleserUsage.output_tokens || 0;
+                }
                 console.error(`FEHLER bei der Anfrage: ${e.message}`);
                 zusammenfassungAusgeben();
                 throw e;
@@ -1273,8 +1479,56 @@ function elementFunktionsaufrufBauen(callId, funktionName, argumente) {
 function elementTextBauen(text) {
     return { id: 'msg-selbsttest', type: 'message', status: 'completed', role: 'assistant', content: [{ type: 'output_text', text }] };
 }
+// Punkt 14/B7: TOP-LEVEL "status", sonst lehnt die neue Statuspruefung in
+// anfragen() (Punkt 12) JEDEN bestehenden Selbsttestlauf ab -- der
+// Ereignistyp ist NICHT der Ersatz fuer den Objektstatus.
 function antwortKoerperBauen(ausgabeElement, inputToken, outputToken) {
-    return { output: [ausgabeElement], usage: { input_tokens: inputToken, output_tokens: outputToken } };
+    return { status: 'completed', output: [ausgabeElement], usage: { input_tokens: inputToken, output_tokens: outputToken } };
+}
+// Form aus M3 (Auftragspapier, gemessen 19.09.2026): status incomplete,
+// incomplete_details.reason, output[] traegt einen reasoning-Eintrag.
+function antwortKoerperUnvollstaendigBauen(reason, inputToken, outputToken) {
+    return {
+        status: 'incomplete',
+        incomplete_details: { reason },
+        output: [{ id: 'rs-selbsttest', type: 'reasoning', status: 'completed', summary: [] }],
+        usage: { input_tokens: inputToken, output_tokens: outputToken },
+    };
+}
+function antwortKoerperFehlgeschlagenBauen(fehlerObjekt, inputToken, outputToken) {
+    return {
+        status: 'failed',
+        error: fehlerObjekt,
+        output: [],
+        usage: { input_tokens: inputToken, output_tokens: outputToken },
+    };
+}
+
+// Baut den STANDARD-SSE-Strom fuer einen Antwortkoerper (Punkt 15/B9): NICHT
+// eine einzelne response.completed-Zeile, sondern event:- und Leerzeilen,
+// response.created, mindestens ein Delta, DANN erst der Abschluss -- sonst
+// wuerden alle 72+ Selbsttestfaelle einen Transportweg pruefen, den eine
+// Implementierung, die beim ERSTEN Nicht-Abschluss-Ereignis aufloest, nie
+// verraet (GP8). Der Abschlusstyp folgt antwortKoerper.status, NICHT
+// umgekehrt -- der Ereignistyp ist nie die Quelle des Objektstatus.
+function sseStandardStromBauen(antwortKoerper) {
+    const typEreignis = antwortKoerper && antwortKoerper.status === 'incomplete' ? 'response.incomplete'
+        : antwortKoerper && antwortKoerper.status === 'failed' ? 'response.failed'
+        : 'response.completed';
+    return `event: response.created\n`
+        + `data: ${JSON.stringify({ type: 'response.created', response: { status: 'in_progress' } })}\n\n`
+        + `\n` // Leerzeile zwischen Ereignissen -- SSE erlaubt Kommentar-/Keepalive-Zeilen, sie werden ignoriert.
+        + `event: response.output_text.delta\n`
+        + `data: ${JSON.stringify({ type: 'response.output_text.delta', delta: '' })}\n\n`
+        + `event: ${typEreignis}\n`
+        + `data: ${JSON.stringify({ type: typEreignis, response: antwortKoerper })}\n\n`;
+}
+
+// Fuer Gegenproben, die die SSE-Bytes selbst kontrollieren muessen (Chunk-
+// Grenzen, fehlendes Abschluss-Ereignis, Verbindungsabbruch, Statuscode) statt
+// des automatisch gebauten Standardstroms oben.
+function sseRohEintragBauen({ chunks, statusCode, abgebrochen, fehler, vorzeitigesClose }) {
+    return { __sseRoh: true, chunks, statusCode, abgebrochen, fehler, vorzeitigesClose };
 }
 
 // Stub fuer https.request: KEIN Netz, keine echten Sockets. Beantwortet der
@@ -1282,6 +1536,19 @@ function antwortKoerperBauen(ausgabeElement, inputToken, outputToken) {
 // Anfragekoerper in "aufgezeichnet" auf (inkl. ob "tools" mitgeschickt
 // wurde) -- die Rundenriegel-Pruefung unten prueft an DIESER Aufzeichnung,
 // nicht an einer Behauptung im Text.
+//
+// Punkt 15/B9/GP5 (Streaming-Umbau 19.09.2026): liefert SSE statt eines
+// einzelnen JSON-Blocks. Ein Eintrag aus "warteschlange" ist entweder ein
+// gewoehnlicher Antwortkoerper (antwortKoerperBauen() & Geschwister) -- dann
+// wird er automatisch in den STANDARD-Mehrereignis-Strom gepackt (s.
+// sseStandardStromBauen) -- oder ein per sseRohEintragBauen() markierter
+// ROHER Eintrag, dessen "chunks" unveraendert als einzelne data()-Aufrufe
+// hinausgehen (fuer Chunk-Grenzen mitten in einer data:-Zeile, fehlende
+// Abschluss-Ereignisse, Nicht-SSE-Antworten und Strom-Abbrueche). Nach einem
+// GEWOEHNLICHEN Abschluss feuert die Stub genau wie ein echter Socket
+// zusaetzlich "close" NACH "end" -- das ist die Positivkontrolle fuer GP7
+// ("ein normales close nach end darf nicht doppelt ablehnen"), gemessen an
+// praktisch jedem der bestehenden Faelle.
 function httpsStubBauen(warteschlange, aufgezeichnet) {
     return function (_url, _optionen, callback) {
         const antwortHandler = {};
@@ -1295,10 +1562,37 @@ function httpsStubBauen(warteschlange, aufgezeichnet) {
                 aufgezeichnet.push(JSON.parse(koerperJson));
                 const eintrag = warteschlange.shift();
                 if (!eintrag) throw new Error('Selbsttest-Stub: keine weitere Antwort in der Warteschlange');
+                fakeAntwort.statusCode = eintrag.statusCode || 200;
                 process.nextTick(() => {
                     callback(fakeAntwort);
-                    antwortHandler.data(Buffer.from(JSON.stringify(eintrag)));
-                    antwortHandler.end();
+                    const regulaerAbschliessen = () => {
+                        antwortHandler.end();
+                        if (antwortHandler.close) antwortHandler.close();
+                    };
+                    if (eintrag.__sseRoh) {
+                        for (const teil of (eintrag.chunks || [])) {
+                            antwortHandler.data(Buffer.isBuffer(teil) ? teil : Buffer.from(teil, 'utf8'));
+                        }
+                        // "error" bleibt UNGESICHERT: ein Ereignis dieses
+                        // Namens ohne Listener ist bei einem echten
+                        // EventEmitter der einzige Fall, der selbst crasht --
+                        // das bildet die Stub bewusst nach. "aborted"/"close"
+                        // sind gewoehnliche Ereignisse: OHNE Listener bleiben
+                        // sie ein stiller No-Op, GENAU das Bild von B2 (die
+                        // Promise haengt fuer immer), nicht ein TypeError der
+                        // Test-Stub selbst (GEGENGEPRUEFT 19.09.2026: eine
+                        // Mutation, die den close-Listener entfernt, crashte
+                        // hier zuvor die Stub statt die Promise haengen zu
+                        // lassen -- der Wachhund konnte den echten Befund gar
+                        // nicht erst sehen).
+                        if (eintrag.fehler) { antwortHandler.error(eintrag.fehler); return; }
+                        if (eintrag.abgebrochen) { if (antwortHandler.aborted) antwortHandler.aborted(); return; }
+                        if (eintrag.vorzeitigesClose) { if (antwortHandler.close) antwortHandler.close(); return; }
+                        regulaerAbschliessen();
+                    } else {
+                        antwortHandler.data(Buffer.from(sseStandardStromBauen(eintrag), 'utf8'));
+                        regulaerAbschliessen();
+                    }
                 });
             },
             destroy() {},
@@ -1307,7 +1601,12 @@ function httpsStubBauen(warteschlange, aufgezeichnet) {
 }
 
 async function selbsttest() {
-    const ERWARTETE_FAELLE = 72;
+    // 72 vor dem Streaming-Umbau (19.09.2026) + 27 neue Faelle
+    // (GP1x2, GP2x3, GP3x2, B8x1, GP4x5, GP5x1, GP6x1, Punkt7/B3 x1,
+    // Punkt6/B4 x1, GP7x4, GP8x1, GP9x1, GP-FAILED x1, GP-ERROR x1,
+    // GP10x1, B8-Ende-zu-Ende x1) = 99. Von Hand hergeleitet, nicht aus
+    // dem Lauf abgeschrieben -- unten durch den tatsaechlichen Lauf bestaetigt.
+    const ERWARTETE_FAELLE = 99;
     let gelaufen = 0;
     let fehler = 0;
     const pruefen = (bezeichnung, bedingung) => {
@@ -2144,6 +2443,307 @@ async function selbsttest() {
                 codeC === 0
                 && ausgabeZeilenC.some((z) => z.includes('Kosten unbekannt (Modell "modell-unbekannt-xyz-imaginaer" nicht in der Preistabelle)'))
                 && !ausgabeZeilenC.some((z) => /Kosten geschaetzt/.test(z)));
+        }
+
+        // ===== STREAMING/SSE-UMBAU (19.09.2026): GP1-GP10 + B3/B4/B8 =====
+        // anfragen() wird hier DIREKT gerufen (kein main()-Umweg noetig fuer
+        // alles, was nicht --zweck/--brief betrifft) -- gemeinsamer Rahmen:
+        // Stub aufbauen, anfragen() rufen, https.request zuverlaessig
+        // zuruecksetzen, Ergebnis ODER Fehler zurueckgeben.
+        const anfragenIsoliertPruefen = async (warteschlange) => {
+            const alterHttpsRequest = https.request;
+            const aufgezeichnet = [];
+            https.request = httpsStubBauen(warteschlange, aufgezeichnet);
+            let ergebnis = null;
+            let fehler = null;
+            try {
+                ergebnis = await anfragen('selbsttest-dummy-schluessel-ohne-netz', 'gpt-5.6-sol', [{ role: 'user', content: 'GP-Selbsttest' }]);
+            } catch (e) {
+                fehler = e;
+            } finally {
+                https.request = alterHttpsRequest;
+            }
+            return { ergebnis, fehler, aufgezeichnet };
+        };
+        // Wachhund (GP7): ein Versprechen, das nicht innerhalb von "ms"
+        // aufloest, gilt als HAENGEND -- Beleg, dass eine kontrollierte
+        // Ablehnung wirklich ankommt statt die Promise fuer immer offen zu
+        // lassen (Papier B2).
+        const mitWachhund = (versprechen, ms) => new Promise((resolve) => {
+            const timer = setTimeout(() => resolve({ art: 'HAENGT (Wachhund)' }), ms);
+            versprechen.then(
+                (wert) => { clearTimeout(timer); resolve({ art: 'geloest', wert }); },
+                (fehler) => { clearTimeout(timer); resolve({ art: 'abgelehnt', fehler }); },
+            );
+        });
+
+        // ----- GP1: Chunk-Grenze mitten in einer data:-Zeile -----
+        {
+            const textAscii = 'TESTBERICHT-CHUNKGRENZE-ASCII';
+            const vollerAscii = Buffer.from(sseStandardStromBauen(antwortKoerperBauen(elementTextBauen(textAscii), 10, 5)), 'utf8');
+            const markerAscii = vollerAscii.indexOf(Buffer.from('"type":"response.completed"', 'utf8'));
+            const schnittAscii = markerAscii + 14; // mitten im JSON-Feldwert, EINDEUTIG innerhalb der data:-Zeile
+            const { ergebnis: ergAscii, fehler: fehlAscii } = await anfragenIsoliertPruefen([sseRohEintragBauen({
+                chunks: [vollerAscii.subarray(0, schnittAscii), vollerAscii.subarray(schnittAscii)],
+            })]);
+            pruefen(`GP1 CHUNK-GRENZE INNERHALB EINER data:-ZEILE (59) (Trennung mitten im Wort "completed" der data:-Zeile, muss durchlaufen: ${fehlAscii ? 'ABGELEHNT: ' + fehlAscii.message : textAusAusgabe(ergAscii.output)})`,
+                !fehlAscii && !!ergAscii && textAusAusgabe(ergAscii.output) === textAscii);
+        }
+        {
+            // B1/B14: eine MEHRBYTE-Fixtur, deren Schnitt ZWISCHEN den beiden
+            // UTF-8-Bytes von "ü" liegt -- eine ASCII-Fixtur kann diese
+            // Klasse nicht ausloesen (Lehrbuchfall "Testdaten, die den
+            // gesuchten Unterschied gar nicht auslösen können").
+            const textUmlaut = 'Pruefung: Sonderzeichen ueber die Chunk-Grenze: ü (muss zeichengetreu ankommen)';
+            const vollerUmlaut = Buffer.from(sseStandardStromBauen(antwortKoerperBauen(elementTextBauen(textUmlaut), 10, 5)), 'utf8');
+            const umlautIndex = vollerUmlaut.indexOf(Buffer.from('ü', 'utf8'));
+            if (umlautIndex === -1) throw new Error('GP1-Fixture: "ü" nicht im SSE-Text gefunden -- Fixture kaputt');
+            const schnittUmlaut = umlautIndex + 1; // zwischen den beiden Bytes von "ü"
+            const { ergebnis: ergUml, fehler: fehlUml } = await anfragenIsoliertPruefen([sseRohEintragBauen({
+                chunks: [vollerUmlaut.subarray(0, schnittUmlaut), vollerUmlaut.subarray(schnittUmlaut)],
+            })]);
+            const textZurueck = ergUml ? textAusAusgabe(ergUml.output) : null;
+            pruefen(`GP1 CHUNK-GRENZE MITTEN IM MEHRBYTEZEICHEN (60) (Schnitt zwischen den zwei Bytes von "ü": Text kommt zeichengetreu an, kein Ersatzzeichen U+FFFD: ${JSON.stringify(textZurueck)})`,
+                !fehlUml && textZurueck === textUmlaut && !(textZurueck || '').includes('�'));
+        }
+
+        // ----- GP2: Strom ohne Abschluss-Ereignis -- Bytes/Zeilen/Typ als
+        // LITERALE aus der Fixtur, NICHT vom Produktionsparser berechnet -----
+        {
+            const gp2Zeilen = [
+                'event: response.created',
+                'data: {"type":"response.created"}',
+                '',
+                'data: {"type":"response.output_text.delta","delta":"x"}',
+                '',
+            ];
+            const gp2Text = gp2Zeilen.join('\n') + '\n';
+            const GP2_BYTES = Buffer.byteLength(gp2Text, 'utf8'); // unabhaengiges Buffer.byteLength, NICHT der SSE-Parser
+            const GP2_DATENZEILEN = 2; // von Hand ausgezaehlt: exakt zwei "data:"-Zeilen oben
+            const GP2_LETZTER_TYP = 'response.output_text.delta'; // die letzte data:-Zeile traegt genau diesen type
+            const { fehler: fehlGp2 } = await anfragenIsoliertPruefen([sseRohEintragBauen({ chunks: [gp2Text] })]);
+            const msgGp2 = fehlGp2 ? fehlGp2.message : '(kein Fehler geworfen!)';
+            pruefen(`GP2 BYTES WOERTLICH AUS DER FIXTUR (61) (Meldung nennt "Empfangene Bytes: ${GP2_BYTES}": "${msgGp2}")`,
+                !!fehlGp2 && msgGp2.includes(`Empfangene Bytes: ${GP2_BYTES},`));
+            pruefen(`GP2 ANZAHL data:-ZEILEN WOERTLICH (62) (Meldung nennt "gelesene data:-Zeilen: ${GP2_DATENZEILEN}": "${msgGp2}")`,
+                !!fehlGp2 && msgGp2.includes(`gelesene data:-Zeilen: ${GP2_DATENZEILEN},`));
+            pruefen(`GP2 LETZTER EREIGNISTYP WOERTLICH (63) (Meldung nennt "zuletzt gesehener Ereignistyp: ${GP2_LETZTER_TYP}": "${msgGp2}")`,
+                !!fehlGp2 && msgGp2.includes(`zuletzt gesehener Ereignistyp: ${GP2_LETZTER_TYP}.`));
+        }
+
+        // ----- GP3: response.incomplete mit reason max_output_tokens (Form
+        // aus M3) -- status UND reason einzeln zusicherbar -----
+        let fehlerGp3FuerB8 = null;
+        {
+            const { fehler: fehlGp3 } = await anfragenIsoliertPruefen([antwortKoerperUnvollstaendigBauen('max_output_tokens', 500, 24000)]);
+            fehlerGp3FuerB8 = fehlGp3;
+            pruefen(`GP3 STATUS INCOMPLETE (64) (anfragen() wirft bei status=incomplete: "${fehlGp3 ? fehlGp3.message : '(kein Fehler!)'}")`,
+                !!fehlGp3 && fehlGp3.gegenleserStatus === 'incomplete' && fehlGp3.message.includes('status="incomplete"'));
+            pruefen(`GP3 REASON max_output_tokens WOERTLICH (65) (Grund steht woertlich in der Meldung)`,
+                !!fehlGp3 && fehlGp3.gegenleserGrund === 'max_output_tokens' && fehlGp3.message.includes('max_output_tokens'));
+        }
+        // ----- B8: der Verbrauch aus GENAU DIESEM Abbruch bleibt am Fehler
+        // haengen (500/24000, wie oben uebergeben) -- sonst verliert die
+        // Rundenschleife ihn beim Verbuchen. -----
+        pruefen(`GP3/B8 USAGE AM FEHLER ERHALTEN (66) (der geworfene Fehler traegt usage aus der Antwort: ${fehlerGp3FuerB8 && fehlerGp3FuerB8.gegenleserUsage ? JSON.stringify(fehlerGp3FuerB8.gegenleserUsage) : '(fehlt)'})`,
+            !!fehlerGp3FuerB8 && !!fehlerGp3FuerB8.gegenleserUsage
+            && fehlerGp3FuerB8.gegenleserUsage.input_tokens === 500 && fehlerGp3FuerB8.gegenleserUsage.output_tokens === 24000);
+
+        // ----- GP4: Pflichtfelder am AUFGEZEICHNETEN Anfragekoerper -----
+        {
+            const { aufgezeichnet: aufgGp4 } = await anfragenIsoliertPruefen([antwortKoerperBauen(elementTextBauen('GP4-BERICHT'), 5, 5)]);
+            const k = aufgGp4[0];
+            pruefen(`GP4 stream:true (67) (der aufgezeichnete Anfragekoerper traegt stream:true: ${k && k.stream})`, !!k && k.stream === true);
+            pruefen(`GP4 store:false (68) (${k && k.store})`, !!k && k.store === false);
+            pruefen(`GP4 truncation:'disabled' (69) (${k && k.truncation})`, !!k && k.truncation === 'disabled');
+            pruefen(`GP4 reasoning.effort vorhanden (70) (nichtleerer String: "${k && k.reasoning && k.reasoning.effort}")`,
+                !!k && !!k.reasoning && typeof k.reasoning.effort === 'string' && k.reasoning.effort.length > 0);
+            pruefen(`GP4 metadata EXAKTE Schluesselmenge (71) (werkzeug,zweck,datum: "${k && k.metadata ? Object.keys(k.metadata).sort().join(',') : '(fehlt)'}")`,
+                !!k && !!k.metadata && Object.keys(k.metadata).sort().join(',') === 'datum,werkzeug,zweck');
+        }
+
+        // ----- GP5: der ALTE Stub (ein einzelner JSON-Block statt SSE) muss
+        // scheitern -- Beleg, dass die neuen Faelle wirklich den SSE-Weg
+        // messen und nicht ueber einen Rueckfallpfad am alten haengen -----
+        {
+            const alterStilKoerper = JSON.stringify(antwortKoerperBauen(elementTextBauen('ALTER-STIL-TEXT'), 10, 5));
+            const { ergebnis: ergGp5, fehler: fehlGp5 } = await anfragenIsoliertPruefen([sseRohEintragBauen({ chunks: [alterStilKoerper] })]);
+            pruefen(`GP5 ALTER JSON-BLOCK-STUB SCHEITERT (72) (kein SSE-Rahmen wird NICHT mehr akzeptiert: ${fehlGp5 ? 'abgelehnt - ' + fehlGp5.message : 'FAELSCHLICH ANGENOMMEN: ' + JSON.stringify(ergGp5)})`,
+                !!fehlGp5 && !ergGp5);
+        }
+
+        // ----- GP6: HTTP 400 -- Status wird VOR der SSE-Auswertung geprueft -----
+        {
+            const fehlerKoerperText = JSON.stringify({ error: { message: 'HTTP-MARKER-4711' } });
+            const { fehler: fehlGp6 } = await anfragenIsoliertPruefen([sseRohEintragBauen({ chunks: [fehlerKoerperText], statusCode: 400 })]);
+            const msgGp6 = fehlGp6 ? fehlGp6.message : '(kein Fehler!)';
+            pruefen(`GP6 HTTP 400 VOR SSE-AUSWERTUNG (73) (Meldung enthaelt "HTTP 400" und den Marker, NICHT "Abschluss-Ereignis": "${msgGp6}")`,
+                !!fehlGp6 && msgGp6.includes('HTTP 400') && msgGp6.includes('HTTP-MARKER-4711') && !msgGp6.includes('Abschluss-Ereignis'));
+        }
+
+        // ----- Punkt 7/B3: eine data:-Zeile mit UNGUELTIGEM JSON wird NICHT
+        // uebersprungen, sondern bricht laut ab -----
+        {
+            const kaputtesJson = 'data: {"type":"response.completed", KAPUTT\n\n';
+            const { ergebnis: ergKaputt, fehler: fehlKaputt } = await anfragenIsoliertPruefen([sseRohEintragBauen({ chunks: [kaputtesJson] })]);
+            // GEGENGEPRUEFT (19.09.2026): "irgendein Fehler kam" allein war
+            // GRUEN aus dem falschen Grund -- ein stilles Ueberspringen der
+            // kaputten Zeile laesst den Stream ganz ohne Abschluss-Ereignis
+            // enden und loest DIESELBE ablehnende Promise ueber den ANDEREN
+            // Pfad (Punkt 9) aus. Erst die Nachricht selbst unterscheidet
+            // "erkannt und laut abgebrochen" von "stillschweigend
+            // uebersprungen, dann spaeter aus anderem Grund gescheitert".
+            pruefen(`PUNKT 7/B3 UNGUELTIGES JSON BRICHT LAUT AB (74) (kein stilles Ueberspringen -- die Meldung nennt den JSON-Fehler selbst, nicht nur "keinen Abschluss": ${fehlKaputt ? fehlKaputt.message : 'FAELSCHLICH ANGENOMMEN: ' + JSON.stringify(ergKaputt)})`,
+                !!fehlKaputt && !ergKaputt && fehlKaputt.message.includes('enthaelt kein gueltiges JSON') && fehlKaputt.message.includes('SSE-Datensatz Nr. 1'));
+        }
+
+        // ----- Punkt 6/B4: der Ereignistyp kommt aus dem type-Feld im JSON,
+        // NICHT aus der event:-Zeile -- die event:-Zeile LUEGT hier absichtlich -----
+        {
+            const luegendesEreignis = `event: response.created\ndata: ${JSON.stringify({ type: 'response.completed', response: antwortKoerperBauen(elementTextBauen('B4-TYP-AUS-JSON'), 2, 2) })}\n\n`;
+            const { ergebnis: ergB4, fehler: fehlB4 } = await anfragenIsoliertPruefen([sseRohEintragBauen({ chunks: [luegendesEreignis] })]);
+            pruefen(`PUNKT 6/B4 EREIGNISTYP AUS DEM JSON, NICHT AUS event: (75) (event:-Zeile behauptet response.created, JSON traegt response.completed -- Parser folgt dem JSON: ${fehlB4 ? fehlB4.message : textAusAusgabe(ergB4.output)})`,
+                !fehlB4 && !!ergB4 && textAusAusgabe(ergB4.output) === 'B4-TYP-AUS-JSON');
+        }
+
+        // ----- GP7: Strom-Abbruch -- je einzeln kontrolliert ablehnen, mit
+        // Wachhund als Beleg, dass nichts haengt; der Normalfall (end dann
+        // close) loest GENAU EINMAL auf -----
+        {
+            const partiellerStrom = 'data: {"type":"response.created"}\n\n';
+
+            const alterHttpsRequestGp7 = https.request;
+            https.request = httpsStubBauen([sseRohEintragBauen({ chunks: [partiellerStrom], abgebrochen: true })], []);
+            const ergA = await mitWachhund(anfragen('k', 'gpt-5.6-sol', [{ role: 'user', content: 'x' }]), 1000);
+            https.request = alterHttpsRequestGp7;
+            pruefen(`GP7A PARTIELL + aborted LEHNT KONTROLLIERT AB (76) (${ergA.art}${ergA.fehler ? ' - ' + ergA.fehler.message : ''})`,
+                ergA.art === 'abgelehnt');
+
+            https.request = httpsStubBauen([sseRohEintragBauen({ chunks: [partiellerStrom], fehler: new Error('Simulierter Streamfehler (Selbsttest)') })], []);
+            const ergB = await mitWachhund(anfragen('k', 'gpt-5.6-sol', [{ role: 'user', content: 'x' }]), 1000);
+            https.request = alterHttpsRequestGp7;
+            pruefen(`GP7B PARTIELL + error AM ANTWORTSTROM LEHNT KONTROLLIERT AB (77) (${ergB.art}${ergB.fehler ? ' - ' + ergB.fehler.message : ''})`,
+                ergB.art === 'abgelehnt');
+
+            https.request = httpsStubBauen([sseRohEintragBauen({ chunks: [partiellerStrom], vorzeitigesClose: true })], []);
+            const ergC = await mitWachhund(anfragen('k', 'gpt-5.6-sol', [{ role: 'user', content: 'x' }]), 1000);
+            https.request = alterHttpsRequestGp7;
+            pruefen(`GP7C PARTIELL + close OHNE end LEHNT KONTROLLIERT AB (78) (${ergC.art}${ergC.fehler ? ' - ' + ergC.fehler.message : ''})`,
+                ergC.art === 'abgelehnt');
+
+            https.request = httpsStubBauen([antwortKoerperBauen(elementTextBauen('GP7-NORMAL-END-CLOSE'), 5, 5)], []);
+            const ergD = await mitWachhund(anfragen('k', 'gpt-5.6-sol', [{ role: 'user', content: 'x' }]), 1000);
+            https.request = alterHttpsRequestGp7;
+            pruefen(`GP7 NORMALER end-DANN-close LOEST GENAU EINMAL AUF (79) (${ergD.art}, Text: ${ergD.wert ? textAusAusgabe(ergD.wert.output) : '-'})`,
+                ergD.art === 'geloest' && textAusAusgabe(ergD.wert.output) === 'GP7-NORMAL-END-CLOSE');
+        }
+
+        // ----- GP8: Mehrereignis-Strom -- zurueckgegeben wird AUSSCHLIESSLICH
+        // das response-Feld des ABSCHLUSSES, nicht eines der vorherigen
+        // Ereignisse (response.created/Delta gehen jedem Standardfall voraus,
+        // s. sseStandardStromBauen) -----
+        {
+            const { ergebnis: ergGp8, fehler: fehlGp8 } = await anfragenIsoliertPruefen([antwortKoerperBauen(elementTextBauen('GP8-NUR-ABSCHLUSS'), 7, 3)]);
+            pruefen(`GP8 MEHREREIGNIS-STROM: NUR DAS ABSCHLUSS-response (80) (status=${ergGp8 && ergGp8.status}, Text: ${ergGp8 ? textAusAusgabe(ergGp8.output) : fehlGp8 && fehlGp8.message})`,
+                !fehlGp8 && !!ergGp8 && ergGp8.status === 'completed' && textAusAusgabe(ergGp8.output) === 'GP8-NUR-ABSCHLUSS');
+        }
+
+        // ----- GP9: ZWEITES Abschluss-Ereignis lehnt ab -- completed mit
+        // Bericht, dann failed, dann end -----
+        {
+            const ereignisCompleted = `event: response.completed\ndata: ${JSON.stringify({ type: 'response.completed', response: antwortKoerperBauen(elementTextBauen('GP9-SOLLTE-NIE-ANKOMMEN'), 5, 5) })}\n\n`;
+            const ereignisFailed = `event: response.failed\ndata: ${JSON.stringify({ type: 'response.failed', response: antwortKoerperFehlgeschlagenBauen({ code: 'x', message: 'y' }, 5, 5) })}\n\n`;
+            const { ergebnis: ergGp9, fehler: fehlGp9 } = await anfragenIsoliertPruefen([sseRohEintragBauen({ chunks: [ereignisCompleted, ereignisFailed] })]);
+            pruefen(`GP9 ZWEITES ABSCHLUSS-EREIGNIS LEHNT AB (81) (completed gefolgt von failed: ${fehlGp9 ? fehlGp9.message : 'FAELSCHLICH ANGENOMMEN'})`,
+                !!fehlGp9 && !ergGp9 && fehlGp9.message.includes('ZWEITES Abschluss-Ereignis'));
+        }
+
+        // ----- Ergaenzend zu Punkt 12/B6: ein sauber EINZELNES response.failed
+        // wird ueber die Statuspruefung abgelehnt, response.error steht in
+        // der Meldung; ein Ereignis vom Typ error (kein response.*) ist
+        // sofort fatal, unabhaengig von Abschluss-Ereignissen -----
+        {
+            const koerperFailed = antwortKoerperFehlgeschlagenBauen({ code: 'server_error', message: 'GP-FAILED-MARKER-9931' }, 3, 1);
+            const { fehler: fehlFailed } = await anfragenIsoliertPruefen([koerperFailed]);
+            pruefen(`GP-FAILED STATUS UEBER DIE STATUSPRUEFUNG (82) (${fehlFailed ? fehlFailed.message : '(kein Fehler!)'})`,
+                !!fehlFailed && fehlFailed.gegenleserStatus === 'failed' && fehlFailed.message.includes('GP-FAILED-MARKER-9931'));
+        }
+        {
+            const ereignisErrorRoh = `data: ${JSON.stringify({ type: 'error', code: 'rate_limit', message: 'GP-ERROR-EVENT-MARKER-5521' })}\n\n`;
+            const { ergebnis: ergErr, fehler: fehlErr } = await anfragenIsoliertPruefen([sseRohEintragBauen({ chunks: [ereignisErrorRoh] })]);
+            pruefen(`GP-ERROR-EREIGNIS SOFORT FATAL (83) (${fehlErr ? fehlErr.message : 'FAELSCHLICH ANGENOMMEN'})`,
+                !!fehlErr && !ergErr && fehlErr.message.includes('rate_limit') && fehlErr.message.includes('GP-ERROR-EVENT-MARKER-5521'));
+        }
+
+        // ----- GP10: metadata-Datengrenze -- weder --zweck noch der
+        // Briefdateiname duerfen in metadata auftauchen -----
+        {
+            const briefAuffaelligPfad = path.join(klon, 'GEHEIM-BRIEFNAME-nicht-in-metadata.txt');
+            fs.writeFileSync(briefAuffaelligPfad, 'Selbsttest-Auftrag GP10 -- nur die Mechanik pruefen.\n');
+            const alterKey = process.env.OPENAI_API_KEY;
+            const alteDatei = process.env.OPENAI_KEY_DATEI;
+            process.env.OPENAI_API_KEY = 'selbsttest-dummy-schluessel-ohne-netz';
+            delete process.env.OPENAI_KEY_DATEI;
+            const echtesHttpsRequest = https.request;
+            const aufgezeichnetGp10 = [];
+            https.request = httpsStubBauen([antwortKoerperBauen(elementTextBauen('GP10-BERICHT'), 5, 5)], aufgezeichnetGp10);
+            let codeGp10;
+            try {
+                codeGp10 = await main([
+                    path.join(klon, 'harmlos.txt'),
+                    `--brief=${briefAuffaelligPfad}`,
+                    `--wurzel=${klon}`,
+                    '--max-runden=10',
+                    `--protokoll=${path.join(klon, 'selbsttest-protokoll-gp10.jsonl')}`,
+                    '--zweck=GEHEIM-PFAD-routes/x.js',
+                ]);
+            } finally {
+                https.request = echtesHttpsRequest;
+                if (alterKey !== undefined) process.env.OPENAI_API_KEY = alterKey; else delete process.env.OPENAI_API_KEY;
+                if (alteDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteDatei;
+            }
+            const metadataJson = JSON.stringify(aufgezeichnetGp10.map((k) => k.metadata));
+            pruefen(`GP10 METADATA-DATENGRENZE (84) (weder --zweck noch der Briefdateiname tauchen in metadata auf: "${metadataJson}")`,
+                codeGp10 === 0 && aufgezeichnetGp10.length >= 1
+                && !metadataJson.includes('GEHEIM-PFAD') && !metadataJson.includes('routes/x.js')
+                && !metadataJson.includes('GEHEIM-BRIEFNAME') && !metadataJson.includes('nicht-in-metadata'));
+        }
+
+        // ----- B8 Ende-zu-Ende: ueber main() darf der Verbrauch aus einem
+        // Status-Abbruch NICHT verloren gehen -- die Konsolenzusammenfassung
+        // muss die echten Zahlen zeigen, nicht "Token rein: 0" (Punkt 13) -----
+        {
+            const alterKey = process.env.OPENAI_API_KEY;
+            const alteDatei = process.env.OPENAI_KEY_DATEI;
+            process.env.OPENAI_API_KEY = 'selbsttest-dummy-schluessel-ohne-netz';
+            delete process.env.OPENAI_KEY_DATEI;
+            const echtesHttpsRequest = https.request;
+            const echtesLog = console.log;
+            const echtesError = console.error;
+            const chronoB8 = [];
+            console.log = (m) => chronoB8.push(String(m));
+            console.error = (m) => chronoB8.push(String(m));
+            https.request = httpsStubBauen([antwortKoerperUnvollstaendigBauen('max_output_tokens', 1234, 5678)], []);
+            let geworfenB8 = null;
+            try {
+                await main([
+                    path.join(klon, 'harmlos.txt'),
+                    `--brief=${briefFixturePfad}`,
+                    `--wurzel=${klon}`,
+                    '--max-runden=10',
+                    `--protokoll=${path.join(klon, 'selbsttest-protokoll-b8.jsonl')}`,
+                ]);
+            } catch (e) {
+                geworfenB8 = e;
+            } finally {
+                console.log = echtesLog;
+                console.error = echtesError;
+                https.request = echtesHttpsRequest;
+                if (alterKey !== undefined) process.env.OPENAI_API_KEY = alterKey; else delete process.env.OPENAI_API_KEY;
+                if (alteDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteDatei;
+            }
+            pruefen(`B8 TOKEN NICHT VERLOREN BEI STATUS-ABBRUCH (85) (Zusammenfassung zeigt die echten Zahlen statt 0/0, obwohl anfragen() geworfen hat: "${geworfenB8 ? geworfenB8.message : '(kein Fehler!)'}")`,
+                !!geworfenB8 && chronoB8.some((z) => z.includes('Token rein: 1234') && z.includes('Token raus: 5678')));
         }
 
         // ===== LAUF-PROTOKOLL (TEIL D): die acht Faelle aus dem Auftrag =====
