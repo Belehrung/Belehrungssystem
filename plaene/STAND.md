@@ -1,4 +1,4 @@
-# Stand — 16.09.2026, ~11:50 UTC
+# Stand — 19.09.2026, ~18:20 UTC
 
 Diese Datei ist der Übergabepunkt. Der Takt-Prompt ist beim Bau von
 Beitrag 1 stehengeblieben. **Hier steht, was wirklich gilt.**
@@ -64,19 +64,22 @@ Punkt 4 ist die Lehre des Tages: Die Upload-Spur war sachlich richtig (sie
 hat ein echtes Informationsleck gefunden), aber sie ist ohne Entscheidung an
 das Programm vorbeigewachsen, und gemerkt hat es der Betreiber, nicht ich.
 
-## LÄUFT GERADE (18.09.2026, 20:45 UTC) — nicht anfassen
+## LÄUFT GERADE (19.09.2026, ~18:20 UTC) — nicht anfassen
 
 | Was | Zweig | Arbeitsbaum |
 |---|---|---|
-| **Executer 1: Mandantengrenze M1+M2** (Suite läuft) | `claude/mandantengrenze-fremd-ids` | **`/home/user/gymdocu` — BELEGT** |
-| **Executer 2: Nacharbeit Upload-Härtung 2a** (sechs Prüfbefunde, Suite wartet auf die Sperre) | `claude/upload-haertung-2a` | **`/workspace/gymdocu-2a` — BELEGT** |
-| Gegenleser: Planprüfung Fotolöschung/Identität | — | liest `/workspace/gymdocu-sicher` |
-| Claude-Workflow: achtspuriger Sicherheits-Fächer | — | liest `/workspace/gymdocu-sicher` |
+| **Gegenleser Spur 1 (`gpt-5.6-sol`): Planprüfung Eingabewache** — Frage „was bricht dieser Plan, das heute funktioniert?" | — | LIEST `/home/user/gymdocu` |
+| **Gegenleser Spur 2 (`deepseek-flash`): dieselbe Planprüfung** — Frage „was verspricht der Plan, das er nicht einlöst?" | — | statisches Bündel, liest nichts |
 
-**`/workspace/gymdocu-2a` ist ein ZWEITER Arbeitsbaum** (`git worktree`),
-angelegt am 18.09.2026 20:31, `npm ci` gelaufen, Durchquerbarkeit für fremde
-Nutzer geprüft (`sudo -u nobody test -x` → ok). Nach dem Merge mit
-`git worktree remove` abräumen — ebenso `/workspace/gymdocu-sicher`.
+**Kein Executer läuft.** Alle Arbeitsbäume sind sauber
+(`git status --short` leer in `/home/user/gymdocu`, `/workspace/gymdocu-2a`,
+`/workspace/gymdocu-sicher`, `/home/user/Belehrungssystem`, gemessen
+19.09.2026 16:50 UTC). **Solange Spur 1 läuft, wird in `/home/user/gymdocu`
+nicht geschrieben** — der Gegenleser liest das Repo während seines Laufs.
+
+Die drei Arbeitsbäume aus dem 18.09. sind abgearbeitet; `/workspace/gymdocu-2a`
+und `/workspace/gymdocu-sicher` stehen weiter und können mit
+`git worktree remove` abgeräumt werden, sobald nichts mehr darauf zeigt.
 
 **Die beiden Suiten serialisieren über `/tmp/gymdocu-suite.lock`.** Eine, die
 wartet, ist NICHT hängengeblieben. Nicht abbrechen, nicht in ein äusseres
@@ -5029,3 +5032,93 @@ Zustände im Kontrollfluss, DeepSeek bekommt das ganze Teilsystem (1M Kontext)
 und die Frage „was verbietet das hier nicht, und wo geht eine Folgerung weiter
 als ihre Messung?". Mitschreiben, welche Spur was fand; nach vierzehn Bündeln
 ist das eine Messung statt einer Anekdote.
+
+---
+
+## 19.09.2026, ~18:20 UTC — Bündel 1 vollständig gemessen, erster Bauauftrag draussen
+
+### Was fertig ist
+
+**Bündel 1 des Durchgangs (Geräte-Lebenszyklus) ist VOLLSTÄNDIG nachgemessen:
+11 von 11.** Zwei Spuren über byte-identisches Material (354.231 gezählte
+Token), nur die Frage verschieden, **Überschneidung null**. Ergebnis:
+**9 getragen, 1 gefallen, 1 teilweise** (Beobachtung richtig, Schwere falsch).
+
+Die Einzelurteile stehen in **`plaene/durchgang-befunde.md`** — je Befund
+Fundstelle, wörtliche Behauptung, eigene Messung MIT Ausgabe, Ergebnis,
+Entscheidung. `ASTRA-LAEUFE.md` trägt nur noch die Lauf-Zahlen; die Trennung
+ist Absicht (dieselbe Aussage an zwei Orten).
+
+**Zwei Zahlen, die für die Arbeitsweise zählen:**
+
+* sol 4 von 6 voll getragen, deepseek 5 von 5 — und der EINZIGE als
+  *blockierend* gemeldete Befund kam von der teuren Spur und FIEL. Ein
+  Bündel; das trägt keine Aussage über die Spuren.
+* **2,52 $ fürs Finden gegen rund 85 Minuten fürs Messen.** Auf 15–20 Bündel
+  hochgerechnet: 38–50 $ gegen **20–28 Stunden eigene Messzeit**. Wer mehr
+  Bündel ansetzt, kauft Messzeit, nicht Geld.
+
+### Was daraus gebaut wird — fünf Beiträge, einer davon unterwegs
+
+Die neun getragenen Befunde zerfallen in fünf Klassen. Sie werden NICHT in
+einem Beitrag gebaut: zwei davon ändern Verhalten mit Breitenwirkung, einer
+berührt die Sperrordnung, vor der CLAUDE.md ausdrücklich warnt.
+
+| | Beitrag | Befunde | Stand |
+|---|---|---|---|
+| 1 | **Eingabewache** — eine Quelle für ID- und Textfeldprüfung | B1-07, B1-08 | Auftragspapier geschrieben, **Planprüfung läuft** |
+| 2 | **Schreibwege** — Zustandsbedingung + `rowCount`, Transaktionsklammer | B1-05, B1-03 | offen |
+| 3 | **`ladeBestand()`** — stilles falsches Ergebnis | B1-02 | offen |
+| 4 | **Namensinvariante Seilgeräte** — ungleiche Prüfung, verschiedene Sperrschlüssel | B1-09, B1-10 | offen, **braucht zuerst die Lock-Ordnungsanalyse** |
+| 5 | **Zusicherung mit eigenem Sollwert** | B1-04 | offen, kann mitfahren |
+
+**Vorlage an den Betreiber statt Bauauftrag: B1-11.** `routes/admin/geraete.js`
+führt eine eigene Escaper-Kopie (162 Verwendungen), die Schwesterdatei bezieht
+sie aus `core/html-escape`, und der Wächter ist für die erste blind. Der Kopf
+von `core/html-escape.js` legt die Umstellung aber ausdrücklich als
+**Betreiber-Entscheidung** fest. Vorgelegt, nicht gebaut.
+
+### Beitrag 1: Auftragspapier `plaene/auftrag-eingabewache-geraete.md`
+
+Beim Schreiben kamen **zwei Dinge dazu, die in keinem der beiden Befunde
+standen** — beide gemessen, beide ausdrücklich AUSGEKLAMMERT statt
+stillschweigend mitgenommen:
+
+* **Die ID-Regel steht an VIER Orten** (`geraete-typen.js:232`,
+  `ausmusterung.js:73`, `tablets.js:46`, inline `geraete.js:699`), und jede
+  der drei Funktionen verweist im Kommentar auf eine der anderen als
+  Begründung — ein Zitierring ohne Quelle. Der Auftrag legt sie nach
+  `core/eingabe-pruefung.js` und bindet alle vier, statt eine fünfte Kopie
+  anzulegen.
+* **Eine ZWEITE, andere Klasse:** fünf Stellen machen `parseInt(x,10)` VOR der
+  Prüfung (`mitarbeiter.js:670,703,736,835`, `tablet-sperre.js:545`). Die
+  erreichen SQL nie mit einem schlechten Wert — sie handeln still am FALSCHEN
+  Datensatz. Gemessen: `parseInt("2abc",10)=2`, `parseInt("007",10)=7`.
+  `/mitarbeiter/loeschen/2abc` löscht also Mitarbeiter 2. **Kein
+  Rechtegewinn** (alle fünf Abfragen tragen `studio_id`, und wer `2abc`
+  schicken kann, kann auch `2` schicken) — deshalb eigener, späterer Beitrag.
+* **Drei weitere verwundbare `.trim()`-Stellen** in derselben Datei, über die
+  beiden gemeldeten hinaus; `geraete.js:5030` sogar ganz ohne Guard, dort
+  wirft schon ein FEHLENDES Feld.
+
+### Als Nächstes
+
+1. Die beiden Planprüfungen abwarten, **jeden Befund selbst nachmessen**,
+   erst dann bauen.
+2. Beiträge 2–5 als Auftragspapiere schreiben, jeweils mit Planprüfung davor.
+3. Danach Bündel 2 des Durchgangs (Anmeldung und Rechte) — mit den fünf
+   Dateien im Bündel, die DeepSeek bei Bündel 1 als seine Prüfgrenze benannt
+   hat.
+
+### Weiter offen
+
+* **Greptile-Kontingent verbraucht** (50 Credits, Freiplan) — Betreiber-
+  Entscheidung, ob aufgestockt wird. Bis dahin laufen bei Beiträgen an
+  Wächtern und Zusicherungen BEIDE Gegenleser-Spuren statt abwechselnd.
+* **`tools/gegenleser-repo.js` kann nur OpenAI** (`ENDPUNKT` fest auf
+  `api.openai.com`, Zeile 86). Die DeepSeek-Spur läuft deshalb weiter über ein
+  Skript von Hand — statisches Bündel, kein Repo-Lesezugriff. Das ist der
+  Rest, der vom DeepSeek-Adapter übrig ist: Basis-URL, Modellname, Schlüssel.
+* **`plaene/befund-datei-vs-commit.md`** — zwei gemessene Stellen, an denen
+  eine unwiderrufliche Dateiaktion auf der falschen Seite eines fehlbaren
+  Schritts steht. Gehört zu Beitrag 2.
