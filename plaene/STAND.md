@@ -4903,3 +4903,76 @@ Bündel **gezählt, nicht geschätzt**: `POST /v1/responses/input_tokens` →
 Zwei Spuren laufen parallel über dasselbe Bündel (sol und deepseek-v4-pro).
 Begründung für die zweite Spur: durch dieses Werkzeug laufen ALLE Gegenlesungen
 des kommenden Durchgangs — bricht es still, ist jede folgende Prüfung wertlos.
+
+## 19.09.2026, 14:19 UTC — Nacharbeit zum Streaming-Umbau: sechs Befunde, vier davon eigene falsch-grüne Zusicherungen
+
+Gegenlesung zu Commit `36524a7` (Streaming-Umbau) lieferte sechs Befunde
+(N1–N6, Lauf 2,44 $, siehe `ASTRA-LAEUFE.md` „19.09.2026 — der Lauf, der
+zugleich sein eigener Prüfstand war"), alle sechs nach eigener Nachmessung
+getragen. **Der teuerste Befund ist eine Ironie:** der Beitrag gegen
+falsch-grüne Zusicherungen hat selbst VIER ausgeliefert — jede einzeln
+mutiert, jedes Mal 99 Haken / 0 Kreuze, EXIT 0 VOR der Behebung.
+
+- **N1 (blockierend, behoben).** Der Einmal-Riegel (`fertig`/`abschliessen`)
+  lag nur im response-Callback; `anfrage.on('error', ...)` (Anfrage-Ebene)
+  lief komplett daran vorbei. Und die Zusicherung „LOEST GENAU EINMAL AUF"
+  prüfte den ENDZUSTAND der Promise — eine native Promise schluckt ein
+  zweites `reject()` nach `resolve()` lautlos, der Endzustand kann also
+  einen von zwei Settle-Versuchen nie unterscheiden. Riegel in den äußeren
+  Promise-Executor verschoben, `anfrage.on('error', ...)` läuft jetzt
+  darüber, und die Zusicherung zählt zusätzlich über
+  `process.on('multipleResolves', ...)` echte Settle-Versuche. GEGENGEPRÜFT:
+  Riegel komplett entfernt → beide neuen Zusicherungen (GP7D, GP7E) werden
+  ROT; nur die Anfrage-Ebene zurückgedreht → GP7E wird ROT, GP7D bleibt
+  GRÜN (isoliert also genau die behobene Hälfte).
+- **N2 (mittel, behoben — mit einer gemeldeten, NICHT behobenen
+  Zusatzerkenntnis).** Der Selbsttest-Stub bildete einen Abbruch bisher als
+  „nur aborted, dann Rücksprung" nach — eine Folge, die ein echter
+  Node-22-Server nie erzeugt (GEMESSEN: `aborted → error → close`). Stub
+  korrigiert, dazu ein fehlender `aborted`-Listener im Nicht-200-Zweig
+  ergänzt (Symmetrie zum SSE-Zweig). **Gemeldet statt stillschweigend
+  repariert:** weder GP7A noch der neue GP6B isolieren den
+  `aborted`-Listener allein — GEMESSEN per Mutation: mit entferntem
+  `aborted`-Listener bleiben beide Tests GRÜN, weil der gleichzeitig
+  simulierte `error`-Listener denselben Fall fängt. Die drei Listener sind
+  redundante Verteidigung für denselben Transportzustand, kein isoliert
+  prüfbarer Einzelfall je Ereignisname — so in den Testkommentaren
+  vermerkt, statt eine Isolation zu behaupten, die es nicht gibt.
+- **N3 (mittel, behoben).** `GP2_BYTES` wurde per `Buffer.byteLength()` AUS
+  der bewachten Fixtur berechnet — unabhängig vom Parser, aber nicht von
+  der Fixtur. Jetzt ein von Hand ausgezähltes Literal (116). GEGENGEPRÜFT:
+  ein Byte an die Fixtur ergänzt → Zusicherung wird ROT (116 erwartet, 117
+  tatsächlich).
+- **N4 (mittel, behoben).** Die effort-Zusicherung prüfte nur
+  `typeof === 'string' && length > 0` — die FORM statt des WERTES. Jetzt
+  ein Vergleich gegen einen unabhängig ausgewerteten zweiten Ausdruck
+  (`process.env.GEGENLESER_EFFORT || 'xhigh'`, nicht über die Konstante
+  `EFFORT` referenziert). GEGENGEPRÜFT: `EFFORT`-Default auf `low` gesetzt
+  → Zusicherung wird ROT.
+- **N5 (mittel, behoben).** GP10 suchte nur nach `--zweck` und dem
+  Brief-DATEINAMEN. Brief-INHALT und eine eigene Diff-Fixtur bekamen eigene
+  Marker, dazu ein wörtlicher Vergleich der Metadaten-WERTE (nicht nur der
+  Schlüsselmenge). GEGENGEPRÜFT mit der im Auftrag genannten Mutation
+  (`zweck: verlauf[0].content.slice(0, 500)`) → BEIDE neuen Zusicherungen
+  werden unabhängig voneinander ROT.
+- **N6 (niedrig, behoben).** Nach einem Abschluss-Ereignis wurde nur ein
+  ZWEITES Abschluss-Ereignis abgelehnt; ein gewöhnliches Ereignis danach
+  (z. B. ein delta) wurde still übernommen und beim Stromende als „sauber"
+  gewertet. Jetzt lehnt JEDE weitere `data:`-Nutzlast nach dem Abschluss ab.
+  Reine Härtung (drei echte Ströme: keine weitere data:-Zeile nach
+  `response.completed`). GEGENGEPRÜFT: neue Ablehnung deaktiviert →
+  Negativtest wird ROT, Positivkontrolle (nur Leerzeilen nach dem
+  Abschluss) bleibt unabhängig davon GRÜN.
+
+`ERWARTETE_FAELLE` auf 104 angehoben (99 + 5 neue Fälle: GP6B, GP7E, N6×2,
+GP10-Metadatenwerte). `--selbsttest`: **104/104, EXIT 0.**
+
+### Datiert offener Punkt aus dieser Nacharbeit
+
+- **Alleinstehendes CR als SSE-Zeilenende** (aus derselben Gegenlesung
+  gemeldet als „sollte behoben werden", vom Haupt-Agenten NICHT beauftragt).
+  Die SSE-Spezifikation erlaubt es, aber gemessen über drei echte Ströme:
+  null CR, nicht einmal CRLF. Gegen diesen Endpunkt nicht erreichbar, und
+  ein Umbau des Zeilentrenners auf `\r\n|\r|\n` riskiert einen NEUEN Fehler
+  an der Chunk-Grenze — genau die Klasse, die der Streaming-Umbau gerade
+  behoben hat. Zeilentrenner in `anfragen()` bewusst unverändert gelassen.

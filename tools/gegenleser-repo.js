@@ -594,6 +594,19 @@ function anfragen(schluessel, modell, verlauf, mitWerkzeugen = true) {
         metadata: metadatenBauen(),
     });
     return new Promise((erfuellen, ablehnen) => {
+        // "genau EINMAL wirkt" (Punkt 10/B2): mehrere Ereignisse (end, error,
+        // aborted, close -- auf der ANTWORT wie auf der ANFRAGE) koennen
+        // sonst die Promise mehrfach ansprechen -- z. B. feuert Node nach
+        // einem normalen "end" verlaesslich zusaetzlich noch "close".
+        // N1 (Gegenlesung 19.09.2026): fertig/abschliessen lagen bisher NUR
+        // im response-Callback -- anfrage.on('error', ...) weiter unten
+        // (Anfrage-, nicht Antwort-Ebene; feuert z. B. nach der
+        // Zeitueberschreitung ueber anfrage.destroy()) lief DARAN VORBEI und
+        // konnte die Promise ein zweites Mal ansprechen. Beide Ebenen teilen
+        // sich jetzt denselben Riegel.
+        let fertig = false;
+        const abschliessen = (fn) => { if (fertig) return; fertig = true; fn(); };
+
         const anfrage = https.request(ENDPUNKT, {
             method: 'POST',
             headers: {
@@ -603,13 +616,6 @@ function anfragen(schluessel, modell, verlauf, mitWerkzeugen = true) {
             },
             timeout: 20 * 60 * 1000,
         }, (antwort) => {
-            // "genau EINMAL wirkt" (Punkt 10/B2): mehrere Ereignisse auf
-            // antwort (end, error, aborted, close) koennen sonst die Promise
-            // mehrfach ansprechen -- z. B. feuert Node nach einem normalen
-            // "end" verlaesslich zusaetzlich noch "close".
-            let fertig = false;
-            const abschliessen = (fn) => { if (fertig) return; fertig = true; fn(); };
-
             // Punkt 11: der Statuscode wird VOR der SSE-Auswertung geprueft,
             // wie heute -- eine Fehlerantwort ist kein SSE, sondern ein
             // gewoehnlicher JSON-Koerper, der Rohauszug bleibt in der Meldung.
@@ -626,6 +632,12 @@ function anfragen(schluessel, modell, verlauf, mitWerkzeugen = true) {
                 });
                 antwort.on('error', (e) => abschliessen(() => ablehnen(
                     new Error(`HTTP ${antwort.statusCode}, Fehlerantwort abgebrochen: ${e.message}`))));
+                // N2 (Gegenlesung 19.09.2026): bisher fehlte hier "aborted" --
+                // derselbe Grund wie im SSE-Zweig (Punkt 10/B2): ohne
+                // Listener haengt die Promise fuer immer, wenn die
+                // Fehlerantwort selbst mitten im Koerper abgebrochen wird.
+                antwort.on('aborted', () => abschliessen(() => ablehnen(
+                    new Error(`HTTP ${antwort.statusCode}, Fehlerantwort abgebrochen (aborted), bevor sie vollstaendig war -- ${rohFehler.slice(0, 800)}`))));
                 antwort.on('close', () => abschliessen(() => ablehnen(
                     new Error(`HTTP ${antwort.statusCode}: Verbindung geschlossen, bevor die Fehlerantwort vollstaendig war -- ${rohFehler.slice(0, 800)}`))));
                 return;
@@ -693,6 +705,21 @@ function anfragen(schluessel, modell, verlauf, mitWerkzeugen = true) {
                         return;
                     }
                     abschlussEreignis = ereignis;
+                } else if (abschlussEreignis) {
+                    // N6 (Gegenlesung 19.09.2026): nicht nur ein ZWEITES
+                    // Abschluss-Ereignis ist verboten -- JEDE weitere
+                    // data:-Nutzlast danach ist eine beschaedigte Reihenfolge.
+                    // Bisher wurde ein gewoehnliches Ereignis (z. B. ein
+                    // response.output_text.delta) NACH dem Abschluss still
+                    // uebernommen (nur letzterEreignisTyp aktualisiert) und
+                    // beim Stromende als "sauberes Ergebnis" gewertet -- eine
+                    // stille Normalisierung. GEMESSEN (drei echte Stroeme):
+                    // nach response.completed kommt KEINE weitere
+                    // data:-Zeile -- reine Haertung, kein lebender Defekt.
+                    abschliessen(() => ablehnen(new Error(
+                        `WEITERE data:-Nutzlast (Typ "${ereignis && ereignis.type}") NACH dem Abschluss-Ereignis `
+                        + `"${abschlussEreignis.type}" erhalten -- Lauf abgelehnt.`)));
+                    return;
                 }
             };
 
@@ -773,7 +800,14 @@ function anfragen(schluessel, modell, verlauf, mitWerkzeugen = true) {
                 new Error(`Antwortstrom (SSE) wurde vorzeitig geschlossen, bevor ein Abschluss-Ereignis kam. ${diagnose()}`))));
         });
         anfrage.on('timeout', () => { anfrage.destroy(new Error('Zeitueberschreitung nach 20 Minuten')); });
-        anfrage.on('error', ablehnen);
+        // N1 (Gegenlesung 19.09.2026): lief bisher DIREKT auf ablehnen, ganz
+        // am fertig/abschliessen-Riegel vorbei (der lag im response-Callback,
+        // dieser Handler hier ist Anfrage-Ebene und ausserhalb jenes Scopes).
+        // Ein Anfrage-Fehler NACH einem bereits abgeschlossenen Antwortstrom
+        // (z. B. ein spaeter destroy() nach der Zeitueberschreitung) haette
+        // sonst einen zweiten, stillen Settle-Versuch ausgeloest (siehe
+        // GP7E im Selbsttest).
+        anfrage.on('error', (e) => abschliessen(() => ablehnen(e)));
         anfrage.end(koerper);
     });
 }
@@ -1556,8 +1590,15 @@ function httpsStubBauen(warteschlange, aufgezeichnet) {
             statusCode: 200,
             on(ereignis, fn) { antwortHandler[ereignis] = fn; return this; },
         };
+        // N1 (Gegenlesung 19.09.2026): die ANFRAGE-Ebene (anfrage.on(...) in
+        // anfragen()) wurde bisher verworfen ("on() { return this; }"). Die
+        // GP7E-Gegenprobe unten braucht einen echten Request-Fehler NACH
+        // einem regulaeren Abschluss, um zu pruefen, dass anfrage.on('error')
+        // durch denselben Einmal-Riegel laeuft wie die Antwort-Ereignisse --
+        // dafuer muss der Handler wie bei der Antwort GESPEICHERT werden.
+        const anfrageHandler = {};
         return {
-            on() { return this; },
+            on(ereignis, fn) { anfrageHandler[ereignis] = fn; return this; },
             end(koerperJson) {
                 aufgezeichnet.push(JSON.parse(koerperJson));
                 const eintrag = warteschlange.shift();
@@ -1586,12 +1627,36 @@ function httpsStubBauen(warteschlange, aufgezeichnet) {
                         // lassen -- der Wachhund konnte den echten Befund gar
                         // nicht erst sehen).
                         if (eintrag.fehler) { antwortHandler.error(eintrag.fehler); return; }
-                        if (eintrag.abgebrochen) { if (antwortHandler.aborted) antwortHandler.aborted(); return; }
+                        if (eintrag.abgebrochen) {
+                            // N2 (Gegenlesung 19.09.2026): GEMESSEN an einem
+                            // echten lokalen Node-22-Server, der nach einer
+                            // abgebrochenen Antwort den Socket zerstoert --
+                            // die tatsaechliche Folge ist
+                            // aborted -> error -> close (beide Listener
+                            // bekommen ein Ereignis). Der Stub bildete bisher
+                            // NUR "aborted" nach und kehrte zurueck, eine
+                            // Folge, die echtes Node so nie erzeugt (dieselbe
+                            // Krankheit wie beim alten JSON-Block-Stub, eine
+                            // Ebene feiner).
+                            if (antwortHandler.aborted) antwortHandler.aborted();
+                            if (antwortHandler.error) antwortHandler.error(new Error('Simulierter Verbindungsabbruch (Selbsttest): Socket nach Abbruch zerstoert'));
+                            if (antwortHandler.close) antwortHandler.close();
+                            return;
+                        }
                         if (eintrag.vorzeitigesClose) { if (antwortHandler.close) antwortHandler.close(); return; }
                         regulaerAbschliessen();
                     } else {
                         antwortHandler.data(Buffer.from(sseStandardStromBauen(eintrag), 'utf8'));
                         regulaerAbschliessen();
+                        // GP7E (N1-Gegenprobe): nach einem GEWOEHNLICHEN
+                        // Abschluss zusaetzlich einen Fehler auf der ANFRAGE
+                        // (nicht der Antwort) ausloesen -- prueft, dass
+                        // anfrage.on('error', ...) durch denselben Riegel
+                        // laeuft wie die Antwort-Ereignisse und keinen
+                        // zweiten Settle-Versuch mehr durchlaesst.
+                        if (eintrag.__anfrageFehlerNachAbschluss && anfrageHandler.error) {
+                            anfrageHandler.error(new Error('GP7E: Anfrage-Fehler NACH regulaerem Abschluss (Selbsttest, erwartet KEIN zweites Settle)'));
+                        }
                     }
                 });
             },
@@ -1604,9 +1669,13 @@ async function selbsttest() {
     // 72 vor dem Streaming-Umbau (19.09.2026) + 27 neue Faelle
     // (GP1x2, GP2x3, GP3x2, B8x1, GP4x5, GP5x1, GP6x1, Punkt7/B3 x1,
     // Punkt6/B4 x1, GP7x4, GP8x1, GP9x1, GP-FAILED x1, GP-ERROR x1,
-    // GP10x1, B8-Ende-zu-Ende x1) = 99. Von Hand hergeleitet, nicht aus
-    // dem Lauf abgeschrieben -- unten durch den tatsaechlichen Lauf bestaetigt.
-    const ERWARTETE_FAELLE = 99;
+    // GP10x1, B8-Ende-zu-Ende x1) = 99, dazu 5 neue Faelle aus der
+    // Nacharbeit vom selben Tag (Gegenlesung des Streaming-Umbaus, sechs
+    // Befunde N1-N6): GP6Bx1 (N2), GP7Ex1 (N1), N6x2 (Ereignis nach
+    // Abschluss + Positivkontrolle), GP10-Metadatenwerte x1 (N5) = 104.
+    // Von Hand hergeleitet, nicht aus dem Lauf abgeschrieben -- unten durch
+    // den tatsaechlichen Lauf bestaetigt.
+    const ERWARTETE_FAELLE = 104;
     let gelaufen = 0;
     let fehler = 0;
     const pruefen = (bezeichnung, bedingung) => {
@@ -2518,7 +2587,16 @@ async function selbsttest() {
                 '',
             ];
             const gp2Text = gp2Zeilen.join('\n') + '\n';
-            const GP2_BYTES = Buffer.byteLength(gp2Text, 'utf8'); // unabhaengiges Buffer.byteLength, NICHT der SSE-Parser
+            // N3 (Gegenlesung 19.09.2026): GP2_BYTES war
+            // Buffer.byteLength(gp2Text) -- "unabhaengiges
+            // Buffer.byteLength, NICHT der SSE-Parser" ist unabhaengig vom
+            // PARSER, aber NICHT von der FIXTUR: aendert sich gp2Zeilen,
+            // rechnet sich dieser Wert lautlos mit, die Zusicherung kann
+            // nie fallen. Von Hand ausgezaehlt statt aus der Fixtur
+            // berechnet: 23+33+0+55+0 Zeichen (die fuenf Zeilen oben) + 5
+            // Zeilenumbrueche (4 Trenner aus join('\n'), 1 abschliessender
+            // aus "+ '\n'") = 116.
+            const GP2_BYTES = 116;
             const GP2_DATENZEILEN = 2; // von Hand ausgezaehlt: exakt zwei "data:"-Zeilen oben
             const GP2_LETZTER_TYP = 'response.output_text.delta'; // die letzte data:-Zeile traegt genau diesen type
             const { fehler: fehlGp2 } = await anfragenIsoliertPruefen([sseRohEintragBauen({ chunks: [gp2Text] })]);
@@ -2556,8 +2634,17 @@ async function selbsttest() {
             pruefen(`GP4 stream:true (67) (der aufgezeichnete Anfragekoerper traegt stream:true: ${k && k.stream})`, !!k && k.stream === true);
             pruefen(`GP4 store:false (68) (${k && k.store})`, !!k && k.store === false);
             pruefen(`GP4 truncation:'disabled' (69) (${k && k.truncation})`, !!k && k.truncation === 'disabled');
-            pruefen(`GP4 reasoning.effort vorhanden (70) (nichtleerer String: "${k && k.reasoning && k.reasoning.effort}")`,
-                !!k && !!k.reasoning && typeof k.reasoning.effort === 'string' && k.reasoning.effort.length > 0);
+            // N4 (Gegenlesung 19.09.2026): pruefte nur typeof/length -- die
+            // FORM statt des WERTES. "EFFORT von 'xhigh' auf 'low' gesetzt"
+            // blieb damit GRUEN. Der erwartete Wert wird hier ABSICHTLICH
+            // als eigener, woertlich wiederholter Ausdruck ausgewertet (NICHT
+            // ueber die Konstante EFFORT von oben referenziert) -- eine
+            // zweite, unabhaengige Quelle statt eines Verweises auf dieselbe
+            // Variable, damit eine Mutation an EFFORT selbst auffaellt statt
+            // sich mit der Zusicherung mitzuaendern.
+            const erwarteterEffort = process.env.GEGENLESER_EFFORT || 'xhigh';
+            pruefen(`GP4 reasoning.effort GEGEN DEN ERWARTETEN WERT (70) (erwartet "${erwarteterEffort}", tatsaechlich: "${k && k.reasoning && k.reasoning.effort}")`,
+                !!k && !!k.reasoning && k.reasoning.effort === erwarteterEffort);
             pruefen(`GP4 metadata EXAKTE Schluesselmenge (71) (werkzeug,zweck,datum: "${k && k.metadata ? Object.keys(k.metadata).sort().join(',') : '(fehlt)'}")`,
                 !!k && !!k.metadata && Object.keys(k.metadata).sort().join(',') === 'datum,werkzeug,zweck');
         }
@@ -2579,6 +2666,29 @@ async function selbsttest() {
             const msgGp6 = fehlGp6 ? fehlGp6.message : '(kein Fehler!)';
             pruefen(`GP6 HTTP 400 VOR SSE-AUSWERTUNG (73) (Meldung enthaelt "HTTP 400" und den Marker, NICHT "Abschluss-Ereignis": "${msgGp6}")`,
                 !!fehlGp6 && msgGp6.includes('HTTP 400') && msgGp6.includes('HTTP-MARKER-4711') && !msgGp6.includes('Abschluss-Ereignis'));
+        }
+
+        // ----- GP6B (N2, Gegenlesung 19.09.2026): dieselbe Symmetrie wie GP7
+        // fuer den NICHT-200-Zweig -- ein "aborted" waehrend einer
+        // Fehlerantwort darf nicht ewig haengen (vorher war dort ueberhaupt
+        // kein aborted-Listener registriert, der Wachhund unten ist der
+        // Beleg, dass hier wirklich nichts mehr haengt). EHRLICHER VERMERK,
+        // GEMESSEN wie bei GP7A: isoliert NICHT den aborted-Listener allein
+        // -- den aborted-Listener im Nicht-200-Zweig entfernt, GP6B blieb
+        // TROTZDEM gruen, weil der error-Listener denselben Fall faengt
+        // (die Stub feuert aborted->error->close in Folge). Redundante
+        // Verteidigung fuer denselben Transportzustand, kein isoliert
+        // pruefbarer Einzelfall je Ereignisname -- wie bei GP7A bleibt der
+        // Test bestehen, weil er den REALISTISCHEN Abbruch trotzdem
+        // kontrolliert ablehnt, nur ohne Isolationsanspruch. -----
+        {
+            const fehlerKoerperAbgebrochenText = JSON.stringify({ error: { message: 'GP6B-MARKER-3387' } });
+            const alterHttpsRequestGp6b = https.request;
+            https.request = httpsStubBauen([sseRohEintragBauen({ chunks: [fehlerKoerperAbgebrochenText], statusCode: 400, abgebrochen: true })], []);
+            const ergGp6b = await mitWachhund(anfragen('k', 'gpt-5.6-sol', [{ role: 'user', content: 'x' }]), 1000);
+            https.request = alterHttpsRequestGp6b;
+            pruefen(`GP6B HTTP 400 + aborted MITTEN IN DER FEHLERANTWORT LEHNT KONTROLLIERT AB, HAENGT NICHT (86) (${ergGp6b.art}${ergGp6b.fehler ? ' - ' + ergGp6b.fehler.message : ''})`,
+                ergGp6b.art === 'abgelehnt');
         }
 
         // ----- Punkt 7/B3: eine data:-Zeile mit UNGUELTIGEM JSON wird NICHT
@@ -2613,10 +2723,24 @@ async function selbsttest() {
             const partiellerStrom = 'data: {"type":"response.created"}\n\n';
 
             const alterHttpsRequestGp7 = https.request;
+            // N2 (Gegenlesung 19.09.2026), EHRLICHER VERMERK: seit die Stub
+            // bei "abgebrochen" die GEMESSENE Folge aborted->error->close
+            // sendet (statt nur "aborted"), isoliert GP7A NICHT mehr den
+            // aborted-Listener allein -- GEMESSEN durch Mutation: den
+            // aborted-Listener im SSE-Zweig entfernt, GP7A blieb TROTZDEM
+            // gruen, weil der jetzt ebenfalls simulierte error-Listener
+            // denselben Fall faengt (Einzelheiten im Bericht des
+            // Haupt-Agenten, nicht stillschweigend "repariert"). Das ist
+            // gewollt: die drei Listener sind redundante Verteidigung fuer
+            // DENSELBEN Transportzustand, kein isoliert pruefbarer
+            // Einzelfall je Ereignisname. GP7A bleibt bestehen, weil sie den
+            // REALISTISCHEN Abbruch waehrend eines laufenden Streams
+            // trotzdem kontrolliert ablehnt (nicht haengt) -- nur ihr Name
+            // verspricht keine Isolation mehr, die es so nicht gibt.
             https.request = httpsStubBauen([sseRohEintragBauen({ chunks: [partiellerStrom], abgebrochen: true })], []);
             const ergA = await mitWachhund(anfragen('k', 'gpt-5.6-sol', [{ role: 'user', content: 'x' }]), 1000);
             https.request = alterHttpsRequestGp7;
-            pruefen(`GP7A PARTIELL + aborted LEHNT KONTROLLIERT AB (76) (${ergA.art}${ergA.fehler ? ' - ' + ergA.fehler.message : ''})`,
+            pruefen(`GP7A PARTIELL + REALISTISCHE ABBRUCHFOLGE (aborted->error->close) LEHNT KONTROLLIERT AB (76) (${ergA.art}${ergA.fehler ? ' - ' + ergA.fehler.message : ''})`,
                 ergA.art === 'abgelehnt');
 
             https.request = httpsStubBauen([sseRohEintragBauen({ chunks: [partiellerStrom], fehler: new Error('Simulierter Streamfehler (Selbsttest)') })], []);
@@ -2631,11 +2755,49 @@ async function selbsttest() {
             pruefen(`GP7C PARTIELL + close OHNE end LEHNT KONTROLLIERT AB (78) (${ergC.art}${ergC.fehler ? ' - ' + ergC.fehler.message : ''})`,
                 ergC.art === 'abgelehnt');
 
+            // N1 (Gegenlesung 19.09.2026): der ENDZUSTAND der Promise kann
+            // einen von zwei Settle-VERSUCHEN nicht unterscheiden -- eine
+            // native Promise schluckt ein zweites reject() nach einem
+            // resolve() lautlos, "geloest" saehe in BEIDEN Faellen exakt
+            // gleich aus (mit "const abschliessen = (fn) => { fn(); };",
+            // Riegel komplett entfernt, GEMESSEN: 99/99, EXIT 0 -- diese
+            // Zusicherung konnte nicht fallen). Gezaehlt wird deshalb
+            // ZUSAETZLICH ueber process.on('multipleResolves'): dieses
+            // Node-Ereignis feuert NUR, wenn ein echter zweiter
+            // resolve/reject-Aufruf beim NATIVEN Promise ankommt -- der
+            // Riegel (fertig-Flag) verhindert genau das, ohne das Ereignis
+            // selbst abzuschalten (GEGENGEPRUEFT: mit Riegel bleibt der
+            // Zaehler 0, ohne Riegel wird er >0 und diese Zusicherung faellt
+            // -- Einzelheiten im Bericht des Haupt-Agenten).
+            let mehrfacheAufloesungenD = 0;
+            const mrHandlerD = () => { mehrfacheAufloesungenD++; };
+            process.on('multipleResolves', mrHandlerD);
             https.request = httpsStubBauen([antwortKoerperBauen(elementTextBauen('GP7-NORMAL-END-CLOSE'), 5, 5)], []);
             const ergD = await mitWachhund(anfragen('k', 'gpt-5.6-sol', [{ role: 'user', content: 'x' }]), 1000);
             https.request = alterHttpsRequestGp7;
-            pruefen(`GP7 NORMALER end-DANN-close LOEST GENAU EINMAL AUF (79) (${ergD.art}, Text: ${ergD.wert ? textAusAusgabe(ergD.wert.output) : '-'})`,
-                ergD.art === 'geloest' && textAusAusgabe(ergD.wert.output) === 'GP7-NORMAL-END-CLOSE');
+            process.off('multipleResolves', mrHandlerD);
+            pruefen(`GP7 NORMALER end-DANN-close LOEST GENAU EINMAL AUF, GEZAEHLT UEBER SETTLE-VERSUCHE (79) (${ergD.art}, Text: ${ergD.wert ? textAusAusgabe(ergD.wert.output) : '-'}, zusaetzliche Settle-Versuche: ${mehrfacheAufloesungenD})`,
+                ergD.art === 'geloest' && textAusAusgabe(ergD.wert.output) === 'GP7-NORMAL-END-CLOSE' && mehrfacheAufloesungenD === 0);
+
+            // N1, zweite Haelfte: anfrage.on('error', ...) (ANFRAGE-, nicht
+            // Antwort-Ebene) lief bisher VOLLSTAENDIG am Riegel vorbei, weil
+            // fertig/abschliessen nur im response-Callback existierten. Nach
+            // einem regulaeren Abschluss wird hier zusaetzlich ein
+            // Anfrage-Fehler ausgeloest -- das darf GENAU EINEN wirksamen
+            // Settle-Versuch ergeben (den bereits erfolgten), keinen
+            // zweiten.
+            let mehrfacheAufloesungenE = 0;
+            const mrHandlerE = () => { mehrfacheAufloesungenE++; };
+            process.on('multipleResolves', mrHandlerE);
+            https.request = httpsStubBauen([{
+                ...antwortKoerperBauen(elementTextBauen('GP7E-END-DANN-ANFRAGEFEHLER'), 5, 5),
+                __anfrageFehlerNachAbschluss: true,
+            }], []);
+            const ergE = await mitWachhund(anfragen('k', 'gpt-5.6-sol', [{ role: 'user', content: 'x' }]), 1000);
+            https.request = alterHttpsRequestGp7;
+            process.off('multipleResolves', mrHandlerE);
+            pruefen(`GP7E END, DANN ANFRAGE-FEHLER: NUR EIN WIRKSAMER SETTLE-VERSUCH (87) (${ergE.art}, Text: ${ergE.wert ? textAusAusgabe(ergE.wert.output) : '-'}, zusaetzliche Settle-Versuche: ${mehrfacheAufloesungenE})`,
+                ergE.art === 'geloest' && textAusAusgabe(ergE.wert.output) === 'GP7E-END-DANN-ANFRAGEFEHLER' && mehrfacheAufloesungenE === 0);
         }
 
         // ----- GP8: Mehrereignis-Strom -- zurueckgegeben wird AUSSCHLIESSLICH
@@ -2658,6 +2820,28 @@ async function selbsttest() {
                 !!fehlGp9 && !ergGp9 && fehlGp9.message.includes('ZWEITES Abschluss-Ereignis'));
         }
 
+        // ----- N6 (Gegenlesung 19.09.2026): NACH dem Abschluss wird JEDE
+        // weitere data:-Nutzlast abgelehnt, nicht nur ein zweites
+        // Abschluss-Ereignis (das deckt GP9 oben bereits ab). Vorher
+        // aktualisierte ein gewoehnliches Ereignis danach (z. B. ein
+        // response.output_text.delta) nur stillschweigend letzterEreignisTyp
+        // und verschwand sonst spurlos -- eine beschaedigte Reihenfolge
+        // wurde still normalisiert. Positivkontrolle direkt daneben: reine
+        // Leerzeilen NACH dem Abschluss (wie sie jeder echte Strom als
+        // Keepalive senden kann) duerfen weiterhin nichts stoeren. -----
+        {
+            const abschlussDannDelta = `data: ${JSON.stringify({ type: 'response.completed', response: antwortKoerperBauen(elementTextBauen('N6-SOLLTE-NIE-ANKOMMEN'), 5, 5) })}\n\n`
+                + `data: ${JSON.stringify({ type: 'response.output_text.delta', delta: 'N6-GEWOEHNLICHES-EREIGNIS-NACH-ABSCHLUSS' })}\n\n`;
+            const { ergebnis: ergN6, fehler: fehlN6 } = await anfragenIsoliertPruefen([sseRohEintragBauen({ chunks: [abschlussDannDelta] })]);
+            pruefen(`N6 GEWOEHNLICHES EREIGNIS NACH DEM ABSCHLUSS LEHNT AB (88) (completed gefolgt von einem delta: ${fehlN6 ? fehlN6.message : 'FAELSCHLICH ANGENOMMEN'})`,
+                !!fehlN6 && !ergN6 && fehlN6.message.includes('NACH dem Abschluss-Ereignis') && fehlN6.message.includes('response.output_text.delta'));
+
+            const abschlussDannLeerzeilen = `data: ${JSON.stringify({ type: 'response.completed', response: antwortKoerperBauen(elementTextBauen('N6-POSITIVKONTROLLE-LEERZEILEN'), 5, 5) })}\n\n\n`;
+            const { ergebnis: ergN6b, fehler: fehlN6b } = await anfragenIsoliertPruefen([sseRohEintragBauen({ chunks: [abschlussDannLeerzeilen] })]);
+            pruefen(`N6 POSITIVKONTROLLE: NUR LEERZEILEN NACH DEM ABSCHLUSS STOEREN NICHT (89) (${fehlN6b ? 'ABGELEHNT: ' + fehlN6b.message : textAusAusgabe(ergN6b.output)})`,
+                !fehlN6b && !!ergN6b && textAusAusgabe(ergN6b.output) === 'N6-POSITIVKONTROLLE-LEERZEILEN');
+        }
+
         // ----- Ergaenzend zu Punkt 12/B6: ein sauber EINZELNES response.failed
         // wird ueber die Statuspruefung abgelehnt, response.error steht in
         // der Meldung; ein Ereignis vom Typ error (kein response.*) ist
@@ -2676,10 +2860,22 @@ async function selbsttest() {
         }
 
         // ----- GP10: metadata-Datengrenze -- weder --zweck noch der
-        // Briefdateiname duerfen in metadata auftauchen -----
+        // Briefdateiname duerfen in metadata auftauchen. N5 (Gegenlesung
+        // 19.09.2026) erweitert das: die bisherige Fassung suchte NUR nach
+        // --zweck und dem Brief-DATEINAMEN. Eine einzeilige
+        // Produktionsmutation ("metadata: { ...metadatenBauen(), zweck:
+        // verlauf[0].content.slice(0, 500) }") kopiert Auftrag und Diff in
+        // die Metadaten und waere GRUEN geblieben, weil weder Brief-INHALT
+        // noch Diff-Material einen eigenen Marker trugen. Beide bekommen
+        // jetzt einen. -----
         {
             const briefAuffaelligPfad = path.join(klon, 'GEHEIM-BRIEFNAME-nicht-in-metadata.txt');
-            fs.writeFileSync(briefAuffaelligPfad, 'Selbsttest-Auftrag GP10 -- nur die Mechanik pruefen.\n');
+            fs.writeFileSync(briefAuffaelligPfad, 'Selbsttest-Auftrag GP10 -- GEHEIM-BRIEFINHALT-MARKE-7734 -- nur die Mechanik pruefen.\n');
+            // Eigene Diff-Fixtur statt der geteilten harmlos.txt -- die wird
+            // von etlichen anderen Faellen mit fixem Inhalt ("Zeile A/B/C")
+            // vorausgesetzt, ein eigener Marker gehoert in eine eigene Datei.
+            const diffAuffaelligPfad = path.join(klon, 'GEHEIM-DIFFINHALT-nicht-in-metadata.txt');
+            fs.writeFileSync(diffAuffaelligPfad, 'GEHEIM-DIFFINHALT-MARKE-2915 -- Selbsttest-Diff, nur fuer GP10.\n');
             const alterKey = process.env.OPENAI_API_KEY;
             const alteDatei = process.env.OPENAI_KEY_DATEI;
             process.env.OPENAI_API_KEY = 'selbsttest-dummy-schluessel-ohne-netz';
@@ -2690,7 +2886,7 @@ async function selbsttest() {
             let codeGp10;
             try {
                 codeGp10 = await main([
-                    path.join(klon, 'harmlos.txt'),
+                    diffAuffaelligPfad,
                     `--brief=${briefAuffaelligPfad}`,
                     `--wurzel=${klon}`,
                     '--max-runden=10',
@@ -2703,10 +2899,25 @@ async function selbsttest() {
                 if (alteDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteDatei;
             }
             const metadataJson = JSON.stringify(aufgezeichnetGp10.map((k) => k.metadata));
-            pruefen(`GP10 METADATA-DATENGRENZE (84) (weder --zweck noch der Briefdateiname tauchen in metadata auf: "${metadataJson}")`,
+            pruefen(`GP10 METADATA-DATENGRENZE: WEDER --zweck NOCH BRIEFNAME/-INHALT NOCH DIFF-INHALT (84) (${metadataJson})`,
                 codeGp10 === 0 && aufgezeichnetGp10.length >= 1
                 && !metadataJson.includes('GEHEIM-PFAD') && !metadataJson.includes('routes/x.js')
-                && !metadataJson.includes('GEHEIM-BRIEFNAME') && !metadataJson.includes('nicht-in-metadata'));
+                && !metadataJson.includes('GEHEIM-BRIEFNAME') && !metadataJson.includes('nicht-in-metadata')
+                && !metadataJson.includes('GEHEIM-BRIEFINHALT-MARKE-7734')
+                && !metadataJson.includes('GEHEIM-DIFFINHALT-MARKE-2915'));
+
+            // N5, zweite Haelfte: die Metadaten-WERTE woertlich pruefen,
+            // nicht nur die Schluesselmenge. Die obige Mutation behaelt die
+            // Schluesselmenge EXAKT bei (sie ersetzt nur den Wert von
+            // "zweck" NACH dem Spread von metadatenBauen()) -- GP4s
+            // Schluesselmengen-Pruefung saehe sie deshalb nicht. Erst der
+            // woertliche Wertevergleich faellt auf den falschen WERT.
+            const metadataGp10 = aufgezeichnetGp10[0] && aufgezeichnetGp10[0].metadata;
+            pruefen(`GP10 METADATA-WERTE WOERTLICH GEPRUEFT, NICHT NUR DIE SCHLUESSELMENGE (90) (werkzeug="${metadataGp10 && metadataGp10.werkzeug}", zweck="${metadataGp10 && metadataGp10.zweck}", datum="${metadataGp10 && metadataGp10.datum}")`,
+                !!metadataGp10
+                && metadataGp10.werkzeug === 'gegenleser-repo.js'
+                && metadataGp10.zweck === 'stufe-2-diff-gegenlesung'
+                && /^\d{4}-\d{2}-\d{2}$/.test(metadataGp10.datum));
         }
 
         // ----- B8 Ende-zu-Ende: ueber main() darf der Verbrauch aus einem
