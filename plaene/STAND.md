@@ -4090,3 +4090,29 @@ Executer committet und pusht jetzt nach JEDEM fertigen Punkt statt einmal
 am Ende. Ein Neustart soll einen Punkt kosten, nicht die ganze Runde.
 Dazu der Marker-Scan VOR jedem Commit, damit bei einem Abbruch mitten in
 einer Gegenprobe nie ein Sabotage-Rest mitgeht.
+
+### Neustart Nummer drei — diesmal hat die Vorsichtsmassnahme getragen
+
+Dritter Container-Neustart in gut zwei Stunden. Diesmal ist NICHT alles weg:
+der Executer hatte nach Anweisung laufend committet.
+
+**Gerettet:**
+- `0ece03b` (gepusht, von ihm selbst): B, C, D.
+- `217da0a` (von mir als WIP committet und gepusht, nachdem ich den ganzen
+  Diff gelesen habe): G, J, K, L, M und die Loopback-Bindung. Die Fixturen
+  für die H-Matrix stehen schon.
+
+**Warum ich das committet habe, statt es liegen zu lassen:** der Baum trug
+160 neue Zeilen echte Bauarbeit, der Marker-Scan war sauber (6, alle Prosa),
+`node --check` OK, `eslint` EXIT 0. Ein vierter Neustart hätte das
+weggeworfen. Die Commit-Botschaft sagt ausdrücklich, dass der Stand
+UNVOLLSTÄNDIG und NICHT grün ist — syntaktisch sauber ist nicht dasselbe wie
+geprüft.
+
+**Offen:** H (die Matrix selbst), A/I (N9-Positivkontrolle), E (`req.xhr`),
+F (Kommentar + offener Punkt), die Mindestprüfzahl der Hauptdatei, und
+sämtliche Gegenproben.
+
+**Der nächste Lauf setzt auf `217da0a` auf** und committet nach JEDEM
+einzelnen Punkt, nicht nach Paketen. Bei dieser Neustart-Frequenz ist das
+der Unterschied zwischen Fortschritt und Nullrunde.
