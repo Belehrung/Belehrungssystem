@@ -2116,45 +2116,41 @@ lokale Escaper-Kopie gegen die eine Quelle).
 Das ist methodisch sauberer als die Messung vom 13.09.: dort hatten die Spuren
 ungleiche Freiheiten, hier war das Material Byte für Byte dasselbe.
 
-**Nachgemessen bisher 5 von 11:**
+**VOLLSTÄNDIG nachgemessen: 11 von 11.** Ergebnis: **9 getragen, 1 gefallen,
+1 teilweise** (Beobachtung richtig, Schwere falsch). Eigene Messzeit rund
+85 Minuten.
 
-* **DS-3 (hoch) TRÄGT.** Anlegen prüft Namenskollision mit
-  `COALESCE(aktiv,1)=1` (nur aktive Geräte), Umbenennen ohne `aktiv`-Filter
-  UND zusätzlich gegen vorhandene Prüfhistorie. Ein Gerät unter dem Namen
-  eines GELÖSCHTEN anzulegen geht durch; dorthin umzubenennen wird verweigert.
-  Warum das schadet, steht in unserem eigenen Kommentar auf der
-  Umbenennen-Seite: `geraete_pruefung_detail` hängt am NAMEN, nicht an einer
-  `geraet_id`, und lässt sich nachträglich nicht mehr trennen.
-* **SOL-1 (als blockierend gemeldet) FÄLLT.** Die beanstandete Migration
-  0014 setzt einen systemdefinierten Eintragsnamen ohne `studio_id` um. Das
-  ist kein Leck, sondern Absicht — unsere eigene Regel lautet „Migrationen für
-  alle Studios". Die `studio_id`-Pflicht gilt request-bezogenen Abfragen; eine
-  Migration hat weder Request noch Mandanten. Beobachtung richtig, Einordnung
-  nicht.
+**Die Einzelurteile stehen NICHT hier, sondern in
+`plaene/durchgang-befunde.md`** — Datei, Zeile, Behauptung, eigene Messung mit
+Ausgabe, Ergebnis, Entscheidung, je Befund. Diese Datei ist das Lauf-Protokoll
+(Material, Dauer, Verbrauch, Kosten, Zahlen); die Befunde gehören in die
+Befunddatei. Dieselbe Trennung wie am 13.09.2026, als die Lauftabelle an zwei
+Orten stand.
 
-* **SOL-5 (hoch) TRÄGT — und der Kommentar darüber macht es schärfer.** Die
-  Fristbestätigung verspricht wörtlich Schutz gegen den zweiten Klick
-  („offener Tab, Doppel-Submit … stillschweigend überschreiben"), setzt ihn
-  aber als ungesichertes SELECT-dann-UPDATE über den POOL um: keine
-  Transaktion, keine Sperre, und die `WHERE` trägt KEINE Zustandsbedingung.
-  Zwei parallele Requests lesen beide `frist_festgelegt_am IS NULL`, bestehen
-  beide die Prüfung, schreiben beide — und hängen ZWEI Einträge in die
-  gehashte Audit-Kette. Behebung nach unserer eigenen Regel: Zustandsbedingung
-  in die `WHERE`, `rowCount` lesen.
-* **SOL-3 (hoch) TRÄGT.** `/geraetewartung/geraet/neu` legt das Gerät mit
-  `db.one(INSERT … RETURNING id)` an und schreibt die Aufgaben danach einzeln
-  mit `db.run`. Beide gehen über den POOL, sind also je eine eigene, bereits
-  committete Anweisung. Scheitert die zweite Aufgabenzeile, bleiben Gerät und
-  erste Aufgabe stehen — dieselbe Klasse wie die Dateilöschungen in
-  `plaene/befund-datei-vs-commit.md`.
-* **SOL-6 (hoch gemeldet) — Beobachtung richtig, SCHWERE nicht.** Der Wächter
-  fasst echtes Dateisystem an, aber umgeleitet auf ein Wegwerf-Verzeichnis
-  unter `os.tmpdir()`, und der Dateikopf begründet das über zehn Zeilen. Die
-  Regel „Tests fassen kein echtes Dateisystem an" zielt auf `pm2`, `nginx`,
-  `/var/www` auf dem Live-Server — ein eigenes Temp-Verzeichnis ist nicht diese
-  Klasse. Bleibt als bewusste, dokumentierte Abweichung stehen.
+Zwei Zahlen, die für die REGEL zählen und deshalb hierbleiben:
 
-**DeepSeek hat seine Prüfgrenze von selbst benannt** — `core/seilgeraete.js`
-und vier weitere Dateien lagen nicht im Bündel. Genau dort entschied sich
-DS-3. Für den nächsten Durchlauf gehören sie hinein; Platz ist da (34 % von
-DeepSeeks Kontext genutzt).
+* **sol 4 von 6 voll getragen, deepseek 5 von 5.** Der EINZIGE als
+  *blockierend* gemeldete Befund kam von der teuren Spur und FIEL (eine
+  Migration ohne `studio_id` ist bei uns Absicht, kein Leck). Das ist ein
+  Bündel — dieselbe Stichprobengrösse, der diese Datei sonst misstraut; es
+  trägt keine Aussage „deepseek ist so gut wie sol", sondern nur: in diesem
+  Bündel hat die 0,08-$-Spur nicht weniger Getragenes geliefert als die
+  2,44-$-Spur.
+* **Der Engpass bleibt das eigene Nachmessen.** 2,52 $ Finden gegen ~85 min
+  Messen. Auf die Hochrechnung des Durchgangsplans (15–20 Bündel) sind das
+  38–50 $ gegen **20–28 Stunden eigene Messzeit**. Wer mehr Bündel ansetzt,
+  kauft Messzeit, nicht Geld.
+
+**Ein Befund, den ein Prüfer selbst als UNSICHER kennzeichnet, ist mehr wert
+als einer, der sich sicher gibt.** DeepSeek schrieb bei DS-4 ausdrücklich, es
+habe `core/seilgeraete.js` nicht vorliegen und könne die Ungleichheit der
+Sperrschlüssel nicht zweifelsfrei behaupten — es nannte stattdessen die
+Messung, die sie entscheidet. Genau die habe ich gefahren, und der Verdacht
+bestätigte sich in beidem: verschiedene Zeichenkette UND verschiedene
+Hashfunktion, dazu kein `UNIQUE(studio_id, name)` als Netz. Ein Prüfer, der
+seine Prüfgrenze benennt, macht aus einer Vermutung einen Auftrag.
+
+**DeepSeek hat seine Prüfgrenze auch insgesamt von selbst benannt** —
+`core/seilgeraete.js` und vier weitere Dateien lagen nicht im Bündel. Genau
+dort entschieden sich DS-3 und DS-4. Für den nächsten Durchlauf gehören sie
+hinein; Platz ist da (34 % von DeepSeeks Kontext genutzt).

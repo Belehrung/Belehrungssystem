@@ -5,8 +5,9 @@ Ablageort für `plaene/durchgang-risikoorientiert.md`, Abschnitt 5. Angelegt am
 stand eine solche Regel einen Tag lang ohne Datei da, in der sie hätte erfüllt
 werden können.
 
-**Noch keine Einträge: der Durchgang beginnt erst nach dem Merge und der
-Auslieferung des Beitrags zur Signaturprüfung.**
+**Bündel 1 (Geräte-Lebenszyklus) ist gelaufen und VOLLSTÄNDIG nachgemessen:
+elf Befunde aus zwei Spuren, alle elf selbst am Quelltext bzw. per Mutation
+gemessen. Die Einträge stehen unten.**
 
 ## Wie hier eingetragen wird
 
@@ -33,6 +34,161 @@ Je Eintrag:
 | Schwere (gemessen) | nach eigener Nachmessung — kann in beide Richtungen abweichen |
 | Entscheidung | behoben in <PR> / eigenes Papier / bewusst nicht behoben, mit Grund |
 
+
+## Bündel 1 — Geräte-Lebenszyklus (19.09.2026)
+
+Zwei Spuren über BYTE-IDENTISCHES Material (354.231 gezählte Token), nur die
+Frage verschieden. Spur 1 = `gpt-5.6-sol`, Frage „erreichbare Zustände im
+Kontrollfluss". Spur 2 = `deepseek-flash`, Frage „ungesicherte Annahmen,
+vergessene Geschwisterstellen". **Überschneidung: null.**
+
+Alle Fundstellen liegen im GymDocu-Repo (`/home/user/gymdocu`, Stand
+`4c4b729`), sofern nicht anders genannt.
+
+### B1-01 — SOL-1 · FÄLLT
+
+| Feld | Inhalt |
+|---|---|
+| Spur / Frage | sol · 5 (Mandantentrennung) |
+| Schwere gemeldet | **blockierend** |
+| Fundstelle | `migrations/0014_*.sql` |
+| Behauptung | Migration setzt einen Eintragsnamen ohne `studio_id` — Mandantenleck. |
+| Eigene Messung | Migration gelesen. Sie setzt einen systemdefinierten Eintragsnamen für ALLE Studios. |
+| Ergebnis | **FÄLLT** |
+| Schwere gemessen | keine |
+| Entscheidung | Nicht behoben. Die `studio_id`-Pflicht gilt request-bezogenen Abfragen; eine Migration hat weder Request noch Mandanten. Unsere eigene Regel lautet „Migrationen für alle Studios". Beobachtung richtig, Einordnung nicht. |
+
+### B1-02 — SOL-2 · TRÄGT
+
+| Feld | Inhalt |
+|---|---|
+| Spur / Frage | sol · 4 (abgebrochener Lauf als leerer Bestand) |
+| Schwere gemeldet | hoch |
+| Fundstelle | `routes/admin/geraete.js:1821` (`ladeBestand`), `:4123` (POST `/geraetewartung/ausstattung`), `:2626` (Brandschutz) |
+| Behauptung | `ladeBestand()` verwandelt jeden DB-Fehler in `{}` mit nicht aufzählbarem `fehler=true`; kein Aufrufer prüft das Merkmal, und die Ableitung deaktiviert danach vorhandene Termine. |
+| Eigene Messung | (1) `grep "\.fehler\b"` über die Datei: EINZIGER Treffer ist Zeile 1835 — der Kommentar, der das Merkmal EINFÜHRT. Kein Aufrufer liest es. (2) Die Ableitung selbst gerechnet, mit genau dem Fehlerobjekt aus dem `catch`: `Object.entries(...).length = 0`, `geplant = 0`, `unklar = 0`, `alleTerminNamen = 12`, **`weg = 12`, `weg === alleNamen: true`**. Danach `UPDATE wartung_geraete SET aktiv = 0 … name = ANY($2)` über alle zwölf. Antwort bleibt die normale Erfolgsseite. (3) Zweite Fundstelle gegengerechnet: `begehungsAufgaben(voll)` = 24 Zeilen, `begehungsAufgaben({})` = 10 — **14 Vorlagenzeilen** fielen weg und würden von `syncAufgaben(nurVerwaltete)` deaktiviert. |
+| Ergebnis | **TRÄGT**, beide Fundstellen |
+| Schwere gemessen | **hoch** — ein vorübergehend fehlgeschlagener SELECT baut einen dokumentierten Prüfplan ab und meldet Erfolg. |
+| Entscheidung | Bauauftrag. Das `catch` in `ladeBestand()` ist genau die Stelle, an der ein LAUTES Scheitern in ein stilles falsches Ergebnis verwandelt wird (CLAUDE.md, „Wer ein lautes Scheitern … verwandelt"). Ohne das `catch` hätte der äußere `catch` der Route eine saubere Fehlerseite gezeigt. |
+
+### B1-03 — SOL-3 · TRÄGT
+
+| Feld | Inhalt |
+|---|---|
+| Spur / Frage | sol · 1 (erreichbare Zustände) |
+| Schwere gemeldet | hoch |
+| Fundstelle | `routes/admin/geraete.js`, POST `/geraetewartung/geraet/neu` |
+| Behauptung | `db.one(INSERT … RETURNING id)` und danach eine Schleife `db.run` — beide über den Pool, also je eine bereits committete Anweisung. |
+| Eigene Messung | Quelltext gelesen; `db.q`/`db.run` benutzen den Pool (`core/db.js:421-432`), nicht die Transaktionsverbindung. Scheitert die zweite Aufgabenzeile, bleiben Gerät und erste Aufgabe stehen. |
+| Ergebnis | **TRÄGT** |
+| Schwere gemessen | hoch |
+| Entscheidung | Bauauftrag, gemeinsam mit `plaene/befund-datei-vs-commit.md` — dieselbe Klasse (Unwiderrufliches vor bzw. ohne Transaktionsklammer). |
+
+### B1-04 — SOL-4 · TRÄGT (per Mutation gemessen)
+
+| Feld | Inhalt |
+|---|---|
+| Spur / Frage | sol · 2 (Sollwert aus dem bewachten Zustand) |
+| Schwere gemeldet | hoch |
+| Fundstelle | `test_feature_pruefbereich_kopf.js:340-351` gegen `routes/admin/geraete.js:4146` |
+| Behauptung | Der Test liest `MIN(naechste_faelligkeit)` aus genau den Zeilen, die die Route geschrieben hat, und erwartet, dass die Kopfzeile denselben Wert zeigt. Mutation `faelligAm: plusMonate(heute, t.intervallMonate)` → `faelligAm: heute` bleibt grün. |
+| Eigene Messung | **Positivkontrolle zuerst:** unmutiert `EXIT 0, 19 PASS / 0 FAIL` — der Wächter läuft und ist grün, ein Nullbefund heißt also blind, nicht kaputt. **Mutiert** (Mutationsskript mit Zielpfad als Argument, Fundstellen gezählt = 1, `GEGENPROBE-`+`DEFEKT`-Marker gesetzt, `node --check` OK): **`EXIT 0, 19 PASS / 0 FAIL`** — identisch. Zusätzlich die drei anderen Testdateien gemessen, die diese Route anfassen, jede gegen eine FRISCHE Wegwerf-DB: `test_feature_ausstattung.js` 7/0, `test_feature_frist_herkunft.js` 131/0, `test_feature_wartung_geraet_verknuepfung.js` 49/0 — **mit und ohne Mutation identisch.** Rücknahme gegen eine unabhängig angelegte `cp`-Kopie, `diff` EXIT 0, `git status` leer, Marker-Scan über alle vier Arbeitsbäume sauber. |
+| Ergebnis | **TRÄGT** |
+| Schwere gemessen | hoch |
+| Entscheidung | Bauauftrag: erwarteter Fälligkeitstag unabhängig vom gespeicherten Ergebnis bilden (festes Testdatum, eigene Kalendererwartung), erst danach gegen die Kopfzeile halten. |
+| **Grenze dieser Messung** | Die VOLLE Suite (rund 340 Dateien) lief mit der Mutation NICHT. „Kein Test irgendwo fängt es" ist damit NICHT gemessen — gemessen ist, dass der benannte Wächter und die drei naheliegendsten Geschwister es nicht fangen. |
+
+### B1-05 — SOL-5 · TRÄGT
+
+| Feld | Inhalt |
+|---|---|
+| Spur / Frage | sol · 1 (erreichbare Zustände) |
+| Schwere gemeldet | hoch |
+| Fundstelle | Fristbestätigung, `routes/admin/geraete.js` |
+| Behauptung | Der Doppel-Submit-Schutz ist ein ungesichertes SELECT-dann-UPDATE über den Pool; die `WHERE` trägt keine Zustandsbedingung. |
+| Eigene Messung | Quelltext gelesen. Der Kommentar verspricht wörtlich Schutz gegen den zweiten Klick („offener Tab, Doppel-Submit … stillschweigend überschreiben"). Keine Transaktion, keine Sperre, `WHERE` ohne `frist_festgelegt_am IS NULL`. Zwei parallele Requests bestehen beide die Prüfung und hängen ZWEI Einträge in die gehashte Audit-Kette. |
+| Ergebnis | **TRÄGT** — und der Kommentar macht es schärfer, weil er den Schutz zusichert, den der Code nicht leistet. |
+| Schwere gemessen | hoch |
+| Entscheidung | Bauauftrag: Zustandsbedingung in die `WHERE`, `rowCount` lesen. |
+
+### B1-06 — SOL-6 · Beobachtung richtig, SCHWERE falsch
+
+| Feld | Inhalt |
+|---|---|
+| Spur / Frage | sol · 6 (Tests fassen echtes Dateisystem an) |
+| Schwere gemeldet | hoch |
+| Fundstelle | ein Wächter der Suite |
+| Behauptung | Der Wächter fasst das echte Dateisystem an — dieselbe Suite ist auf dem Live-Server Deploy-Gate. |
+| Eigene Messung | Er fasst es an, aber umgeleitet auf ein Wegwerf-Verzeichnis unter `os.tmpdir()`; der Dateikopf begründet das über zehn Zeilen. |
+| Ergebnis | **TEILWEISE** |
+| Schwere gemessen | keine |
+| Entscheidung | Bleibt als bewusste, dokumentierte Abweichung stehen. Die Regel zielt auf `pm2`, `nginx`, `/var/www` — ein eigenes Temp-Verzeichnis ist nicht diese Klasse. |
+
+### B1-07 — DS-1 · TRÄGT
+
+| Feld | Inhalt |
+|---|---|
+| Spur / Frage | deepseek · 4 (Geschwisterstelle vergessen) |
+| Schwere gemeldet | mittel |
+| Fundstelle | `routes/admin/geraete.js:337` und `:467`, verglichen mit `:699` |
+| Behauptung | Drei schreibende Seilkontroll-Routen prüfen ihre `:id` ungleich streng. Nur `/geraete/inbetriebnahme/:id` benutzt `/^\d+$/` + `res.status(400)`; Löschen und Umbenennen benutzen weiter `isNaN(id)` + `res.send()` ohne Status. |
+| Eigene Messung | Alle drei Routen gelesen — stimmt wörtlich. Gemessen: `isNaN("1e3") = false`, `isNaN("1.5") = false`, `isNaN("0x10") = false`; alle drei fallen bei `/^\d+$/` durch. Der Kommentar an der Inbetriebnahme-Route (`:688-696`) dokumentiert die Nachbesserung vom 17.09.2026 samt Folge (22P02 → HTTP 200 „Datenbankfehler" statt 400) — an den beiden älteren Geschwisterstellen derselben Datei ist sie nicht nachgezogen. |
+| Ergebnis | **TRÄGT** |
+| Schwere gemessen | mittel — Falscheingabe erzeugt HTTP 200 mit Fehlerseite und einen Telegram-Alarm über `intern()`. |
+| Entscheidung | Bauauftrag, gebündelt mit B1-08. Lehrbuchfall der Hausregel „Wer EINEN Eintrittspunkt absichert, hat nicht die Eintrittspunkte abgesichert." |
+
+### B1-08 — DS-2 · TRÄGT
+
+| Feld | Inhalt |
+|---|---|
+| Spur / Frage | deepseek · 4 (Geschwisterstelle vergessen) |
+| Schwere gemeldet | mittel |
+| Fundstelle | `routes/admin/geraete.js:234-235` (POST `/geraete`) und `:467-468` (POST `/geraete/umbenennen/:id`) |
+| Behauptung | Beide rufen `.trim()` auf einen `req.body`-Wert VOR dem `try`. Bei Objekt/Array ist `!wert` falsy, `wert.trim` keine Funktion → TypeError außerhalb von `try/catch` → HTTP 500. Die Schwesterdatei fängt genau das mit `pruefeTextfelder()` ab. |
+| Eigene Messung | Beide Stellen gelesen — die Prüfung steht wörtlich vor dem `try`. Bodyparser gemessen: `server.js:161` `express.urlencoded({ extended: true })`, also `qs` → Klammernotation liefert ein Objekt. Express-Version gemessen: **5.2.1** — eine abgelehnte Promise aus einem `async`-Handler wird also an den globalen Fehlerbehandler weitergereicht (`server.js:1467`): `errorTracker.melde(err, req)` (Log + gedrosselter Telegram-Alarm) und HTTP 500. `pruefeTextfelder()` in `routes/admin/geraete-typen.js:246` prüft `typeof === 'object'` und antwortet 400. |
+| Ergebnis | **TRÄGT** |
+| Schwere gemessen | mittel |
+| Entscheidung | Bauauftrag, gebündelt mit B1-07 — dieselbe Datei, dieselbe Klasse, verschiedene Wache. |
+
+### B1-09 — DS-3 · TRÄGT
+
+| Feld | Inhalt |
+|---|---|
+| Spur / Frage | deepseek · 1 (nicht durchgesetzte Invariante) |
+| Schwere gemeldet | hoch |
+| Fundstelle | `core/seilgeraete.js#seilNamenskollision` gegen `routes/admin/geraete.js:513-516` |
+| Behauptung | Anlegen und Umbenennen prüfen denselben Namen ungleich streng. |
+| Eigene Messung | Anlegen filtert `COALESCE(aktiv,1)=1` (nur aktive Geräte); Umbenennen prüft OHNE `aktiv`-Filter und zusätzlich gegen vorhandene Prüfhistorie. Ein Gerät unter dem Namen eines GELÖSCHTEN anzulegen geht durch; dorthin umzubenennen wird verweigert. |
+| Ergebnis | **TRÄGT** |
+| Schwere gemessen | hoch — warum es schadet, steht in unserem eigenen Kommentar auf der Umbenennen-Seite: `geraete_pruefung_detail` hängt am NAMEN, nicht an einer `geraet_id`, und lässt sich nachträglich nicht mehr trennen. |
+| Entscheidung | Bauauftrag, gemeinsam mit B1-10 — beide betreffen dieselbe Invariante „höchstens ein aktives Seilgerät je Name". |
+
+### B1-10 — DS-4 · TRÄGT (schärfer als gemeldet)
+
+| Feld | Inhalt |
+|---|---|
+| Spur / Frage | deepseek · 1 (nicht durchgesetzte Invariante) |
+| Schwere gemeldet | mittel |
+| Fundstelle | `core/seilgeraete.js:194` gegen `routes/admin/geraete.js:475` |
+| Behauptung | Anlege- und Umbenennen-Weg sichern dieselbe Invariante unter VERSCHIEDENEN Sperrschlüsseln ab. **Der Prüfer hat seine eigene Grenze benannt:** `core/seilgeraete.js` lag nicht im Bündel, er konnte die Ungleichheit nicht zweifelsfrei behaupten. |
+| Eigene Messung | Genau das nachgeholt. Die Schlüssel unterscheiden sich in BEIDEM — Zeichenkette und Hashfunktion: Anlegen `pg_advisory_xact_lock(hashtextextended('geraet-seilname:<studio>:<name>', 0))`, Umbenennen `pg_advisory_xact_lock(hashtext('seilkontrolle:<studio>:<heute>'))`. Zusätzlich gemessen: **kein `UNIQUE(studio_id, name)` auf `geraete`** — weder in `migrations/*.sql` noch im Schema-Literal (`core/db.js:555`). Unter READ COMMITTED sieht keine der beiden Transaktionen die noch nicht committete Zeile der anderen; beide Kollisionsprüfungen bestehen, beide committen. |
+| Ergebnis | **TRÄGT** |
+| Schwere gemessen | **mittel bis hoch** — der Zustand ist unwiderruflich (beide Kommentare der Datei sagen das selbst), braucht aber zwei gleichzeitige Admin-Vorgänge im selben Studio. |
+| Entscheidung | Bauauftrag mit B1-09. Der billige Weg ist, den Umbenennen-Weg zusätzlich unter den NAMENSSCHLÜSSEL zu stellen (alter UND neuer Name) — Advisory-Locks sind innerhalb derselben Transaktion wiedereintrittsfähig. Vor dem Bau gilt die Transaktions-Regel aus CLAUDE.md: zählen, welche anderen Transaktionen dieselben Zeilen anfassen und in welcher Reihenfolge sie den Audit-Lock nehmen. |
+
+### B1-11 — DS-5 · TRÄGT als Beobachtung, Vorschlag NICHT unsere Entscheidung
+
+| Feld | Inhalt |
+|---|---|
+| Spur / Frage | deepseek · 2/3 (Name verspricht mehr als die Zusicherung misst) |
+| Schwere gemeldet | niedrig |
+| Fundstelle | `routes/admin/geraete.js:20` gegen `routes/admin/geraete-typen.js:64` und `test_feature_geraeteseite_typen.js:627-628` |
+| Behauptung | Die Schwesterdatei bezieht ihren Escaper aus der einen Quelle und lässt sich das von einem Wächter zusichern; `geraete.js` führt daneben eine zweite Implementierung, für die dieselbe Zusicherung weder eingelöst noch geprüft ist. |
+| Eigene Messung | Stimmt. `geraete.js:20` hat `auditEsc` (**162 Verwendungen**), `geraete-typen.js:64` hat `require('../../core/html-escape')`. Der Wächter liest `quelltext` — und `quelltext` ist in Zeile 594 wörtlich `readFileSync('routes/admin/geraete-typen.js')`, er ist also strukturell blind für `geraete.js`. Die beiden Ersetzungen sind zeichengleich (`/[<>&"']/g`, dieselben fünf Abbildungen); ein Funktionsfehler ist es heute nicht. |
+| Ergebnis | **TRÄGT** (Beobachtung), **Vorschlag zurückgestellt** |
+| Schwere gemessen | niedrig |
+| Entscheidung | **Kein Bauauftrag ohne Betreiber-Entscheidung.** Der Kopf von `core/html-escape.js` legt ausdrücklich fest: „Ob die drei bestehenden später hierauf umgestellt werden, ist eine Betreiber-Entscheidung, keine Executer-Entscheidung." DS-5 schlägt genau diese Umstellung vor. Vorgelegt, nicht gebaut. |
+
 ## Zählwerk je Bündel
 
 Wird nach jedem Bündel fortgeschrieben, damit aus Anekdoten eine Messung wird.
@@ -41,7 +197,24 @@ ein KALTER Durchgang über Bestandscode ist, hat niemand gemessen.
 
 | Bündel | Token | Befunde Spur 1 | Spur 2 | Überschneidung | getragen | gefallen | ungemessen | Kosten | eigene Messzeit |
 |---|---|---|---|---|---|---|---|---|---|
-| — | — | — | — | — | — | — | — | — | — |
+| 1 — Geräte-Lebenszyklus | 354.231 | 6 (sol) | 5 (deepseek) | **0** | **9** | 1 | 0 | **2,52 $** | **~85 min** |
+
+Lesart der Zeile 1: „getragen 9" zählt B1-02 bis B1-05 und B1-07 bis B1-11.
+B1-06 ist TEILWEISE (Beobachtung richtig, Schwere falsch) und in keiner der
+beiden Zahlen enthalten; B1-01 ist die einzige gefallene.
+
+**Die teuerste Spalte ist die letzte, und sie bestätigt, was seit dem
+12.09.2026 gemessen wird: der Engpass ist das eigene Nachmessen, nicht das
+Finden.** 2,52 $ für elf Befunde gegen rund 85 Minuten, um sie zu messen —
+und die Hochrechnung des Durchgangsplans (15–20 Bündel) bedeutet damit
+**20–28 Stunden eigene Messzeit** gegen 38–50 $. Wer die Bündelzahl erhöht,
+kauft nicht Geld, sondern Messzeit.
+
+**Zur Trefferquote je Spur, und was sie NICHT hergibt:** sol 4 von 6 voll
+getragen, deepseek 5 von 5. Das ist EIN Bündel — genau die Stichprobengrösse,
+der diese Datei sonst misstraut. Festhalten lässt sich nur: die 0,08-$-Spur
+hat in diesem Bündel nicht weniger Getragenes geliefert als die 2,44-$-Spur,
+und der einzige als BLOCKIEREND gemeldete Befund kam von der teuren und fiel.
 
 **Nach Bündel 1 und 2 wird die Hochrechnung aus dem Durchgangsplan (15–20
 Bündel, 50–80 $) gegen die tatsächlichen Zahlen gehalten und berichtigt.**
