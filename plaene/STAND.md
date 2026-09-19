@@ -4116,3 +4116,27 @@ sämtliche Gegenproben.
 **Der nächste Lauf setzt auf `217da0a` auf** und committet nach JEDEM
 einzelnen Punkt, nicht nach Paketen. Bei dieser Neustart-Frequenz ist das
 der Unterschied zwischen Fortschritt und Nullrunde.
+
+### Takt 01:40 — Bau läuft, laufende Commits greifen
+
+Nichts angefasst (Agent aktiv). Stand im GymDocu-Zweig
+`claude/mandantengrenze-fremd-ids`:
+
+- `0ece03b` B, C, D
+- `217da0a` G, J, K, L, M, Loopback (von mir gerettet)
+- `40bf277` **H — die volle Matrix je Transport** gegen gefälschtes
+  `body.studio_id` bei M2
+- `36b2ce9` **A/I — N9-Positivkontrolle** und die Hülle auf alle
+  M2-Ablehnungen ausgeweitet
+
+Damit sind die beiden schwersten Punkte des Papiers gebaut: der
+Mandanten-Bypass (H) und der Wächter, der seine eigene Signalquelle nicht
+bewachte (A/I).
+
+**Noch offen:** E (`req.xhr`), F (Kommentar + offener Punkt), die
+Mindestprüfzahl der Hauptdatei, sämtliche Gegenproben, dann volle Suite,
+Lint, Dateizahl-Ritual, unabhängige Review, CI.
+
+**Was sich als richtig erwiesen hat:** die Umstellung auf Commit-und-Push
+nach JEDEM Punkt. Beim dritten Neustart hätte die alte Arbeitsweise alles
+verloren; so kostet ein Neustart höchstens den laufenden Punkt.
