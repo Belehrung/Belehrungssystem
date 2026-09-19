@@ -4503,3 +4503,51 @@ Daneben offen und bewusst nicht gebaut: die acht `fetch`-Aufrufer ohne
 `Accept`, der injizierbare Logger statt des globalen `console.error`-Austauschs,
 B9 (`httpOk`-Spread-Reihenfolge), B10-Rest (138 `listen(0)`-Stellen),
 B11 (`wantsJson()`-Vereinheitlichung).
+
+## 19.09.2026, 06:45 — neue Runde: Einmal-Verbrauch vor fehlbarem Schritt
+
+Zweig `claude/freischaltung-verbrauch-rueckgabe` (von master `6ee7b15`).
+Auftragspapier: `plaene/auftrag-freischaltung-verbrauch.md`.
+
+**Der Hauptbefund ist nachgemessen und in drei Punkten schärfer als gemeldet.**
+`routes/belehrungen.js:826` löscht die Einmal-Freischaltung ausserhalb jeder
+Transaktion und VOR dem fehlbaren PDF-Schritt; der Fehlerpfad (`:898`) nimmt
+nur den Unterschriften-Eintrag zurück. Zusätzlich gefunden: der Kommentar
+darüber behauptet die Vollständigkeit der Rücknahme, niemand liest den
+`rowCount`, und `catch {}` verschluckt auch ein Scheitern des DELETE selbst.
+Vorbild im eigenen Bestand, das es richtig macht: `core/defekt_mailer.js`
+`claimZurueck()`.
+
+**Die Lage hat sich seither geändert: es ist eine KLASSE mit VIER
+Fundstellen, nicht ein Einzelbefund.** Die zweite Prüfspur hat drei weitere
+geliefert, alle von mir selbst nachgemessen und alle getragen:
+
+| Fundstelle | was passiert, wenn der zweite Schritt scheitert |
+|---|---|
+| `routes/admin/mitarbeiter.js` ~856/862 | Freischaltungen und offene PIN-Links sind per Autocommit weg, die `db.tx` mit dem eigentlichen `DELETE FROM mitarbeiter` rollt zurück → Mitarbeiter bleibt, seine Zugänge sind dauerhaft gelöscht |
+| `routes/belehrungen.js` ~1455/1469 | alte Einweisung auf `aktiv=0`, INSERT der neuen scheitert → **gar keine aktive Einweisung** mehr |
+| `routes/belehrungen.js` ~1614/1641 | alter Ersthelfer-Nachweis auf `inaktiv_seit`, INSERT scheitert → Studio hat auf dem Papier **keinen Ersthelfer** |
+
+Alle drei sind blankes `db.run`, also Autocommit. Nach der eigenen Regel
+(„wer EINEN Eintrittspunkt absichert, hat nicht die Eintrittspunkte
+abgesichert") muss das Auftragspapier entsprechend wachsen — das steht als
+nächstes an, sobald die Planprüfung zurück ist.
+
+**Eine Positivkontrolle für den PRÜFER, nicht für den Code.** Der Kundschafter
+hatte `routes/wartung.js:1628` als fünften Kandidaten gemeldet — formgleich
+(`SET mail_gesendet_am=NULL` vor einem Mailversand), inhaltlich aber das
+Gegenteil: eine FREIGABE des Doppelversand-Schutzes, kein Verbrauch. Ich habe
+die Stelle ohne Hinweis mit ins Bündel der zweiten Spur gelegt. Sie hat sie
+von selbst korrekt einsortiert („Setzt `mail_gesendet_am` auf NULL (Freigabe)
+vor Senden; als korrekt eingestuft"). Damit ist ihre Richtungsargumentation
+auf dieser Achse einmal belegt — an EINEM Fall, also eine Beobachtung, keine
+Eigenschaft.
+
+**Läuft gerade: eine A/B-Messung `max` gegen `xhigh`** (Betreiber-Frage
+„ist max oder xhigh besser?"). Identisches Bündel, identischer Prompt,
+programmatisch belegt byte-gleich — einziger Unterschied ist
+`reasoning.effort`. Verglichen werden Befundzahl, davon nach EIGENER
+Nachmessung getragen, Überschneidung, Kosten und Dauer. Vorhergesagt habe ich
+vorab: kein grosser Unterschied, weil der Auftrag eng und das Material klein
+ist. Die Vorhersage steht schriftlich, damit sie hinterher nicht angepasst
+wird.
