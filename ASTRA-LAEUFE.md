@@ -124,6 +124,8 @@ sondern falsch.
 | 19.09.2026 | Planpruefung Eingabewache (Spur 2, `deepseek-flash`: was verspricht der Plan, das er nicht einlöst) | statisches Bündel, kein Repo-Zugriff; Token rein 14458, Token raus 34237 (davon 26768 Denken), 150 s | 9 | **9** | 0 | ~0,03 $ |
 | 19.09.2026 | Planpruefung Eingabewache Fassung 2 (Spur 1: was bricht die Verschaerfung) | Diff 961 Zeilen, Suchen 76, Lesungen 48, Token rein 3562404, Token raus 31864, Runden 24 | 6 (3 blockierend) | **6** | 0 | 18,77 $ |
 | 19.09.2026 | Planpruefung Eingabewache Fassung 2 (Spur 2, `deepseek-flash`: was verspricht sie, das sie nicht einlöst) | statisches Bündel; Token rein 19161, Token raus 36308; 160 s | 11 (2 blockierend) | **11** | 0 | ~0,04 $ |
+| 19.09.2026 | Planpruefung ID-Wache + Textfeld-Wache (Spur 1: wo scheitert der Inventar-Waechter) | Diff 1356 Zeilen, Suchen 86, Lesungen 39, Token rein 2315434, Token raus 38490, Runden 21 | 13 (9 blockierend) | **13** | 0 | 12,73 $ |
+| 19.09.2026 | Planpruefung ID-Wache + Textfeld-Wache (Spur 2, `deepseek-flash`: was verspricht das Verfahren, das es nicht einlöst) | statisches Bündel; Token rein 19161, Token raus ~39000; 189 s | 16 (2 blockierend) | **16** | 0 | ~0,04 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -2238,3 +2240,53 @@ sieben blockierend. Zum Vergleich: eine einzelne Bau-Runde mit anschliessender
 Diff-Prüfung kostet ein Vielfaches an eigener Messzeit — und hätte die vier
 falschen Regeln erst am fertigen Code gefunden, in einer kanonischen Datei,
 auf die dann schon vier Orte zeigen.
+
+---
+
+## 19.09.2026 — DREI Planprüfungsrunden über EINEN Beitrag: 63 Befunde, 63 getragen
+
+| Runde | Gegenstand | Befunde | getragen | blockierend | Kosten |
+|---|---|---|---|---|---|
+| 1 | Eingabewache Fassung 1 | 17 | 17 | 4 | 11,23 $ |
+| 2 | Eingabewache Fassung 2 (die Behebungen) | 17 | 17 | 5 | 18,81 $ |
+| 3 | ID-Wache + Textfeld-Wache (der neue ENTWURF) | 29 | 29 | 11 | 12,77 $ |
+| | **Summe** | **63** | **63** | **20** | **42,81 $** |
+
+**Das ist die mit Abstand grösste Prüfserie dieser Datei — und die einzige, in
+der KEIN einziger Befund gefallen ist.** Zum Vergleich: am 12.09. fielen drei
+von neun, am 13.09. einer von drei.
+
+**Was daraus für die REGEL folgt — drei Dinge, und das dritte ist das
+unangenehmste:**
+
+**1. Die Regel „der Plan geht VOR der ersten Bau-Runde raus" ist jetzt
+belegt, nicht mehr behauptet.** Zwanzig blockierende Befunde an PAPIER, für
+42,81 $. Vier davon hätten falsche Regeln in eine kanonische `core/`-Datei
+geschrieben, auf die danach vier Orte zeigen; einer hätte einen legitimen
+heutigen Aufrufer gebrochen; einer stützte eine ganze Ausklammerung auf eine
+falsche Tatsachenbehauptung.
+
+**2. Eine Runde über die BEHEBUNGEN findet eine eigene Klasse.** Alle fünf
+blockierenden Befunde der zweiten Runde betrafen die Korrekturen, nicht den
+ursprünglichen Plan — eine Runde hätte sie strukturell nicht finden können.
+Die Rundenbegrenzung aus CLAUDE.md („zweite Runde, wenn die Behebung Verhalten
+ändert") trägt und hat hier zum ersten Mal wirklich gegriffen.
+
+**3. Die dritte Runde hat den ENTWURF gekippt, nicht das Papier — und das ist
+ein Ergebnis über MICH.** Sie fand, dass mein Inventar-Wächter seine eigenen
+Paradebeispiele nicht sieht (`aufgaben` ist destrukturiert, die Zeile
+`aufgaben.trim()` enthält kein `req.body`; `tablet-sperre.js:546` ist eine
+Body-ID, keine `:id`-Route). Die Antwort war deshalb **kein vierter Entwurf,
+sondern ein KLEINERER Beitrag**: elf gemessene Eintrittspunkte, drei
+gemessene Verhaltensänderungen, jeder ausgeklammerte Fundort aufgeschrieben.
+Dreimal hintereinander war meine handgemachte Stellenliste unvollständig und
+viermal an einem Tag ein Suchmuster von mir falsch — wer nach so einer Serie
+noch einmal grösser plant, hat aus der Serie nichts gelernt.
+
+**Über die Spuren, mit der nötigen Einschränkung:** Überschneidung 3 von 17,
+1 von 17, wenige in Runde 3 — deutlich mehr als bei Bündel 1 und am 13.09.
+(je null). Plausible Erklärung: dort war das Material Code, hier ein Papier,
+über dessen Schwächen beide Fragen stolpern müssen. **Nicht belegt.** Was
+belegt ist: die 0,04-$-Spur lieferte in ALLEN DREI Runden Befunde, die die
+teure nicht hatte — und die teure in allen drei welche, die nur mit
+Repo-Lesezugriff erreichbar waren.
