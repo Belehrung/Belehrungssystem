@@ -2087,3 +2087,52 @@ JSON-Block-Stub, nur eine Ebene feiner.
 **Für die Regel:** Der Lauf kostete 2,44 $ — der billigste der ganzen Tabelle
 — und fand vier Zusicherungen, die nicht fallen können. „Der Preis eines
 Laufs sagt nichts über den Ertrag" hat sich damit zum zweiten Mal bestätigt.
+
+---
+
+## 19.09.2026 — Durchgang Bündel 1 (Geräte-Lebenszyklus), ZWEI Spuren mit VERSCHIEDENEN Fragen
+
+Erster Lauf nach der Betreiber-Entscheidung „beide Spuren, verschiedene
+Fragen". **Material identisch**, gezählt auf 354.231 Token (in drei Schritten
+getrimmt: 420.857 → 363.544 → 354.231; die erste Fassung wäre an sols Grenze
+abgelehnt worden). Damit ist ein Unterschied der Frage zuzurechnen, nicht dem
+Bündel.
+
+| | sol | deepseek-flash |
+|---|---|---|
+| Frage | erreichbare Zustände im Kontrollfluss | ungesicherte Annahmen, vergessene Geschwisterstellen |
+| Dauer | 366 s | 198 s |
+| Verbrauch | 354.946 rein / 22.291 raus | 371.849 rein / 43.308 raus |
+| Kosten | **2,44 $** | **0,08 $** |
+| Befunde | 6 | 5 |
+
+**Überschneidung: NULL.** sol lieferte durchweg erreichbare Zustände (Wettlauf
+bei Doppel-Submit, Commit vor fehlbarem Folgeschritt, eine Zusicherung mit
+Sollwert aus dem bewachten DB-Zustand, ein Wächter am echten Dateisystem).
+DeepSeek lieferte durchweg ungesicherte Annahmen (ungleich strenge
+Namensprüfungen, verschiedene Sperrschlüssel für dieselbe Invariante, eine
+lokale Escaper-Kopie gegen die eine Quelle).
+
+Das ist methodisch sauberer als die Messung vom 13.09.: dort hatten die Spuren
+ungleiche Freiheiten, hier war das Material Byte für Byte dasselbe.
+
+**Nachgemessen bisher 2 von 11:**
+
+* **DS-3 (hoch) TRÄGT.** Anlegen prüft Namenskollision mit
+  `COALESCE(aktiv,1)=1` (nur aktive Geräte), Umbenennen ohne `aktiv`-Filter
+  UND zusätzlich gegen vorhandene Prüfhistorie. Ein Gerät unter dem Namen
+  eines GELÖSCHTEN anzulegen geht durch; dorthin umzubenennen wird verweigert.
+  Warum das schadet, steht in unserem eigenen Kommentar auf der
+  Umbenennen-Seite: `geraete_pruefung_detail` hängt am NAMEN, nicht an einer
+  `geraet_id`, und lässt sich nachträglich nicht mehr trennen.
+* **SOL-1 (als blockierend gemeldet) FÄLLT.** Die beanstandete Migration
+  0014 setzt einen systemdefinierten Eintragsnamen ohne `studio_id` um. Das
+  ist kein Leck, sondern Absicht — unsere eigene Regel lautet „Migrationen für
+  alle Studios". Die `studio_id`-Pflicht gilt request-bezogenen Abfragen; eine
+  Migration hat weder Request noch Mandanten. Beobachtung richtig, Einordnung
+  nicht.
+
+**DeepSeek hat seine Prüfgrenze von selbst benannt** — `core/seilgeraete.js`
+und vier weitere Dateien lagen nicht im Bündel. Genau dort entschied sich
+DS-3. Für den nächsten Durchlauf gehören sie hinein; Platz ist da (34 % von
+DeepSeeks Kontext genutzt).
