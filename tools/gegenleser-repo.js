@@ -57,9 +57,11 @@
 // EXIT-CODES: 0 fertig, 2 kein Schluessel/falscher Aufruf, 3 Geheimnis-Riegel
 // auf dem EINGEGEBENEN Diff hat angeschlagen (eine abgelehnte Lesung
 // waehrend des Laufs bricht seit 13.09.2026 NICHT mehr ab, siehe oben),
-// 4 Runden- oder Mengenlimit erreicht (Bericht UNVOLLSTAENDIG), 5 das
-// Modell hat am Ende keinen Text geliefert, 6 kein --brief angegeben oder
-// die Datei ist leer/unlesbar, 1 sonstiger Fehler.
+// 4 Runden- oder Mengenlimit erreicht bzw. unbrauchbar konfiguriert (Bericht
+// UNVOLLSTAENDIG bzw. gar nicht erst begonnen -- GEGENLESER_MAX_AUSGABE_BYTES
+// seit 19.09.2026, siehe maxAusgabeBytesErmitteln()), 5 das Modell hat am
+// Ende keinen Text geliefert, 6 kein --brief angegeben oder die Datei ist
+// leer/unlesbar, 1 sonstiger Fehler.
 //
 // LAUF-PROTOKOLL (seit 13.09.2026, TEIL D weiter unten): JEDER echte Lauf --
 // Erfolg wie Abbruch ueber Exit 3/4/5 -- traegt sich selbst als Zeile in
@@ -70,7 +72,8 @@
 // Werkzeug erzwingen, nicht die Prosa". --zweck=<text> beschriftet die
 // Zeile; fehlt der Schalter, wird der Basisname der --brief-Datei genommen.
 // Ein Aufruf, bei dem gar kein Lauf stattfand (Exit 2, Exit 6,
-// --max-runden < 1, --selbsttest), bekommt KEINE Zeile.
+// --max-runden < 1, GEGENLESER_MAX_AUSGABE_BYTES unbrauchbar, --selbsttest),
+// bekommt KEINE Zeile.
 
 const fs = require('node:fs');
 const https = require('node:https');
@@ -158,7 +161,30 @@ const MAX_LIES_ZEILEN = 400;
 // Bytes ab, der Bericht war damit verloren (nach unserer Hausregel: NICHTS
 // geliefert, nicht "keine Befunde"). Deshalb hebbar, Voreinstellung
 // unveraendert -- wer hebt, tut es bewusst und traegt die Kosten.
-const MAX_AUSGABE_BYTES = Number(process.env.GEGENLESER_MAX_AUSGABE_BYTES) || 600 * 1024;
+//
+// B2 (Review-Bot-Befund an PR #45, GEMESSEN 19.09.2026): "Number(...) ||
+// Vorgabe" fing nur 0/leer/nicht-numerisch ab. GEMESSEN blieben unbemerkt
+// durch:
+//   "-1"       -> -1        (bricht beim ERSTEN Werkzeugergebnis ab)
+//   "1.5"      -> 1.5
+//   "Infinity" -> Infinity  (schaltet den Deckel STILL aus)
+// Ein ausgeschalteter Deckel, den niemand bemerkt, ist genau unsere teuerste
+// Klasse. Deshalb jetzt eine PURE Funktion statt der stillschweigenden
+// Rueckfallkette, aufgerufen aus main() (dort die Abbruch-Zeile, Muster wie
+// bei den anderen Vorbedingungen) -- NICHT gesetzt/leer -> Vorgabe wie
+// bisher, GESETZT aber unbrauchbar -> wirft LAUT, mit Wert und erwarteter
+// Form. "Number.isInteger(zahl) && zahl > 0" deckt dabei ALLE Faelle in
+// einer Bedingung ab, auch "Infinity" (Number.isInteger(Infinity) === false)
+// und "0" (nicht positiv) -- keine Sonderfallliste noetig.
+const MAX_AUSGABE_BYTES_VORGABE = 600 * 1024;
+function maxAusgabeBytesErmitteln(rohwert) {
+    if (rohwert === undefined || rohwert === '') return MAX_AUSGABE_BYTES_VORGABE;
+    const zahl = Number(rohwert);
+    if (Number.isInteger(zahl) && zahl > 0) return zahl;
+    throw new Error(
+        `GEGENLESER_MAX_AUSGABE_BYTES="${rohwert}" ist unbrauchbar -- erwartet wird eine `
+        + `positive, endliche Ganzzahl (z. B. "900000"), oder die Variable bleibt ungesetzt.`);
+}
 
 // Preise pro 1 Mio. Token (USD), Stand 10.09.2026 -- das ist ein STAND, kein
 // Naturgesetz, und er VERALTET: bei jeder neuen Modellstufe hier nachtragen,
@@ -604,8 +630,27 @@ function anfragen(schluessel, modell, verlauf, mitWerkzeugen = true) {
         // Zeitueberschreitung ueber anfrage.destroy()) lief DARAN VORBEI und
         // konnte die Promise ein zweites Mal ansprechen. Beide Ebenen teilen
         // sich jetzt denselben Riegel.
+        // B1 (Review-Bot-Befund an PR #45, GEMESSEN 19.09.2026): nach einem
+        // FATALEN Abbruch (kaputtes JSON, ein error-Ereignis, ein zweites
+        // Abschluss-Ereignis, Daten nach dem Abschluss) wurde die Promise
+        // abgelehnt, aber der Antwortstrom nie zerstoert -- spaetere Chunks
+        // liefen nur noch ins "if (fertig) return;" ins Leere. GEMESSEN am
+        // Nachbau gegen einen echten lokalen Node-22-Server, der nach der
+        // kaputten Zeile endlos weitersendet: OHNE destroy() laeuft der
+        // Prozess nach 1200 ms noch (ein offener Socket haelt die
+        // Ereignisschleife am Leben), MIT destroy() endet er von selbst nach
+        // ~18 ms. destroy() NACH einem bereits regulaer beendeten Strom
+        // (Erfolgspfad) ist dabei GEMESSEN ein echtes No-op (kein Wurf, kein
+        // zusaetzliches Ereignis) -- deshalb hier fuer BEIDE Pfade, in
+        // try/catch: ein dadurch etwaig ausgeloestes anfrage.on('error')
+        // laeuft ins bereits gesetzte "fertig" und wird geschluckt.
         let fertig = false;
-        const abschliessen = (fn) => { if (fertig) return; fertig = true; fn(); };
+        const abschliessen = (fn) => {
+            if (fertig) return;
+            fertig = true;
+            fn();
+            try { anfrage.destroy(); } catch (e) { /* Socket ggf. schon weg -- ohne Belang */ }
+        };
 
         const anfrage = https.request(ENDPUNKT, {
             method: 'POST',
@@ -1164,6 +1209,21 @@ async function main(argvUeberschreibung) {
         return 4;
     }
 
+    // B2 (Review-Bot-Befund an PR #45): derselbe Grenzfall wie eben --
+    // pruefbar ohne Schluessel und ohne Netz, deshalb hier und nicht erst
+    // beim ersten Werkzeugergebnis. Ein unbrauchbarer Deckel bricht LAUT ab,
+    // statt sich lautlos auf die Vorgabe zurueckzuziehen (siehe
+    // maxAusgabeBytesErmitteln() oben).
+    let MAX_AUSGABE_BYTES;
+    try {
+        MAX_AUSGABE_BYTES = maxAusgabeBytesErmitteln(process.env.GEGENLESER_MAX_AUSGABE_BYTES);
+    } catch (e) {
+        console.error(`ABBRUCH: ${e.message}`);
+        // KEIN Lauf-Protokolleintrag, aus demselben Grund wie beim
+        // --max-runden-Abbruch direkt darueber: "gar kein Lauf fand statt."
+        return 4;
+    }
+
     const schluessel = schluesselHolen();
     if (!schluessel) {
         console.error(
@@ -1583,7 +1643,7 @@ function sseRohEintragBauen({ chunks, statusCode, abgebrochen, fehler, vorzeitig
 // zusaetzlich "close" NACH "end" -- das ist die Positivkontrolle fuer GP7
 // ("ein normales close nach end darf nicht doppelt ablehnen"), gemessen an
 // praktisch jedem der bestehenden Faelle.
-function httpsStubBauen(warteschlange, aufgezeichnet) {
+function httpsStubBauen(warteschlange, aufgezeichnet, zerstoerungen) {
     return function (_url, _optionen, callback) {
         const antwortHandler = {};
         const fakeAntwort = {
@@ -1660,7 +1720,13 @@ function httpsStubBauen(warteschlange, aufgezeichnet) {
                     }
                 });
             },
-            destroy() {},
+            // B1 (Review-Bot-Befund an PR #45): bisher ein reines No-op --
+            // ohne dieses Zaehlen ist "nach einem fatalen Abbruch wird die
+            // Verbindung zerstoert" fuer den Selbsttest nicht pruefbar
+            // (kein echter Socket, kein echtes Netz). "zerstoerungen" ist
+            // OPTIONAL (dritter Parameter): bestehende Aufrufe uebergeben
+            // ihn nicht und bleiben unveraendert.
+            destroy() { if (zerstoerungen) zerstoerungen.push(true); },
         };
     };
 }
@@ -1676,10 +1742,13 @@ async function selbsttest() {
     // dazu EIN Nachtrag aus dem Pruefgang ueber diese Nacharbeit:
     // Positivkontrolle x1 (belegt, dass process.on('multipleResolves')
     // in dieser Node-Version noch feuert -- DEP0160, ohne diesen Beleg
-    // waere GP7D/GP7E mehrdeutig) = 105. Von Hand hergeleitet, nicht aus
-    // dem Lauf abgeschrieben -- unten durch den tatsaechlichen Lauf
-    // bestaetigt.
-    const ERWARTETE_FAELLE = 105;
+    // waere GP7D/GP7E mehrdeutig) = 105, dazu 9 Faelle aus dem Review-Bot-
+    // Pruefgang an PR #45 (B1: destroy() nach fatalem SSE-Abbruch x1;
+    // B2: maxAusgabeBytesErmitteln() -- nicht gesetzt/leer/"900000" x3,
+    // "-1"/"1.5"/"Infinity"/"abc"/"0" brechen ab x5) = 114. Von Hand
+    // hergeleitet, nicht aus dem Lauf abgeschrieben -- unten durch den
+    // tatsaechlichen Lauf bestaetigt.
+    const ERWARTETE_FAELLE = 114;
     let gelaufen = 0;
     let fehler = 0;
     const pruefen = (bezeichnung, bedingung) => {
@@ -2518,15 +2587,45 @@ async function selbsttest() {
                 && !ausgabeZeilenC.some((z) => /Kosten geschaetzt/.test(z)));
         }
 
+        // ===== B2 (Review-Bot-Befund an PR #45, GEMESSEN 19.09.2026):
+        // maxAusgabeBytesErmitteln() -- dieselbe Funktion, die main() ruft,
+        // in DERSELBEN Aufrufform (ein String oder undefined), kein
+        // Netzverkehr noetig. Je Fall einzeln, die Zusicherung prueft die
+        // MELDUNG, nicht nur, dass ueberhaupt geworfen wird. =====
+        {
+            pruefen(`B2 NICHT GESETZT -> VORGABE (93) (${maxAusgabeBytesErmitteln(undefined)})`,
+                maxAusgabeBytesErmitteln(undefined) === MAX_AUSGABE_BYTES_VORGABE);
+            pruefen(`B2 LEER -> VORGABE (94) (${maxAusgabeBytesErmitteln('')})`,
+                maxAusgabeBytesErmitteln('') === MAX_AUSGABE_BYTES_VORGABE);
+            pruefen(`B2 "900000" LAEUFT DURCH (95) (${maxAusgabeBytesErmitteln('900000')})`,
+                maxAusgabeBytesErmitteln('900000') === 900000);
+
+            const mussAbbrechen = (bezeichnung, nummer, rohwert) => {
+                let geworfen = null;
+                try { maxAusgabeBytesErmitteln(rohwert); } catch (e) { geworfen = e; }
+                pruefen(`B2 ${bezeichnung} BRICHT LAUT AB (${nummer}) (Meldung nennt den Wert und "Ganzzahl": ${geworfen ? geworfen.message : '(kein Wurf! Deckel bliebe still falsch konfiguriert)'})`,
+                    !!geworfen && geworfen.message.includes(String(rohwert)) && geworfen.message.includes('Ganzzahl'));
+            };
+            mussAbbrechen('"-1"', 96, '-1');
+            mussAbbrechen('"1.5"', 97, '1.5');
+            mussAbbrechen('"Infinity"', 98, 'Infinity');
+            mussAbbrechen('"abc"', 99, 'abc');
+            mussAbbrechen('"0"', 100, '0');
+        }
+
         // ===== STREAMING/SSE-UMBAU (19.09.2026): GP1-GP10 + B3/B4/B8 =====
         // anfragen() wird hier DIREKT gerufen (kein main()-Umweg noetig fuer
         // alles, was nicht --zweck/--brief betrifft) -- gemeinsamer Rahmen:
         // Stub aufbauen, anfragen() rufen, https.request zuverlaessig
         // zuruecksetzen, Ergebnis ODER Fehler zurueckgeben.
-        const anfragenIsoliertPruefen = async (warteschlange) => {
+        // "zerstoerungen" (optional, fuer B1): Array, in das der Stub jeden
+        // destroy()-Aufruf auf der ANFRAGE eintraegt -- weitergereicht an
+        // httpsStubBauen, bestehende Aufrufe ohne diesen Parameter bleiben
+        // unveraendert.
+        const anfragenIsoliertPruefen = async (warteschlange, zerstoerungen) => {
             const alterHttpsRequest = https.request;
             const aufgezeichnet = [];
-            https.request = httpsStubBauen(warteschlange, aufgezeichnet);
+            https.request = httpsStubBauen(warteschlange, aufgezeichnet, zerstoerungen);
             let ergebnis = null;
             let fehler = null;
             try {
@@ -2709,6 +2808,21 @@ async function selbsttest() {
             // uebersprungen, dann spaeter aus anderem Grund gescheitert".
             pruefen(`PUNKT 7/B3 UNGUELTIGES JSON BRICHT LAUT AB (74) (kein stilles Ueberspringen -- die Meldung nennt den JSON-Fehler selbst, nicht nur "keinen Abschluss": ${fehlKaputt ? fehlKaputt.message : 'FAELSCHLICH ANGENOMMEN: ' + JSON.stringify(ergKaputt)})`,
                 !!fehlKaputt && !ergKaputt && fehlKaputt.message.includes('enthaelt kein gueltiges JSON') && fehlKaputt.message.includes('SSE-Datensatz Nr. 1'));
+        }
+
+        // ----- B1 (Review-Bot-Befund an PR #45, GEMESSEN 19.09.2026): ein
+        // fataler SSE-Abbruch muss die Verbindung zerstoeren, sonst haelt ein
+        // offener Socket die Ereignisschleife am Leben und das Werkzeug
+        // terminiert nicht (siehe die Messung im Kommentar bei abschliessen()
+        // in anfragen()). Kein echter Socket noetig: der Stub zaehlt
+        // destroy()-Aufrufe auf der ANFRAGE selbst, kein Netzverkehr im
+        // Selbsttest. -----
+        {
+            const kaputtesJsonB1 = 'data: {"type":"response.completed", KAPUTT-B1\n\n';
+            const zerstoerungenB1 = [];
+            const { fehler: fehlB1 } = await anfragenIsoliertPruefen([sseRohEintragBauen({ chunks: [kaputtesJsonB1] })], zerstoerungenB1);
+            pruefen(`B1 FATALER SSE-ABBRUCH ZERSTOERT DIE VERBINDUNG GENAU EINMAL (92) (destroy()-Aufrufe: ${zerstoerungenB1.length}, Fehler: ${fehlB1 ? fehlB1.message : '(keiner!)'})`,
+                !!fehlB1 && zerstoerungenB1.length === 1);
         }
 
         // ----- Punkt 6/B4: der Ereignistyp kommt aus dem type-Feld im JSON,
