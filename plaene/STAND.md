@@ -4392,3 +4392,25 @@ DRITTEN Mal gemeldet worden, und die Ursache war mein eigener Prüf-Vorspann —
 er zitierte die Regel ohne die Einschränkung auf Tabellenabfragen. Die Spuren
 haben korrekt angewandt, was ich ihnen geschrieben habe. Der Vorspann liegt
 jetzt als `tools/gegenleser-vorspann.txt` im Repo.
+
+## 19.09.2026, 04:45 — Takt: Agent läuft, nur Stand
+
+F6 Fassung 2 ist beauftragt und im Bau (F6-1 einzeln, F6-2+F6-3 in EINEM
+Commit — getrennt wäre der Zwischenstand absichtlich rot). Der Beitrag ist
+offen, CI auf dem aktuellen Kopf vollständig grün; gemergt wird erst, wenn der
+Bot-Befund nachgezogen ist.
+
+**Widerspruch im Takt-Prompt, gemessen — er gehört korrigiert.** Der Prompt
+nennt als Sollwert des Marker-Scans „Im Belehrungssystem-Repo: 2, beide in der
+CLAUDE.md-Prosa". Nachgemessen sind es **17 Treffer in 8 Dateien** — und das
+ist richtig so: die CLAUDE.md hat am 16.09.2026 ausdrücklich festgehalten,
+dass in DIESEM Repo die ZAHL kein Sollwert mehr ist, weil der Scan hier
+mitzählt, wie oft wir über ihn schreiben. Die Bedingung lautet dort: *jeder
+Treffer ist Prosa, keiner steht in ausführbarem Code.* Gemessen: alle 17
+stehen in `.md`-Dateien, **keine einzige in ausführbarem Code** — Bedingung
+erfüllt.
+
+Nach der Vorrangregel des Takt-Prompts selbst gilt die CLAUDE.md, und der
+Prompt-Text gehört nachgezogen. Ich ändere ihn nicht selbst: er ist die
+Vorgabe des Betreibers, nicht meine. Er steht hier, damit die Zahl nicht beim
+nächsten Lauf als Befund verbucht wird, der keiner ist.
