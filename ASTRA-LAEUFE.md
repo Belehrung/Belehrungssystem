@@ -122,7 +122,8 @@ sondern falsch.
 | 19.09.2026 | diffpruefung-streaming-umbau | Diff 757 Zeilen, Suchen 14, Lesungen 18, Token rein 323750, Token raus 27525, Runden 5 | 6 (2 als blockierend gemeldet) | **6** | 0 (1 Schwere korrigiert) | 2,44 $ |
 | 19.09.2026 | Planpruefung Eingabewache (Spur 1: was bricht der Plan) | Diff 699 Zeilen, Suchen 62, Lesungen 44, Token rein 2041937, Token raus 32995, Runden 17 | 8 | **8** | 0 | 11,20 $ |
 | 19.09.2026 | Planpruefung Eingabewache (Spur 2, `deepseek-flash`: was verspricht der Plan, das er nicht einlöst) | statisches Bündel, kein Repo-Zugriff; Token rein 14458, Token raus 34237 (davon 26768 Denken), 150 s | 9 | **9** | 0 | ~0,03 $ |
-| 19.09.2026 | Planpruefung Eingabewache Fassung 2 (Spur 1: was bricht die Verschaerfung) | Diff 961 Zeilen, Suchen 76, Lesungen 48, Token rein 3562404, Token raus 31864, Runden 24 | — | — | — | 18,77 $ |
+| 19.09.2026 | Planpruefung Eingabewache Fassung 2 (Spur 1: was bricht die Verschaerfung) | Diff 961 Zeilen, Suchen 76, Lesungen 48, Token rein 3562404, Token raus 31864, Runden 24 | 6 (3 blockierend) | **6** | 0 | 18,77 $ |
+| 19.09.2026 | Planpruefung Eingabewache Fassung 2 (Spur 2, `deepseek-flash`: was verspricht sie, das sie nicht einlöst) | statisches Bündel; Token rein 19161, Token raus 36308; 160 s | 11 (2 blockierend) | **11** | 0 | ~0,04 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -2194,3 +2195,46 @@ invertierte Bauanweisung.
 über die Klasse.** 11,20 $ gegen ~0,03 $, und beide lieferten. Die teure Spur
 lieferte die vier blockierenden, die billige die vollständigere Kritik an der
 Prosa des Papiers.
+
+---
+
+## 19.09.2026 — Planprüfung Eingabewache, RUNDE 2: was die zweite Runde wirklich leistet
+
+Die erste Runde ist oben protokolliert (17 Befunde, alle getragen). **Runde 2
+über die BEHOBENE Fassung brachte 17 weitere, ebenfalls alle getragen, fünf
+blockierend.** Einzelurteile in `plaene/auftrag-eingabewache-geraete.md`.
+
+**Das ist die erste Messung, die die Rundenbegrenzung aus CLAUDE.md wirklich
+prüft.** Dort steht seit dem 13.09.2026: EINE Runde ist der Regelfall, eine
+zweite nur, wenn die Behebung VERHALTEN ändert. Genau dieser Fall lag vor
+(zwei verschärfte Regeln in einer kanonischen Datei), und die zweite Runde
+lieferte ebenso viel wie die erste. **Die Regel trägt — und sie hätte fast
+nicht gegriffen, weil die Versuchung gross war, die Korrekturen als „nur
+Nachziehen" einzustufen.**
+
+**Was die zweite Runde fand, das die erste strukturell NICHT finden konnte:**
+alle fünf blockierenden Befunde beziehen sich auf die KORREKTUREN, nicht auf
+den ursprünglichen Plan — auf die neu gezogene int4-Grenze, auf die neue
+`typeof === 'string'`-Regel, auf die neu geordnete Stellenliste, auf den neuen
+Z3-Wortlaut. Eine Runde hätte davon nichts sehen können, weil es sie noch
+nicht gab.
+
+**Der teuerste einzelne Befund kam von BEIDEN Spuren** und widerlegte eine
+Tatsachenbehauptung, die ich in Fassung 2 selbst als gemessen ausgegeben
+hatte: `parseInt` fängt den Teilstring-Fall, aber NICHT den int4-Überlauf
+(`parseInt("2147483648",10)` ist nicht `NaN`). Die Ausklammerung einer ganzen
+Fehlerklasse stand auf diesem Satz.
+
+**Und die eigentliche Lehre ist methodisch:** dreimal hintereinander war meine
+von Hand geschriebene Stellenliste unvollständig, viermal an einem Tag war ein
+Suchmuster von mir falsch. Die Papiere, die daraus entstanden
+(`plaene/auftrag-id-wache.md`, `plaene/auftrag-textfeld-wache.md`), lassen
+deshalb einen WÄCHTER die Eintrittspunkte aufzählen statt mich. Eine Liste,
+die ich pflege, ist ein Selbstnachweis aus dem eigenen Datenfluss — und der
+Regress endet erst an einer Referenz von aussen.
+
+**Kosten beider Runden zusammen: 30,04 $ für 34 getragene Befunde**, davon
+sieben blockierend. Zum Vergleich: eine einzelne Bau-Runde mit anschliessender
+Diff-Prüfung kostet ein Vielfaches an eigener Messzeit — und hätte die vier
+falschen Regeln erst am fertigen Code gefunden, in einer kanonischen Datei,
+auf die dann schon vier Orte zeigen.
