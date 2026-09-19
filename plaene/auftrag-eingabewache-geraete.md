@@ -1,3 +1,16 @@
+# Auftragspapier — Eingabewache (FASSUNG 1 und 2, BEIDE ÜBERHOLT)
+
+> **DIESES PAPIER WIRD NICHT MEHR GEBAUT.** Es ist das Protokoll von zwei
+> Planprüfungsrunden über zwei Fassungen: **Runde 1 = 17 Befunde, Runde 2 =
+> 17 Befunde, alle 34 selbst nachgemessen, alle getragen**, sieben davon
+> blockierend. Der Ertrag ist NICHT eine dritte Fassung desselben Auftrags,
+> sondern eine METHODENÄNDERUNG (Begründung im Nachtrag Runde 2 ganz unten).
+>
+> **Gebaut wird stattdessen:** `plaene/auftrag-id-wache.md` und
+> `plaene/auftrag-textfeld-wache.md`.
+
+---
+
 # Auftragspapier — Eingabewache: EINE Quelle für ID- und Textfeldprüfung
 
 **FASSUNG 2 (19.09.2026).** Fassung 1 wurde von zwei Planprüfungen mit
@@ -698,3 +711,112 @@ betreffen den KERN: die zu kanonisierende Textregel (S-1), die zu
 kanonisierende ID-Regel (S-2), die Vollständigkeit der Stellenliste (S-3, S-6)
 und den Sollwert von Z3 (S-4, P-1). Fassung 2 folgt; bis dahin wird nichts
 gebaut.
+
+---
+
+# NACHTRAG — Planprüfung Runde 2 über FASSUNG 2, 19.09.2026
+
+Gefahren, weil die Behebung VERHALTEN ändert (zwei verschärfte Regeln in einer
+kanonischen Datei) — das ist der in CLAUDE.md benannte Fall für eine zweite
+Runde. **Ergebnis: 17 weitere Befunde, drei plus zwei blockierend, EINE
+Überschneidung zwischen den Spuren.**
+
+| | Spur 1 (`sol`, mit Repo-Zugriff) | Spur 2 (`deepseek-flash`, statisch) |
+|---|---|---|
+| Befunde | 6 (3 blockierend) | 11 (2 blockierend) |
+| Verbrauch | 3.562.404 rein / 31.864 raus, 24 Runden, 76 Suchen, 48 Lesungen | 19.161 rein / 36.308 raus |
+| Kosten | **18,77 $** | **~0,04 $** |
+
+## Die fünf blockierenden
+
+**R2-1 (beide Spuren, gemessen) — meine Begründung für das Ausklammern der
+`parseInt`-Klasse ist FALSCH.** Fassung 2 schreibt: „Sie erreichen SQL nie mit
+einem schlechten Wert." Gemessen:
+
+    parseInt("2147483648",10) = 2147483648   Guard (!id||isNaN) weist ab: false
+    parseInt("99999999999",10) = 99999999999 Guard (!id||isNaN) weist ab: false
+
+`parseInt` fängt den Teilstring-Fall, **nicht den int4-Überlauf.** Der Wert
+erreicht SQL für eine INTEGER-Spalte → 22003 → dieselbe Alarmklasse, die 0.2
+für die anderen Routen schliesst. **Folge: die fünf Stellen gehören IN den
+Auftrag, nicht daneben.** Das ist der einzige Befund, den beide Spuren hatten.
+
+**R2-2 (sol, gemessen) — Z1 quantifiziert über 26 Routen, gebaut werden 10.**
+Gemessen mit einem an bekannten Fundstellen gelernten Muster: `geraete.js` 19,
+`geraete-typen.js` 4, `ausmusterung.js` 2, `tablets.js` 1 = **26 Routen mit
+`:id`**. Abschnitt 1 bindet zehn. Ein nach Z1 korrekt gebauter Test schlägt
+also sofort fehl — oder wird stillschweigend verkürzt. Dazu: „echte ID → 302"
+gilt nicht für GET-Routen, die 200 liefern.
+
+**R2-3 (sol, gemessen) — meine Stellenliste ist zum DRITTEN Mal
+unvollständig.** `grep -nE "String\(req\.body" routes/admin/geraete.js` →
+**10 Treffer**; Fassung 2 nennt einen davon (`:4353`). `hinweis` steht in
+`:4355`, direkt daneben, und schreibt `[object Object]` nach
+`spuel_stellen.hinweis`. Dazu je ein koerziertes Detailfeld in Brandschutz
+(`:2435`), Legionellen (`:3102`, `:3137`), DGUV (`:3525`, `:3555`) und
+Gefährdungsbeurteilung (`:3852`).
+
+**R2-4 (deepseek, gemessen) — `typeof === 'string'` bricht einen LEGITIMEN
+heutigen Aufrufer.** `geraete-typen.js:431-434` gibt drei OPTIONALE Felder an
+`pruefeTextfelder`, und der Kommentar `:456-458` nennt `inbetriebnahme_am`
+ausdrücklich FREIWILLIG; `standort` darf leer sein, `seriennummer` NULL.
+Fassung 2 verspricht die Ausnahme für `null`/`undefined` in 0.4, schreibt sie
+aber in 1.1 nirgends in den Vertrag, und Z4 listet beide Werte OHNE Sollwert.
+**Ein Formular ohne `inbetriebnahme_am` bekäme künftig 400.** Genau der
+„legitime Aufrufer", den Abschnitt 5 als nicht vorhanden meldete.
+
+**R2-5 (sol, gemessen) — Z3 wäre gegen KORREKTEN Bestand rot.** `tablets.js:56`
+hat `typeof t === 'string' && /^[0-9a-f]{64}$/.test(t)` — ein Token-Filter, der
+bleiben muss; `geraete.js:1928` und `:2008` sind weitere, unabhängige
+`typeof`-Prüfungen. Mein Z3-Wortlaut „kein eigener `typeof`-Textfilter mehr"
+trifft sie mit.
+
+## Die weiteren zwölf, gemessen und getragen
+
+* **Z4 ist keine Zusicherung** (deepseek): eine Liste von Eingaben ohne
+  Sollwert misst nichts, und „der Helfer" ist Singular für drei Funktionen.
+* **`/^\d+$/` → `/^\s*\d+\s*$/` überlebt Z1–Z5** (sol): `" 12"` und `"12 "`
+  würden neu akzeptiert; keiner der vorgesehenen Werte fällt.
+* **Z5 ist ein Kommentar, keine fallfähige Zusicherung** (sol).
+* **Z3s Sollwert nennt die beiden neu gebundenen Stellen nicht** (deepseek):
+  ein Test, der bei vier stehenbleibt, bliebe grün, während `:337` wieder eine
+  eigene `isNaN`-Wache bekommt. Und ein Muster, das `isNaN(` kennt, findet in
+  `geraete.js` mehr als die ID-Wachen (`:5455`, `:5461` sind Intervallprüfungen).
+* **Die int4-Konstante stünde an zwei Orten** (deepseek): `core/` darf nicht
+  aus `routes/` importieren, also wäre `2147483647` dupliziert, ohne dass eine
+  Zusicherung die beiden vergleicht.
+* **`"[object Object]"` hat 15 Zeichen, nicht 16** (deepseek, gemessen). Die
+  Sache bleibt richtig, die Zahl war falsch.
+* **„vier davon blockierend" löst das Papier nicht ein** (deepseek): nur zwei
+  Stellen tragen die Markierung.
+* Dazu Befunde zu Abnahme-Schritten, zum Dateizahl-Ritual und zur
+  Selbstwidersprüchlichkeit von 0.6 („vollständige Liste" gegen „vor dem Bau
+  einzeln auszählen" im selben Abschnitt).
+
+---
+
+# WAS DARAUS FOLGT — die Methode war falsch, nicht nur die Fassung
+
+**Dreimal hintereinander war meine von Hand erstellte Stellenliste
+unvollständig** (Fassung 1: fünf statt acht; Fassung 2: einer von zehn
+`String(req.body…)`-Senken; dazu 26 `:id`-Routen gegen zehn gebundene). **Und
+viermal an einem Tag war ein Suchmuster von mir falsch** — beim `|| ''`-Idiom
+(Leerraum), beim `:id`-Routen-Zählen (`[^\n]*` in `grep`), beim
+Marker-Ausschluss und beim Dateizahl-Ritual.
+
+Eine vierte Fassung mit einer vierten handgemachten Liste wäre derselbe Fehler
+zum vierten Mal. Die Hausregel sagt, wohin: **ein Selbstnachweis aus dem
+eigenen Datenfluss lässt sich beliebig verfeinern, ohne je zu schliessen — der
+Regress endet erst an einer Referenz von AUSSEN.** Eine Liste, die ich
+schreibe, ist ein Selbstnachweis.
+
+**Die zwei neuen Papiere machen die Liste deshalb MECHANISCH:** ein Wächter
+zählt die Eintrittspunkte selbst auf (alle `:id`-Routen; alle `req.body`-Senken)
+und verlangt für JEDEN entweder eine Wache oder einen literal
+hingeschriebenen, begründeten Ausnahmeeintrag. Wächst die Datei um eine Route,
+wird der Wächter rot — nicht meine Liste still unvollständig.
+
+Und der Auftrag wird GETEILT: die ID-Regel und die Textfeldregel haben
+verschiedene Eintrittspunktmengen, verschiedene Ausnahmen und verschiedene
+Gegenproben. Sie in einem Beitrag zu führen war der Grund, warum 0.6, 1.2, 1.4
+und Z2 in Fassung 2 nachweislich nicht dieselbe Menge meinten.

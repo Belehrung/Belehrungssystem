@@ -122,6 +122,7 @@ sondern falsch.
 | 19.09.2026 | diffpruefung-streaming-umbau | Diff 757 Zeilen, Suchen 14, Lesungen 18, Token rein 323750, Token raus 27525, Runden 5 | 6 (2 als blockierend gemeldet) | **6** | 0 (1 Schwere korrigiert) | 2,44 $ |
 | 19.09.2026 | Planpruefung Eingabewache (Spur 1: was bricht der Plan) | Diff 699 Zeilen, Suchen 62, Lesungen 44, Token rein 2041937, Token raus 32995, Runden 17 | 8 | **8** | 0 | 11,20 $ |
 | 19.09.2026 | Planpruefung Eingabewache (Spur 2, `deepseek-flash`: was verspricht der Plan, das er nicht einlöst) | statisches Bündel, kein Repo-Zugriff; Token rein 14458, Token raus 34237 (davon 26768 Denken), 150 s | 9 | **9** | 0 | ~0,03 $ |
+| 19.09.2026 | Planpruefung Eingabewache Fassung 2 (Spur 1: was bricht die Verschaerfung) | Diff 961 Zeilen, Suchen 76, Lesungen 48, Token rein 3562404, Token raus 31864, Runden 24 | — | — | — | 18,77 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
