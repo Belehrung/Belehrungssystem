@@ -4764,3 +4764,48 @@ das Audit ausserhalb der Transaktion. **Kein neuer Kreis.**
 **Zwei eigene Vorgaben sind gefallen** (M17/M18 im Auftragspapier): meine
 Gegenprobe-Methoden K2 und K5 beruhten auf ungemessenen Behauptungen über die
 Datenbankschicht. Der Ausführende hat beide gemessen und widersprochen.
+
+## 19.09.2026, 10:41 — Takt: PR #460 steht, wird NICHT gemergt (P1 trägt)
+
+Der Beitrag ist gebaut, geprüft und liegt als PR. **Alle fünf CI-Checks auf
+`af05bdc` sind `success`** — einschliesslich der Isolationstests, die den neuen
+Wächter auf einem fremden Runner mit frischer Datenbank fahren.
+
+**Gemergt wird trotzdem nicht.** Der Review-Bot meldet einen P1 (Sicherheit),
+und er trägt: ein einzelnes FAST WEISSES Pixel (Wert 249) zählt als Tinte und
+kommt durch. Das ist schärfer als das Restrisiko, das ich in M11 selbst
+benannt hatte — meins war ein SCHWARZER Punkt.
+
+**Wichtiger als der Befund ist, was die Nachmessung über seinen VORSCHLAG
+ergab.** Der Bot schlägt „mehr Tinte oder ein dunkelheitsgewichtetes Mass" vor.
+Am Zeichenmass gemessen ist echte Tinte aber HELL — das Verkleinern mittelt sie
+weg:
+
+    Raster        Strich   Zeichenmass  dunkelster Wert  Pixel<128
+    2048x1400     20x2     146x100             221           0
+    2400x1200     600x3    200x100             196           0
+
+Eine Dunkelheitsschwelle dort hätte **alle 19** gemessenen echten Fälle
+abgewiesen — aus einer Sicherheitslücke wäre ein Totalausfall der
+Unterschriftsfunktion geworden. Die Klasse „eine Behebung tauscht das
+Gemeldete gegen etwas Schlimmeres", und diesmal an einem fremden Vorschlag.
+
+**Richtig ist dieselbe Prüfung an einer ANDEREN STELLE.** In Originalauflösung
+ist echte Tinte schwarz (dunkelster Wert 0, 4 bis 1800 Pixel unter 128),
+während alle Angriffsvarianten bei 200–249 liegen und NULL Pixel unter 128
+haben. Das kanonische Raster habe ich ebenfalls geprüft, weil es gratis gewesen
+wäre — dort fallen sechs von vierzehn echten Fällen durch. **Die Stelle der
+Messung entscheidet, nicht die Schwelle.**
+
+Beauftragt sind damit zwei Kriterien, jedes dort gemessen, wo sein Mass etwas
+bedeutet: Sichtbarkeit im Dokument am Zeichenmass (`< 250`), echte Tinte in
+Originalauflösung (`< 128`). Kosten: 20 ms im Normalfall, 113 ms am Deckel
+(`sharp.stats()` wäre mit 948 ms der schlechtere Weg gewesen).
+
+**Nebenbefund über den Bot-Check:** sein Check-Run meldet `success`, während in
+seinem Kommentar „not yet safe to merge" steht. Genau dafür gibt es die Regel,
+seine Kommentare VOR den Checks zu lesen.
+
+Eigener Check-in auf 11:07 geschoben, mit dem Grund im Text. Die
+Wegwerf-Datenbank `gymdocu_basis_test` steht noch und wird nach dem Merge
+abgeräumt.
