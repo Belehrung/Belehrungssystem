@@ -4661,3 +4661,43 @@ Code" — gemessen: 9 Dateien, ausnahmslos Prosa, keine Zeile in Code.
 
 Eine Wegwerf-Datenbank `gymdocu_basis_test` steht noch (NICHT `gymdocu_test`,
 die Suite ist davon unberührt); sie wird nach der Nacharbeit weggeräumt.
+
+## 19.09.2026, 08:20 — Beide Planprüfungen ausgewertet, Bauauftrag läuft
+
+**Elf Befunde aus zwei Spuren, NULL Überschneidung, neun nach eigener
+Nachmessung getragen.** Einzelheiten in `ASTRA-LAEUFE.md` und in den
+Nachträgen M11–M16 des Auftragspapiers.
+
+Der wichtigste: **ein blockierender Fehler in MEINER Lesereihenfolge.** Mein
+Plan las die Belehrungszeile vor der Freischaltungs-Generation — damit wäre
+genau das Rennen offengeblieben, gegen das die Generationsprüfung antritt (neue
+Version fährt dazwischen, wir lesen die NEUE Generation, signieren das ALTE
+Dokument und löschen am Ende die neue Pflicht). Umgedreht fällt jeder Ausgang
+auf die sichere Seite.
+
+Weiter getragen und eingearbeitet: eine eigene Gegenprobe von mir, die NIE rot
+werden konnte (die Fixtur hat Kanalwert 0, also zählen `< 250` und `< 1`
+dieselben Pixel — Grenzfixtur mit vier unterscheidbaren Zahlen ergänzt); zwei
+Zusicherungen, die eine Konstante erfüllt hätte; ein ungedeckelter
+Speicherverbrauch (neuer Beitrag B4: das GEPRÜFTE Bild wird eingebettet, nicht
+das eingeschickte — 182,3 gegen 17,1 MB RSS-Zuwachs, je eigener Prozess
+gemessen); zwei falsche Bestandsbehauptungen von mir; und ein zusätzlicher
+ernster Befund, der ein eigenes Papier bekommt (`/neue-version/:id` ist selbst
+nicht atomar und löscht im Fehlerfall die Datei, auf die die schon committete
+Belehrungszeile zeigt).
+
+**Das ist der Beleg für die Regel vom 18.09.2026 an einem eigenen Fall:** jeder
+dieser Punkte hätte sonst eine Bau-Runde gekostet. Gebaut war zu diesem
+Zeitpunkt noch nichts.
+
+Eine eigene Korrektur unterwegs: meine erste Speichermessung lief in EINEM
+Prozess und zeigte scheinbar mehr Verbrauch für die bessere Variante. RSS ist
+innerhalb eines Prozesses kumulativ — ein Rückgang ist so gar nicht messbar.
+Erst je ein eigener Prozess zeigt die Richtung.
+
+**Jetzt läuft der Bauauftrag** über den Executer in `/home/user/gymdocu`,
+Zweig `claude/freischaltung-verbrauch-rueckgabe`. Vier Beiträge (B1
+serverseitige Signaturprüfung, B2 Verbrauch ans Ende mit Generationsprüfung,
+B3 Aufräum-DELETE nur für ungehashte Zeilen, B4 kanonisches Bild einbetten)
+plus neuer Wächter mit elf Zusicherungen und dreizehn Gegenproben.
+**Solange er läuft, wird in diesem Arbeitsbaum nichts angefasst.**
