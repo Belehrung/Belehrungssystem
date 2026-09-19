@@ -263,3 +263,41 @@ Erreichbar sind die Routen für jeden angemeldeten Admin und für jeden, der
 bereits eine Sitzung hat — nicht für einen fremden Dritten. Der Defekt bleibt
 (stille Falschschreibungen, halb angelegte Datensätze), die Einordnung ändert
 sich.
+
+### Berichtigung 19.09.2026 — mein Auftrag war falsch, der Ausführende hat es gemessen
+
+**U-ID4 `parseIds()` FÄLLT.** Ich hatte aus einem Gegenlesungs-Befund
+(`ausmusterung.js#parseIds` gibt `parseInt(w,10)` unbegrenzt weiter,
+`"99999999999"` erreicht int4 → 22003) einen Bauauftrag gemacht: die
+int4-Grenze dort nachziehen.
+
+**Der Ausführende hat widersprochen und gemessen.** Selbst am Quelltext
+nachgeprüft und bestätigt: der einzige Aufrufer baut bei
+`routes/admin/ausmusterung.js:618` ein `erlaubtSet` aus den REAL
+existierenden Kandidaten genau dieses Geräts und weist bei `:619-621` jede
+eingereichte ID ab, die dort nicht vorkommt — `status: 'fremde_id'` → `:899`
+→ **HTTP 400, bevor irgendein UPDATE läuft.** Eine Zahl über der int4-Grenze
+kann in `erlaubtSet` gar nicht vorkommen (die Menge stammt aus
+DB-Zeilen-IDs). Er hat es zusätzlich zweimal über den echten POST-Weg
+gemessen; beide Fälle 400, keiner erreichte SQL.
+
+**Mein Fehler war methodisch, nicht sachlich:** Ich habe einen Befund über
+die FUNKTION übernommen, ohne den AUFRUFER zu messen. Genau die Hausregel,
+die ich selbst zitiere — „ein Auftrag, der behauptet ‚X verletzt Regel Y
+nicht', hat Y nicht geprüft" — nur in die andere Richtung: ein Auftrag, der
+behauptet „X erreicht SQL", hat den Weg dorthin nicht geprüft.
+
+Dass er der Vorgabe seines Auftraggebers mit einer Messung widersprochen hat,
+ist nach unserer eigenen Rangordnung das wertvollste Ergebnis dieses Bau-Laufs.
+
+### U-MA1 (NEU, vom Ausführenden gefunden, nicht behoben)
+
+Beim Umstellen der Grenzwert-Zusicherungen von negativ auf positiv fiel auf:
+**drei Mitarbeiter-Routen (`email`, `pin-direkt`, `umbenennen`) melden lautlos
+Erfolg, obwohl ihr UPDATE null Zeilen trifft.** Dieselbe Klasse wie B1-05:
+„ein UPDATE, dessen `rowCount` niemand liest, ist ein stiller No-op — und was
+danach unbedingt läuft, behauptet etwas, das nie passiert ist."
+
+Ausserhalb des Auftrags, deshalb als Fundort geführt. Gehört zu
+`plaene/auftrag-schreibreihenfolge.md`, wo dieselbe Klasse schon zweimal
+vorkommt.
