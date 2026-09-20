@@ -137,6 +137,8 @@ sondern falsch.
 | 20.09.2026 | Planpruefung M3-Haertung Spur A (Buendel: Papier + heutiger test_landing.js) | Diff 1021 Zeilen, Suchen 37, Lesungen 31, Token rein 1127792, Token raus 35652, Runden 15 | — | — | — | 6,71 $ |
 | 20.09.2026 | Planpruefung M3-Haertung Spur B (Buendel: Papier + rendernder Test + Gate-Liste) | Diff 410 Zeilen, Suchen 21, Lesungen 21, Token rein 666439, Token raus 33316, Runden 8 | — | — | — | 4,33 $ |
 | 20.09.2026 | Planpruefung Ladebestand-Nacharbeit Spur A (Buendel: Papier + Testdatei) | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 787 Zeilen, Suchen 33, Lesungen 39, Token rein 580260, Token raus 12499, Runden 10 | — | — | — | mind. 3,28 $ |
+| 20.09.2026 | Planpruefung Ladebestand-Nacharbeit auf `kimi-k3` (ERSTER Versuch) | **abgebrochen** (HTTP 200, LEERE Antwort -- das Ausgabebudget von 20.000 ging vollstaendig ins Nachdenken, gemessen 121.875 Denkzeichen) | — | — | — | nicht bezifferbar (Kimi fehlt in der Preistabelle) |
+| 20.09.2026 | Planpruefung Ladebestand-Nacharbeit auf `kimi-k3` (zweiter Versuch, Budget 60.000) | `finish_reason: stop`, 20.134 Antwortzeichen, 121.875 Denkzeichen; Buendel Papier + Testdatei, kein Repo-Lesewerkzeug | 9 | **3 klar getragen** (unerfuellbares Abnahmekriterium, ungemessene Idempotenz-Zusage, falscher Kopfkommentar); 2 ueberwiegend gefallen MIT tragendem Teil; 2 nicht einzeln nachgemessen; 2 waren Rechenschaft ohne Befundcharakter | 2 | nicht bezifferbar |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
