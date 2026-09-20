@@ -5609,3 +5609,66 @@ solches Bündel bräuchte.
 4. `plaene/auftrag-ladebestand.md` — liegt fertig, braucht noch die
    Planprüfung. Zeilennummern sind bereits auf `5a194ba` nachgezogen.
 5. B1-09/B1-10 (Namensinvariante Seilgeräte) — noch kein Papier.
+
+### 20.09.2026, 00:40 UTC — Beitrag B geprüft, Nacharbeit läuft
+
+**Der Produktivcode trägt. Eigene Messungen** (nicht der Bericht des
+Ausführenden): Suite **`SUITE_EXIT=0`**, **0** `✗ FAIL`-Zeilen, jede
+Summenzeile 0 FAIL; Dateizahl-Ritual **344 = 344, `diff` EXIT 0**;
+`npm run lint` **`LINT_EXIT=0`**; Marker-Scan **6**, alle in `docs/`;
+`node --check` grün; `istGueltigeId` am neuen Eintrittspunkt nachweislich im
+Scope. Berührt sind nur `geraete.js` + zwei Testdateien + `test/run.sh` —
+`belehrungen.js` und `mitarbeiter.js` unangetastet.
+
+**Zwei Prüfspuren über den Diff: `/code-review` 15 Befunde, `kimi-k3` 2.**
+Einzelheiten in `plaene/diffpruefung-beitrag-b.md`.
+
+**Vier Befunde müssen vor dem Merge weg, alle „Zusicherung kann nicht rot
+werden":**
+
+1. **Der Nebenläufigkeitsbeweis trägt nicht — von DREI Spuren unabhängig
+   gefunden** (beide Prüfer und meine eigene Lesung). „Mindestens ein
+   Blockierter" ist auch dann erfüllt, wenn nur EIN Request das UPDATE
+   erreicht; danach schreibt er, der zweite steigt am `if` aus, alles grün,
+   Überschneidung nie stattgefunden. Der Kommentar behauptet ausdrücklich das
+   Gegenteil.
+2. **Die Z4c-Audit-Zusicherung fragt die falsche `studio_id` ab** — der
+   Fremd-Request läuft als B, gezählt wird A. Kann nie fallen.
+3. **Der Z1-Kernfall unterscheidet Rollback nicht von Frühabweisung.**
+   Gemessen: `intern()` liefert immer denselben Text, und die Route hat
+   **sechs** Frühausstiege, die ebenfalls `class="error"` mit non-302 liefern
+   und nichts schreiben.
+4. **Der Testaufbau schreibt ohne `studio_id`** — in der Datei, die die
+   Mandantentrennung prüft.
+
+**Ein gemeldeter Befund fällt in der Schwere:** die neue `IS NULL`-Bedingung
+gegen einen Leerstring in `frist_festgelegt_am`. **Nachgemessen ist `''` heute
+NICHT erreichbar** — einziger Schreiber der Spalte im ganzen Bestand ist diese
+Route selbst, keiner der drei `INSERT INTO wartung_geraete` führt sie. Die
+Divergenz zwischen `if` und `WHERE` bleibt und wird mit einer Zeile
+geschlossen.
+
+**Zwei Fehler auf unserer Seite, festgehalten statt übergangen:**
+
+* Der Ausführende meldete beim Marker-Scan einen Treffer in seiner Testdatei —
+  gemessen sind es dort **null**; seine Zeichenkette trägt einen Unterstrich
+  und trifft das Suchmuster nicht. *(Eine Zahl aus einem Bericht ist eine
+  Behauptung.)*
+* **Mein eigenes** Suchmuster bei der Scope-Prüfung passte in der Datei
+  fünfmal und traf die ERSTE statt der neuen Fundstelle — dieselbe Klasse wie
+  bei Mutationsmustern, nur beim Messen. Mit Volltrefferliste neu gemessen.
+
+### Beobachtung zu den Prüfspuren
+
+Am DIFF war die ausführende Spur deutlich ergiebiger (15 gegen 2); am PAPIER
+war es umgekehrt (dort fand die Ein-Schuss-Spur sechs Befunde, die keine
+andere hatte). **Welche Spur trägt, hängt am GEGENSTAND, nicht am Modell** —
+Diff-Befunde verlangen, den Kontrollfluss des Bestands abzulaufen, und dafür
+braucht es Repo-Zugriff. Wer daraus eine Rangfolge macht, hat aus zwei Läufen
+eine Regel gemacht.
+
+### Läuft gerade
+
+Nacharbeit zu Beitrag B beim selben Executer (vier Muss-Befunde, neun billige
+Mitnahmen, ein reiner Kommentarsatz). Danach: zweite Prüfrunde über die
+Nacharbeit, dann CI und Merge, dann Beitrag C.
