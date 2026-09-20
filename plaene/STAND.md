@@ -5917,3 +5917,48 @@ diesem Repo kein Sollwert mehr ist, weil der Scan mitmisst, wie oft wir über
 ihn schreiben. Der Prompt ist an dieser Stelle die veraltete Kopie; nach
 seiner eigenen Vorrangregel gilt CLAUDE.md. Festgehalten hier statt im
 Prompt, weil der Prompt selbst sagt, der Stand gehöre ins Repo.
+
+### 05:55 UTC — Beitrag C: Runde 2 der Nacharbeit abgenommen, PR offen, CI läuft
+
+*(Uhrzeit mit `date -u` gemessen, nicht abgeschrieben.)*
+
+**Zwei Nacharbeitsrunden sind durch.** Der Zweig steht auf `665fdc9`.
+
+**Runde 1 (`0424143`, `b40627d`):** N1-Regress behoben, N2/N3/N5/N6/N7/N8/N9
+gebaut, N4 gestrichen. Der Ausführende hat dabei **in meiner eigenen
+N1-Vorgabe einen echten Fehler gefunden und gemessen**: `let` im `try`-Block
+ist im `catch` nicht sichtbar (Geschwister-Block), jeder Fehlerpfad endete in
+einem zweiten, unbehandelten `ReferenceError`. Ich habe die Sprachtatsache
+unabhängig nachgemessen — sie stimmt. Dabei bin ich selbst in die Falle
+gelaufen, die dieser Durchgang laufend anstreicht: meine erste Probe benutzte
+`typeof`, und `typeof` wirft bei einer undeklarierten Variable NIE. Die
+Methode konnte die gesuchte Antwort gar nicht erzeugen.
+
+**Zweite Gegenlesung** (Regel: zweite Runde, weil N1 VERHALTEN ändert;
+158.043 ein / 24.051 aus, 367 s, ≈ 1,51 $): **10 Befunde, sechs tragen, einer
+fällt, drei als offene Befunde.**
+
+**Runde 2 (`665fdc9`) — die vier geschlossenen Lücken, jede von MIR gemessen:**
+
+| Lücke | vorher | nachher |
+|---|---|---|
+| B8 hatte keine Zusicherung | Suite `SUITE_EXIT=0`, 347 Dateien, **0 FAIL** | 37 → **33 PASS / 4 FAIL** (`status: 404`) |
+| Platzierung der Merkvariable ungesichert | **37 PASS / 0 FAIL** | 42 → **41 PASS / 1 FAIL** |
+| `auditAppend`-Wächter prüfte falsche Argumentposition | `(…, payload, null, t)`: **14 / 0** | 15 → **14 PASS / 1 FAIL** |
+| Lock-Position ungeprüft | Lock hinter UPDATE: Suite grün | 147 → **146 PASS / 1 FAIL** |
+
+Bei der R5-Gegenprobe ist mir selbst ein unsauberes Rot unterlaufen (die
+Mutation verdoppelte versehentlich die Locknahme → drei Kreuze aus teils
+falschem Grund). Sauber wiederholt: **146 / 1**, genau die N5c-Zusicherung.
+
+**Abnahme (maßgeblicher Lauf):** volle Suite **`SUITE_EXIT=0`**, 0 `✗ FAIL`,
+Dateizahl-Ritual **348 = 348** (`diff` EXIT 0), `npm run lint` **`LINT_EXIT=0`**,
+Marker-Scan **6**, alle Arbeitsbäume sauber, Zweig nicht hinter master.
+
+**PR ist offen** (nicht als Entwurf), Review-Bot hat noch nichts kommentiert,
+CI läuft. Nach Regel 6a geht die Nummer erst raus, wenn auch Deploy und
+Live-Check durch sind.
+
+**Bilanz Beitrag C:** 45 Planprüfungs-Befunde + 26 Diffprüfungs-Befunde aus
+drei Runden + 6 aus der Planprüfung des Behebungspapiers. **Viermal in Folge
+war nicht der Befund die Gefahr, sondern meine Behebung.**
