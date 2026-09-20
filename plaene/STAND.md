@@ -6862,3 +6862,62 @@ benennt die Stelle dann eindeutig.
 **Offen und ausdrücklich unbeantwortet:** ob Z2 einen echten Unterschied
 gefunden hat (dann Befund) oder zu spröde ist (dann Testmangel). Beides ist
 möglich; das zu unterscheiden ist der ganze Zweck der nächsten Runde.
+
+---
+
+## 20.09.2026, 20:45 UTC — Ladebestand: zweite Runde vom Haupt-Agenten nachgemessen
+
+Die Z2-Frage von oben ist längst beantwortet (Kollation, `ORDER BY` über eine
+Textspalte — behoben, CI grün). Dieser Eintrag betrifft die **zweite
+Nacharbeitsrunde** (N8–N11) und die Folgeanpassung am Geschwisterwächter.
+
+**Stand des Zweigs `beitrag-ladebestand`:** `70d1489`.
+
+### Eigene Messungen (nicht der Bericht des Ausführenden)
+
+| Was | Ergebnis |
+|---|---|
+| Volle Suite | **SUITE_EXIT=0**, `test_feature_ladebestand_streng.js` 15 PASS / 0 FAIL |
+| Dateizahl-Ritual | **350 = 350**, `diff` EXIT 0 |
+| Marker-Scan | 6 Treffer, alle Prosa in `docs/offene-befunde-31-08-2026.md` |
+| CI auf `70d1489` | alle **vier** Checks grün |
+| N8 Gegenprobe | Parameter → Konstante `1` ⇒ Kernfall-Zusicherung fällt |
+| N9 Gegenprobe | No-op im UPDATE-Zweig: **mit** Verfälschung rot, **ohne** sie grün |
+| N10 Gegenprobe | INSERT-Zweig auf `aktiv=0` ⇒ „waren 0" |
+| Geweitetes Fenster 600→700 | zwei Fundstellen im Block: streng 607, mild **36173** Zeichen entfernt |
+
+**Der Fund, der das geweitete Wächter-Budget entschärft:** dieselbe Mutation
+(`bestandJetzt = {}`) macht nicht nur die statische Nähe-Prüfung rot, sondern
+auch eine VERHALTENS-Zusicherung mit unabhängig hingeschriebener Zahl („24
+Begehungszeilen … waren 10"). Die Verdrahtung Route → `begehungsAufgaben`
+hängt also nicht an einem Zeichenabstand.
+
+**Eine eigene Vorhersage ist gefallen:** mein Auftrag behauptete, der
+SHA-256-Sollwert ändere sich durch N9/N10 erneut. Der Ausführende hat
+widersprochen und recht behalten — der Hash entsteht über den Zustand NACH
+dem 2./3. POST, die Verfälschung liegt davor und wird ausgebügelt.
+
+### Zwei neue eigene Befunde (von keiner Prüfspur)
+
+* **N12** — `istGueltigeAntwort('unbekannt')` ist `true`. Im N8-Kernfall legt
+  die Route auf einem frischen Studio eine Kategoriezeile an, während die
+  Seite „Am Prüfplan wurde nichts angelegt" behauptet. Behebung ist eine
+  Wortänderung („keine Einträge"), kein dritter Umbau des Zählers.
+* **N13** — der N10-Sollwert wird unter dem Termin-NAMEN abgelegt; zwei
+  gleichnamige Termine überschrieben ihn lautlos. Heute 12 Termine, 12
+  eindeutige Namen — Momentaufnahme, kein Riegel.
+
+### Läuft gerade
+
+Zwei Prüfspuren über denselben Diff, nach der Betreiber-Entscheidung vom
+20.09. abends (Diffprüfung = die ausführende Claude-Spur **plus EINE**
+Lesespur, verschiedene Bündel):
+
+* **Lesespur** `gpt-5.6-sol` über `tools/gegenleser-repo.js` (mit
+  Repo-Leserechten, Bündel = der Diff).
+* **Ausführende Spur** in einem EIGENEN Arbeitsbaum `/workspace/gymdocu-review-lb`
+  — getrennt, weil eine lesende und eine mutierende Spur im selben Baum
+  einander den Zustand verfälschen (gemessene Lehre, CLAUDE.md).
+
+Erst danach werden N12/N13 und die Befunde beider Spuren in EINEN Bauauftrag
+gebündelt.
