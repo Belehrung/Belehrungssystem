@@ -1118,11 +1118,14 @@ fertiger Test mit grünem Lauf.
 
 ## Was NICHT mitfährt, und warum
 
-* **B9 (Sessions entwerten).** Bestehende Tablet-Sitzungen prüfen `pin_hash`
-  nicht erneut; ein direktes PIN-Setzen beendet sie also nicht. Ob das
-  Setzen einer PIN durch den Admin ein Credential-Reset SEIN SOLL, ist keine
-  technische Feststellung, sondern eine Festlegung — und sie beträfe BEIDE
-  PIN-Wege, auch den öffentlichen. **Offener Punkt, Betreiber-Entscheidung.**
+* **B9 (Sessions entwerten) — ENTSCHIEDEN am 20.09.2026, nicht erneut
+  fragen.** Bestehende Tablet-Sitzungen prüfen `pin_hash` nicht erneut; ein
+  direktes PIN-Setzen beendet sie also nicht. Ob das Setzen einer PIN durch
+  den Admin ein Credential-Reset SEIN SOLL, war keine technische
+  Feststellung, sondern eine Festlegung — und sie beträfe BEIDE PIN-Wege,
+  auch den öffentlichen. **Betreiber wörtlich: „zur pin frage: nein soll
+  nicht beendet werden".** Es bleibt beim heutigen Verhalten, es wird nichts
+  gebaut. Eingetragen in `plaene/ENTSCHIEDEN.md`.
 * **U-SIG1** (B1) — eigener Entwurf, s. `plaene/durchgang-befunde.md`.
 * **U-DEL1** — das stille `unlink` bei `:2299`, unverändert.
 

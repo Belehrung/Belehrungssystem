@@ -5509,7 +5509,9 @@ angenommen" sagt dort nichts), und der Egress-Proxy schneidet auch hier bei
 | **`kimi-k3` (A/B, wortgleich zu deepseek)** | **7** | **7** | **~0,42 $** |
 
 Der zwanzigste Befund (B9, Sessions entwerten) ist eine richtige Beobachtung,
-deren Auflösung eine **Betreiber-Entscheidung** ist — er fährt nicht mit.
+deren Auflösung eine **Betreiber-Entscheidung** war — er fährt nicht mit.
+(Sie liegt seit dem 20.09.2026 vor: NEIN, s. weiter unten und
+`plaene/ENTSCHIEDEN.md`.)
 
 **Zwei Entwürfe wurden ERSETZT, nicht korrigiert:**
 
@@ -5532,13 +5534,15 @@ dieselben Zeilen anfassen.
 gerichtet). Begründung: unsere eigene Regel verlangt eine zweite Lesung, wenn
 eine Behebung VERHALTEN ändert — und beide tun das.
 
-### Offen, Betreiber-Entscheidung
+### ENTSCHIEDEN am 20.09.2026 (war: offen, Betreiber-Entscheidung)
 
 **Soll das direkte Setzen einer PIN durch den Admin bestehende
-Tablet-Sitzungen beenden?** Heute prüfen sie `pin_hash` nicht erneut, laufen
-also weiter. Das ist eine Festlegung, keine technische Feststellung, und sie
-beträfe BEIDE PIN-Wege (auch `routes/mitarbeiter-auth.js:288-302`). Bis zur
-Antwort fährt es nicht mit.
+Tablet-Sitzungen beenden? — NEIN.** Betreiber wörtlich: „zur pin frage: nein
+soll nicht beendet werden". Es bleibt beim heutigen Verhalten: bestehende
+Sitzungen prüfen `pin_hash` nicht erneut und laufen weiter, in BEIDEN
+PIN-Wegen (auch `routes/mitarbeiter-auth.js:288-302`). Es wird nichts
+gebaut. Eingetragen in `plaene/ENTSCHIEDEN.md`, dort auch die Abgrenzung
+gegen die Token-Entwertung, die davon unberührt bleibt.
 
 ### 23:40 UTC — Planprüfung abgeschlossen, Beitrag B im Bau
 
@@ -6028,3 +6032,53 @@ dazu ausdrücklich „was wird durch die Behebung SCHLECHTER?".
 
 **Danach:** Beitrag A (S5/S6, `routes/admin/mitarbeiter.js`) — der letzte des
 Papiers.
+
+### 07:30 UTC — vierte S6-Lesung ausgewertet, S6 gestrichen, B9 entschieden
+
+**Die Lesung aus dem Abschnitt darüber ist durch.** Zwei Spuren, dasselbe
+Material, verschiedenes Vorwissen (DeepSeek kannte S6 nie, Kimi kannte die
+Vorgeschichte): **beide lieferten je einen blockierenden Befund, NULL
+Überschneidung.** Entwurf 3 ist damit gefallen — Schritt 3 schliesst das
+Fenster nicht, weil sein UPDATE unter READ COMMITTED nur sieht, was beim
+Statement-Beginn sichtbar war. Zahlen und Einzelheiten: `ASTRA-LAEUFE.md`,
+die Ableitung in `plaene/auftrag-schreibreihenfolge.md`, Abschnitt
+„ENTSCHEIDUNG 20.09.2026 — S6 wird AUS dem Papier HERAUSGENOMMEN".
+
+**Betreiber-Entscheidung, wörtlich „ohne s6":** S6 und seine Zusicherungen
+Z6a/Z6b fahren nicht mit. **Beitrag A besteht nur noch aus S5.** Der
+Kandidat für einen eigenen Beitrag (Abweisen beim EINLÖSEN statt Entwerten
+beim SCHREIBEN) steht samt seiner gemessenen Schwäche — beide Spalten haben
+Sekundenauflösung — im selben Abschnitt.
+
+**B9 ist entschieden**, wörtlich: „zur pin frage: nein soll nicht beendet
+werden". Ein direktes PIN-Setzen beendet bestehende Tablet-Sitzungen NICHT;
+es bleibt beim heutigen Verhalten, es wird nichts gebaut. Eingetragen in
+`plaene/ENTSCHIEDEN.md`, dort auch die Abgrenzung gegen die
+Token-Entwertung, die davon unberührt bleibt. Der Abschnitt weiter oben, der
+B9 noch als offen führte, ist entsprechend umgeschrieben.
+
+**Damit ist im Papier nichts mehr offen ausser S5 selbst.**
+
+### Als Nächstes: Beitrag A (nur S5) — erster Fall für den neuen Aufbau
+
+`routes/admin/mitarbeiter.js`: drei Routen melden Erfolg, obwohl null Zeilen
+betroffen waren. Dieser Beitrag ist der erste, der nach der
+Betreiber-Entscheidung vom 20.09.2026 gefahren wird — **jede Lesespur
+bekommt ein ANDERES Bündel**, nicht dasselbe:
+
+1. der Diff mit den direkten Nachbarn,
+2. der weitere Umkreis (Geschwisterrouten, `core/db.js`, Schema),
+3. nur die Zusicherungen und Testdateien.
+
+Frage und Vorspann bleiben gleich. Begründung: bei gleichem Aufbau
+überlappten sol und kimi zu mehr als der Hälfte (14 Befunde für 10
+verschiedene), bei unterschiedlichem Aufbau lag die Überschneidung zweimal
+bei null.
+
+**Danach die noch NICHT gemessene Runde:** die Befunde der drei Spuren gehen
+als ausdrücklich **UNGEPRÜFTE BEHAUPTUNGEN** an eine weitere Spur, mit den
+Fragen „was haben diese übersehen?" und „welche dieser Behauptungen stützt
+sich auf etwas, das im Material nicht steht?". Gemessen wird: wie viele NEUE
+Befunde, wie viele Prämissen-Berichtigungen, und ob eine Spur ihre eigene
+Klasse verliert (Verankerung). Kein Befund wird verworfen, weil eine andere
+Spur das sagt.

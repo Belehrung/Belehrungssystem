@@ -94,6 +94,27 @@ zwei Orten" wieder: hier steht sie, dort nicht mehr.
   je ID mitschreiben. Erst dann trifft zu, was die Entscheidung voraussetzt.
   Kleiner Zusatz, gehört zu Beitrag 2b-1, VOR dem Merge.
 
+- **PIN-SETZEN BEENDET KEINE TABLET-SITZUNG (20.09.2026).** Wörtlich: „zur
+  pin frage: nein soll nicht beendet werden". Damit ist B9 aus
+  `plaene/auftrag-schreibreihenfolge.md` entschieden: setzt ein Admin einem
+  Mitarbeiter direkt eine PIN, laufen dessen bestehende Tablet-Sitzungen
+  WEITER. Es wird also KEIN Credential-Reset daraus gemacht — weder im
+  Admin-Weg noch im öffentlichen PIN-Weg (`routes/mitarbeiter-auth.js`,
+  PIN-Setzen über Einmaltoken). Das ist der heutige Zustand: bestehende
+  Sitzungen prüfen `pin_hash` nicht erneut. Es wird nichts gebaut, und die
+  Frage wird nicht erneut gestellt.
+  **Was davon UNBERÜHRT bleibt und nicht mit weggeworfen werden darf:** die
+  Entwertung der EINMALTOKEN beim PIN-Setzen. Sie ist kein Sitzungsende,
+  sondern verhindert, dass mit demselben Einladungs- oder Reset-Link ein
+  zweites Mal eine PIN gesetzt wird. Sie steht heute in BEIDEN Wegen
+  (`routes/admin/mitarbeiter.js:762`, `routes/mitarbeiter-auth.js:293-300`)
+  und bleibt. Offen ist allein ihre SCHREIBREIHENFOLGE im Admin-Weg (dort
+  PIN zuerst, Tokens danach, beides Autocommit) — das war S6, und S6 ist am
+  20.09.2026 auf Betreiber-Wunsch („ohne s6") AUS dem Papier genommen
+  worden. Wer es später aufgreift, tut das als eigenen Beitrag und liest
+  vorher die drei gefallenen Entwürfe in
+  `plaene/auftrag-schreibreihenfolge.md`.
+
 ## Berichtigungen — nicht neu aufrollen
 
 1. Zuständigkeit ist auf allen sechs Schreibwegen erzwungen (#14).
