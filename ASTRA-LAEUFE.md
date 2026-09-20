@@ -133,6 +133,7 @@ sondern falsch.
 | 20.09.2026 | Planpruefung Schreibreihenfolge Fassung 2 | Diff 2198 Zeilen, Suchen 92, Lesungen 47, Token rein 3286959, Token raus 32890, Runden 21 | — | — | — | 17,42 $ |
 | 20.09.2026 | Diffpruefung Z2-Kollationsbehebung | Diff 819 Zeilen, Suchen 49, Lesungen 50, Token rein 2839786, Token raus 31454, Runden 27 | — | — | — | 15,14 $ |
 | 20.09.2026 | Diffpruefung M3 Startseite | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 773 Zeilen, Suchen 4, Lesungen 12, Token rein 68913, Token raus 8136, Runden 3 | — | — | — | mind. 0,59 $ |
+| 20.09.2026 | Diffpruefung M3 Startseite (zweiter Versuch nach Ueberlast-Abbruch) | Diff 773 Zeilen, Suchen 45, Lesungen 36, Token rein 1574605, Token raus 27412, Runden 20 | — | — | — | 8,70 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
