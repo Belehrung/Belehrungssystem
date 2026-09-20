@@ -6120,3 +6120,35 @@ Basislauf auf dem unveränderten Zweig.
 `istGueltigeId`-Wache in der E-Mail-Route die bestehende Zusicherung grün
 lässt (E5). Vorüberlegung am Quelltext steht im Prüfprotokoll — sie ist eine
 Überlegung, keine Messung.
+
+### 08:42 UTC — Beitrag A: Planprüfung fertig, Bau-Runde 1 läuft
+
+**Läuft:** ein Executer in `/home/user/gymdocu`, Zweig
+`beitrag-a-mitarbeiter-rowcount`. Nicht in diesem Arbeitsbaum arbeiten,
+solange seine Benachrichtigung nicht da ist.
+
+**Planprüfung abgeschlossen: 21 Befunde aus drei Spuren, 16 tragen** nach
+eigener Nachmessung. Zahlen je Spur in `ASTRA-LAEUFE.md`, die Nachmessungen
+in `plaene/planpruefung-beitrag-a-20-09-2026.md`, das Ergebnis als
+**Fassung 2** in `plaene/auftrag-beitrag-a-s5.md` (Abschnitt 6 listet jede
+Änderung samt Anlass).
+
+**Der Plan ist dadurch KLEINER geworden:** der `ma`-Frühausstieg fällt in
+`email` und `umbenennen` weg (zwei Riegel, die einander zudecken, sind
+einzeln nicht messbar), und die Entscheidung zur Token-Entwertung kippt — auf
+einem Weg, den wir als gescheitert melden, wird nichts mehr geschrieben.
+
+**Neu gemessen und für die Modellwahl brauchbar:** `kimi-k3` mit
+`reasoning.effort: xhigh` braucht auf einem ~80k-Bündel mehr als 45.000
+Ausgabe-Token allein fürs Denken und liefert nichts; mit `high` sind es
+21.158 und es kommt ein vollständiges Ergebnis.
+
+**Zwei neue offene Befunde** in `plaene/durchgang-befunde.md`: U-TOK1 (ein
+Token kann seinen Mitarbeiter überleben — stiller `catch` ausserhalb der
+Transaktion, Behebung braucht eine eigene Lock-Ordnungsanalyse) und
+U-PINAUD1 (der Erfolgspfad von `pin-direkt` hat keine Audit-Zusicherung —
+wird in Runde 2 dieses Beitrags geschlossen).
+
+**Runde 2 danach:** Z5a-1b (bcrypt-Zähler), Z5a-2 für alle drei Routen mit
+Positivkontrolle, Z5c mit Positivkontrolle, Z5b mit `ui-banner--error`, und
+Z5e — dessen erste Messung ausdrücklich VOR dem Bau steht.
