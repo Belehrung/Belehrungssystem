@@ -1114,3 +1114,82 @@ diesen Marker gar nicht.
 * Mutationsskript mit Zielpfad als ARGUMENT, Abbruch bei ≠ 1 Fundstelle,
   Marker mit, `node --check` danach.
 * Am Ende `git status` sauber und der Marker-Scan nur mit Prosatreffern.
+
+---
+
+## DIFFPRÜFUNG DER DRITTEN RUNDE — Lesespur (gpt-5.6-sol, 16 Runden, 11,07 $)
+
+Material: der Diff `70d1489..9d3fc3b` plus freier Repo-Lesezugriff. **Zwei neue
+Befunde, beide selbst nachgemessen, beide tragen.** Eine Bewertung fällt.
+
+### R1 (BLOCKIEREND) — die Feuerlöscher-Ablösung hat ihre Verdrahtung verloren
+
+Die Auslagerung nach `feuerloescherOhneProtokoll()` war nötig, damit der neue
+Bereichs-Riegel keinen rohen `db.q()` im Bereich sieht. Sie hat aber die
+statische Zusicherung in `test_feature_brandschutz.js` von der AUFRUFSTELLE
+getrennt: das Muster findet jetzt die Definition des Helfers, nicht den Aufruf.
+
+**Selbst gemessen**, `const alt = await feuerloescherOhneProtokoll(...)` durch
+`const alt = []` ersetzt — die Ablösung ist damit vollständig tot:
+
+    test_feature_brandschutz.js         EXIT 0, 55 PASS / 0 FAIL
+    test_feature_ladebestand_streng.js  EXIT 0, 20 PASS / 0 FAIL
+
+**Dass es vorher getragen hat, ist ebenfalls gemessen**, nicht vermutet: das
+SQL-Literal `NOT EXISTS (SELECT 1 FROM wartung_pruefungen` kommt auf `70d1489`
+GENAU EINMAL vor — in der Route selbst (Z. 2693). Dieselbe Mutation hätte es
+dort ersatzlos entfernt und das Muster wäre gefallen. Heute steht es genau
+einmal im Helfer (Z. 2203) und überlebt die Mutation.
+
+**Eine Verhaltensprobe für die Ablösung gibt es nirgends** (`grep` über alle
+Testdateien: nur die beiden statischen Muster).
+
+Das ist die Klasse „eine Behebung kann Abdeckung KOSTEN" — verursacht von
+genau dem Beitrag, der diese Klasse schliessen sollte.
+
+**Behebung: eine echte Verhaltensprobe**, keine zweite statische Zusicherung.
+Zwei nummerierte Altbestände im selben Studio: einer OHNE Prüfprotokoll muss
+deaktiviert und in `abgeloest` gemeldet werden, einer MIT muss aktiv bleiben.
+Das fängt zugleich den vertauschten Aufruf
+(`feuerloescherOhneProtokoll(kategorieId, req.studioId)`), den eine reine
+Aufrufmuster-Zusicherung nur zufällig träfe.
+
+### R2 — mein eigener Titel-Wortlaut ist zu absolut
+
+`Keine Feststellung gespeichert — Prüfplan nicht abgeglichen` habe ich in
+Fassung 2 wörtlich vorgegeben. **Nachgemessen am Testablauf:** der leere POST
+läuft auf demselben Studio wie drei vorherige POSTs mit Antworten
+(`test_feature_ladebestand_streng.js`, `sid`/`port` aus Schritt 1). Es IST
+also eine Feststellung gespeichert — nur nicht in diesem Durchgang. Der
+Fliesstext sagt das korrekt („In diesem Durchgang wurden keine Antworten
+gespeichert."), der Titel nicht.
+
+**Behebung, Wortlaut:** `Keine neue Feststellung gespeichert — Prüfplan nicht
+abgeglichen`. Die Testkonstante `LEERER_POST_TITEL_NEU` zieht mit; der exakte
+`<title>`-Vergleich bleibt.
+
+Das ist in diesem Beitrag die **fünfte** eigene Vorgabe, die beim Messen
+gefallen ist.
+
+### R3 (Anmerkung, wird mitgenommen) — `pruefeKeinFehlerseiten()` verbraucht den Körper
+
+`await r.text()` konsumiert den Fetch-Körper; ein zweites `r.text()` wirft
+`TypeError: Body is unusable`. **Heute greift kein Aufrufer danach erneut zu**
+(alle prüfen, keiner liest weiter) — also kein Defekt, aber eine Falle für den
+nächsten. `r.clone().text()` kostet ein Wort und nimmt sie weg.
+
+### Was NACHGEMESSEN NICHT trägt
+
+**„Die beiden `html.includes('Einträge')`-Zusicherungen sind redundant neben
+dem Volltext-Vergleich."** Sie sind es nicht. Der Volltext-Vergleich läuft
+gegen die TESTKONSTANTE `AUSSTATTUNG_ABBRUCH_TEXT` (Z. 369). Würden Produktion
+und Konstante gemeinsam umformuliert — genau der Fall, den Punkt 5 der
+Fassung 2 verhindern soll —, bliebe er grün, und NUR die
+`'Einträge'`-Zeile fiele. Sie ist der nicht-selbstbezügliche Anker, als der
+sie gebaut wurde.
+
+Ebenfalls nicht übernommen: die Anmerkung, die Positivkontrolle des
+Bereichs-Riegels beweise nur „mindestens ein `schreibePruefplan(`". Das ist
+richtig und ausdrücklich so gewollt — sie ist die Bremse gegen einen LEEREN
+Bereich („leeres Ergebnis ist nicht sauberes Ergebnis"), nicht der Nachweis
+der einzelnen Wege. Den leisten die Verhaltensproben 4a–4c.
