@@ -70,3 +70,23 @@ ID-Wache).
 ### Eigene Korrektur
 
 Ich hatte sol #3 im Zwischenstand als „trägt, und den hatte ich NICHT" gemeldet — **das war vor der Messung und es war falsch.** Der Befund fällt. Dieselbe Regel, die ich am 20.09. selbst in die CLAUDE.md geschrieben habe: eine Mutation kann von einem ZWEITEN, unabhängigen Riegel gefangen werden, den man nicht kennt. Hier war es kein Riegel im Produktivcode, sondern eine Zusicherung in einer Datei, die ich nicht ins Bündel gelegt hatte.
+
+## N10 — die vom Papier verlangte Laufzeitmessung (nachgetragen)
+
+Gegen die echte `schalteAlleFrei`-Anweisung gemessen (Lock zuerst, dann
+`INSERT … SELECT … ON CONFLICT`), je ein Aufwärmlauf vorher:
+
+| aktive Mitarbeiter | Dauer | betroffene Zeilen |
+|---|---|---|
+| 50 | **1,25 ms** | 50 |
+| 500 | **5,02 ms** | 500 |
+
+Lokale Test-DB, **keine** Aussage über Produktionslatenz oder -hardware. Die
+Grössenordnung (niedriger einstelliger Millisekundenbereich auch bei 500
+Mitarbeitern) macht die Haltedauer des Studio-Locks unauffällig. **Keine
+Zeitschwelle als Zusicherung gebaut** — das Papier verlangte eine Messung,
+keinen Wächter.
+
+Die Zahl steht hier im Repo und nicht nur im Bericht des Ausführenden: eine
+Messung, die nur in einem Transkript lebt, ist beim nächsten
+Container-Neustart weg. (Befund 10 der zweiten Gegenlesung, trägt.)

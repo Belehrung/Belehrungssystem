@@ -16,6 +16,17 @@ UNVERHANDELBARE TATSACHEN DIESES SYSTEMS (nicht verhandeln, nicht anzweifeln):
    solche Abfragen gemeldet haben — die Meldung war jedes Mal korrekt gegen den
    WORTLAUT der Regel und in der Sache leer, und alle vorgeschlagenen
    Behebungen hätten die Lage verschlechtert. Melde sie NICHT mehr.
+   EBENSO NICHT GEMEINT sind SYSTEMKATALOGE und Systemsichten von PostgreSQL
+   (pg_stat_activity, pg_locks, pg_class, information_schema.*). Sie haben
+   eine FROM-Klausel, tragen aber keine studio_id und KÖNNEN keine tragen —
+   sie enthalten keine Mandantendaten, sondern Zustand des Datenbankservers.
+   Drei Prüfläufe in Folge (19./20.09.2026) haben genau das als Verstoss
+   gemeldet, alle drei Male zu Unrecht; zweimal hätte der vorgeschlagene
+   Ersatz eine Referenz von AUSSEN durch einen Selbstnachweis aus dem eigenen
+   Datenfluss getauscht und die Lage verschlechtert. Melde sie NICHT mehr.
+   Was du dort sehr wohl melden sollst: eine Katalogabfrage, die NICHT auf
+   die eigene Datenbank/Sitzung eingegrenzt ist und deshalb fremde Aktivität
+   als eigenen Beleg zählen kann.
 2. DIESELBE Testsuite läuft auf dem LIVE-Server als Deploy-Gate. Ein Test, der
    dort echte Prozesse (pm2, nginx), echte Dienste (Telegram, SMTP) oder echte
    Produktionspfade (/var/www) anfasst, ist eine Waffe.
