@@ -314,3 +314,99 @@ Prüfplan wurde nichts …" in N1 geworden.
 `reihenfolge`."** Nachgemessen: es gibt genau einen Deaktivierungsweg
 (`routes/admin/geraete.js:2141`), und er liegt in `syncAufgaben()`, das im
 selben Lauf neu nummeriert. Siehe N2.
+
+---
+
+# ZWEITE RUNDE — aus der Diffprüfung von `95c52ed`
+
+Elf Befunde, vier als blockierend eingestuft. **Vier davon habe ich selbst
+nachgemessen und sie tragen; sie werden gebaut. Die übrigen sind entweder
+schon entschieden oder ohne Bauauftrag** (unten benannt).
+
+## N8 — BLOCKIEREND: der neue Text kann in der Gegenrichtung falsch sein
+
+Der Parameter sagt nicht, ob geschrieben WURDE, sondern nur, WELCHE Route
+ruft. **Gemessen am Quelltext:** `routes/admin/geraete.js:2621` lautet
+
+    if (antwort === 'unbekannt') continue;
+
+und der Kommentar darüber sagt es selbst: *„Die Feststellung ist oben
+gespeichert, **mehr passiert nicht**."* Werden also alle Brandschutz-Fragen
+mit „Weiß ich nicht" beantwortet und scheitert danach das strenge Lesen,
+behauptet die Seite „Ein Teil des Prüfplans wurde bereits angepasst" —
+**und es wurde nichts angepasst.**
+
+Damit hätte ich einen Satz, der auf einem WEG falsch war, gegen einen Satz
+getauscht, der in einem FALL falsch ist. Dieselbe Klasse.
+
+**Behebung: messen statt annehmen.** Die Brandschutz-Schleife zählt, was sie
+wirklich am Prüfplan geändert hat (Deaktivierungen, Neuanlagen,
+Reaktivierungen, Aufgabenzeilen), und übergibt diese Zahl. Null Änderungen →
+derselbe Text wie auf dem Ausstattungsweg. Damit verschwindet auch die
+Stellungs-Boolean-Falle: ein vergessener dritter Aufrufer bekommt keinen
+stillschweigend falschen Text, sondern muss eine Zahl liefern.
+
+**Abnahme:** ein Brandschutz-POST mit ausschliesslich `unbekannt` und
+gestörtem Bestandslesen → die Seite trägt den „nichts geändert"-Text. Ein
+POST mit echten Änderungen → den Teiländerungs-Text. Beide wörtlich.
+
+## N9 — BLOCKIEREND: der zweite Prüfzeitpunkt beweist nicht, dass der UPDATE-Zweig SCHREIBT
+
+Er beweist, dass eine VERFÄLSCHENDE Mutation auffällt. Ein **No-op** fällt
+nicht auf: der Vorzustand trägt schon die richtige Reihenfolge aus dem
+INSERT-Zweig, und der zweite POST ändert die Aufgabenlisten nicht.
+
+    SET reihenfolge=reihenfolge + 0 * $1, aktiv=1     -- statt SET reihenfolge=$1
+
+bliebe grün. Das ist unsere eigene dritte Erscheinungsform: **der Vorzustand
+erzwingt das erwartete Ergebnis ohnehin.**
+
+**Behebung:** nach dem ersten POST die gespeicherten `reihenfolge`-Werte
+absichtlich verfälschen (etwa +100), DANN den UPDATE-Weg fahren. Nur ein
+echter Schreibvorgang stellt `0 … n-1` wieder her.
+
+**Abnahme:** mit der No-op-Mutation oben muss die Zusicherung ROT werden;
+unverändert GRÜN.
+
+## N10 — BLOCKIEREND: der erste Prüfzeitpunkt ist für leere Mengen vakuos
+
+**Gemessen:**
+
+    [].sort()  deepStrictEqual  [].map(...)   ->  besteht
+
+Ein Gerät ohne aktive Aufgabenzeilen erfüllt die Zusicherung also immer. Und
+die drei POSTs reparieren einen solchen Defekt anschliessend wieder, weil der
+UPDATE-Zweig `aktiv=1` zurücksetzt — **eine zweite Maskierung durch dieselbe
+Fixtur-Erweiterung.**
+
+**Behebung:** am ersten Prüfzeitpunkt eine von Hand hergeleitete
+Aufgabenanzahl je Gerät zusichern, mindestens aber `reihenfolgen.length > 0`.
+Die Zahl wird VOR dem Bau gemessen und im Kommentar begründet.
+
+**Abnahme:** die Aufgabenzeilen nach dem ersten POST deaktivieren → ROT.
+
+## N11 — der Kommentar nennt zu wenig, und eine Zusicherungszahl stimmt nicht
+
+Zwei Prosa-Berichtigungen, beide selbst nachgemessen:
+
+* **Es gibt einen VIERTEN produktiven Leser**, den N3 nicht nennt:
+  `core/pdf-engine.js` liest `ORDER BY a.reihenfolge, a.id` — MIT Beistand,
+  und sein eigener Kommentar begründet das: *„alte reihenfolge, neue beginnen
+  wieder bei 0 — ohne Tiebreaker könnte …"*. Das ist zugleich ein Beleg
+  dafür, dass die Reihenfolgewerte im Bestand nicht global eindeutig sind.
+* **„muss GENAU diese Zusicherung fallen"** stimmt nicht: beim Vertauschen
+  der Texte fallen je Weg ZWEI Zusicherungen (die positive auf den richtigen
+  und die negative gegen den falschen Text).
+
+## Was NICHT gebaut wird, und warum
+
+* **`0 … n-1` bleibt.** Die Prüfung nennt es überstreng (ein Schreiber mit
+  Zehnerschritten wäre fachlich gleichwertig und würde rot). Das ist dieselbe
+  Anmerkung, die schon die Planprüfung gemacht hat; die Entscheidung steht in
+  N2 mit ihrer Begründung und ihrem in Kauf genommenen Preis. **Neu ist nur
+  der vierte Leser — der geht in N11 ein, nicht in eine Änderung der
+  Zusicherung.**
+* **Der grosse Umbau** (alle Schreibvorgänge hinter das strenge Lesen)
+  bleibt ausdrücklich draussen, mit eigenem Papier und eigener Planprüfung.
+  Die Prüfung nennt das korrekt als verbleibenden Mangel; das ist er auch,
+  und er ist benannt statt verdeckt.
