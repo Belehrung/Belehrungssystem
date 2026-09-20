@@ -5672,3 +5672,46 @@ eine Regel gemacht.
 Nacharbeit zu Beitrag B beim selben Executer (vier Muss-Befunde, neun billige
 Mitnahmen, ein reiner Kommentarsatz). Danach: zweite Prüfrunde über die
 Nacharbeit, dann CI und Merge, dann Beitrag C.
+
+### 01:00 UTC — Beitrag B: Nacharbeit geprüft, Abnahme vollständig, CI läuft
+
+**Alle vier Muss-Befunde behoben und von mir nachgemessen.** Der Ausführende
+hat dabei **meiner Gegenprobe-Vorgabe mit einer Messung widersprochen — zu
+Recht:** `studio_id` nur aus der LESE-Abfrage zu entfernen erzeugt kein Leck,
+weil die Route sie auch im UPDATE trägt und dieses dann gegen das Studio des
+ANFRAGENDEN prüft (`rowCount 0`). Erst die Mutation BEIDER Stellen erzeugt
+den Schaden; gemessen landet der Audit-Eintrag dann unter dem fremden Studio,
+wo die alte Zählung ihn nie gesehen hätte.
+
+**Daraus eine neue Regel in CLAUDE.md:** eine grüne Gegenprobe hat ZWEI
+mögliche Ursachen. Bekannt war „der Defekt ist nicht angekommen"; neu ist „er
+ist angekommen, und ein ZWEITER unabhängiger Riegel hat ihn gefangen". Die
+zweite ist die angenehmere Nachricht und die gefährlichere Fehldeutung — man
+hält die Zusicherung für wertlos und schwächt sie ab. Folge: eine
+Gegenprobe-Vorgabe benennt nicht „die eine Zeile", sondern zählt ALLE Riegel
+zwischen Eingabe und Schaden ab.
+
+**Zwei eigene Nacharbeiten:**
+
+* **Der Marker-Scan war von 6 auf 7 gestiegen** — durch den Kommentar, der die
+  Umbenennung erklärt und dabei das Suchwort zitiert. Wörtlich die Krankheit,
+  die CLAUDE.md für dieses Repo beschreibt. Selbst behoben (Bagatellgrenze),
+  Suchwort getrennt geschrieben, nachgemessen wieder **6**.
+* **Einen eigenen Befund heruntergestuft**, bevor er ein Auftrag wurde:
+  `require.main === module` wollte ich als Regress melden — gemessen benutzen
+  das **neun** Testdateien, es ist Hausmuster. Die dahinterliegende Lücke
+  bleibt echt und steht als **U-NOOP1** in `plaene/durchgang-befunde.md`.
+
+**Meine Abnahme (maßgeblicher Lauf nach der eigenen Korrektur):**
+
+| | |
+|---|---|
+| Volle Suite | **`SUITE_EXIT=0`**, **0** `✗ FAIL`, jede Summenzeile 0 FAIL |
+| Dateizahl-Ritual | **344 = 344**, `diff` **EXIT 0** |
+| `npm run lint` | **`LINT_EXIT=0`** |
+| Marker-Scan | **6**, alle in `docs/` |
+| Arbeitsbaum | sauber, Zweig nicht hinter master, Remote = HEAD |
+
+PR ist offen, Review-Bot hat noch nichts kommentiert, **CI läuft** (vier Jobs).
+Nach Regel 6a geht die Nummer erst raus, wenn auch Deploy und Live-Check
+durch sind.
