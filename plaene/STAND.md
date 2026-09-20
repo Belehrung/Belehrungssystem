@@ -6605,3 +6605,84 @@ Assistenten). Mein Diff-Durchgang ist sonst durch, inklusive eigener
 Stichprobe: strengen Ausstattungs-Aufruf zurückgedreht → EXIT 1 mit echter
 AssertionError; per `cp` zurückgenommen, `diff` EXIT 0, md5 identisch;
 danach EXIT 0, 11 PASS / 0 FAIL.
+
+### 14:41 UTC — Ladebestand-Beitrag fertig gebaut und geprüft, M5 neu gefasst
+
+**Ladebestand (GymDocu, Zweig `beitrag-ladebestand`): vier Bau-Runden, alle
+vier mit gemessener Ursache.** Der PR steht, CI läuft — **Nummer erst nach
+Regel 6a**, also wenn auch Review-Bot und Deploy durch sind.
+
+Eigener Prüfgang vollständig: Diff Datei für Datei gelesen, **drei eigene
+Gegenproben** (Ausstattungs-Aufruf zurückgedreht → echte AssertionError;
+Kommentarblindheit der Routenprüfung → EXIT 0 trotz 404; nach der Behebung
+Blockkommentar mitten in der Zeile → „war 404"), jede per `cp` zurückgenommen
+mit `diff` EXIT 0 und identischer md5. Volle Suite selbst: **SUITE_EXIT=0**,
+Dateizahl **350 = 350** (`diff` EXIT 0), `npm run lint` **EXIT 0**,
+Marker-Scan 6 Treffer (alle Prosa).
+
+**Die vierte Runde ist die lehrreiche:** die Routen-Existenzprüfung war ein
+Selbstnachweis aus demselben Datenfluss, in dem der Defekt läge — Quelltext
+lesen, um zu belegen, dass eine Route existiert. Die Kette war roher Text →
+`//` abziehen → Blockkommentare abziehen → … Jede Runde schob die Lücke eine
+Ebene tiefer. **Ersetzt durch eine Referenz von AUSSEN** (echter GET, gemessen
+200/200/404). Das beendet die Klasse, statt sie zu verfeinern.
+
+**Methodisch zweimal gelernt, beides gemessen:**
+* `node --check` vor jeder Gegenprobe hat zum ersten Mal wirklich gegriffen:
+  mein erster Mutationsversuch ergab einen **SyntaxError**, das EXIT 1 wäre
+  sonst als Beleg durchgegangen.
+* **Zwei Prüfläufe waren gar nicht gelaufen.** Ihre Logs trugen nur die
+  Kopfzeile, keine Ergebniszeile, keine Rohantwort — die `nohup`-Prozesse
+  haben das Turn-Ende nicht überlebt. Nach unserer Regel heisst das „niemand
+  hat geprüft". Wer nur auf „keine Befunde im Log" schaut, baut auf einer
+  Scheinprüfung. **Prüfläufe ab jetzt harness-verwaltet starten, nicht per
+  `nohup &`.**
+
+### M5 (Handbuch, Audit-Ansicht, Sicherheitsdoku): Fassung 2
+
+Zwei Planprüfungen mit getrennten Bündeln, **19 Befunde**. Drei davon treffen
+meine eigenen Zusicherungen, und alle drei sind nachgemessen:
+
+* **Die Negativ-Zusicherung wäre gegen den Generator blind gewesen.**
+  `tools/baue_handbuch.py` schreibt Umlaute als Unicode-Escapes — gemessen
+  **162 Stück**. „fälschungssicher" trägt ein ä; als `fälschungssicher`
+  zurückgeschrieben fände ein Literal-Muster es nie, während im PDF wieder
+  das alte Wort stünde.
+* **Die Positiv-Zusicherung zählte, ohne den ORT zu prüfen.** Das Wort in
+  einen Kommentar verschieben lässt die Zahl stehen und nimmt es dem Benutzer
+  weg.
+* **„sinngemäß" ist nicht testbar** — und als Literal implementiert bleibt sie
+  grün, wenn man nur den Bedingungsteil löscht („das" ohne Referenten).
+
+**Der schwerste Fund ist inhaltlich, nicht formal — neu als M5-e.** Der
+Handbuchsatz verspricht: *„im Streitfall lässt sich belegen, was WANN
+unterschrieben wurde"*. Unsere eigene `docs/SICHERHEIT.md:152-154` sagt
+wörtlich das Gegenteil — die Kette *„beweist NICHT gegenüber einem Dritten,
+dass ein Eintrag zu einem bestimmten Zeitpunkt bereits existierte"* — und
+führt bei `:268` „Qualifizierter Zeitstempel" in der Lückenliste. **Das
+Handbuch verspricht einem Kunden genau das, was das Sicherheitsdokument als
+fehlend führt.** Die reine Wortersetzung hätte das konserviert.
+
+**Zwei eigene Fehler berichtigt:** mein Kommentar-Inventar sagte „zehn
+Fundstellen" — nachgezählt sind es **12 Treffer in 9 Dateien**, abzüglich der
+einen geänderten also **11 in 8**. Und M5-a ist die einzige der Stellen OHNE
+erklärenden Nachbarsatz; ohne einen wäre „Manipulationsschutz" dort nach
+meiner eigenen Begründung genauso unscharf wie vorher.
+
+**Betreiber-Entscheidungen, beide eingearbeitet:** „Manipulationsschutz" statt
+„manipulationssicher" (sieben Stellen in M3, fünf in M5), und **keine neue
+Handbuch-Version, kein Changelog-Eintrag**.
+
+**Eine Folge davon, die in die Meldung nach dem Merge gehört:** das
+ausgelieferte PDF ändert seinen Inhalt, ohne dass die Versionsnummer sich
+ändert. `tools/live-check.sh` prüft nur die Version — sie meldete grün, auch
+wenn der neue Text gar nicht drin wäre. **Nach dem Merge wird der INHALT
+geprüft, nicht die Nummer.** Genau umgekehrt zum Vorfall vom 11.08.2026, der
+im Kopf des Generators steht.
+
+**Offene Nebenfrage, nicht gebaut:** ob dieselbe Zeitbeleg-Zusage an weiteren
+Stellen steht (Verkaufsunterlagen, weitere Handbuchkapitel). Ein `grep` auf
+„Streitfall", „belegen", „wann unterschrieben" gehört in den M5-Bericht.
+
+**Reihenfolge ab hier:** Ladebestand durch CI und Merge → M5 bauen → M3
+(Startseite, anderes Repo) → dann die Pentest-Liste ab U-IDW1.
