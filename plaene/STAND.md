@@ -6375,3 +6375,43 @@ Einlöse-Riegel würde beide schliessen.
 
 **Läuft gerade:** ein Executer in `/home/user/gymdocu`, Zweig
 `beitrag-ladebestand`, baut `plaene/auftrag-ladebestand.md` **Fassung 2**.
+
+### 12:40 UTC — Betreiber-Auftrag: die anderen KI auf Markt, Bedienung und Startseite
+
+Wörtlich: „kannst du die anderen ki beauftragen gymdocu mit potenteillen
+mitbewerbern zu verglichen um zu sehen was die besser machen. dazu bitte noch
+ideen zur vereinfachung für admin, trainer . andere ki könnten vorschläge zum
+design der homepage machen. gerne mit animation. auch da bitte bei den andeen
+hompages nachsehen lassen"
+
+**VIER Läufe, verschiedene Aufträge UND verschiedene Bündel** (Entscheidung
+vom selben Tag: gleiches Bündel überlappt zu mehr als der Hälfte):
+
+| Spur | Modell | Websuche | Bündel |
+|---|---|---|---|
+| `mitbewerber` | `gpt-5.6-sol` | **ja** | NUR die Produktbeschreibung — es soll nach AUSSEN sehen, nicht nach innen |
+| `homepage` | `gpt-5.6-sol` | **ja** | Produktbeschreibung + der ECHTE, heute ausgelieferte Quelltext von gymdocu.de |
+| `einfach-k` | `kimi-k3` | nein | Handbuch + **Trainer**-Einstieg (`mitarbeiter-auth.js`) + Einrichtungs-Assistent |
+| `einfach-d` | `deepseek-v4-pro` | nein | Handbuch + **Admin-Dashboard** — den Trainer-Einstieg sieht es NICHT |
+
+**Warum nur OpenAI sucht:** gemessen 19./20.09.2026 — kimis Websuche ist laut
+Hersteller „being updated and not recommended", deepseek hat keine. Eine
+Marktaussage ohne Quelle ist bei uns keine.
+
+**Positivkontrolle vorweg** (`probe.js`): `tools: [{"type":"web_search"}]` und
+`text.format` mit `json_schema`/`strict` gehen ZUSAMMEN — HTTP 200, ein
+`web_search_call` im Ergebnis, richtige Antwort mit URL. Ohne diese Probe wäre
+ein vierstündiger Lauf das Messmittel gewesen.
+
+**Der Vorspann erzwingt die Beweislast**, nicht die Höflichkeit: jede
+Tatsachenbehauptung trägt `belegt` (mit URL, in dieser Sitzung gelesen),
+`vermutet` (aus dem Gedächtnis, ausdrücklich so genannt) oder `unklar`. Seiten,
+an die die Spur nicht herankam, gehören in ein eigenes Feld `nicht_erreichbar`
+— eine benannte Lücke ist ein Ergebnis, eine kaschierte ist Schaden.
+Das ist gegen eine gemessene Umgebungsgrenze gerichtet: viele Anbieterseiten
+sind reine JavaScript-Anwendungen, aus denen ein Abruf nur die leere Hülle holt.
+
+**Jede Ausgabe dieser vier Läufe ist eine BEHAUPTUNG.** Konkurrenzangaben
+werden als ungeprüft geführt, bis ich sie selbst gegen die genannte URL halte;
+Vereinfachungsideen gegen den Quelltext. Dieselbe Regel wie bei jedem
+Prüflauf — sie gilt hier sogar schärfer, weil nichts davon rot werden kann.
