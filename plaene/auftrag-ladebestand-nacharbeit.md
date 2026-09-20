@@ -570,3 +570,27 @@ Der Satz wird damit wahr, ohne dass sich das Verhalten ändert.
 Brandschutz-Text, müssen weiterhin je Weg ZWEI Zusicherungen fallen (N11).
 Zusätzlich eine Zusicherung, die dem Satz das Wort „Einträge" VERLANGT —
 sonst rutscht beim nächsten Umformulieren dieselbe Übertreibung zurück.
+
+### N13 — `erwarteteAufgabenanzahl()` kann einen Sollwert lautlos überschreiben
+
+`karte.set(t.name, t.aufgaben.length)` benutzt den Termin-NAMEN als Schlüssel.
+Kämen zwei Termine mit gleichem Namen vor, bliebe stillschweigend der letzte
+stehen — und der Sollwert, gegen den N10 prüft, wäre falsch, ohne dass
+irgendetwas rot wird. Genau die Klasse, gegen die N10 antritt.
+
+**Heute gemessen, ohne Datenbank:**
+
+    Termine gesamt:          12
+    ohne aufgaben-Array:     []
+    doppelte Termin-Namen:   []
+    eindeutige Namen:        12
+
+Der Fall tritt also heute nicht ein — das ist aber eine Momentaufnahme, kein
+Riegel. **Behebung:** eine Zeile, die verlangt, dass die Karte so viele
+Einträge hat wie es Termine gibt. Fällt sie, hat jemand einen Namen doppelt
+vergeben, und der Sollwert wäre ab da eine Behauptung.
+
+**Abnahme:** in einer Wegwerf-Kopie einen Termin-Namen verdoppeln → die neue
+Zeile muss rot werden. (`t.aufgaben.length` an einem Termin ohne
+`aufgaben`-Array wirft laut — das ist kein stiller Ausfall und braucht keinen
+eigenen Riegel.)
