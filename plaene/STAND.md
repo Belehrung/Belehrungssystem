@@ -6990,3 +6990,15 @@ S6 als eigener Punkt (Fallakte steht, Generationsnummer empfohlen, noch kein
 Bauauftrag); B1-09/B1-10; die Textfeld-Wache (braucht AST); Bündel 2 des
 Durchgangs. Dazu: ein neues Abhängigkeitspaket blockiert die
 Hauptserver-Auslieferung still, weil `nachziehen` kein `npm ci` fährt.
+
+**Nachtrag 22:45 UTC (Takt, Bau läuft noch — nur Stand nachgezogen):** Der
+Executer hat zwei Commits gepusht, `47ff357` (Fassung 2 umgesetzt) und
+`9d3fc3b` („Ehrliche Korrektur an Punkt 4a: M5-Mutation trägt gegen diese
+Fassung nicht"). Die CI war auf `47ff357` mit allen vier Checks grün; für
+`9d3fc3b` steht sie noch aus. **Beides ist noch kein Ergebnis** — der Diff
+ist ungelesen, die Rückmeldung fehlt, und der Vorgängerstand `70d1489` war
+ebenfalls CI-grün und hat drei Prüfspuren trotzdem nicht standgehalten.
+Bemerkenswert ist der Titel des zweiten Commits: er klingt danach, dass ein
+Abnahmekriterium AUS MEINEM EIGENEN Auftrag beim Messen gefallen ist — das
+wäre das vierte in diesem Beitrag und genau das Verhalten, das ich verlangt
+habe. Nachzumessen, nicht zu glauben.
