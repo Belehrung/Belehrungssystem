@@ -231,3 +231,55 @@ beide Aufzeichnungen verknüpft, ohne dass wir etwas anbinden.
 der genau eine Zeile schreibt: „externer Vorgang \<Servicefallnummer\> meldet
 Status X am \<Zeit\>". Das passt auf Jira, auf das System der Servicefirma und
 auf alles andere — und die Herkunft bleibt ehrlich. Bis dahin: nicht bauen.
+
+---
+
+## 20.09.2026 — Startseiten-Wächter: HTML-Parser UND CI-Render-Lauf, sofort
+
+**Betreiber-Entscheidung auf eine Frage mit drei Möglichkeiten.** Gewählt:
+*„Gleich den Parser und den CI-Render-Lauf"* — nicht der von mir empfohlene
+kleinere Weg.
+
+**Anlass:** Acht Umgehungen der Startseiten-Zusicherungen sind gemessen
+worden, alle mit derselben Wurzel — die Zusicherungen vergleichen rohen
+Quelltext mit regulären Ausdrücken, messen also die SCHREIBWEISE statt der
+WIRKUNG. Eine Planprüfung fand danach in meinem eigenen Behebungspapier zwei
+blockierende Fehler, beide selbst nachgemessen:
+
+* Meine Vorgabe „Inline-Auszeichnung durch ein LEERZEICHEN ersetzen" ist
+  falsch. Im Browser gemessen: `manipulations<strong>sicher</strong>` ergibt
+  `"manipulationssicher"` — EIN Wort. Meine Regel hätte daraus
+  `manipulations sicher` gemacht und damit genau die Lücke erzeugt, die sie
+  schliessen sollte (das verbotene Wort schlüpft durch, das erwünschte löst
+  einen Fehlalarm aus).
+* Meine Vorgabe „Block-Tags stehen lassen, dann fliessen keine Absätze
+  zusammen" trägt nicht: die Tags werden vom erweiterten Muster selbst als
+  Zwischenwörter verbraucht. Gemessen: `<p>Wir beugen vor</p><p>jedem
+  deutschen Gericht</p>` trifft das Muster — ein Fehlalarm über eine
+  Absatzgrenze hinweg.
+
+**Was daraus folgt und ab jetzt gilt:**
+
+1. **Live-Gate:** ein echter HTML-Parser im selben Node-Prozess. Kein Server,
+   kein Kindprozess, kein Browser.
+2. **CI:** ein EIGENER Lauf mit echtem Browser für die berechneten Stile und
+   die Sichtbarkeit (`page.setContent()`, kein HTTP-Server, alle
+   Netzanfragen abgewiesen). **Der Live-Server bleibt browserfrei.**
+
+**Eine gemessene Randbedingung, die den Bau bestimmt:** der Parser gehört in
+`dependencies`, NICHT in `devDependencies`. Grund, nachgemessen:
+`ops/gymdocu-deploy:553` setzt für das Ziel *hauptserver*
+`REPO=/var/www/hauptserver`, und `:1978-1984` fährt dort `test/run.sh` als
+Pflicht-Gate; der Produktionsserver installiert laut `:70` bewusst mit
+`npm ci --omit=dev`, und `package.json` hat heute überhaupt keinen
+`devDependencies`-Block. Eine Entwicklungsabhängigkeit fehlte dem Server
+also — das Gate würde mit `MODULE_NOT_FOUND` rot, und zwar erst dort.
+
+**Was die Entscheidung NICHT aufhebt:** die Begründung, warum
+`test/e2e-landing-netzwerk.js` nicht im Live-Gate steht, bleibt gültig. Sie
+war nur enger, als ich sie wiedergegeben hatte: das Verbot lautet „keine
+unkontrollierten Systemwirkungen", nicht „kein Kindprozess" — das Gate
+startet heute schon `bash` (`test_landing.js:391,415`) unter einer
+ausdrücklich dokumentierten Ausnahme
+(`test_feature_keine_systemeingriffe.js:111-118,319`). Ein Browser im
+Live-Gate bleibt trotzdem abgelehnt.
