@@ -191,12 +191,13 @@ das Manipulation ERKENNBAR macht — beschreibt wortgenau auch
 „Manipulationssichere Prüfkette". Die Grenze, die ich gezogen hatte, trennt
 nur „vor Gericht zählt" sauber ab.
 
-**ENTSCHEIDUNG: M3 fasst „manipulationssicher" NICHT an, und das Papier
-behauptet nicht mehr, die Absolutheit sei damit beseitigt.** Ob die sechs
-Stellen bleiben, ist eine Produkt- und Marketingfrage des Betreibers, keine
-Messung — sie steht als **offene Frage** in Abschnitt 6, nicht als
-Bauauftrag. Der Z-e-Wächter stellt den Bestand fest, ohne ihn zu
-rechtfertigen.
+**Entscheidung der Fassung 2 — SEITHER ÜBERHOLT, maßgeblich ist Abschnitt 6.**
+Hier stand: „M3 fasst ,manipulationssicher' NICHT an", weil das eine Produkt-
+und Marketingfrage des Betreibers sei und keine Messung. Die Frage ist am
+20.09.2026 beantwortet worden („ja nimm das so"), und damit ist daraus ein
+Bauauftrag geworden — **M3-g in Abschnitt 6, sieben Stellen über beide
+Seiten.** Der Absatz bleibt stehen, damit niemand den Widerspruch für einen
+Flüchtigkeitsfehler hält.
 
 *Nicht übernommen:* eine Planprüfung wollte zusätzlich „Alle
 Dokumentationspflichten" ersetzen. Diese Zeichenkette kommt **0×** vor — eine
@@ -288,8 +289,10 @@ mit eigener Positivkontrolle. **Keine neue Datei.**
 * **Pflichtabschnitt im Kopfkommentar: „Was dieser Wächter NICHT leistet"** —
   nach dem Vorbild von `test_rechtsaussagen.js`. Hinein gehört wörtlich: er
   bannt eine Musterklasse, keine Aussage; ein Synonym, das keines der Muster
-  trifft, schlüpft durch; und „manipulationssicher" (6×) ist bewusst NICHT
-  Gegenstand, solange der Betreiber nicht entschieden hat.
+  trifft, schlüpft durch; und „Manipulationsschutz" (Abschnitt 6) nimmt die
+  Absolutheit heraus, ohne das Gegenteil zuzusichern — nachträgliche
+  Änderungen werden dadurch ERKENNBAR, nicht unmöglich. Wer mehr hineinliest,
+  liest es nicht aus diesem Wächter.
 
 ---
 
