@@ -1,19 +1,18 @@
 # Auftragspapier — Beitrag A: `routes/admin/mitarbeiter.js`, nur S5
 
-**Stand: 20.09.2026, gemessen gegen `master` = `7b955ec`.** Arbeitszweig
-`beitrag-a-mitarbeiter-rowcount`, abgezweigt von genau diesem Stand.
+**FASSUNG 2, 20.09.2026 — nach der Planprüfung durch drei Spuren.** Was sich
+gegenüber Fassung 1 geändert hat, steht in Abschnitt 6; die Befunde und meine
+Nachmessungen dazu in `plaene/planpruefung-beitrag-a-20-09-2026.md`.
+
+**Stand gemessen gegen `master` = `7b955ec`.** Arbeitszweig
+`beitrag-a-mitarbeiter-rowcount`. Basislauf der vollen Suite auf dem
+unveränderten Zweig: **`SUITE_EXIT=0`, 0 FAIL, Dateizahl-Ritual 348 = 348,
+`diff` EXIT 0.**
 
 Dies ist der DRITTE und letzte Beitrag aus
-`plaene/auftrag-schreibreihenfolge.md`. **S6 fährt NICHT mit** —
-Betreiber-Entscheidung vom 20.09.2026 („ohne s6"), Begründung dort im
-Abschnitt „ENTSCHEIDUNG 20.09.2026 — S6 wird AUS dem Papier
-HERAUSGENOMMEN". Dieses Papier ist eigenständig: wer es umsetzt, braucht das
-grosse Papier nicht zu lesen.
-
-**Damit entfällt auch der Satz „S5 und S6 MÜSSEN zusammen gebaut werden"** aus
-dem grossen Papier. Er stand dort, weil beide dieselben zwei Zeilen (`:760`,
-`:762`) angefasst hätten. S5 allein fasst `:762` NICHT an — s. Entscheidung E-2
-unten, die genau das festlegt.
+`plaene/auftrag-schreibreihenfolge.md`. **S6 fährt NICHT mit**
+(Betreiber-Entscheidung 20.09.2026, „ohne s6"). Damit entfällt auch der Satz
+„S5 und S6 MÜSSEN zusammen gebaut werden" — S5 allein fasst `:762` nicht an.
 
 ---
 
@@ -28,88 +27,96 @@ getroffen hat.
 | `POST /mitarbeiter/pin-direkt/:id` | 746 | 758 | 760 | Redirect `feedback=pin_gesetzt` |
 | `POST /mitarbeiter/umbenennen/:id` | 818 | 838 | 840 | Redirect `feedback=name_geaendert` |
 
-**Alle Zeilennummern am 20.09.2026 gegen `7b955ec` NEU gemessen**, nicht aus
-dem alten Papier übernommen (Hausregel: „Aufgabennotizen veralten").
+**Alle Zeilennummern am 20.09.2026 gegen `7b955ec` NEU gemessen.**
 
-**Alle drei lesen VORHER** (SELECT-Spalte oben). Das ist gemessen und
-widerspricht einer früheren Behauptung des grossen Papiers; es ändert die
-Behebung, s. Abschnitt 2.
+**Kein Datenrisiko.** `studio_id` steht in allen sechs WHERE-Klauseln
+(gemessen). Der Schaden ist eine **falsche Zusage an den Benutzer** — „PIN
+gespeichert. Der Mitarbeiter kann sich jetzt am Tablet anmelden." für einen
+Mitarbeiter, den es nicht gibt.
 
-**Kein Datenrisiko.** `studio_id` steht in jeder der sechs WHERE-Klauseln
-(gemessen an allen drei SELECTs und allen drei UPDATEs). Der Schaden ist eine
-**falsche Zusage an den Benutzer** — „PIN gespeichert. Der Mitarbeiter kann
-sich jetzt am Tablet anmelden." für einen Mitarbeiter, den es nicht gibt.
+**Zwei verschiedene Fälle führen zu 0 Zeilen:**
 
-**Zwei verschiedene Fälle führen zu 0 Zeilen, und sie brauchen verschiedene
-Riegel:**
-
-1. **Die ID war nie vergeben** (oder gehört einem fremden Studio). Dann
-   liefert schon der SELECT `ma = null`. Heute wird `ma` nur für den
-   Protokolleintrag benutzt (`if (ma) { … }`), nicht für die Antwort.
+1. **Die ID war nie vergeben** (oder gehört einem fremden Studio) — der SELECT
+   liefert `ma = null`. Heute wird `ma` nur für den Protokolleintrag benutzt
+   (`if (ma) { … }`), nicht für die Antwort.
 2. **Die Zeile verschwindet ZWISCHEN SELECT und UPDATE** — `POST
-   /mitarbeiter/loeschen/:id` löscht die Zeile hart (gemessen:
-   `routes/admin/mitarbeiter.js:952`, echtes `DELETE FROM mitarbeiter`
-   innerhalb einer `db.tx`, kein Deaktivieren). Dann ist `ma` gefüllt und das
-   UPDATE trifft trotzdem nichts. Diesen Fall fängt NUR `rowCount`.
+   /mitarbeiter/loeschen/:id` löscht hart (`:952`, `DELETE FROM mitarbeiter`
+   innerhalb einer `db.tx`). Dann ist `ma` gefüllt und das UPDATE trifft
+   nichts. Diesen Fall fängt NUR `rowCount`.
+
+**`rowCount` ist in PostgreSQL die Zahl der GETROFFENEN, nicht der
+GEÄNDERTEN Zeilen** — gemessen, vier Fälle einzeln:
+
+    Wert IDENTISCH -> UPDATE 1      Zeile FEHLT   -> UPDATE 0
+    Wert GEAENDERT -> UPDATE 1      NULL auf NULL -> UPDATE 1
+
+Ein erneutes Speichern desselben Werts ist also KEIN Nullzeilen-Fall. Die
+MySQL-Semantik („changed rows") gilt hier nicht. Z5d unten sichert das zu.
 
 ---
 
 ## 2. Was gebaut wird
 
-### E-1 — beide Riegel, in jeder der drei Routen
+### E-1 — `rowCount` in allen drei Routen, `ma`-Ausstieg NUR bei `pin-direkt`
 
-**Riegel A (`ma`):** direkt nach dem vorhandenen SELECT
-
-    if (!ma) return res.redirect("/admin/mitarbeiter?feedback=<code>");
-
-**Riegel B (`rowCount`):** das vorhandene `await db.run(<UPDATE>)` bekommt
-einen Rückgabewert, danach
+**Riegel B (`rowCount`) — in allen drei Routen.** Das vorhandene
+`await db.run(<UPDATE>)` bekommt einen Rückgabewert, danach:
 
     if (!r.rowCount) return res.redirect("/admin/mitarbeiter?feedback=<code>");
 
-`db.run` liefert das volle pg-Ergebnis samt `rowCount` — gemessen,
-`core/db.js:431-433` (`return pool.query(sql, params);`). Es muss also nichts
-umgebaut werden, nur ausgewertet.
+`db.run` liefert das volle pg-Ergebnis samt `rowCount` (`core/db.js:431-433`,
+`return pool.query(sql, params);`).
+
+**Riegel A (`!ma`) — NUR bei `pin-direkt`**, und dort direkt nach dem SELECT
+(`:758`), also VOR `bcrypt.hash(pin, 12)` (`:759`):
+
+    if (!ma) return res.redirect("/admin/mitarbeiter?feedback=pin_fehler");
+
+**In `email` und `umbenennen` wird KEIN `ma`-Ausstieg gebaut.** Er spart dort
+nichts — kein bcrypt, kein teurer Schritt —, und Riegel B liefert für eine nie
+vergebene ID dasselbe Ergebnis. Zwei Riegel, von denen jeder den anderen
+zudeckt, sind einzeln nicht messbar; einer, den man entfernen kann und der
+Test wird rot, ist mehr wert als zwei, die sich gegenseitig tarnen.
+
+Danach steht je Route genau so viel Schutz, wie sich einzeln messen lässt:
+
+| Route | Riegel | bewacht durch |
+|---|---|---|
+| `email` | nur B | Z5a-1 (B entfernen → ROT) und Z5a-2 |
+| `umbenennen` | nur B | dito |
+| `pin-direkt` | A (spart bcrypt) **und** B | A → Z5a-1b (Verhalten), B → Z5a-2 |
 
 **Riegel B steht VOR dem `auditAppend`.** Sonst schreibt die gehashte
-Protokollkette „mitarbeiter_pin_gesetzt" für einen Vorgang, der nicht
-stattgefunden hat. Heute ist der Audit-Aufruf nur durch `if (ma)` geschützt —
-und `ma` ist im Fall 2 gefüllt.
+Protokollkette einen Vorgang fest, der nicht stattgefunden hat. Heute schützt
+den Audit-Aufruf nur `if (ma)` — und `ma` ist im Fall 2 gefüllt.
 
-**Bei `pin-direkt` steht Riegel A VOR `bcrypt.hash`** (`:758` vor `:759`).
-Das ist kein Schönheitsgewinn: `bcrypt.hash(pin, 12)` ist der teuerste
-Schritt der Route, und eine nie vergebene ID soll ihn nicht auslösen.
+### E-2 — bei `pin-direkt` steht Riegel B VOR der Token-Entwertung (`:762`)
 
-### E-2 — Entscheidung: die Token-Entwertung bei `pin-direkt` bleibt, wo sie ist
+**Geändert gegenüber Fassung 1, die das Gegenteil wollte.** Auf einem Weg,
+den wir dem Benutzer als gescheitert melden, wird NICHTS geschrieben.
 
-`:762` entwertet offene Einladungs-/Reset-Tokens. **Riegel B wird bei
-`pin-direkt` NACH dieser Zeile ausgewertet**, nicht davor.
+Fassung 1 argumentierte, `:762` räume bei 0 Zeilen ein verwaistes Token
+nebenbei mit ab, und das sei erhaltenswert. Dagegen stehen zwei Gründe, beide
+aus der Planprüfung und beide nachgemessen:
 
-Begründung: träfe das PIN-UPDATE null Zeilen, ist die Mitarbeiterzeile weg.
-`loeschen` räumt deren Tokens zwar selbst ab (`:889`), tut das aber AUSSERHALB
-der `db.tx`, in der die Mitarbeiterzeile selbst fällt (`:940-953`), und in einem
-`try { … } catch {}` — schlägt es fehl, wird der Fehler verschluckt und die
-Tokens überleben. Die Zeile `:762` räumt sie dann nebenbei mit ab. Wer Riegel B
-davorsetzt, nimmt diese Aufräumung weg und führt einen Zustand neu ein, den es
-heute nicht gibt.
-
-Riegel A steht dagegen VOR `:762` — bei einer nie vergebenen ID gibt es nichts
-aufzuräumen.
-
-**Das ist eine Entscheidung, kein Messergebnis**, und sie gehört ausdrücklich
-in die Prüffrage: *was wird dadurch schlechter?*
+* Die Aufräumung greift nur, wenn ZUFÄLLIG ein Admin `pin-direkt` auf genau
+  die veraltete ID abschickt. Ohne diesen Zufall überleben die Tokens
+  genauso. Das ist kein Riegel, sondern ein glücklicher Nebeneffekt.
+* Mit ihr änderte das System bei 0 getroffenen Zeilen seinen Zustand,
+  während es „nicht gespeichert" meldet und NICHTS protokolliert — ein
+  unbelegter Schreibzugriff auf einem für gescheitert erklärten Weg. Das ist
+  dieselbe Krankheit, die dieser Beitrag heilt, nur spiegelverkehrt.
 
 ### E-3 — Rückmeldecodes
 
-Die Liste steht bei `routes/admin/mitarbeiter.js:60-74` (dreizehn Codes,
-gezählt). **Ein Code ohne Listeneintrag zeigt GAR NICHTS an**
-(`core/ui-feedback.js#feedbackFromQuery`; im Bestand bei `:826-831`
-kommentiert und dort ausdrücklich als GEMESSEN bezeichnet).
+Die Liste steht bei `:60-74` (dreizehn Codes, gezählt). **Ein Code ohne
+Listeneintrag zeigt GAR NICHTS an** (`core/ui-feedback.js#feedbackFromQuery`;
+im Bestand bei `:826-831` als GEMESSEN bezeichnet).
 
 | Route | Code | vorhanden? |
 |---|---|---|
-| `email` | `email_fehler` | **ja, `:72`** — *„E-Mail-Adresse nicht gespeichert. / Der Mitarbeiter wurde nicht gefunden."* Passt wörtlich, wird bereits bei `:680` benutzt. Nichts Neues. |
-| `umbenennen` | `name_nicht_gefunden` | **neu.** `name_fehler` (`:73`) trägt den Detailtext *„Bitte gib einen Namen ein."* — hier irreführend. |
+| `email` | `email_fehler` | **ja, `:72`** — *„E-Mail-Adresse nicht gespeichert. / Der Mitarbeiter wurde nicht gefunden."* Wird bereits bei `:680` benutzt. |
+| `umbenennen` | `name_nicht_gefunden` | **neu.** `name_fehler` (`:73`) trägt *„Bitte gib einen Namen ein."* — hier irreführend. |
 | `pin-direkt` | `pin_fehler` | **neu.** Kein passender Code vorhanden. |
 
 Vorgegebener Wortlaut, beide mit `tone: "error"`:
@@ -117,16 +124,28 @@ Vorgegebener Wortlaut, beide mit `tone: "error"`:
     pin_fehler:          { title: "PIN nicht gespeichert.",  detail: "Der Mitarbeiter wurde nicht gefunden." }
     name_nicht_gefunden: { title: "Name nicht gespeichert.", detail: "Der Mitarbeiter wurde nicht gefunden." }
 
+**Benannte, NICHT behobene Inkonsistenz:** dieselbe Ursache (ungültiges
+ID-FORMAT) wird an den drei Geschwisterrouten verschieden beantwortet —
+`email` zeigt `email_fehler` (`:680`), `pin-direkt` und `umbenennen` machen
+einen baren Redirect ohne jede Anzeige. Das ist BESTAND und nicht Folge
+dieses Beitrags. Neu ist nur, dass der Detailtext von `email_fehler` ab jetzt
+für ZWEI Ursachen stehen muss. Den eigentlichen Schaden daraus fängt Z5e.
+
 ### E-4 — was NICHT angefasst wird
 
 * **`:762` selbst** (Reihenfolge, Transaktion) — das war S6, gestrichen.
+* **Die Wurzel des verwaisten Tokens in `loeschen`**: das Token-DELETE steht
+  bei `:889` AUSSERHALB der `db.tx` (`:940-953`) und in einem stillen
+  `try {} catch {}` ohne `melde()`. Scheitert es, überlebt das Token seinen
+  Mitarbeiter. **Eigener Befund, eigener Beitrag** — das Hineinziehen in die
+  Transaktion ist eine Lock-Ordnungs-Frage (der öffentliche PIN-Weg sperrt
+  `mitarbeiter_token` → `mitarbeiter`, `routes/mitarbeiter-auth.js:295-301`),
+  und die CLAUDE.md verlangt dafür eine eigene Analyse. Nicht nebenbei
+  mitbauen.
 * **`umbenennen` übergibt `req.params.id` als Zeichenkette** an beide
-  SQL-Anweisungen (`:838`, `:840`), während die Geschwister `parseInt`
-  benutzen. Gemessen, aber nicht Gegenstand dieses Beitrags: die ID-Wache
-  `istGueltigeId` läuft davor, und `rowCount` wirkt unabhängig von der
-  Schreibweise.
+  SQL-Anweisungen (`:838`, `:840`). Gemessen, nicht Gegenstand: die ID-Wache
+  läuft davor, und `rowCount` wirkt unabhängig von der Schreibweise.
 * **Der `exists`-Vorabtest bei `email`** (`:684-687`).
-* **Alle übrigen Routen der Datei.**
 
 ---
 
@@ -134,117 +153,184 @@ Vorgegebener Wortlaut, beide mit `tone: "error"`:
 
 ### Z5a-1 — nie vergebene ID → keine Erfolgsmeldung (alle drei Routen)
 
-Die Fixtur existiert bereits: `test_feature_id_wache_route.js` fährt jede der
-drei Routen mit `ID_MAX_FORMAT_GUELTIG` (2147483647). **Drei Zusicherungen
-dort schreiben heute das FALSCHE Verhalten fest** und werden umgedreht:
+Die Fixtur existiert: `test_feature_id_wache_route.js` fährt jede Route mit
+`ID_MAX_FORMAT_GUELTIG` (2147483647). **Drei Zusicherungen dort schreiben
+heute das FALSCHE Verhalten fest** und werden umgedreht:
 
     :340  email       feedback=email_gespeichert  ->  feedback=email_fehler
     :379  pin-direkt  feedback=pin_gesetzt        ->  feedback=pin_fehler
     :427  umbenennen  feedback=name_geaendert     ->  feedback=name_nicht_gefunden
 
-Ihre heutigen Meldungstexte sagen ausdrücklich *„tatsächliches ‚nicht
-gefunden'-Verhalten (GEMESSEN: kein Fehler … 0 Zeilen betroffen, s. Fundort im
-Bericht)"* — sie halten den Befund fest, statt ihn zu beheben. Der Text wird
-mit umgeschrieben; ein Verweis auf diesen Beitrag kommt hinein.
+Ihr heutiger Meldungstext hält den Befund fest statt ihn zu beheben; er wird
+mit umgeschrieben, mit Verweis auf diesen Beitrag.
 
-**GEGENPROBE — und hier ist die Falle, die in CLAUDE.md am 20.09.2026 gemessen
-wurde:** Z5a-1 wird NICHT rot, wenn man nur Riegel A entfernt. Dann läuft das
-UPDATE, trifft null Zeilen, und Riegel B fängt es — grün aus dem zweiten
-Riegel. **Es sind also BEIDE Riegel zu mutieren**, einzeln UND gemeinsam, und
-alle drei Ergebnisse gehören wörtlich in den Bericht:
+**GEGENPROBEN, je einzeln zu messen und wörtlich zu melden:**
 
-    nur Riegel A entfernt   -> erwartet GRÜN  (Riegel B fängt es)
-    nur Riegel B entfernt   -> erwartet GRÜN  (Riegel A fängt es)
-    BEIDE entfernt          -> erwartet ROT   (drei Zusicherungen)
+    email:       Riegel B entfernen            -> erwartet ROT
+    umbenennen:  Riegel B entfernen            -> erwartet ROT
+    pin-direkt:  NUR Riegel A entfernen        -> erwartet GRÜN (B fängt es)
+    pin-direkt:  NUR Riegel B entfernen        -> erwartet GRÜN (A fängt es)
+    pin-direkt:  BEIDE entfernen               -> erwartet ROT
 
-### Z5a-1b — Riegel A steht bei `pin-direkt` VOR `bcrypt.hash` (statisch)
+Die beiden grünen Ergebnisse bei `pin-direkt` sind kein Mangel, sondern der
+Grund für Z5a-1b und Z5a-2: dort trägt jeder Riegel eine eigene Zusicherung.
 
-Weil Z5a-1 den Riegel A verhaltensmässig nicht von Riegel B unterscheiden
-kann (s.o.), bekommt die EINE Eigenschaft, die nur Riegel A hat, eine eigene,
-statische Zusicherung: im Quelltext der Route steht der `!ma`-Ausstieg
-lexikalisch vor dem `bcrypt.hash`-Aufruf.
+### Z5a-1b — bei `pin-direkt` läuft für eine nie vergebene ID KEIN `bcrypt`
 
-**Gegenprobe:** die beiden Zeilen vertauschen → ROT. Muster und
-Fundstellenzählung wie bei den vorhandenen statischen Wächtern der Datei
-(`test_feature_audit_benutzerverwaltung_static.js` benutzt dafür
-`startMarker`) — **das Mutationsmuster muss GENAU EINMAL passen, sonst
-abbrechen** (Hausregel).
+**Verhalten, nicht Lexik.** Die Route holt `bcrypt` erst im Handler über
+`require` (`:755`) — ein Zähler auf dem Modulobjekt greift also.
 
-### Z5a-2 — Löschung ZWISCHEN SELECT und UPDATE → keine Erfolgsmeldung
+**Erwartet:** nie vergebene ID → `bcrypt.hash` 0-mal aufgerufen; echte ID →
+genau 1-mal (Positivkontrolle im selben Lauf).
 
-Der SELECT liest eine ECHTE Zeile; danach wird sie über eine ZWEITE Verbindung
-gelöscht; erst dann läuft das UPDATE.
+**Gegenprobe:** Riegel A hinter `bcrypt.hash` schieben → ROT.
 
-Aufbau wie in Beitrag C (`test_feature_belehrung_neue_version_transaktion.js`):
-`db.one` der Route wird umhüllt, das Muster der Abfrage wird auf die EINE
-gesuchte Anweisung festgelegt, und der Zähler der Aufrufe wird mitgeführt.
-**Der Wrapper prüft, dass er wirklich gegriffen hat** — sonst misst der Lauf
-den unveränderten Weg und meldet grün.
+*Warum nicht statisch:* eine lexikalische Zusicherung („`!ma`-Ausstieg steht
+vor `bcrypt.hash`") überlebt zwei Ein-Zeilen-Mutationen, die das Bewachte
+entfernen — `const ma = (await db.one(...)) || {};` und das blosse Streichen
+des Wortes `return`. Beide wurden in der Planprüfung gefunden, von zwei
+Spuren unabhängig.
 
-**Erwartet:** Fehlermeldung, kein `feedback=…gespeichert/gesetzt/geaendert`.
+### Z5a-2 — Löschung ZWISCHEN SELECT und UPDATE, alle drei Routen
 
-**Gegenprobe:** NUR Riegel B entfernen → **nur dieser Lauf** rot, Z5a-1 bleibt
-grün. Genau das unterscheidet die beiden Riegel voneinander.
+Der SELECT liest eine ECHTE, im SELBEN Lauf angelegte Zeile; danach wird sie
+über eine ZWEITE Verbindung gelöscht (`DELETE … WHERE id=$1 AND
+studio_id=$2` — `studio_id` ist Pflicht, auch im Test); erst dann läuft das
+UPDATE.
 
-**Mindestens für `pin-direkt` zu bauen**, weil dort der Folgeschaden am
-grössten ist (falsche Zusage „kann sich jetzt anmelden" + Protokolleintrag).
-Für `email` und `umbenennen` genügt Z5a-1, wenn der Aufbau sie nicht ohnehin
-billig mitnimmt.
+**Erwartet:** genau der Fehlercode DIESER Route (`email_fehler` /
+`pin_fehler` / `name_nicht_gefunden`), nicht nur „irgendein 302".
 
-### Z5c — bei 0 getroffenen Zeilen wird NICHTS protokolliert
+**Positivkontrolle im selben Lauf:** derselbe Weg OHNE die Löschung muss den
+ERFOLGScode liefern und den Wert wirklich in der Datenbank ändern. Ohne sie
+bliebe die Mutation `if (!r.rowCount)` → `if (true)` unbemerkt.
 
-Im Aufbau von Z5a-2: nach dem Durchlauf steht KEIN Eintrag
+**Gegenprobe:** NUR Riegel B der jeweiligen Route entfernen → nur deren Lauf
+ROT.
+
+**Zwei handwerkliche Vorschriften, beide aus der Planprüfung:**
+
+* **Der Wrapper muss routenscharf greifen.** Der SQL-String
+  `SELECT name FROM mitarbeiter WHERE id=$1 AND studio_id=$2` steht WÖRTLICH
+  IDENTISCH an drei Stellen (`:731` einladen, `:758` pin-direkt, `:838`
+  umbenennen) — ein Muster allein auf diesen String trifft mehrfach. Der
+  Wrapper zählt seine Treffer und die Zusicherung verlangt die erwartete
+  Anzahl; greift er nicht, bricht der Lauf ab, statt grün zu melden.
+* **Restore in `finally`.** Bleibt der Wrapper nach einer geworfenen
+  Zusicherung aktiv, wird aus „ein FAIL" ein „mehrere FAILs aus fremder
+  Ursache" — eine Diagnose darf nie Abdeckung kosten.
+
+### Z5c — bei 0 getroffenen Zeilen wird kein ERFOLGS-Audit geschrieben
+
+Im Aufbau von Z5a-2: nach dem Nullzeilen-Durchlauf steht KEIN Eintrag
 `mitarbeiter_pin_gesetzt` für diese ID in der Protokollkette.
 
-**Gegenprobe:** Riegel B hinter den `auditAppend` schieben → ROT. Damit ist
-die Reihenfolge aus E-1 bewacht und nicht nur behauptet.
+**Positivkontrolle im selben Lauf (Pflicht):** derselbe Weg mit echter ID
+schreibt den Eintrag. Ohne sie ist „kein Eintrag" nicht von „die Abfrage
+sucht am falschen Ort" zu unterscheiden — und den Erfolgspfad-Audit von
+`pin-direkt` sichert heute überhaupt niemand zu (gemessen:
+`test_feature_audit_mitarbeiter.js` deckt anlegen, umbenennen und E-Mail ab,
+`pin-direkt` nicht).
 
-### Z5b — die neuen Codes werden auch ANGEZEIGT
+**Gegenprobe:** Riegel B hinter den `auditAppend` schieben → ROT.
 
-`GET /admin/mitarbeiter?feedback=pin_fehler` liefert eine Seite, die den
-hinterlegten Titel UND den Detailtext enthält; dasselbe für
-`name_nicht_gefunden`.
+**Die Überschrift ist eng gefasst und bleibt es:** zugesichert wird die
+Abwesenheit des ERFOLGS-Eintrags, nicht die Abwesenheit jeder
+Protokollierung.
 
-**Gegenprobe:** den jeweiligen Eintrag aus der Liste (`:60-74`) entfernen →
-ROT. Ohne diese Zusicherung ist ein vergessener Listeneintrag ein stiller
-Redirect, den Z5a nicht von einer Fehlermeldung unterscheiden kann.
+### Z5b — die neuen Codes werden ANGEZEIGT, und zwar als FEHLER
+
+`GET /admin/mitarbeiter?feedback=pin_fehler` liefert eine Seite mit dem
+hinterlegten Titel, dem Detailtext **und der Klasse `ui-banner--error`**;
+dasselbe für `name_nicht_gefunden`.
+
+**Gegenproben, beide einzeln:**
+
+    Listeneintrag entfernen        -> ROT (stiller Redirect)
+    tone: "error" entfernen        -> ROT
+
+Der zweite ist nötig, weil `core/ui-feedback.js:158` bei fehlendem `tone` auf
+`"success"` zurückfällt und `banner()` (`:138-148`) Klasse und `role` daraus
+ableitet: eine Fehlermeldung erschiene als grünes Erfolgsbanner mit
+`role="status"` — für den Benutzer schlechter als der Befund, den wir
+beheben.
+
+### Z5d — derselbe Wert erneut gespeichert bleibt ein ERFOLG
+
+Für `email` und `umbenennen`: denselben Wert ein zweites Mal senden →
+weiterhin `feedback=email_gespeichert` bzw. `name_geaendert`, und weiterhin
+KEIN neuer Audit-Eintrag.
+
+*Warum:* die bestehenden No-Op-Gegenproben
+(`test_feature_audit_mitarbeiter.js:197-200` und `:221-224`) prüfen nur
+Status 302 und die Audit-Anzahl — den Rückmeldecode prüft dort niemand. Beide
+blieben also grün, wenn Riegel B diesen Fall fälschlich als „nicht gefunden"
+behandelte. Sie werden um den Code ergänzt.
+
+### Z5e — ungültiges ID-FORMAT löst keine Datenbankabfrage aus (`email`)
+
+Nach dem Umbau hat `email_fehler` zwei Erzeuger: den Format-Riegel (`:680`)
+und Riegel B. Eine Zusicherung, die nur den Code prüft, kann danach aus dem
+falschen Grund grün sein.
+
+**Erwartet:** für jeden Wert aus `UNGUELTIGE_WERTE` läuft weder `db.one` noch
+`db.run` — null Aufrufe.
+
+**Gegenprobe:** den `istGueltigeId`-Riegel der E-Mail-Route entfernen → ROT.
+
+**Diese Gegenprobe ist die ERSTE Messung der Bau-Runde**, und zwar bevor
+Z5e gebaut wird: erst messen, ob die BESTEHENDE Zusicherung die Entfernung
+des Riegels nach dem Umbau überhaupt noch fängt. Vorüberlegung am Quelltext
+(ausdrücklich eine Überlegung, keine Messung): `2147483648` erzwingt einen
+int4-Überlauf und dürfte sie weiterhin röten — dann aber aus einem Zufall,
+nicht aus dem Riegel.
 
 ---
 
 ## 4. Betroffene Prüfdateien (gemessen, `7b955ec`)
 
-Gesucht wurde nach BEIDEM — Routenpfaden UND Rückmeldecodes/Meldungstexten
-(ein Suchmuster, das nur nach Pfaden sucht, misst die Form mit; genau daran
-fehlte in einer früheren Fassung `test_feature_employee_feedback.js`):
+Gesucht nach BEIDEM — Routenpfaden UND Rückmeldecodes:
 
-    test/e2e-durchlauf.js                          nur INSERT mit pin_gesetzt_am -- NICHT betroffen
+    test/e2e-durchlauf.js                            nur INSERT mit pin_gesetzt_am -- NICHT betroffen
     test_feature_audit_benutzerverwaltung_static.js  statischer Anker auf pin-direkt
     test_feature_audit_fehler_gemeldet.js            Anker auf den melde()-Pfad des pin-Audits
-    test_feature_audit_mitarbeiter.js                Verhalten umbenennen/email mit ECHTEN IDs
+    test_feature_audit_mitarbeiter.js                No-Op-Gegenproben (Z5d)
     test_feature_employee_feedback.js                die drei ERFOLGScodes im Quelltext
-    test_feature_id_wache_route.js                   drei umzudrehende Zusicherungen (s. Z5a-1)
+    test_feature_id_wache_route.js                   drei umzudrehende Zusicherungen, Z5e
 
-**Jede dieser sechs Dateien läuft vor dem Commit einzeln**, und ihre Zahlen
-gehören wörtlich in den Bericht — auch die der nicht betroffenen. Danach die
-volle Suite.
+**Eigens zu messen (Planprüfung, K9):** überleben die statischen Anker auf
+`pin-direkt` das Einfügen zweier neuer `if (...)`-Zeilen, ohne ihre
+GENAU-EINMAL-Zählung zu verlieren?
+
+**Jede dieser sechs Dateien läuft vor dem Commit einzeln**, Zahlen wörtlich in
+den Bericht — auch die der nicht betroffenen. Danach die volle Suite, das
+Dateizahl-Ritual und `npm run lint`.
 
 ---
 
-## 5. Was an diesem Beitrag schiefgehen kann — meine eigene Liste
+## 5. Was an diesem Beitrag noch schiefgehen kann
 
-Sie steht hier, damit die Gegenlesung sie widerlegen oder ergänzen kann, nicht
-damit sie sie übernimmt:
+Nach der Planprüfung verbliebene eigene Liste:
 
-1. **Ein Riegel deckt den anderen zu** (s. Z5a-1) — die Klasse „Zusicherung
-   misst den Frühausstieg statt des Riegels".
-2. **E-2 könnte falsch herum sein.** Ich habe entschieden, die
-   Token-Entwertung bei 0 Zeilen weiterlaufen zu lassen. Das ist eine
-   Abwägung, kein Messergebnis.
-3. **Ein neuer Rückmeldecode ohne Listeneintrag** ist ein stiller Redirect.
-   Z5b soll genau das fangen — bewacht aber nur die zwei NEUEN Codes.
-4. **`email_fehler` wird jetzt für ZWEI verschiedene Ursachen benutzt**
-   (ungültige ID-Form bei `:680`, und neu: nicht gefunden). Eine bestehende
-   Zusicherung, die `email_fehler` erwartet, kann ab jetzt aus dem anderen
-   Grund grün sein — die Klasse „derselbe Statuscode aus einem neuen Grund".
-5. **`umbenennen` arbeitet mit der ID als Zeichenkette** (E-4). Ich halte das
-   für folgenlos, habe es aber nicht gemessen.
+1. **Z5e ist noch nicht gemessen** (s. dort) — die Reihenfolge „erst messen,
+   dann bauen" ist Teil des Auftrags.
+2. **Die statischen Audit-Anker** könnten an den neuen Zeilen mehrdeutig
+   werden (K9).
+3. **Der verwaiste Token in `loeschen`** bleibt bestehen und wird hier
+   bewusst nicht angefasst (E-4).
+
+---
+
+## 6. Was sich gegenüber Fassung 1 geändert hat
+
+| | Fassung 1 | Fassung 2 | Anlass |
+|---|---|---|---|
+| Riegel A | in allen drei Routen | **nur `pin-direkt`** | deepseek T2/T3, sol E2/E4 — zwei Riegel decken einander zu |
+| E-2 | Riegel B NACH `:762` | **VOR `:762`** | kimi K2 — kein Schreibzugriff auf einem als gescheitert gemeldeten Weg |
+| Z5a-1b | statisch (Lexik) | **Verhalten (bcrypt-Zähler)** | kimi K3, sol E4 — `return` streichen reicht, um sie zu täuschen |
+| Z5a-2 | nur `pin-direkt` | **alle drei Routen**, mit Positivkontrolle, exaktem Code, routenscharfem Wrapper, `finally`-Restore | sol E2/E4, deepseek T3, kimi K8 |
+| Z5b | Titel + Detail | **+ `ui-banner--error`** | kimi K6 — ohne `tone` rendert es als Erfolgsbanner |
+| Z5c | „nichts protokolliert" | **„kein ERFOLGS-Audit", mit Positivkontrolle** | sol E7, kimi K1/K4 |
+| Z5d | – | **neu** | deepseek T1 (gefallen) und T4 |
+| Z5e | – | **neu** | sol E5, kimi K5 |
+| `loeschen` | nicht erwähnt | **als eigener Befund benannt** | kimi K2, Flanke 1 |

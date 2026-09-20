@@ -216,3 +216,153 @@ für Sachfragen ohnehin, `high` sei das bessere Geschäft) und einem Dach von
 
 Dass es überhaupt auffiel, liegt an der Statusprüfung bei JEDEM Aufruf — wer
 nur den Text ausliest, hätte hier „0 Befunde" gemeldet.
+
+**Wiederholung mit `high`: 883 s, `status: completed`, 79.660 Eingabe- /
+28.577 Ausgabe-Token (davon 21.158 Nachdenken), 9 Befunde.** Also weniger
+Denken UND ein Ergebnis — die CLAUDE.md-Notiz „für Sachfragen ist `high` das
+bessere Geschäft" bestätigt sich an einer echten Prüfaufgabe.
+
+### K1 „Kein Erfolgspfad-Test für `pin-direkt`; `if (true)` bliebe grün" —
+**FÄLLT im Kern, ein Teil TRÄGT**
+
+Die Prämisse ist falsch, und der Grund ist wieder das Bündel:
+`test_feature_id_wache_route.js:381-384` fährt `pin-direkt` mit einer ECHTEN
+ID, erwartet `feedback=pin_gesetzt` und kontrolliert positiv, dass
+`pin_hash` in der Datenbank steht. Die Mutation `if (!r.rowCount)` →
+`if (true)` würde daran ROT. Die Datei lag nur der Spur „tests" vor.
+
+**Was TRÄGT:** für den ERFOLGSPFAD von `pin-direkt` sichert niemand den
+AUDIT-Eintrag zu. `test_feature_audit_mitarbeiter.js` deckt anlegen,
+umbenennen und E-Mail ab, `pin-direkt` nicht; die beiden übrigen
+Audit-Wächter sind statisch. Damit fehlt genau die Positivkontrolle, die Z5c
+braucht (→ K4).
+
+### K2 „E-2 ist eine opportunistische Aufräumung und erzeugt einen
+unprotokollierten Schreibzugriff" — **TRÄGT, und es KIPPT die Entscheidung
+gegen sol**
+
+Zwei Spuren, dieselbe Tatsache, **entgegengesetzte Empfehlung**: sol (E3) will
+die Aufräumung erhalten, kimi will sie fallen lassen. Entschieden wird es
+nicht durch Abstimmung, sondern am Argument — und kimis zweite Flanke ist
+das stärkere:
+
+* **Flanke 1:** `:762` räumt ein verwaistes Token nur dann ab, wenn ZUFÄLLIG
+  ein Admin `pin-direkt` auf genau diese veraltete ID abschickt. Ohne diesen
+  Zufall überleben die Tokens genauso. Das ist kein Riegel, sondern ein
+  glücklicher Nebeneffekt.
+* **Flanke 2:** Mit E-2 ändert das System bei 0 getroffenen Zeilen seinen
+  Zustand (`mitarbeiter_token` wird geschrieben), während es dem Benutzer
+  „nicht gespeichert" meldet und NICHTS protokolliert. Ein unbelegter
+  Schreibzugriff auf einem für gescheitert erklärten Weg — in einem System,
+  dessen Kern die Beweiskette ist. **Das ist dieselbe Krankheit, die der
+  Beitrag heilen soll, nur spiegelverkehrt.**
+
+**ENTSCHEIDUNG: Riegel B kommt VOR `:762`.** Auf einem Weg, den wir als
+gescheitert melden, wird nichts geschrieben. Sols Beobachtung bleibt richtig
+(heute räumt die Route auf), seine Empfehlung wird verworfen.
+
+**NICHT in diesem Beitrag** — kimis Wurzelvorschlag (`loeschen`: den stillen
+`catch {}` bei `:889` an `melde()` hängen oder das Token-DELETE in die `db.tx`
+bei `:940-953` ziehen). Begründung: das Hineinziehen in die Transaktion ist
+genau die Klasse, für die die CLAUDE.md eine eigene Lock-Ordnungs-Analyse
+verlangt (der öffentliche PIN-Weg sperrt `mitarbeiter_token` → `mitarbeiter`;
+`loeschen` würde dieselbe Ordnung brauchen). Der Befund wird als eigener
+Punkt festgehalten, nicht nebenbei mitgebaut.
+
+### K3 „Z5a-1b: nur das Wort `return` löschen lässt sie grün" — **TRÄGT**
+
+`if (!ma) res.redirect(...)` ohne `return` lässt Muster und lexikalische
+Reihenfolge unverändert, der Frühausstieg feuert aber nicht mehr. Deckt sich
+mit E4 der Spur „eng" — **beide Spuren unabhängig auf derselben Zeile.**
+Behebung: der Anker enthält das `return`, UND es kommt ein Verhaltensanker
+dazu (bcrypt-Zähler).
+
+### K4 „Z5c ist eine reine Nicht-Existenz-Zusicherung" — **TRÄGT**
+
+Deckt sich mit E7. Positivkontrolle im selben Lauf: mit echter ID fahren und
+den Eintrag als VORHANDEN zusichern. Erst „Eintrag da, wenn geschrieben
+wurde / kein Eintrag bei 0 Zeilen" belegt die Reihenfolge aus E-1.
+
+### K5 „`email_fehler` bekommt zwei Erzeuger" — **TRÄGT in der Klasse**
+
+Dritte Spur auf denselben Punkt (E5, K5). kimi liefert den schärfsten
+Mechanismus: jeder Fixtur-Wert, dessen numerischer Kopf auf eine nicht
+vergebene ID führt, liefert nach dem Umbau `email_fehler` aus dem NEUEN
+Riegel — die alte Zusicherung bleibt grün, obwohl der Format-Riegel weg ist.
+**Noch nicht gemessen, weil erst nach dem Bau messbar:** unsere echte
+Fixturliste ist `['1e3','1.5','0x10','2147483648','0']`; `2147483648` löst
+einen int4-Überlauf aus und dürfte die Zusicherung weiterhin röten — dann
+aber aus einem Zufall, nicht aus dem Riegel. **Das ist die ERSTE Messung der
+Bau-Runde.** Behebung unabhängig davon: die Zusicherung sichert zu, dass bei
+ungültigem FORMAT gar keine Datenbankabfrage läuft.
+
+### K6 „Z5b bewacht den `tone` nicht" — **TRÄGT, gemessen**
+
+`core/ui-feedback.js:158` setzt `item.tone || "success"`; `banner()`
+(`:138-148`) leitet Klasse UND `role` daraus ab. Streicht jemand
+`tone: "error"`, erscheint die Fehlermeldung als grünes Erfolgsbanner mit
+`role="status"` — und Z5b prüft laut Papier nur Titel und Detailtext.
+Behebung: zusätzlich auf `ui-banner--error` zusichern.
+
+### K7 „Dreigeteilte Antwort auf denselben Formatfehler" — **TRÄGT als
+Beobachtung, wird NICHT behoben**
+
+`email` → `email_fehler`, `pin-direkt` und `umbenennen` → barer Redirect ohne
+Anzeige. Das ist BESTAND, nicht Folge dieses Beitrags. kimi räumt das selbst
+ein. Es kommt als benannte Inkonsistenz ins Papier, damit es nicht als
+übersehen durchgeht; die Behebung von K5 (Zusicherung auf „keine DB-Abfrage
+bei Formatfehler") fasst den eigentlichen Schaden ohnehin.
+
+### K8 „Das Wrapper-Muster ist nicht routenscharf, und ein Restore fehlt" —
+**TRÄGT, gemessen**
+
+`SELECT name FROM mitarbeiter WHERE id=$1 AND studio_id=$2` steht WÖRTLICH
+IDENTISCH an drei Stellen: `:731` (einladen), `:758` (pin-direkt), `:838`
+(umbenennen). Das ist die Klasse „ein Mutationsmuster, das mehr als einmal
+passt". Dazu fehlt die Vorschrift, den Wrapper in `finally` zurückzunehmen —
+sonst wird aus „ein FAIL" ein „mehrere FAILs aus fremder Ursache", und eine
+Diagnose darf nie Abdeckung kosten.
+
+### K9 „Prüflücke durch fehlendes Material" — **kein Befund, aber ein
+brauchbarer Auftrag**
+
+Wie E8: der gewollte blinde Fleck. Der verwertbare Teil ist die Frage, die
+kimi daraus ableitet: **überleben die statischen Anker auf `pin-direkt`
+(`test_feature_audit_benutzerverwaltung_static.js`) das Einfügen zweier neuer
+`if (...)`-Zeilen, ohne ihre GENAU-EINMAL-Zählung zu verlieren?** Das wird in
+der Bau-Runde gemessen.
+
+---
+
+## Bilanz der drei Spuren
+
+**21 Befunde, 16 tragen nach eigener Nachmessung.**
+
+| | Befunde | tragen | fallen | „kein Befund" |
+|---|---|---|---|---|
+| `gpt-5.6-sol` (eng) | 8 | 6 | 1 (E1 im Kern), 1 (E6) | 1 (E8) |
+| `deepseek-v4-pro` (tests) | 4 | 3 | 1 (T1, war „blockierend") | – |
+| `kimi-k3` (umkreis) | 9 | 7 | 1 (K1 im Kern) | 1 (K9) |
+
+**Was die verschiedenen Bündel gebracht haben — und was nicht.** Vier Punkte
+fanden MEHRERE Spuren unabhängig (Z5a-1b schwach; Z5c ohne Positivkontrolle;
+`email_fehler` mit zwei Erzeugern; die beiden Riegel decken einander zu). Das
+ist keine Überraschung: alle drei lasen dasselbe Papier. Die Ergänzung kam
+aus dem ZUSATZmaterial, und zwar in beide Richtungen —
+
+* **kimi (Umkreis)** fand allein: den `tone`-Befund (nur mit
+  `core/ui-feedback.js` sichtbar), das dreifach vorkommende SQL-Muster, die
+  dreigeteilte Formatfehler-Antwort und die Wurzel in `loeschen`.
+* **deepseek (Tests)** fand allein: dass die bestehenden No-Op-Gegenproben nur
+  Status 302 prüfen.
+* **sol (eng)** fand allein: die fehlende `studio_id`-Vorschrift für die
+  Löschabfrage des Tests.
+* **Und die beiden Spuren OHNE die Testdateien haben genau dort ihre
+  Fehlschlüsse** — E1, E6, K1 fallen alle drei an einer Tatsache, die in den
+  Testdateien steht. Der blinde Fleck ist also nicht gratis: er kostet
+  Fehlalarme, die ich nachmessen muss.
+
+**Ein Ergebnis, das ohne mehrere Spuren nicht zustande gekommen wäre:** sol
+und kimi geben zu E-2 ENTGEGENGESETZTE Empfehlungen, gestützt auf dieselbe,
+von beiden richtig gelesene Tatsache. Ein einzelner Prüfer hätte mir eine der
+beiden als „die" Antwort geliefert.
