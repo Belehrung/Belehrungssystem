@@ -5844,3 +5844,51 @@ nicht der Befund, sondern die BEHEBUNG die Gefahr war.
 
 **Danach:** Executer-Auftrag (Standard, nicht Fable — jede Entscheidung steht
 im Papier), dann volles Prüf-Ritual von vorn.
+
+### 05:55 UTC — Planprüfung hat N4 gestrichen; Nacharbeit beauftragt
+
+**Die Planprüfung des Nacharbeits-Papiers hat sich sofort bezahlt gemacht**
+(`gpt-5.6-sol`, `xhigh`, 99.201 ein / 27.812 aus, 418 s, ≈ 1,33 $):
+6 Befunde, zwei blockierend, **alle vier tragenden Prämissen selbst
+nachgemessen**.
+
+**Der teuerste Befund ging gegen MEINEN eigenen Behebungsplan.** N4 wollte
+`freigeschaltet_am` auf EIN Format vereinheitlichen, damit eine Z2c-Zusicherung
+überhaupt fallen kann. Die Spalte ist aber zugleich das GENERATIONSTOKEN
+(`routes/belehrungen.js:963`, `AND freigeschaltet_am = $4` — der Schutz
+dagegen, dass eine zwischenzeitlich neu angeforderte Pflicht mitgelöscht
+wird), und die `to_char`-Form hat **Sekundenauflösung** (gemessen: `now()` und
+`clock_timestamp()` liefern beide `2026-09-20 05:46:37`). Meine
+Vereinheitlichung hätte eine mikrosekunden-unwahrscheinliche Kollision in eine
+sekundenwahrscheinliche verwandelt — also **genau das Rennen wieder geöffnet,
+das dieser Vergleich schliesst.** N4 ist gestrichen; gebaut wird nur die
+Testkorrektur (Zusicherung auf `grund` statt auf die Zeit).
+
+**Das ist das VIERTE Mal in Folge bei dieser Klasse, dass nicht der Befund
+das Problem war, sondern meine Behebung.** Vorher: eine Transaktion, die eine
+Verklemmung eingeführt hätte; ein Reihenfolgentausch, der ein Rennen im
+Normalbetrieb eröffnet hätte; ein Wegfall, der den einzigen Löschnachweis
+entfernt hätte.
+
+**Drei weitere Berichtigungen an meinem Papier, alle gemessen:**
+* **N1 falsch platziert.** Die Merkvariable stand VOR `await db.tx(...)` —
+  `core/db.js:457-458` führt `BEGIN` aber erst vor dem Callback aus; wirft
+  `pool.connect()` oder `BEGIN`, stünde sie fälschlich auf `true`. Gehört als
+  erste Anweisung IN den Callback.
+* **N5(a) gestrichen.** Die Zeilennummer in die ERWARTUNGSLISTE zu nehmen
+  hätte eine blinde Zusicherung gegen eine getauscht, die bei jeder
+  eingefügten Kommentarzeile anschlägt. N5(c) (Positionszusicherung) trägt
+  die Lokalisierung ohnehin.
+* **N6 eingeengt.** Gemessen: **53 `db.tx`-Callbacks heissen `t`, einer
+  `tx`** — ein Wächter auf das Literal hätte schon heute einen Fehlalarm. Und
+  lexikalisch lässt sich die Klasse nicht schliessen (ausgelagerte Helfer).
+  Der Wächter wird eng gebaut und nennt seine Grenze selbst.
+
+**Drei neue offene Befunde** in `plaene/durchgang-befunde.md`: U-GEN1
+(Spalte ist Anzeigezeit UND Generationstoken), U-TS1 (`CURRENT_TIMESTAMP` ist
+auf den Transaktionsbeginn eingefroren — seit Beitrag C kann die Zeit
+rückwärts springen), U-AUDT1 (repoweiter `auditAppend`-Wächter braucht AST).
+
+**Laufend:** Der Ausführende baut die Nacharbeit (N1, N2, N3, N4-Ersatz, N5b/c,
+N6 eng, N7-N10) auf demselben Zweig. Baum für mich gesperrt bis zu seiner
+Meldung. Danach volles Prüf-Ritual von vorn.
