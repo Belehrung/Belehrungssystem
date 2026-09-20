@@ -137,6 +137,82 @@ zu raten — das ist das gewünschte Verhalten, nicht ein Fund.
 
 ---
 
-## Spur „umkreis" (`kimi-k3`) — steht aus
+## Spur „tests" (`deepseek-v4-pro`) — 4 Befunde
 
-## Spur „tests" (`deepseek-v4-pro`) — steht aus
+324 s, 49.145 Eingabe- / 18.253 Ausgabe-Token (davon 16.545 Nachdenken).
+
+### T1 „Bei identischem Wert liefert das UPDATE `rowCount = 0`" — **FÄLLT,
+gemessen**
+
+Das ist **MySQL-Semantik**, nicht PostgreSQL. Gemessen an einer
+Wegwerf-Datenbank, vier Fälle einzeln:
+
+    UPDATE t SET email='a@b.de' WHERE id=1   -- Wert IDENTISCH   -> UPDATE 1
+    UPDATE t SET email='c@d.de' WHERE id=1   -- Wert GEAENDERT   -> UPDATE 1
+    UPDATE t SET email='x@y.de' WHERE id=999 -- Zeile FEHLT      -> UPDATE 0
+    UPDATE t SET email=NULL     WHERE id=1   -- NULL auf NULL    -> UPDATE 1
+
+`rowCount` ist in PostgreSQL die Zahl der GETROFFENEN Zeilen, nicht der
+GEÄNDERTEN. Der behauptete Falsch-Rot-Fall existiert nicht. **Der Befund war
+als blockierend eingestuft** — eine Schwereeinstufung ist eben in beide
+Richtungen eine Behauptung, bis sie gemessen ist.
+
+**Was aus ihm TROTZDEM übernommen wird:** seine eigene Nachmess-Anweisung ist
+eine sinnvolle Zusicherung, die es heute nicht gibt — speichert der Admin
+denselben Wert erneut, muss weiterhin der ERFOLGScode kommen. Kostet eine
+Zeile je Route und schliesst zugleich T4.
+
+### T2 „Z5a-1 kann eine alleinige Regression von Riegel A nicht melden" —
+**TRÄGT, und zusammen mit T3 ändert es den ENTWURF**
+
+Deckungsgleich mit E4 (Spur „eng"), aber mit einem Zusatz, den sol nicht
+hatte: Z5a-1b gibt es NUR für `pin-direkt`; in `email` und `umbenennen` steht
+Riegel A ohne jede eigene Zusicherung da.
+
+**Daraus folgt etwas Besseres als eine weitere Zusicherung: in `email` und
+`umbenennen` ist Riegel A ÜBERFLÜSSIG.** Er spart dort nichts (kein bcrypt),
+und Riegel B allein liefert für eine nie vergebene ID dasselbe Ergebnis. Fällt
+Riegel A dort weg, hat jede Route genau so viele Riegel, wie sich einzeln
+messen lassen:
+
+| Route | Riegel | wird bewacht durch |
+|---|---|---|
+| `email` | nur B (`rowCount`) | Z5a-1 — entfernt man B, wird sie ROT |
+| `umbenennen` | nur B | dito |
+| `pin-direkt` | A (spart bcrypt) **und** B | A durch Z5a-1b (Verhalten), B durch Z5a-2 |
+
+Damit lösen sich E2, E4-Punkt-1, T2 und T3 gemeinsam auf — nicht durch mehr
+Prüfungen, sondern durch weniger Code.
+
+### T3 „Riegel B in `email`/`umbenennen` ist unbewacht" — **TRÄGT, durch
+dieselbe Änderung erledigt**
+
+Mit nur einem Riegel je Route ist Z5a-1 die Gegenprobe für genau diesen
+Riegel. Z5a-2 (Löschrennen) wird trotzdem für alle drei Routen gebaut — der
+Aufbau ist geteilt, der Mehraufwand gering, und er bewacht einen Fall, den
+Z5a-1 strukturell nicht erreichen kann.
+
+### T4 „Die bestehenden No-Op-Gegenproben prüfen nur Status 302" — **TRÄGT
+als Lücke, nicht als Folge des Plans**
+
+Gemessen am Quelltext: `test_feature_audit_mitarbeiter.js:197` und `:221`
+schicken denselben Wert erneut und prüfen die Audit-Anzahl; den
+Rückmeldecode prüft dort niemand. Das ist unabhängig von diesem Beitrag eine
+Lücke. Sie wird mit der Zusicherung aus T1 geschlossen.
+
+---
+
+## Spur „umkreis" (`kimi-k3`) — erster Lauf ABGEBROCHEN, Wiederholung läuft
+
+**Kein „keine Befunde", sondern „niemand hat geprüft".** `status:
+incomplete`, `reason: max_output_tokens`: **44.997 von 45.000 Ausgabe-Token
+gingen ins Nachdenken, für die Antwort blieben drei.** 1310 s Laufzeit.
+
+Gemessen und für die CLAUDE.md brauchbar: **`kimi-k3` mit `reasoning.effort:
+xhigh` auf einem Bündel von rund 80.000 Eingabe-Token braucht mehr als 45.000
+Ausgabe-Token allein fürs Denken.** Wiederholt mit `high` (die CLAUDE.md sagt
+für Sachfragen ohnehin, `high` sei das bessere Geschäft) und einem Dach von
+120.000.
+
+Dass es überhaupt auffiel, liegt an der Statusprüfung bei JEDEM Aufruf — wer
+nur den Text ausliest, hätte hier „0 Befunde" gemeldet.
