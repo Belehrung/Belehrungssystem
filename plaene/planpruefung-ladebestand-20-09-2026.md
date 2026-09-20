@@ -142,3 +142,82 @@ Abnahme — zumal derselbe Wächter viele Studios in EINER Wegwerf-DB anlegt.
 * **S4** (Z1 braucht leere und teilweise POSTs) trägt, ist aber eine
   Erweiterung des Prüfumfangs, keine Korrektur. Wird mitgenommen, weil die
   bedingte Ein-Zeilen-Mutation, die sol nennt, sonst durchginge.
+
+---
+
+## NACHTRAG — was erst die eigene MUTATIONSMESSUNG gefunden hat
+
+Beide Prüfspuren sind fertig; dieser Teil stammt aus keiner von ihnen, sondern
+aus der Kette „Mutation einbauen → volle Suite → wer hat sie gefangen →
+was sichert sonst noch auf diese Stelle zu".
+
+### Die Klasse ist NICHT ungedeckt — S3 gilt enger als er klingt
+
+Volle Suite mit `return leer;` → `throw e;`: **`SUITE_EXIT=1`, ein Test
+fehlgeschlagen.** Gefangen hat es **nicht** der Wächter, auf den mein Papier
+zeigt, sondern `test_feature_gefaehrdungsbeurteilung.js:318` (Test 13b):
+
+    FEHLGESCHLAGEN: Auch mit kaputtem ladeBestand() muss die Seite noch
+                    die Erfolgsmeldung zeigen
+
+Das ist genau die Inhaltsprüfung, die sol als Ergänzung vorgeschlagen hat —
+sie existiert bereits, nur in einer anderen Datei.
+
+**Damit ist S3 zu berichtigen, und zwar in meiner eigenen Darstellung
+davor:** Der Wächter in `test_feature_ladestand_dbfehler.js:507-526` kann für
+diese Mutation nicht rot werden (gemessen, 78 PASS / 0 FAIL) — das bleibt.
+Falsch wäre der Schluss, die Klasse sei ungedeckt. **Die Suite als Ganzes
+deckt sie.** Der Befund schrumpft damit auf: *mein Papier darf sich nicht auf
+diesen einen Wächter als Beleg stützen, dass der GET-Vertrag unberührt ist* —
+das war ohnehin der Kern.
+
+### BLOCKIEREND: der bevorzugte Entwurf bricht einen Deploy-Gate-Wächter
+
+Die Spur zu 13b führte auf die eigentliche Frage: was sichert sonst noch auf
+diese Aufrufstelle zu? **`test_feature_brandschutz.js:410`** prüft statisch
+den Quelltext des Blocks von `router.post("/geraetewartung/brandschutz")`
+(`:2396`) — und zwar auf den WÖRTLICHEN Aufruf:
+
+    /ladeBestand\(req\.studioId, brandschutz\.BEREICH\)[\s\S]{0,400}begehungsAufgaben/
+
+**`:2654` liegt in genau diesem Block** (gemessen: letzte Routendefinition
+davor ist `:2396`). Abschnitt 1.1 will diesen Aufruf in
+`ladeBestandStreng(...)` umbenennen.
+
+**GEMESSEN, mit genau dieser Umbenennung:**
+
+    node --check  -> OK
+    test_feature_brandschutz.js -> EXIT 1
+    FEHLGESCHLAGEN: Die Begehungs-Checkliste wird nicht aus den
+                    gespeicherten Antworten zusammengesetzt
+
+Eine echte Zusicherung, kein Absturz. **Der bevorzugte Entwurf des Papiers
+bricht also einen Wächter, der auf dem Live-Server Deploy-Gate ist.**
+
+**Was daraus folgt — und es ist keine Absage an 1.1.** Der Wächter sichert
+inhaltlich zu, dass die Begehungs-Checkliste aus den GESPEICHERTEN Antworten
+entsteht; das ändert der Beitrag nicht. Er hängt nur am Funktionsnamen. Nach
+der Hausregel wird er **FACHLICH umgestellt, nie ersatzlos gestrichen**: das
+Muster wird auf `ladeBestand(Streng)?\(req\.studioId, brandschutz\.BEREICH\)`
+erweitert, mit einem Kommentar, warum beide Namen zulässig sind. Das gehört
+ins Papier, nicht in die Entdeckung des Ausführenden mitten im Bau.
+
+**Zu prüfen ist dasselbe für die zweite Zielroute** (`:4151`, Ausstattung) —
+`grep` auf `ladeBestand` in den Testdateien nennt nur
+`test_feature_brandschutz.js`, `test_feature_gefaehrdungsbeurteilung.js` und
+`test_feature_ladestand_dbfehler.js`; eine statische Zusicherung auf den
+Ausstattungs-Aufruf ist darin nicht gefunden worden. **Das ist eine
+Nicht-Fundmeldung und damit schwächer als eine Messung** — der Ausführende
+prüft sie mit dem gelernten Muster erneut.
+
+### Was das über den Prüfaufbau sagt
+
+**Keine der beiden Lesespuren hatte `test_feature_brandschutz.js` im
+Bündel** — ich habe es nicht hineingelegt. Gefunden hat den blockierenden
+Befund also nicht eine Spur, sondern eine MESSUNG mit objektivem Ergebnis.
+Dasselbe Muster wie am 12.09.2026, als der teuerste Fund des Tages ebenfalls
+aus einer stumpfen Messung kam und aus keiner Prüfspur.
+
+**Die Lehre ist nicht „mehr Spuren", sondern eine bessere Bündelwahl:** wer
+einen Funktionsnamen ändert, legt die Dateien ins Bündel, die auf diesen
+Namen ZUSICHERN — und findet sie vorher mit `grep`, nicht hinterher.
