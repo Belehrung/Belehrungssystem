@@ -5962,3 +5962,69 @@ Live-Check durch sind.
 **Bilanz Beitrag C:** 45 Planprüfungs-Befunde + 26 Diffprüfungs-Befunde aus
 drei Runden + 6 aus der Planprüfung des Behebungspapiers. **Viermal in Folge
 war nicht der Befund die Gefahr, sondern meine Behebung.**
+
+### 06:44 UTC — Beitrag C AUSGELIEFERT; Kimi und DeepSeek sind beschlossen; S6-Lesung läuft
+
+*(Uhrzeit mit `date -u` gemessen.)*
+
+**Beitrag C ist fertig und draussen.** PR #463, Squash als master `7b955ec`,
+Merge-Botschaft zurückgelesen (endet exakt an der Schlusszeile), **Deploy-Lauf
+431 `success` auf dem richtigen `head_sha`**, `live-check.sh` **EXIT 0**
+(zwei Punkte ehrlich ℹ: Zertifikatslaufzeit wegen Egress-Proxy,
+Health-Endpunkt von aussen nicht erreichbar). CI vorher vier Jobs `success`,
+Review-Bot ohne Kommentare und ohne Reviews.
+
+**Bilanz Beitrag C:** 45 Planprüfungs-Befunde + 26 aus drei Diffprüfungsrunden
++ 6 aus der Planprüfung des Behebungspapiers. **Viermal in Folge war nicht der
+Befund die Gefahr, sondern meine Behebung.**
+
+### Der Kimi-Test mit Lösungsschlüssel (Betreiber-Auftrag)
+
+Derselbe Diff, dasselbe Bündel (`md5 b1dba825…`), dieselbe Frage, nur `model`
+getauscht — und die Antworten kannte ich vorher.
+
+| | sol (xhigh) | **kimi-k3 (max)** |
+|---|---|---|
+| Befunde | 7 | **7** |
+| getragen | 5 | **6 ganz, 1 im Kern** |
+| gefallen | **2** | **0** |
+| Kosten | ~1,46 $ | **~1,19 $** |
+| Dauer | 348 s | **1401 s** |
+
+**Kimi fand den REGRESS, den sol übersah**, hatte einen Verklemmungsweg, den
+keine andere Spur hatte, und **berichtigte meine eigene Prüffrage**: ich hatte
+FK-Sperren auf einer Tabelle behauptet, die **gar keinen Fremdschlüssel** hat
+(nachgemessen in `core/db.js`). Meine Schlussfolgerung bleibt richtig, ein
+Glied der Begründung war falsch.
+Die Schwäche zeigte sich, wo die Recherche sie verortet: einen Schaden
+beschrieb Kimi konkret und falsch (behauptet einen falschen Audit-Eintrag,
+tatsächlich hängt der Aufruf).
+
+### BETREIBER-ENTSCHEIDUNG 20.09.2026
+
+Wörtlich: **„wir nutzen kimi und deepseak."** Dazu seine Beobachtung, jede KI
+finde Punkte, die eine andere übersieht — **vierfach gemessen**, Einzelheiten
+stehen jetzt in `CLAUDE.md` (Abschnitt Modellwahl). Der brauchbare Teil ist
+nicht die Zahl, sondern der Grund: die Spuren unterscheiden sich darin, **was
+sie DÜRFEN** (ausführen vs. nur lesen) und **was sie SEHEN** (das Bündel).
+Folge: der Hebel ist nicht „noch ein Modell", sondern verschiedene
+FÄHIGKEITEN und verschiedenes MATERIAL.
+
+**Offen und beim Betreiber:** Moonshot trainiert laut eigener Erklärung
+standardmäßig auf eingereichtem Inhalt; für DeepSeek ist es schlicht
+unbekannt (Doku aus dieser Umgebung nicht lesbar). Beide fahren nun mit.
+
+### Laufend: die beschlossene VIERTE Lesung von S6
+
+Grund ist eine Quote, keine Vorsicht: **drei von drei S6-Entwürfen sind
+gefallen**, jeder erst beim Gegenlesen (Entwurf 1 → Verklemmungskreis, gefunden
+von sol; Entwurf 2 → übersah den Token-erzeugenden Weg, gefunden von kimi).
+Entwurf 3 (drei Autocommits) ist ungeprüft.
+
+**Zwei Spuren parallel über dasselbe Material** — und die Auswahl folgt der
+Entscheidung von heute: **DeepSeek hat S6 noch NIE gesehen**, ist hier also
+das frische Auge; Kimi kennt die Vorgeschichte. Leitfrage in Zustandsform,
+dazu ausdrücklich „was wird durch die Behebung SCHLECHTER?".
+
+**Danach:** Beitrag A (S5/S6, `routes/admin/mitarbeiter.js`) — der letzte des
+Papiers.
