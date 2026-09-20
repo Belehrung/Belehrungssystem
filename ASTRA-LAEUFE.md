@@ -131,6 +131,7 @@ sondern falsch.
 | 19.09.2026 | Planpruefung Schreibreihenfolge (Spur 1: was bricht der Plan, welche Lock-Ordnung entsteht) | Diff 809 Zeilen, Suchen 76, Lesungen 51, Token rein 2580807, Token raus 29375, Runden 21 | 8 (3 blockierend) | **8** | 0 | 13,79 $ |
 | 19.09.2026 | Planpruefung Schreibreihenfolge (Spur 2, `deepseek-flash`: was verspricht der Plan, das er nicht einlöst) | statisches Bündel; 168 s | 9 (1 blockierend) | **9** | 0 | ~0,05 $ |
 | 20.09.2026 | Planpruefung Schreibreihenfolge Fassung 2 | Diff 2198 Zeilen, Suchen 92, Lesungen 47, Token rein 3286959, Token raus 32890, Runden 21 | — | — | — | 17,42 $ |
+| 20.09.2026 | Diffpruefung Z2-Kollationsbehebung | Diff 819 Zeilen, Suchen 49, Lesungen 50, Token rein 2839786, Token raus 31454, Runden 27 | — | — | — | 15,14 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
