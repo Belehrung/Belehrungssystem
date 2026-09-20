@@ -77,3 +77,87 @@ ausserhalb der Transaktion in einem stillen `catch` steht. **Andere Ursache,
 dieselbe Folge** — und der Einlöse-Riegel aus dem Kandidaten oben würde
 U-TOK1 mit erledigen, wenn er auch gegen einen fehlenden Mitarbeiter prüft.
 Wer S6 baut, sieht sich U-TOK1 im selben Zug an.
+
+---
+
+## Nachtrag 20.09.2026, 12:43 UTC — die Auflösungsfrage, am Quelltext gemessen
+
+Punkt 2 der Liste oben („die Auflösungsfrage entscheiden und messen") ist zur
+Hälfte erledigt. **Was am Quelltext messbar war, ist gemessen; was eine
+Datenbankabfrage braucht, steht hier ausdrücklich als UNGEMESSEN** — der
+Cluster war zu dieser Zeit mit dem Suite-Lauf eines Executers belegt, und
+zwei Skripte gegen dieselbe Datenbank sind bei uns verboten.
+
+### Gemessen, wörtlich aus dem Quelltext
+
+    core/db.js:526-527   TS_DEFAULT = "to_char(now() AT TIME ZONE 'Europe/Berlin',
+                                               'YYYY-MM-DD HH24:MI:SS')"
+    core/db.js:648       pin_gesetzt_am TEXT,
+    core/db.js:667       erstellt_am    TEXT DEFAULT (${TS_DEFAULT})
+
+    routes/admin/mitarbeiter.js:790   SET … pin_gesetzt_am=to_char(now() AT TIME ZONE
+                                                'Europe/Berlin','YYYY-MM-DD HH24:MI:SS')
+    routes/mitarbeiter-auth.js:299    dieselbe Zeichenkette, zweiter Schreibweg
+
+Beide Spalten des geplanten Vergleichs sind also **TEXT mit ÖRTLICHER
+Wanduhrzeit, sekundengenau, OHNE Zeitzonenkennung**. Das ist mehr als die in
+der Fallakte notierte „Sekundenauflösung": eine Wanduhrzeit ohne Versatz ist
+nicht nur grob, sie ist **nicht monoton**.
+
+### Die Folge — ABGELEITET, NICHT GEMESSEN
+
+Ende Oktober springt die Uhr in Deutschland von 03:00 MESZ auf 02:00 MEZ
+zurück; die Wanduhrzeiten 02:00:00 bis 02:59:59 kommen an diesem Tag ZWEIMAL
+vor. Für den geplanten Riegel hiesse das:
+
+* Token erzeugt um 00:59 UTC → Text `… 02:59:00` (noch MESZ)
+* PIN gesetzt um 01:01 UTC → Text `… 02:01:00` (schon MEZ)
+
+Das Token ist in Wirklichkeit ZWEI MINUTEN ÄLTER als die PIN-Änderung, sein
+Text sortiert aber HINTER ihr. Der Riegel fragt „ist das Token älter als die
+PIN?", bekommt „nein" — **und lässt genau das Token durch, das er abweisen
+soll. Er fällt in dieser Stunde OFFEN aus.** Die Gegenrichtung gibt es auch
+(ein frisches Token wird abgewiesen); die ist unangenehm, aber sicher.
+
+**Das ist eine Ableitung aus der PostgreSQL-Semantik von `AT TIME ZONE`, kein
+Messwert.** Wer S6 baut, misst sie zuerst — eine Abfrage gegen zwei Instants
+im Umstellungsfenster genügt, sie fasst keine Tabelle an.
+
+### Der Ausweg, der beide Probleme nicht hat
+
+Keine feinere Zeitauflösung, sondern **eine Generationsnummer**:
+`mitarbeiter.pin_generation INTEGER NOT NULL DEFAULT 0`, in derselben
+Anweisung hochgezählt, die die PIN setzt; das Token merkt sich die Generation,
+unter der es erzeugt wurde; beim Einlösen wird Gleichheit verlangt.
+
+Das ist monoton, hat keine Auflösung, keine Zeitzone und keine Uhr — und es
+ist genau das Mittel, das die CLAUDE.md unter „Wie die Praxis es nennt" als
+Lehrbuchantwort führt („Idempotenzschlüssel und Generationsnummern") und das
+am 19.09.2026 zwei Prüfspuren unabhängig voneinander vorgeschlagen haben.
+**Kosten:** eine Migration und eine Spalte im Token. **Gewinn:** die Frage
+„genügt eine Sekunde?" stellt sich gar nicht mehr.
+
+### Eine eigene Vermutung, die beim Nachmessen FIEL
+
+Beim Lesen fiel auf, dass `mitarbeiter_token` seine Zeiten in ZWEI
+verschiedenen Zeitzonen führt — `erstellt_am` örtlich (Berlin, über
+`TS_DEFAULT`), `gueltig_bis` dagegen aus JavaScript:
+
+    routes/mitarbeiter-auth.js:178-179   new Date(Date.now() + stunden*3600*1000)
+                                             .toISOString()…      → UTC
+
+Daraus die Vermutung: der Ablaufvergleich bei `:240`
+(`gueltig_bis > jetztSql()`) mischt UTC mit Ortszeit, und ein Token liefe im
+Sommer zwei Stunden zu früh ab. **Nachgesehen — sie trägt nicht:**
+
+    routes/mitarbeiter-auth.js:51-53   function jetztSql() {
+                                           return new Date().toISOString()… }
+
+`jetztSql()` ist selbst UTC. Der Vergleich ist also in sich stimmig, und die
+Vermutung ist widerlegt. **Was bleibt, ist trotzdem ein Befund** — aber ein
+kleinerer, und er gehört richtig benannt: in DERSELBEN Tabelle steht eine
+Spalte in Ortszeit neben einer in UTC. Wer die beiden je miteinander
+vergleicht, liegt je nach Jahreszeit ein bis zwei Stunden daneben. Heute tut
+das niemand; der geplante Riegel vergleicht `erstellt_am` gegen
+`pin_gesetzt_am`, und beide sind örtlich. **Als Falle für den nächsten
+Beitrag gehört es notiert, als Befund gegen den Bestand nicht.**
