@@ -2523,3 +2523,58 @@ das Profil aus der Recherche im Kleinen.
 **Was dieser Lauf NICHT hergibt:** ein Diff, ein Tag. Er sagt nichts darüber,
 ob Kimi bei einem Diff OHNE Lösungsschlüssel ebenso präzise wäre — und der
 Lösungsschlüssel hat die Bewertung erst möglich gemacht, nicht die Befunde.
+
+## 20.09.2026 — S6, vierte Lesung: ZWEI Spuren, ZWEI verschiedene blockierende Klassen
+
+Erste Anwendung der Betreiber-Entscheidung von heute. Auswahl nach dem
+Grundsatz „verschiedene Spuren sehen Verschiedenes": **DeepSeek hatte S6 noch
+NIE gesehen** (frisches Auge), Kimi kannte die Vorgeschichte (es hatte
+Entwurf 2 gekippt). Dasselbe Bündel, dieselbe Frage, parallel.
+
+| | deepseek-v4-pro | kimi-k3 |
+|---|---|---|
+| Befunde | 4 | 5 |
+| Dauer | 564 s | 1120 s |
+| Ein/Aus | 57.836 / 25.510 | 61.415 / 30.219 |
+| Kosten | ~0,06 $ | **~0,64 $** |
+
+**Beide fanden eine blockierende Klasse — und JEDE übersah die der anderen.**
+
+* **DeepSeek D1:** Schritt 3 schliesst das Erzeugerfenster NICHT. Unter
+  READ COMMITTED sieht sein UPDATE nur, was beim Statement-Beginn sichtbar
+  war; eine Einladung, die danach committet, überlebt. Endzustand: neue PIN
+  UND gültiges Token — genau der von Z6a verbotene Zustand.
+  **Nachgemessen:** `sendeMitarbeiterEinladung` (`routes/mitarbeiter-auth.js:183-186`)
+  ist der EINZIGE Erzeuger von `mitarbeiter_token`; Isolationsstufe ist
+  `read committed` (gegen die DB gemessen). **Trägt.**
+  Kimi hat denselben Mechanismus in K4 berührt, ihn aber als
+  Dokumentationsungenauigkeit mit Schwere „niedrig" eingestuft — die
+  blockierende Folge zog nur DeepSeek.
+* **Kimi K1:** Z6b sichert „kein 40P01 in JEDER Verschränkung" zu. Das ist
+  falsch. **Nachgemessen:** kein Index auf `mitarbeiter_token(mitarbeiter_id)`
+  (nur PK und `token UNIQUE`) → der Mehrzeilen-UPDATE läuft als Seqscan in
+  physischer Reihenfolge; der öffentliche PIN-Weg sperrt erst EINE Zeile per
+  `id` (`:296`) und nimmt danach den Mehrzeilen-UPDATE (`:301`). Bei zwei
+  offenen Tokens ist ein Kreis konstruierbar. **Trägt** — aber als Befund
+  gegen die ZUSICHERUNG, nicht als neuer Defekt: derselbe Mehrzeilen-UPDATE
+  steht heute schon in `pin-direkt`. Auf dem Live-Deploy-Gate wäre das ein
+  Test, der auf KORREKTEM Code rot werden kann.
+  DeepSeek hatte diesen Befund nicht.
+
+**Beide unabhängig:** weder Z6a noch Z6b bewacht Schritt 3 — ihn ersatzlos zu
+streichen lässt beide grün (D2 und K2, getrennt hergeleitet). Die Suite würde
+also den bereits gefallenen Entwurf 2 wortwörtlich durchwinken.
+
+**Nur Kimi (K3):** der Kommentar über `sendeMitarbeiterEinladung` behauptet,
+die Transaktion verhindere zwei gültige Links. Unter READ COMMITTED tut sie
+das nicht — und genau das macht „mehrere offene Tokens" (die Vorbedingung von
+Z6b und von K1) überhaupt erreichbar.
+
+**Folge: Entwurf 3 fällt. Drei Entwürfe, drei gefallen** — jeder erst beim
+Gegenlesen, jeder an einer anderen Klasse (Verklemmung / übersehener
+Erzeuger / Sichtbarkeitsfenster).
+
+**Was dieser Lauf für die Entscheidung von heute hergibt:** er ist der
+bisher klarste Beleg. Zwei Spuren, zwei blockierende Befunde, NULL
+Überschneidung bei den blockierenden — und die billigere (0,06 $) fand den
+Befund, der den Entwurf kippt. Der Preis sagt weiterhin nichts über den Ertrag.
