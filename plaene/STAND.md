@@ -5715,3 +5715,39 @@ zwischen Eingabe und Schaden ab.
 PR ist offen, Review-Bot hat noch nichts kommentiert, **CI läuft** (vier Jobs).
 Nach Regel 6a geht die Nummer erst raus, wenn auch Deploy und Live-Check
 durch sind.
+
+### 01:27 UTC — Beitrag B ist gemergt und ausgeliefert (#462, master `74ace5a`)
+
+**Prüf-Ritual vollständig:**
+
+| Schritt | Ergebnis |
+|---|---|
+| Diff gelesen, Datei für Datei | ja, Produktivcode und beide Testdateien |
+| Zwei Prüfspuren über den Diff | `/code-review` 15 Befunde, `kimi-k3` 2 |
+| Eigene Nachmessung jedes Befunds | 4 Muss (alle behoben), 9 billige Mitnahmen, 1 in der Schwere gefallen |
+| Volle Suite (maßgeblicher Lauf) | **`SUITE_EXIT=0`**, 0 `✗ FAIL` |
+| Dateizahl-Ritual | **344 = 344**, `diff` EXIT 0 |
+| `npm run lint` | **`LINT_EXIT=0`** |
+| Marker-Scan | **6**, alle in `docs/` |
+| CI | vier Jobs, alle `success` auf `c0e7091` = Zweigkopf |
+| Review-Bot | keine Kommentare, keine Reviews, kein eigener Check auf diesem PR |
+| Merge | Squash mit eigener Botschaft, **zurückgelesen — endet exakt an der Schlusszeile** |
+| Deploy | **Lauf 430, `head_sha 74ace5a`** (der richtige), `success` |
+| Live-Check | **EXIT 0** — Landingpage 200, Echtheitsprüfung rendert, Studio-Subdomain weist mit 302 ab, Handbuch 2.9.11. Zwei Punkte ehrlich ℹ (Zertifikatslaufzeit wegen Egress-Proxy, Health-Endpunkt von aussen nicht erreichbar) |
+
+**Bilanz des Beitrags:** 45 Planprüfungs-Befunde (44 getragen), 17
+Diffprüfungs-Befunde (13 getragen), 2 aus meiner Prüfung der Nacharbeit
+(1 getragen, 1 von mir selbst heruntergestuft). **Zweimal war nicht der
+Befund das Problem, sondern meine Behebung.** Einmal hat der Ausführende
+meiner Gegenprobe-Vorgabe mit einer Messung widersprochen und hatte recht.
+
+### Als Nächstes
+
+1. **Beitrag C** — `routes/belehrungen.js` (S2, S3). Zeilennummern vor dem Bau
+   neu messen: master ist jetzt `74ace5a`, B hat `belehrungen.js` aber nicht
+   angefasst, die Nummern des Papiers sollten halten.
+2. **Beitrag A** — `routes/admin/mitarbeiter.js` (S5, S6). **Davor die
+   beschlossene vierte Lesung zu S6** (Begründung: drei von drei Entwürfen
+   gefallen; Zuschnitt steht am Ende des Papiers).
+3. `plaene/auftrag-ladebestand.md` — braucht noch die Planprüfung.
+4. B1-09/B1-10 (Namensinvariante Seilgeräte) — noch kein Papier.
