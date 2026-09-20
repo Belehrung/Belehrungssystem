@@ -6204,3 +6204,36 @@ DOM-Sichtbarkeitsprüfung des Banners. Notiert, nicht gebaut.
 **Danach:** PR, CI, Review-Bot-Kommentare lesen, Merge, Deploy-Lauf und
 live-check. Regel 6a gilt — keine Nummer und keine URL, bevor das alles
 durch ist.
+
+### 10:15 UTC — Beitrag A: Runde 3 durch, PR offen, CI läuft
+
+**Zweigkopf `85f9323`** (Runden 1–3 plus eine eigene Kommentarberichtigung),
+PR gegen `master` steht, **nicht** als Entwurf. Regel 6a gilt: keine Nummer
+und keine URL an den Betreiber, bevor CI, Review-Bot, Merge, Deploy und
+live-check durch sind.
+
+**Eigene Abschlussprüfung, alles selbst gefahren:** volle Suite
+`SUITE_EXIT=0`, 0 FAIL, Dateizahl-Ritual **349 = 349**, `diff` EXIT 0,
+`npm run lint` EXIT 0 ohne Fund, Marker-Scan 6 (Sollwert 6). Zweig liegt
+NICHT hinter `master` (`git log HEAD..origin/master` leer).
+
+**Eigene Stichprobe auf den einen Punkt, den der Ausführende ausdrücklich
+NICHT gegengeprobt hatte** (er hat das gemeldet statt übersprungen): ein
+falscher Erfolgs-Audit mit `bezug_id = null` vor Riegel B →
+**EXIT 1, 40 PASS / 1 FAIL**, und zwar genau die R3-4-Zeile mit der
+Diagnose `2 -> 3`. Die `bezug_id`-gefilterte Zusicherung blieb grün — der
+Gesamtzahl-Zusatz aus Runde 3 fängt also wirklich genau diese Lücke.
+
+**Selbst berichtigt (Bagatellgrenze, eine Zeile):** ein Kommentar behauptete,
+`core/db.js:2620-2626` exportiere „genau diese vier" Query-Funktionen. Der
+Bereich enthält auch `pool` und `init`. Nachgezogen.
+
+**Bilanz der Prüfung über den ganzen Beitrag: 50 Befunde** — 21 aus der
+Planprüfung (drei Spuren, verschiedene Bündel), 29 aus der Diffprüfung (vier
+Spuren, eine mit Ausführungsrecht). Die tragenden sind gebaut, jeder einzeln
+nachgemessen.
+
+**Offen nach dem Merge:** U-TOK1 und U-PINAUD1 in
+`plaene/durchgang-befunde.md` — U-PINAUD1 ist mit diesem Beitrag geschlossen
+(der Erfolgspfad-Audit von `pin-direkt` ist jetzt zugesichert), U-TOK1 bleibt
+und braucht eine eigene Lock-Ordnungsanalyse.
