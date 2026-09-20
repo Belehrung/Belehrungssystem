@@ -165,34 +165,42 @@ nichts mit — und sie ist auch durch nichts bewacht, solange M5 nichts baut.
 
 ---
 
-## 4. Die Handbuch-Frage, die ICH NICHT entscheide
+## 4. Handbuch-Version — ENTSCHIEDEN: keine neue
 
-`tools/baue_handbuch.py` leitet `VERSION`/`STAND` automatisch aus
-`CHANGELOG[0]` ab, und `ops/deploy.sh` (Schritt 8/8) baut und veröffentlicht
-das PDF **bei JEDEM Deploy**. Gemessen, aktueller Stand: `("2.9.11",
-"01.09.2026", …)`.
+**Betreiber-Entscheidung 20.09.2026**, wörtlich: „zum handbuch: keine neu
+version". Damit ist die Frage aus der ersten Fassung dieses Papiers
+beantwortet — **kein Changelog-Eintrag, keine Versionserhöhung.**
 
-**Die Regel für Changelog-Einträge** steht im Kopf des Generators
-(Betreiber-Vorgabe 12.08.2026) und lautet sinngemäß: ein Eintrag beantwortet
-NUR zwei Fragen — *was kann der Anwender jetzt, was er vorher nicht konnte,
-und was ist für ihn besser geworden?* Ausdrücklich NICHT hinein gehören
-„Eingeständnisse früherer Fehler im Text".
+**Das deckt sich mit der Regel im Kopf des Generators** (Betreiber-Vorgabe
+12.08.2026): ein Changelog-Eintrag beantwortet NUR zwei Fragen — *was kann
+der Anwender jetzt, was er vorher nicht konnte, und was ist für ihn besser
+geworden?* — und „Eingeständnisse früherer Fehler im Text" gehören
+ausdrücklich NICHT hinein. Eine Formulierungsschärfung beantwortet keine der
+beiden Fragen.
 
-**Eine reine Formulierungsschärfung beantwortet keine der beiden Fragen.**
+**Gemessener Stand, den der Bau NICHT anfasst:** `CHANGELOG[0]` ist
+`("2.9.11", "01.09.2026", …)`. `VERSION` und `STAND` werden daraus abgeleitet
+und bleiben unverändert.
 
-**Meine Empfehlung: KEIN Changelog-Eintrag, KEINE Versionserhöhung.** Der
-Anwender kann nichts Neues; der Text wird genauer. Ein Eintrag wäre nach der
-eigenen Regel ein Eingeständnis und gehörte nicht hinein.
+**Was daraus folgt und VOR dem Bau zu messen ist:** das ausgelieferte PDF
+ändert dann seinen Inhalt, ohne dass sich die Versionsnummer ändert.
+`ops/deploy.sh` baut es bei jedem Deploy neu (Schritt 8/8), also wird die
+Änderung ausgeliefert — aber ein Wächter könnte auf „Inhalt geändert ⇒
+Version muss steigen" bestehen.
 
-**Was daraus folgt und vor dem Bau GEMESSEN werden muss:** das ausgelieferte
-PDF ändert dann seinen Inhalt, ohne dass sich die Versionsnummer ändert.
-**Bevor gebaut wird, ist zu messen, ob ein Wächter das verbietet** —
-`test_feature_handbuch_deploy_static.js` und
-`test_feature_handbuch_namen.js` sind die Kandidaten. Schlägt einer an, ist
-die Empfehlung falsch und die Frage geht zurück an den Betreiber. **Nicht
-raten, nicht umgehen.**
+**Zu messen, bevor gebaut wird:** `test_feature_handbuch_deploy_static.js`
+und `test_feature_handbuch_namen.js` gegen den geänderten Generator laufen
+lassen. Schlägt einer an, wird das GEMELDET und nicht umgangen — dann ist es
+eine neue Lage und geht zurück an den Betreiber. **Nicht raten, nicht
+abschalten, nicht „anpassen".**
 
----
+*Nebenbei gemessen und für die Meldung wichtig:* `tools/baue_handbuch.py`
+trägt im Kopf den Vorfall vom 11.08.2026 — Handbuch auf 2.9 gehoben und
+gemergt, ausgeliefert blieb 2.8, und der Betreiber wurde fälschlich
+informiert, der Deploy erledige das. Seither macht `ops/deploy.sh` es
+automatisch. **Hier ist es umgekehrt: der Inhalt ändert sich, die Nummer
+nicht.** Wer nach dem Merge prüft, prüft deshalb den PDF-INHALT, nicht die
+Versionsnummer — `tools/live-check.sh` meldet nur letztere.
 
 ## 5. Harte Tore
 
