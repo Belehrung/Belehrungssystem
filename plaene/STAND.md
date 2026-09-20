@@ -5782,3 +5782,65 @@ unabhängige Prüfspuren, eigene volle Suite + Dateizahl-Ritual + Lint +
 Marker-Scan, PR, Review-Bot vor den Checks, CI auf dem passenden `head_sha`,
 Squash mit eigener Botschaft samt Schlusszeile und Zurücklesen, Deploy-Lauf
 auf dem richtigen `head_sha`, Live-Check).
+
+### 03:45 UTC — Beitrag C geprüft: ein REGRESS, sechs Zusicherungslücken, zwei Befunde gefallen
+
+Der Ausführende hat um ~02:50 UTC gemeldet (Commit `61665d4`, gepusht).
+**Kein Merge** — die Prüfung hat einen Regress gefunden.
+
+**Eigene Abnahme:** volle Suite **`SUITE_EXIT=0`**, 0 `✗ FAIL`, Dateizahl-Ritual
+**347 = 347** (`diff` EXIT 0), Marker-Scan **6** (alle in `docs/`), alle drei
+Arbeitsbäume sauber, Remote = HEAD.
+
+**Zwei Prüfspuren:** `/code-review` (13 Befunde) und der Gegenleser
+`gpt-5.6-sol` mit `xhigh` (7 Befunde; Bündel **156.332 Token GEZÄHLT**,
+348 s — also am 300-s-Riegel des Egress-Proxy vorbei, `stream: true` trägt;
+≈ 1,46 $). Dazu vier eigene. **Jeder einzeln nachgemessen.**
+
+**Der Regress (N1), beide Richtungen gemessen.** Der neue „erst nachsehen,
+dann löschen"-Zweig aus B8 benutzt für die Nachsehe-Abfrage DIESELBEN
+Parameter, die den ursprünglichen Fehler ausgelöst haben. Sie scheitert
+deterministisch mit, `darfWeg` bleibt `false`, die hochgeladene Datei bleibt
+liegen — auch wenn nachweislich nichts geschrieben wurde:
+
+| Stand | HTTP | Dateien |
+|---|---|---|
+| neu | 500 | **0 → 1, bleibt liegen** |
+| alt | 500 | 0 → 0, aufgeräumt |
+
+B8 war als Schutz gegen eine verlorene COMMIT-Quittung gedacht und wirkt
+jetzt auf JEDEN Fehler. `test_feature_upload_fehlerbehandlung.js:317` fährt
+diesen Weg — seither lässt jeder Suite-Lauf eine Datei liegen.
+
+**Die teuersten Zusicherungslücken, alle gemessen:**
+* **B8 hat gar keine Zusicherung** — `catch` zurückgedreht: volle Suite
+  `SUITE_EXIT=0`, 347 Dateien, **0 FAIL**.
+* **Eine Z2c-Zusicherung kann nicht fallen:** `freigeschaltet_am` trägt zwei
+  Formate (DEFAULT `2026-09-20 05:34:54`, `CURRENT_TIMESTAMP`
+  `2026-09-20 03:34:54.144842+00`).
+* **Ein Wächter kann auf dem LIVE-Server grün aus dem falschen Grund werden:**
+  `test/run.sh:328` leitet die Testrolle aus der Live-`DATABASE_URL` ab, dort
+  ist `pg_stat_activity.query` nicht maskiert.
+* **Der Advisory-Lock hat keine Positionszusicherung** (hinter das UPDATE
+  verschoben → Suite grün), und die zwei byte-gleichen Inventar-Einträge ohne
+  Zeilenanker sind austauschbar.
+* **`auditAppend` ohne `t` in einer `db.tx` hängt unauffindbar** — zweite
+  Poolverbindung auf denselben Advisory-Key.
+
+**Zwei Befunde FALLEN, und einer davon war meine eigene voreilige Meldung.**
+sol hielt die Mandantenlücke im P2-4-Test für ungeprüft; gemessen fängt
+`test_feature_audit_batch3.js` die Mutation (**23 PASS / 1 FAIL**). Seine
+Beobachtung stimmte, sein Schluss nicht — die Datei lag nicht in seinem
+Bündel. Ich hatte ihn im Zwischenstand als tragend gemeldet, VOR der Messung.
+
+**Acht offene Fundorte** stehen in `plaene/durchgang-befunde.md`
+(U-LOCK1, U-S3ERR, U-VORL1, U-AUD1, U-STAT1, U-REAP1, U-IDW1, U-Z2C1), jeder
+mit Messstand und Begründung, warum er nicht mitfährt.
+
+**Laufend:** Planprüfung des Nacharbeits-Papiers
+(`plaene/nacharbeit-beitrag-c.md`, 10 Punkte, 99.077 Token gezählt). Sie läuft,
+weil N1 und N4 Produktivcode ändern und bei dieser Klasse dreimal in Folge
+nicht der Befund, sondern die BEHEBUNG die Gefahr war.
+
+**Danach:** Executer-Auftrag (Standard, nicht Fable — jede Entscheidung steht
+im Papier), dann volles Prüf-Ritual von vorn.
