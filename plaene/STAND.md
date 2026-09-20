@@ -6344,3 +6344,34 @@ Spur hatte.
 **Mitentschieden:** der noch ungemessene Aufbau „Befunde als ungeprüfte
 Behauptungen weiterreichen" ist damit ZURÜCKGESTELLT — er würde die Prüflast
 erhöhen, und genau die war der Engpass.
+
+### 12:20 UTC — Betreiber-Vorgabe: bis alles fertig ist, dann PENTEST-Reife; S6 eigener Punkt
+
+Wörtlich: „arbeite autonom weiter bis alles fertig ist. danach sollte das
+system für den pentest gerüstet sein. s6 als seperater punkt."
+
+**Das ändert die Rangfolge der offenen Befunde.** Bisher waren sie nach
+Umkehrbarkeit sortiert; ab jetzt kommt zuerst, was ein Pentester findet oder
+ausnutzt. **Das ist eine Empfehlung aus der Einordnung, keine Messung** —
+wer sie umdreht, soll das dürfen.
+
+| Rang | ID | Warum pentest-relevant |
+|---|---|---|
+| **1** | **U-IDW1** | `routes/belehrungen.js` hat **keine ID-Wache**. `POST /admin/belehrungen/loeschen/12abc` erreicht über `parseInt` den Datensatz 12 und löscht ihn. Fehlende Eingabeprüfung auf einer ZERSTÖRENDEN Route — das ist das Erste, was ein Pentester fuzzt, und die Klasse ist in sechs anderen Routendateien bereits geschlossen (#461). |
+| **2** | **U-TOK1** | Ein Einladungs-/Reset-Token kann seinen Mitarbeiter überleben (stiller `catch` ausserhalb der Transaktion). Lebenszyklus von Zugangsdaten. |
+| **3** | **U-LOCK1** + **U-AUDT1** | Beides Verfügbarkeit gegen den ganzen Mandanten: ein studioweiter Advisory-Lock über eine blockierende Anweisung gehalten, und ein `auditAppend` ohne `t`, das eine zweite Poolverbindung auf denselben Schlüssel nimmt und **unauffindbar hängt**. Ein angemeldeter Benutzer kann damit das Studio lahmlegen. |
+| **4** | **U-VORL1** | `vorlage-${key}-${Date.now()}.pdf` ohne Zufallsanteil — zwei Studios in derselben Millisekunde kollidieren, `fs.copyFileSync` überschreibt. Mandantengrenze auf dem Dateiweg. |
+| **5** | **U-STAT1 / U-STAT2** | Der äussere `catch` antwortet mit **HTTP 200**. Nicht selbst ausnutzbar, aber es macht jede „Seite antwortet 200"-Zusicherung wertlos und verbirgt Fehlerwege — genau daran hängt U-LBW1. Für einen Pentest-Bericht ist das die Klasse, die alles andere schwerer auffindbar macht. |
+
+**Was NICHT hochgezogen wird:** U-GEN1/U-TS1, U-AUD1, U-REAP1, U-S3ERR,
+U-Z2C1. Richtig und offen, aber Datenintegrität und Diagnose, nicht
+Angriffsfläche.
+
+**S6 ist jetzt ein eigener Punkt:** `plaene/auftrag-s6-token-einloesen.md` —
+die Fallakte mit allen drei gefallenen Entwürfen, dem Kandidaten und seiner
+gemessenen Schwäche (Sekundenauflösung). **Noch kein Bauauftrag**, und die
+Auflösungsfrage ist VOR dem Entwurf zu messen. Er berührt U-TOK1: derselbe
+Einlöse-Riegel würde beide schliessen.
+
+**Läuft gerade:** ein Executer in `/home/user/gymdocu`, Zweig
+`beitrag-ladebestand`, baut `plaene/auftrag-ladebestand.md` **Fassung 2**.
