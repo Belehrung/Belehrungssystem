@@ -1,4 +1,4 @@
-# Stand — 20.09.2026, ~17:45 UTC
+# Stand — 20.09.2026, ~18:40 UTC
 
 Diese Datei ist der Übergabepunkt. Der Takt-Prompt ist beim Bau von
 Beitrag 1 stehengeblieben. **Hier steht, was wirklich gilt.**
@@ -127,44 +127,32 @@ Punkt 4 ist die Lehre des Tages: Die Upload-Spur war sachlich richtig (sie
 hat ein echtes Informationsleck gefunden), aber sie ist ohne Entscheidung an
 das Programm vorbeigewachsen, und gemerkt hat es der Betreiber, nicht ich.
 
-## LÄUFT GERADE (20.09.2026, ~17:45 UTC)
+## LÄUFT GERADE (20.09.2026, ~18:40 UTC)
 
-* **Bau der Startseiten-Härtung, Teil A** (Parser im Live-Gate) im
-  Arbeitsbaum `/home/user/gymdocu-hauptserver`, Zweig `landing-m3`.
-  Der Bau hat bereits committet (`97892d6`) und der Baum ist sauber —
-  **der Agent hat sich aber noch nicht gemeldet, also gilt der Baum als
-  belegt.**
-* **Planprüfung zur Ladebestand-Nacharbeit auf `kimi-k3`** (der
-  OpenAI-Lauf war vorher am erschöpften Guthaben gescheitert; das Guthaben
-  ist inzwischen wieder da und nachgemessen).
+* **Bau der Ladebestand-Nacharbeit** im Arbeitsbaum `/home/user/gymdocu`,
+  Zweig `beitrag-ladebestand`. Papier:
+  `plaene/auftrag-ladebestand-nacharbeit.md` (nach Planprüfung berichtigt).
 
-**Beide Arbeitsbäume sind sauber, keine Gegenprobe offen.** Der GymDocu-Baum
-steht auf `e58eb2d`, der Hauptserver-Baum auf `97892d6`. **Nichts ist
-gemergt.**
+## ERLEDIGT — Startseite ist GEMERGT, aber NICHT AUSGELIEFERT
 
-### Diese Stunde entschieden und gemessen
+`Belehrung/gymdocu-hauptserver` PR #100, gemergt als `abaf643`. Alle drei
+CI-Jobs grün, einschliesslich des neuen Browser-Laufs. Eigene Messungen:
+volle Suite `SUITE_EXIT=0`, Dateizahl 86 = 86, `test_landing.js` 312 PASS /
+0 FAIL, Render-Lauf lokal 87 PASS / 0 FAIL — dieselbe Zahl wie in der CI.
+Merge-Botschaft zurückgelesen, sie endet genau an ihrer Schlusszeile.
 
-1. **Betreiber: Parser UND CI-Render-Lauf, sofort** (statt meines kleineren
-   Vorschlags). Papier: `plaene/auftrag-m3-haertung.md` Fassung 2. Fassung 1
-   ist verworfen — zwei Planprüfungen fanden darin unabhängig dieselben zwei
-   blockierenden Fehler, beide am Browser nachgemessen.
-2. **Betreiber: bei erschöpftem Guthaben übernehmen die anderen Modelle.**
-3. **Betreiber: Lesewerkzeuge für alle drei Anbieter — aber ERST nach den
-   laufenden Beiträgen.** Grundlage ist die Messung in
-   `plaene/werkzeugfaehigkeit-kimi-deepseek-20-09-2026.md`: Kimi und DeepSeek
-   beherrschen Werkzeugaufrufe nachweislich (volle Zweirundenschleife,
-   Kontrollwort wörtlich zurück).
+**AUSLIEFERUNG STEHT AUS und geht nur von Hand.** Es gibt im Repo NUR
+`ci.yml`, keinen Deploy-Workflow; die Startseite rollt `ops/gymdocu-deploy`
+in Schritt 5c nach `/var/www/landing` aus, und das Skript läuft auf dem
+Server. Gemessen an der echten Seite (`curl https://gymdocu.de/`, HTTP 200,
+68.116 Bytes):
 
-### Eigene Fehler dieser Stunde, damit sie nicht wiederkommen
+    manipulationssicher   6x        <- alter Stand
+    Manipulationsschutz   0x
+    id="module"           0x        <- der tote Anker ist noch tot
 
-* **`$?` hinter einer Pipe** — mein eigener Aufruf meldete `EXIT=0`, während
-  das Werkzeug mit 5 abgebrochen war. Aufgefallen nur, weil das Werkzeug die
-  leere Antwort selbst benannte.
-* **Eine LESENDE und eine SCHREIBENDE Prüfspur gleichzeitig im selben
-  Arbeitsbaum.** Die Lesespur hielt die Gegenprobe der anderen für den
-  Repo-Stand und baute daraus ihren schärfsten Befund.
-* **Ein Ausgabebudget, das das Nachdenken nicht mitträgt**, liefert HTTP 200
-  und eine LEERE Antwort — die sich wie „keine Befunde" liest.
+**Solange das so bleibt, liefert die öffentliche Seite weiter die alten
+Versprechen aus.** Der Betreiber ist unterrichtet.
 
 
 ## Der Gegenleser ist wieder erreichbar (18.09.2026, ~20:20 UTC)
