@@ -410,3 +410,163 @@ Zwei Prosa-Berichtigungen, beide selbst nachgemessen:
   bleibt ausdrücklich draussen, mit eigenem Papier und eigener Planprüfung.
   Die Prüfung nennt das korrekt als verbleibenden Mangel; das ist er auch,
   und er ist benannt statt verdeckt.
+
+---
+
+## Eigene Nachmessung der zweiten Runde (Haupt-Agent, 20.09.2026)
+
+Nicht der Bericht des Ausführenden, sondern eigene Messungen an `b820fb2`
+und `70d1489`. Jede Mutation über ein Skript mit Zielpfad als **Argument**,
+Fundstellenzählung (Abbruch bei ≠ 1), `GEGENPROBE-`+`DEFEKT`-Marker,
+`node --check`, Rücknahme gegen eine unabhängig angelegte `cp`-Kopie mit
+`diff` EXIT 0. Läufe gegen eine eigene Wegwerf-DB `gymdocu_gegenprobe_test`,
+nicht gegen `gymdocu_test`.
+
+### Das geweitete Zeichenfenster (600 → 700) — die Stelle, die ich verboten hatte
+
+Ein Wächter-Budget zu weiten ist genau die Richtung „abgeschwächt", die im
+Auftrag ausgeschlossen war. Deshalb zuerst und am gründlichsten gemessen.
+
+**Am Quelltext gezählt:** im abgegrenzten Assistenten-Block gibt es GENAU
+ZWEI Fundstellen des Musters `ladeBestand(Streng)?\(req\.studioId,
+brandschutz\.BEREICH\)` — die milde bei Zeile 2262, die strenge bei 2793.
+Abstand zu `begehungsAufgaben` (Zeile 2801):
+
+    Zeile 2262 (mild)   ->  36173 Zeichen
+    Zeile 2793 (streng) ->    607 Zeichen
+
+607 belegt, dass die Weitung nötig war; 36173 belegt, dass 700 die falsche
+Fundstelle nicht erreichen kann. Ein Budget müsste um den Faktor 52 wachsen.
+
+**Gegenprobe am Verhalten**, `bestandJetzt = await ladeBestandStreng(…)` durch
+`bestandJetzt = {}` ersetzt:
+
+    test_feature_brandschutz.js        EXIT 1 — „Die Begehungs-Checkliste wird
+                                       nicht aus den gespeicherten Antworten
+                                       zusammengesetzt"
+    zurückgenommen                     EXIT 0, 55 PASS / 0 FAIL
+
+**Und der Fund, der die Weitung endgültig entschärft:** dieselbe Mutation
+macht auch `test_feature_ladebestand_streng.js` rot, und zwar an einer
+VERHALTENS-Zusicherung mit unabhängig hingeschriebener Zahl:
+
+    FEHLGESCHLAGEN: Vorbedingung: bei allen acht Positionen "vorhanden"
+    müssen 24 Begehungszeilen aktiv sein, waren 10
+
+Die statische Nähe-Prüfung ist also NICHT die einzige Absicherung der
+Verdrahtung Route → `begehungsAufgaben`. Damit trägt die Weitung.
+
+**Was dabei auffiel und stehen bleibt (kein Befund gegen diesen Beitrag, aber
+notiert):** die Nähe-Prüfung arbeitet auf dem ROHEN Quelltext INKLUSIVE
+Kommentaren. Ein künftiger Kommentar, der den Aufruf nur ZITIERT, kann sie
+erfüllen, während der Code fehlt — die Umkehrung von „Tests dürfen nicht an
+Prosa scheitern". Heute sind beide Fundstellen echter Code (gezählt, s.o.).
+
+### N8 — Zähler statt Weg-Boolean
+
+Alle Schreibstellen zwischen Schleifenbeginn und `ladeBestandStreng()`
+abgezählt und je gegen den Zähler gehalten: Sammel-Deaktivierung (`rowCount`),
+Ablösung alter Einträge, Reaktivierung, Nachtrag `durchfuehrung`, Nachtrag
+`notizen`, Neuanlage samt Aufgabenzeilen — **jede erhöht `praefplanGeaendert`.**
+Die Antwortzeile in `pruefbereich_bestand` zählt bewusst NICHT mit; genau das
+sagt der Text („Am Prüfplan"). Zwischen Schleifenende und dem strengen Lesen
+steht kein weiterer Schreibvorgang.
+
+Gegenprobe (Parameter durch die Konstante `1` ersetzt):
+
+    FEHLGESCHLAGEN: N8 KERNFALL: Brandschutz-Abbruch-Antwort bei
+    ausschliesslich "unbekannt" muss den "nichts geänderte"-Text tragen
+
+### N9 — die Verfälschung war nötig, und sie wirkt
+
+Hier die Messung, die der Ausführende nur behauptet hatte. Derselbe No-op im
+UPDATE-Zweig (`SET reihenfolge = reihenfolge + 0 * $1, aktiv=1`), zweimal
+gefahren:
+
+    MIT der +100-Verfälschung    EXIT 1 — „reihenfolge von 'AED — Elektroden
+                                 und Batterie: Verfallsdaten' ist nicht
+                                 lückenlos 0…n-1, war [100,101,102]"
+    OHNE die Verfälschung        EXIT 0, 15 PASS / 0 FAIL
+
+Der zweite Prüfzeitpunkt war also wirklich vakuos und ist es jetzt nicht mehr.
+Das ist der Kern von N9, und er steht nicht mehr auf einem Bericht.
+
+### N10 — die Zusicherung greift, die Vakuität ist belegt
+
+    Zusicherung rot: INSERT-Zweig auf aktiv=0 gedreht →
+    „AED — Elektroden und Batterie: Verfallsdaten" muss 3 aktive
+    Aufgabenzeile(n) haben (aus core/ausstattung.js), waren 0
+
+Die Vakuität der ALTEN Fassung ist als JS-Identität belegt
+(`[].sort() deepStrictEqual [].map(…)` besteht), **nicht** über diese
+Mutation: sie ist zu breit. Sie leert auch die Begehungszeilen, und die alte
+Fassung wird davon ebenfalls rot — nur später und über eine fremde
+Vorbedingung (7 Haken statt 4). Ehrlich benannt: die Mutation zeigt, dass die
+neue Zusicherung FRÜHER und GENAUER anschlägt, nicht dass die alte
+nichtsgesehen hätte.
+
+### Der unveränderte Hash — meine Vorhersage war falsch
+
+Mein Auftrag sagte: *„Der Sollwert-Hash ändert sich durch N9 und N10 erneut."*
+Der Ausführende hat widersprochen und recht behalten. Grund, am Quelltext
+nachgelesen: der Hash wird über `mengeZ2` gebildet, also über den Zustand
+NACH dem zweiten/dritten POST. Die +100-Verfälschung liegt DAVOR und wird vom
+UPDATE-Zweig wieder ausgebügelt; N10 fügt nur eine Zusicherung hinzu und
+berührt die serialisierte Menge nicht. `ed8ceb41…` bleibt gültig, und die
+grüne Zusicherung ist die Messung.
+
+**Merksatz für mich:** eine Vorhersage über ein Messergebnis gehört in den
+Auftrag als FRAGE („neu messen"), nicht als Tatsache („ändert sich"). Der
+Satz war beides, und der zweite Teil war falsch.
+
+---
+
+## DRITTE RUNDE — N12, eigener Fund beim Nachmessen (Haupt-Agent, 20.09.2026)
+
+Gefunden NICHT von einer Prüfspur, sondern beim Abzählen der Schreibstellen
+für N8 (Punkt C meines eigenen Prüfauftrags an die Lesespur).
+
+### N12 — der Satz „Am Prüfplan wurde nichts angelegt" ist im N8-Kernfall falsch
+
+**Gemessen, ohne Datenbank:**
+
+    core/brandschutz-vorlage.js:50   ANTWORTEN = ["vorhanden","nicht_vorhanden","unbekannt"]
+    istGueltigeAntwort('unbekannt')  ->  true
+
+Damit ist `brauchtKategorie` bei lauter „Weiß ich nicht" WAHR, und auf einem
+frischen Studio legt `routes/admin/geraete.js:2557-2560` eine Zeile in
+`wartung_kategorien` an — BEVOR die POSITIONEN-Schleife überhaupt beginnt.
+
+**Der Beweis steckt im neuen N8-Testfall selbst:** er sichert zu, dass der
+Stub GENAU EINMAL gegriffen hat. `ladeBestandStreng()` wird aber nur innerhalb
+von `if (kategorieId)` gerufen. Ein Treffer ⇒ `kategorieId` ≠ null ⇒ auf dem
+frischen Studio `lbs-bs-n8-` wurde die Kategorie angelegt. Die Seite behauptet
+in genau diesem Lauf: *„Am Prüfplan wurde nichts angelegt, geändert oder
+deaktiviert."*
+
+**Wie gross ist der Schaden?** Klein, aber es ist genau unsere Klasse — ein
+Satz, den die Oberfläche neu behauptet und den niemand gemessen hat. Zurück
+bleibt eine LEERE Kategorieüberschrift im Prüfplan. Im Erfolgsfall wäre sie
+nicht leer (der Begehungs-Grundblock gilt für jeden Betrieb), aber der
+Erfolgsfall liegt hinter dem strengen Lesen und wird hier nie erreicht.
+
+**Was NICHT die Behebung ist:** die Kategorieanlage in `praefplanGeaendert`
+mitzuzählen. Dann stünde bei lauter „Weiß ich nicht" *„Ein Teil des Prüfplans
+wurde bereits angepasst, der Rest nicht"* — für eine leere Überschrift ist das
+eine grössere Übertreibung als der heutige Satz. Das wäre N8 in der
+Gegenrichtung zum dritten Mal.
+
+**Behebung (Wortlaut, keine Verhaltensänderung):**
+
+    alt:  Am Prüfplan wurde nichts angelegt, geändert oder deaktiviert.
+    neu:  Am Prüfplan wurden keine Einträge angelegt, geändert oder deaktiviert.
+
+„Einträge" ist genau das, was `praefplanGeaendert` zählt (`wartung_geraete`,
+`wartung_geraete_aufgaben`) — die Kategorie ist der Behälter, kein Eintrag.
+Der Satz wird damit wahr, ohne dass sich das Verhalten ändert.
+
+**Abnahme:** die Textkonstante `AUSSTATTUNG_ABBRUCH_TEXT` in
+`test_feature_ladebestand_streng.js` zieht mit; vertauscht man sie mit dem
+Brandschutz-Text, müssen weiterhin je Weg ZWEI Zusicherungen fallen (N11).
+Zusätzlich eine Zusicherung, die dem Satz das Wort „Einträge" VERLANGT —
+sonst rutscht beim nächsten Umformulieren dieselbe Übertreibung zurück.
