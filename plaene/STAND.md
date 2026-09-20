@@ -1,4 +1,4 @@
-# Stand — 19.09.2026, ~20:50 UTC
+# Stand — 20.09.2026, ~15:45 UTC
 
 Diese Datei ist der Übergabepunkt. Der Takt-Prompt ist beim Bau von
 Beitrag 1 stehengeblieben. **Hier steht, was wirklich gilt.**
@@ -10,6 +10,67 @@ Container neu startet.
 **`plaene/ENTSCHIEDEN.md` daneben hält fest, was der Betreiber entschieden
 hat und was nicht neu aufgerollt wird.** Diese Beschlüsse standen bis zum
 16.09.2026 ausschliesslich im Prompt einer Routine.
+
+## PR #465 war CI-rot — die Ursache ist gemessen (20.09.2026)
+
+**Es ist ein TESTFEHLER, kein Produktfehler.** `volleZeilenmenge()` in
+`test_feature_ladebestand_streng.js` holte die Aufgabenliste je Gerät mit
+`ORDER BY aufgabe` — einer TEXTsortierung, und die hängt an der Kollation
+der Datenbank.
+
+* Das Postgres-Docker-Image der CI bringt glibc `en_US.UTF-8` mit. **glibc
+  ignoriert auf der ersten Stufe SATZZEICHEN.**
+* Unser lokaler Cluster fährt `C.UTF-8` und tut das nicht. ICU in der
+  Voreinstellung (`en-US-x-icu`) ebenfalls nicht — deshalb war mein erster
+  Kollationsversuch negativ und ich habe neun weitere Hypothesen widerlegt,
+  bevor ich die richtige Einstellung traf.
+
+Gemessen über die echten Daten mit `Intl.Collator`, je Variante die Zahl
+abweichender Geräte: `byte (C)` 0, `en-US` 0, **`en-US ohne Satzzeichen` 2**,
+**`de-DE ohne Satzzeichen` 2**, `en-US numeric` 0. Die beiden betroffenen
+Geräte:
+
+* `Solarium — Sichtkontrolle Aushänge, Schutzbrillen, Betriebsbuch` —
+  Position 3 und 4 tauschen,
+* `Aufzug — Sichtkontrolle durch die beauftragte Person` — Position 2 und 3.
+
+Das erklärt das CI-Bild vollständig: Name, `notizen`-Kurzhash,
+`intervall_monate`, `durchfuehrung` und die ANZAHL der Aufgaben waren
+byte-identisch, nur der Gesamthash unterschied sich. Es war ausschliesslich
+die REIHENFOLGE innerhalb zweier Arrays — genau das, was die zweite
+Diagnoserunde noch hätte zeigen sollen und wofür sie nicht mehr gebraucht
+wird.
+
+**Warum es ein Testfehler ist:** die Produktion liest Aufgaben nie nach Text,
+sondern nach `reihenfolge` (`routes/admin/geraete.js:2104`,
+`routes/wartung.js:592`), und `syncAufgaben` schreibt `reihenfolge=idx`
+deterministisch aus der Array-Reihenfolge des Moduls.
+
+**Die Lehre, und sie ist allgemeiner als dieser Beitrag:** eine Zusicherung,
+die einen SHA-256 über eine Zeilenmenge pinnt, ist nur so deterministisch
+wie ihr Sortierschlüssel. **Ein `ORDER BY` über eine Textspalte ist kein
+deterministischer Schlüssel** — er ist eine Funktion der Umgebung, und die
+Umgebung ist in CI eine andere als hier. Deterministisch sind
+Ganzzahlspalten (keine Kollation) und eine Sortierung in JavaScript über
+Zeichenwerte. `localeCompare` ist es NICHT.
+
+**Zwei eigene Fehlalarme desselben Tages, die hierher gehören:** zwei lokale
+Testfehlschläge (`test_feature_login_sperre_failclosed.js`,
+`test_feature_dashboard.js`) waren NICHT echt. Ich hatte während eines
+laufenden Suite-Laufs Wegwerf-Datenbanken verworfen und Abfragen gegen
+dieselbe Datenbank gefahren. Der ruhige Nachlauf ist sauber: **SUITE_EXIT=0,
+Dateizahl 350 = 350, `diff` EXIT 0**, selbst nachgemessen. Die Hausregel
+„während des Laufs keine parallelen Skripte gegen dieselbe DB" hat einen
+gemessenen Preis.
+
+**Nebenbefund, kein Befund:** die Schlusszeile der Suite meldet hier
+`Studio-Wächter: NICHT GEPRÜFT (Messung fehlgeschlagen)`. Nachgesehen: in
+diesem Container existiert gar keine Datenbank `gymdocu`
+(`SELECT datname FROM pg_database …` liefert für `gymdocu`, `gymdocu_dev`
+und `gymdocu_test` nichts). Der Wächter kann hier nicht messen und sagt das
+ehrlich, statt grün zu melden — das ist die gewünschte Bauart, nicht ein
+Defekt.
+
 
 ## ZIEL, dem alles untergeordnet ist (Betreiber, 17.09. und 18.09.2026)
 
@@ -64,13 +125,18 @@ Punkt 4 ist die Lehre des Tages: Die Upload-Spur war sachlich richtig (sie
 hat ein echtes Informationsleck gefunden), aber sie ist ohne Entscheidung an
 das Programm vorbeigewachsen, und gemerkt hat es der Betreiber, nicht ich.
 
-## LÄUFT GERADE (19.09.2026, ~20:50 UTC)
+## LÄUFT GERADE (20.09.2026, ~15:45 UTC)
 
-**NICHTS.** Kein Executer, kein Gegenleser, keine Suite, keine CI. Alle vier
-Arbeitsbäume sauber. #461 ist gemergt, ausgeliefert und kontrolliert.
+**Zwei Bauaufträge parallel, in VERSCHIEDENEN Arbeitsbäumen** (kein
+gemeinsamer Postgres: die Hauptserver-Suite fasst keine Datenbank an,
+nachgemessen an `test/run.sh` dort):
 
-**Der nächste Schritt ist frei wählbar** — die Reihenfolge steht unten unter
-„Als Nächstes".
+* **M3** — Startseite, `/home/user/gymdocu-hauptserver`, Zweig `landing-m3`.
+  Papier `plaene/auftrag-landing-m3.md` (Fassung 2 + M3-g).
+* **Z2-Behebung** — `/home/user/gymdocu`, Zweig `beitrag-ladebestand`
+  (PR #465, CI rot). Ursache gefunden — der Abschnitt dazu steht ganz
+  oben in dieser Datei.
+
 
 ## Der Gegenleser ist wieder erreichbar (18.09.2026, ~20:20 UTC)
 
