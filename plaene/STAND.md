@@ -6921,3 +6921,72 @@ Lesespur, verschiedene Bündel):
 
 Erst danach werden N12/N13 und die Befunde beider Spuren in EINEN Bauauftrag
 gebündelt.
+
+---
+
+## 20.09.2026, 21:45 UTC — Ladebestand: dritte Runde, Planprüfung durch, Bau läuft
+
+**Was gerade läuft:** ein Executer baut nach
+`plaene/auftrag-ladebestand-nacharbeit.md`, Abschnitt **„FASSUNG 2"**
+(Fassung 1 steht weiter oben und trägt einen Riegel im Kopf — nicht danach
+bauen). Arbeitsbaum `/home/user/gymdocu`, Zweig `beitrag-ladebestand`,
+Ausgangspunkt `70d1489`.
+
+### Wie die dritte Runde zustande kam
+
+Der Stand `70d1489` war CI-grün und suite-grün. Drei Prüfspuren haben ihn
+trotzdem aufgemacht:
+
+| Spur | Befunde | getragen | Kosten |
+|---|---|---|---|
+| Lesespur `gpt-5.6-sol` über den Diff (Repo-Lesezugriff) | 7 | 6 | 8,78 $ |
+| Ausführende Claude-Spur (eigener Arbeitsbaum, eigene DB) | 4 | Klasse selbst nachgemessen | — |
+| Eigene Nachmessung | 2 (N12, N13) | 2 | — |
+
+Dazu die **Planprüfung** über den daraus entstandenen Auftrag, zwei
+Lesespuren mit verschiedenen Bündeln:
+
+| Spur | Bündel | Befunde | getragen | gefallen |
+|---|---|---|---|---|
+| `gpt-5.6-sol` | Diff + Repo-Lesezugriff, Schwerpunkt Route | 6 | **6** | 0 |
+| `kimi-k3` | Plan + Testdatei | 9 | **7** | 2 |
+
+Überschneidung **3** — passt zur gemessenen Erwartung, dass verschiedene
+Bündel die Doppelarbeit etwa halbieren.
+
+### Der teuerste Fund war gegen MICH
+
+Mein eigener Baupunkt 7 (`SET reihenfolge = 1000 - reihenfolge`) ist eine
+INVOLUTION und wird von `LEAST(reihenfolge, 1000 - reihenfolge)` aufgehoben,
+OHNE dass der Sollindex je geschrieben wird — während das heutige `+100`
+diese Mutation fängt. Beide Spuren fanden es unabhängig, in Postgres
+nachgerechnet. Ein **Tausch der Lücke**, gefunden vor der ersten Bau-Runde.
+
+Die Behebung ist eine **kollabierende** Verfälschung (`= 1000`): stehen alle
+Zeilen auf demselben Wert, liefert jedes `f(reihenfolge)` für alle denselben
+Wert, und `0…n-1` braucht n verschiedene. Konstruktionsargument statt Glück,
+selbst gemessen (korrekt → grün, MOD → rot, LEAST → rot).
+
+Und `1000` ist besser als mein eigenes `0`: gezählt haben die zwölf Termine
+`[6,3,7,3,3,5,3,9,4,3,3,3]` Aufgaben — bei einem Gerät mit nur EINER wäre `0`
+ein legaler Sollwert. **Meine Fassung hing an den Daten, die bessere an der
+Konstruktion.**
+
+### Eine Zahl im Takt-Prompt ist veraltet
+
+Der Takt-Text nennt für den Marker-Scan im **Belehrungssystem-Repo** den
+Sollwert **2**. Gemessen heute: **19** — ausnahmslos Prosa in `.md`-Dateien
+(Auftragspapiere, `CLAUDE.md`, `STAND.md`, `ASTRA-LAEUFE.md`), **keine
+einzige in ausführbarem Code**. Das ist genau der Fall, den die `CLAUDE.md`
+beschreibt: in diesem Repo ist die ZAHL kein Sollwert mehr, weil der Scan
+mitzählt, wie oft wir über ihn schreiben. Die Bedingung lautet dort „jeder
+Treffer ist Prosa" — und sie ist erfüllt. **Beim nächsten Nachziehen des
+Takt-Texts gehört die 2 gestrichen.**
+
+### Offen, unverändert
+
+U-IDW1, U-TOK1, U-LOCK1/U-AUDT1, U-VORL1, U-STAT1/U-STAT2 (Pentest-Liste);
+S6 als eigener Punkt (Fallakte steht, Generationsnummer empfohlen, noch kein
+Bauauftrag); B1-09/B1-10; die Textfeld-Wache (braucht AST); Bündel 2 des
+Durchgangs. Dazu: ein neues Abhängigkeitspaket blockiert die
+Hauptserver-Auslieferung still, weil `nachziehen` kein `npm ci` fährt.
