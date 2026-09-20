@@ -41,3 +41,32 @@ Zwei Befunde fanden beide Spuren unabhängig (B8 ohne Zusicherung; die
 widersprüchlichen Kommentare). Einen hatte nur sol (die Mandantenlücke im
 P2-4-Test), zwei hatte nur ich (die fehlende Laufzeitmessung, die fehlende
 ID-Wache).
+
+## Die Befunde, jeder einzeln nachgemessen
+
+### Was TRÄGT
+
+| Nr | Spur | Schwere (Prüfer) | Eigene Messung |
+|---|---|---|---|
+| N1 | code-review | — | **REGRESS, beide Richtungen gemessen.** Einmalprobe gegen Wegwerf-DB, Request mit kaputter `studioId` (Fehler passiert nachweislich VOR jedem Schreibzugriff): neuer Stand HTTP 500, **0 → 1 Datei, bleibt liegen**; alter Stand HTTP 500, **0 → 0, aufgeräumt**. Ursache: die Nachsehe-Abfrage benutzt dieselben Parameter, die den ersten Fehler ausgelöst haben, scheitert deterministisch mit, und `catch (_) { darfWeg = false }` greift. `prepareValue(NaN) === "NaN"` gemessen; `test_feature_upload_fehlerbehandlung.js:317` fährt diesen Weg, jeder Suite-Lauf lässt seither eine Datei liegen |
+| N2 | code-review **und** sol (unabhängig) | hoch | **trägt.** Ganzer Nachsehe-Block auf das alte `fs.unlink` zurückgedreht → **volle Suite `SUITE_EXIT=0`, 347 Dateien, 0 FAIL**, die drei neuen Dateien unverändert 25/0, 11/0, 11/0 |
+| N3 | code-review (Verschärfung von sol) | hoch | **trägt, und es ist ein Live-Risiko.** `test/run.sh:328` leitet `TEST_ROLE` aus der LIVE-`DATABASE_URL` ab — auf dem Deploy-Gate ist `pg_stat_activity.query` also nicht maskiert, und die ungefilterte Abfrage kann echte Produktionsanfragen zählen |
+| N4 | code-review | — | **trägt.** Gegen PostgreSQL gemessen: DEFAULT-Form `2026-09-20 05:34:54`, `CURRENT_TIMESTAMP`-Form `2026-09-20 03:34:54.144842+00`. Zwei Formate in einer TEXT-Spalte → die Z2c-Zusicherung „es ist die NEUE Generation" kann nicht fallen |
+| N5 | code-review + sol#4 + eigene Messung | hoch | **trägt.** `inventar.push(\`${rel} \| ${tr.anweisung}\`)` ohne Zeilenanker, zwei byte-gleiche Einträge; `nurIst`/`nurErwartet` über `includes` können keine Vielfachheit zeigen. Dazu gemessen: Advisory-Lock hinter das UPDATE verschoben → Suite grün, die Position ist ungeprüft |
+| N6 | code-review | — | **trägt.** `core/integritaet.js`: `return conn ? append(conn) : db.tx(append)` — ohne `conn` eine ZWEITE Poolverbindung auf denselben Advisory-Key. Kein Fehler, ein unentdeckbarer Hänger |
+| N7 | beide Spuren | niedrig | **trägt**, sechs nachgemessene Kommentarfehler (darunter „1.200 Zeilen weiter unten" für eine Stelle 1.266 Zeilen DARÜBER, in einer 2.567-Zeilen-Datei) |
+| N8 | code-review | — | **trägt.** `test/helfer/multipart-post.js` existiert und nennt `routes/belehrungen.js` im eigenen Kopf als vorgesehenen Aufrufer |
+| N9 | code-review | — | **trägt**, beide Geschwisterdateien desselben Commits räumen auf, der Wettlauftest nicht |
+| N10 | eigener Befund | — | Das Papier VERLANGTE die Laufzeitmessung; sie wurde ehrlich als nicht gemacht gemeldet |
+
+### Was FÄLLT
+
+| Nr | Spur | Behauptung | Messung |
+|---|---|---|---|
+| sol #3 | sol (hoch) | Die Mandantenlücke im P2-4-Test sei ungeprüft; `AND studio_id = $2` in der COUNT-Abfrage bleibe unbemerkt | **FÄLLT.** Mutation gefahren: `test_feature_audit_batch3.js:157-174` fängt sie (**23 PASS / 1 FAIL**, `✗ FAIL: Datei überlebt, solange Studio B sie noch referenziert`). Dort steht der echte mandantenübergreifende Fall mit Studio A und B. Seine BEOBACHTUNG war exakt richtig („lässt alle drei neuen Testdateien grün"), der SCHLUSS daraus nicht — die Datei lag nicht im Bündel, er konnte sie nicht kennen |
+| sol #1 | sol (blockierend) | `pg_stat_activity` ohne `studio_id` verletze die Mandantenregel | **FÄLLT in diesem Teil** — ein Systemkatalog ist keine Mandantentabelle. Sein Behebungsvorschlag (Katalogabfragen entfernen, durch testlokale Barrieren ersetzen) hätte eine Referenz von AUSSEN gegen einen Selbstnachweis aus dem eigenen Datenfluss getauscht, also die Lage verschlechtert. Der Rest des Befunds trägt und ist als N3 aufgenommen |
+| CR-6 (Teilaussage) | code-review | Der Diff verbreitere das Fenster zwischen `COUNT` und `unlink` um eine Rundreise | **FÄLLT.** Alt: SELECT → COUNT → unlink → UPDATE. Neu: SELECT → UPDATE → COUNT → unlink. Der Abstand COUNT→unlink ist unverändert. Das Rennen selbst ist echt und vorbestehend (`vorlage-${key}-${Date.now()}.pdf` ohne Zufallsanteil, gemessen) → offener Befund |
+
+### Eigene Korrektur
+
+Ich hatte sol #3 im Zwischenstand als „trägt, und den hatte ich NICHT" gemeldet — **das war vor der Messung und es war falsch.** Der Befund fällt. Dieselbe Regel, die ich am 20.09. selbst in die CLAUDE.md geschrieben habe: eine Mutation kann von einem ZWEITEN, unabhängigen Riegel gefangen werden, den man nicht kennt. Hier war es kein Riegel im Produktivcode, sondern eine Zusicherung in einer Datei, die ich nicht ins Bündel gelegt hatte.
