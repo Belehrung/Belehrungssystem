@@ -133,27 +133,51 @@ das Programm vorbeigewachsen, und gemerkt hat es der Betreiber, nicht ich.
   Zweig `beitrag-ladebestand`. Papier:
   `plaene/auftrag-ladebestand-nacharbeit.md` (nach Planprüfung berichtigt).
 
-## ERLEDIGT — Startseite ist GEMERGT, aber NICHT AUSGELIEFERT
+## ERLEDIGT UND AUSGELIEFERT — Startseite
 
-`Belehrung/gymdocu-hauptserver` PR #100, gemergt als `abaf643`. Alle drei
-CI-Jobs grün, einschliesslich des neuen Browser-Laufs. Eigene Messungen:
-volle Suite `SUITE_EXIT=0`, Dateizahl 86 = 86, `test_landing.js` 312 PASS /
-0 FAIL, Render-Lauf lokal 87 PASS / 0 FAIL — dieselbe Zahl wie in der CI.
-Merge-Botschaft zurückgelesen, sie endet genau an ihrer Schlusszeile.
+`Belehrung/gymdocu-hauptserver` PR #100, gemergt als `abaf643`, am
+20.09.2026 auf dem Server ausgeliefert. **An der echten Seite nachgemessen,
+nicht nur gemeldet:**
 
-**AUSLIEFERUNG STEHT AUS und geht nur von Hand.** Es gibt im Repo NUR
-`ci.yml`, keinen Deploy-Workflow; die Startseite rollt `ops/gymdocu-deploy`
-in Schritt 5c nach `/var/www/landing` aus, und das Skript läuft auf dem
-Server. Gemessen an der echten Seite (`curl https://gymdocu.de/`, HTTP 200,
-68.116 Bytes):
+    https://gymdocu.de/        HTTP 200, 69.150 Bytes (vorher 68.116)
+      Manipulationsschutz      6x      manipulationssicher   0x
+      id="module"              1x      faelschungssicher|gericht  0x
+    https://gymdocu.de/ketten  HTTP 200
+      Manipulationsschutz      1x
 
-    manipulationssicher   6x        <- alter Stand
-    Manipulationsschutz   0x
-    id="module"           0x        <- der tote Anker ist noch tot
+Das sind genau die Sollwerte aus der M3-g-Tabelle (6 und 1).
 
-**Solange das so bleibt, liefert die öffentliche Seite weiter die alten
-Versprechen aus.** Der Betreiber ist unterrichtet.
+### Was die Auslieferung gekostet hat — und die Lehre daraus
 
+**Der erste Anlauf scheiterte, und zwar an meinem Fehler.** Ich hatte
+gemessen, dass der Server mit `npm ci --omit=dev` installiert, und daraus
+geschlossen, `parse5` gehöre in `dependencies`. **Die wirkliche Bedingung
+ist strenger: der `nachziehen`-Pfad des Hauptservers installiert
+ÜBERHAUPT NICHTS.** Im ganzen Pfad steht kein `npm ci`; die einzigen
+Fundstellen sind Kommentare. Eine Zeile im Skript nennt die Annahme offen —
+die Suite „braucht keine devDependencies", gedacht war: gar nichts.
+
+Folge: `test_landing.js` scheiterte auf dem Server an `require('parse5')`,
+die Suite wurde rot, das Skript rollte korrekt zurück und sperrte den
+nächsten Versuch für 60 Minuten. **Die Maschinerie hat sich richtig
+verhalten; die Abhängigkeit war der Fehler.**
+
+Entsperrt mit `npm install --no-save parse5@^8.0.1` (fasst nur das
+ignorierte `node_modules` an, hält den Arbeitsbaum sauber) und dem Löschen
+der Fehlversuchsmarke.
+
+**Der zweite Anlauf brach mitten in der Suite ab** (in die laufende Sitzung
+getippt). Auch das fing das Skript: sein ANKER erkannte beim dritten Lauf
+„Unvollendeter Lauf erkannt (Anker 47730a3) — die Kette wird ab dem
+Syntax-Check erneut gefahren, statt 'Kein Rückstand' zu melden" und lief
+durch.
+
+**OFFEN, eigener Punkt:** eine neue Abhängigkeit blockiert die Auslieferung
+des Hauptservers lautlos, und zwar erst auf dem Server. Das trifft beim
+nächsten Paket genauso. Gebraucht wird entweder ein Installationsschritt im
+`nachziehen`-Pfad oder ein Wächter, der eine Abhängigkeit meldet, die der
+Server nicht hat. **Auslieferungsmaschinerie — mit Planprüfung, nicht
+nebenbei.**
 
 ## Der Gegenleser ist wieder erreichbar (18.09.2026, ~20:20 UTC)
 
