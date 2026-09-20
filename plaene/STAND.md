@@ -6082,3 +6082,41 @@ sich auf etwas, das im Material nicht steht?". Gemessen wird: wie viele NEUE
 Befunde, wie viele Prämissen-Berichtigungen, und ob eine Spur ihre eigene
 Klasse verliert (Verankerung). Kein Befund wird verworfen, weil eine andere
 Spur das sagt.
+
+### 08:00 UTC — Beitrag A: Planprüfung läuft, Spur „eng" ausgewertet
+
+**Arbeitszweig** `beitrag-a-mitarbeiter-rowcount` in `/home/user/gymdocu`,
+abgezweigt von `master` = `7b955ec`. **Noch kein Code geändert** — erst geht
+das Papier durch die Prüfung.
+
+**Auftragspapier:** `plaene/auftrag-beitrag-a-s5.md` (eigenständig, alle
+Zeilennummern gegen `7b955ec` neu gemessen). **Prüfnotizen und meine eigenen
+Nachmessungen:** `plaene/planpruefung-beitrag-a-20-09-2026.md`.
+
+**Aufbau — erster Lauf mit VERSCHIEDENEN Bündeln je Spur:**
+`eng` (`gpt-5.6-sol`, Papier + nur die zu ändernde Datei),
+`umkreis` (`kimi-k3`, + öffentlicher PIN-Weg, `core/ui-feedback.js`,
+`core/db.js`), `tests` (`deepseek-v4-pro`, + die fünf Prüfdateien).
+
+**Spur „eng" ist durch: 8 Befunde, 6 tragen, 2 fallen, 1 ist kein Befund.**
+Der wichtigste (E3) widerlegt meine eigene Begründung zu E-2: bei einer
+BEREITS GELÖSCHTEN ID räumt `pin-direkt` heute ein verwaistes Token nebenbei
+ab (`:762`), und der geplante `ma`-Frühausstieg nimmt genau das weg. Behebung
+steht im Prüfprotokoll.
+E8 ist kein Befund, sondern der GEWOLLTE blinde Fleck des engen Bündels —
+sol konnte drei Zeilennummern nicht prüfen, weil die Testdatei nur der Spur
+„tests" vorlag. Genau dafür sind verschiedene Bündel da.
+
+**Zwei Betriebsbefunde am eigenen Aufbau:** der Geheimnis-Riegel schlug an
+(Platzhalter-Passwörter in zwei Hilfetexten von `core/db.js`) — geschwärzt
+und erneut geprüft, nicht abgeschaltet; und der erste DeepSeek-Lauf lieferte
+NULL Zeichen (`finish_reason: length`, 16.000 von 16.000 Ausgabe-Token ins
+Nachdenken), wiederholt mit 64.000.
+
+**Läuft gerade:** Spuren `umkreis` und `tests`, dazu die volle Suite als
+Basislauf auf dem unveränderten Zweig.
+
+**Steht aus, ausdrücklich noch NICHT gemessen:** ob das Entfernen der
+`istGueltigeId`-Wache in der E-Mail-Route die bestehende Zusicherung grün
+lässt (E5). Vorüberlegung am Quelltext steht im Prüfprotokoll — sie ist eine
+Überlegung, keine Messung.
