@@ -6152,3 +6152,55 @@ wird in Runde 2 dieses Beitrags geschlossen).
 **Runde 2 danach:** Z5a-1b (bcrypt-Zähler), Z5a-2 für alle drei Routen mit
 Positivkontrolle, Z5c mit Positivkontrolle, Z5b mit `ui-banner--error`, und
 Z5e — dessen erste Messung ausdrücklich VOR dem Bau steht.
+
+### 09:52 UTC — Beitrag A: Runden 1+2 gebaut und geprüft, Diffprüfung durch, Runde 3 läuft
+
+**Läuft:** ein Executer in `/home/user/gymdocu`, Zweig
+`beitrag-a-mitarbeiter-rowcount` (Stand `4e501cb`). Nicht in diesem
+Arbeitsbaum arbeiten, solange seine Benachrichtigung nicht da ist.
+
+**Eigene Prüfung nach Runde 2, alles selbst gefahren:** volle Suite
+`SUITE_EXIT=0`, 0 FAIL, Dateizahl-Ritual **349 = 349**, `diff` EXIT 0,
+`npm run lint` EXIT 0 ohne Ausgabe, Marker-Scan 6 (Sollwert 6, alle in
+`docs/offene-befunde-31-08-2026.md`).
+
+**Eigene Stichprobe:** Riegel B der E-Mail-Route auf den falschen
+Rückmeldecode umgebogen → **EXIT 1, 23 PASS / 1 FAIL**, genau die
+Z5a-2-email-Zeile. Der EXAKTE Code ist also bewacht, nicht nur „irgendein
+302".
+
+**DIFFPRÜFUNG: vier Spuren, 29 Befunde.** Drei Lesespuren mit verschiedenen
+Bündeln (`gpt-5.6-sol` 9, `kimi-k3` 5, `deepseek-v4-pro` 3) und die
+Claude-Spur, die AUSFÜHREN darf (12). Zahlen in `ASTRA-LAEUFE.md`.
+
+**Zwei blockierende Befunde, beide von der ausführenden Spur GEMESSEN, beide
+mit Positivkontrolle:**
+
+1. **Die Audit-Ordnung ist nur bei `pin-direkt` bewacht.** Riegel B hinter
+   den `auditAppend` geschoben: `email` und `umbenennen` bleiben bei
+   **24 PASS / 0 FAIL**, `pin-direkt` fällt korrekt auf **23 / 1**. Zwei von
+   drei Routen könnten also einen falschen Eintrag in die gehashte Kette
+   schreiben, ohne dass ein Test es merkt.
+2. **Die Ordnung „Riegel B VOR der Token-Entwertung" ist unbewacht** — das
+   Token-UPDATE darüber gezogen: **24 / 0**. Dazu: der Testmitarbeiter hat
+   nie ein Token, der Vorzustand erzwingt das Ergebnis ohnehin.
+
+**Ein Befund derselben Spur ist GEFALLEN, selbst widerlegt.** Sie behauptete,
+nach Entfernen des Format-Riegels blieben vier von fünf Zusicherungen grün.
+Gemessen auf dem aktuellen Stand: **EXIT 1, 131 PASS / 11 FAIL — alle fünf
+fallen**, dazu alle fünf Z5e-Zusicherungen. Die Sorge dahinter bleibt
+richtig: drei der fünf fallen nur als Kollateralschaden.
+
+**Ebenfalls selbst gemessen:** `test/run.sh:889` startet jede Testdatei in
+einem EIGENEN node-Prozess (`if out=$(node "$t" 2>&1)`). Ein
+stehengebliebener Laufzeit-Patch kann also keine Folgedatei infizieren — die
+tragende Voraussetzung der drei `installiere*`-Helfer.
+
+**Drei Vorschläge ABGELEHNT statt weitergereicht:** ein Umbau auf
+`UPDATE … FROM … RETURNING` (eigener Beitrag), das Entfernen der toten
+`ma`-Prüfungen (theoretischer Vorteil gegen echtes Absturzrisiko), eine
+DOM-Sichtbarkeitsprüfung des Banners. Notiert, nicht gebaut.
+
+**Danach:** PR, CI, Review-Bot-Kommentare lesen, Merge, Deploy-Lauf und
+live-check. Regel 6a gilt — keine Nummer und keine URL, bevor das alles
+durch ist.
