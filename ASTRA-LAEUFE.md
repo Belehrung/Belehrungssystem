@@ -131,9 +131,9 @@ sondern falsch.
 | 19.09.2026 | Planpruefung Schreibreihenfolge (Spur 1: was bricht der Plan, welche Lock-Ordnung entsteht) | Diff 809 Zeilen, Suchen 76, Lesungen 51, Token rein 2580807, Token raus 29375, Runden 21 | 8 (3 blockierend) | **8** | 0 | 13,79 $ |
 | 19.09.2026 | Planpruefung Schreibreihenfolge (Spur 2, `deepseek-flash`: was verspricht der Plan, das er nicht einlöst) | statisches Bündel; 168 s | 9 (1 blockierend) | **9** | 0 | ~0,05 $ |
 | 20.09.2026 | Planpruefung Schreibreihenfolge Fassung 2 | Diff 2198 Zeilen, Suchen 92, Lesungen 47, Token rein 3286959, Token raus 32890, Runden 21 | — | — | — | 17,42 $ |
-| 20.09.2026 | Diffpruefung Z2-Kollationsbehebung | Diff 819 Zeilen, Suchen 49, Lesungen 50, Token rein 2839786, Token raus 31454, Runden 27 | — | — | — | 15,14 $ |
+| 20.09.2026 | Diffpruefung Z2-Kollationsbehebung | Diff 819 Zeilen, Suchen 49, Lesungen 50, Token rein 2839786, Token raus 31454, Runden 27 | 6 | **6** (5 Maengel + 1 zutreffende Beobachtung ohne Mangelcharakter) | 0 | 15,14 $ |
 | 20.09.2026 | Diffpruefung M3 Startseite | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 773 Zeilen, Suchen 4, Lesungen 12, Token rein 68913, Token raus 8136, Runden 3 | — | — | — | mind. 0,59 $ |
-| 20.09.2026 | Diffpruefung M3 Startseite (zweiter Versuch nach Ueberlast-Abbruch) | Diff 773 Zeilen, Suchen 45, Lesungen 36, Token rein 1574605, Token raus 27412, Runden 20 | — | — | — | 8,70 $ |
+| 20.09.2026 | Diffpruefung M3 Startseite (zweiter Versuch nach Ueberlast-Abbruch) | Diff 773 Zeilen, Suchen 45, Lesungen 36, Token rein 1574605, Token raus 27412, Runden 20 | 9 | **7** | 2 (eine als *blockierend* eingestufte Musterbehauptung, nachgemessen falsch; eine Zustandsbehauptung, die eine fremde Gegenprobe im Arbeitsbaum fuer den Repo-Stand hielt) | 8,70 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
