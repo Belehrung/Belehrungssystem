@@ -6121,7 +6121,7 @@ Basislauf auf dem unveränderten Zweig.
 lässt (E5). Vorüberlegung am Quelltext steht im Prüfprotokoll — sie ist eine
 Überlegung, keine Messung.
 
-### 08:42 UTC — Beitrag A: Planprüfung fertig, Bau-Runde 1 läuft
+### 08:41 UTC — Beitrag A: Planprüfung fertig, Bau-Runde 1 läuft
 
 **Läuft:** ein Executer in `/home/user/gymdocu`, Zweig
 `beitrag-a-mitarbeiter-rowcount`. Nicht in diesem Arbeitsbaum arbeiten,
