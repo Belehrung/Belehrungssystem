@@ -1,4 +1,4 @@
-# Stand — 20.09.2026, ~15:45 UTC
+# Stand — 20.09.2026, ~16:45 UTC
 
 Diese Datei ist der Übergabepunkt. Der Takt-Prompt ist beim Bau von
 Beitrag 1 stehengeblieben. **Hier steht, was wirklich gilt.**
@@ -127,17 +127,24 @@ Punkt 4 ist die Lehre des Tages: Die Upload-Spur war sachlich richtig (sie
 hat ein echtes Informationsleck gefunden), aber sie ist ohne Entscheidung an
 das Programm vorbeigewachsen, und gemerkt hat es der Betreiber, nicht ich.
 
-## LÄUFT GERADE (20.09.2026, ~15:45 UTC)
+## LÄUFT GERADE (20.09.2026, ~16:45 UTC)
 
-**Zwei Bauaufträge parallel, in VERSCHIEDENEN Arbeitsbäumen** (kein
-gemeinsamer Postgres: die Hauptserver-Suite fasst keine Datenbank an,
-nachgemessen an `test/run.sh` dort):
+* **Eine Gegenprobe des Haupt-Agenten im Arbeitsbaum `/home/user/gymdocu`.**
+  `routes/admin/geraete.js` trägt dort GERADE eine absichtliche Mutation mit
+  dem Marker `GEGENPROBE-DEFEKT` (`syncAufgaben()`, INSERT-Zweig: `idx` → `0`).
+  Die unabhängige Kopie liegt unter
+  `…/scratchpad/eigen/geraete.js.kopie`, das Mutationswerkzeug daneben als
+  `mutiere.js`. **Wer nach einem Container-Neustart hier weitermacht: ZUERST
+  zurücknehmen** (`cp` von der Kopie, danach `diff` EXIT 0), NICHT committen.
+* **Planprüfung Spur A** zur Startseiten-Härtung (Lesespur, liest
+  `/home/user/gymdocu-hauptserver`). Spur B wird erst DANACH gestartet —
+  zwei gleichzeitige Gegenleser schreiben sonst beide in `ASTRA-LAEUFE.md`
+  und verlieren eine Zeile.
 
-* **M3** — Startseite, `/home/user/gymdocu-hauptserver`, Zweig `landing-m3`.
-  Papier `plaene/auftrag-landing-m3.md` (Fassung 2 + M3-g).
-* **Z2-Behebung** — `/home/user/gymdocu`, Zweig `beitrag-ladebestand`
-  (PR #465, CI rot). Ursache gefunden — der Abschnitt dazu steht ganz
-  oben in dieser Datei.
+**Beide Beiträge sind gebaut, gepusht und haben ihre Prüfung hinter sich;
+beide bekommen eine Nacharbeit** (Papiere: `plaene/auftrag-m3-haertung.md`
+und `plaene/auftrag-ladebestand-nacharbeit.md`). **Nichts davon ist
+gemergt.**
 
 
 ## Der Gegenleser ist wieder erreichbar (18.09.2026, ~20:20 UTC)
