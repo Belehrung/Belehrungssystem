@@ -5751,3 +5751,34 @@ meiner Gegenprobe-Vorgabe mit einer Messung widersprochen und hatte recht.
    gefallen; Zuschnitt steht am Ende des Papiers).
 3. `plaene/auftrag-ladebestand.md` — braucht noch die Planprüfung.
 4. B1-09/B1-10 (Namensinvariante Seilgeräte) — noch kein Papier.
+
+### 02:43 UTC — Takt: Beitrag C ist beim Ausführenden, nichts sonst getan
+
+**Auftrag steht seit ~02:00 UTC.** Zweig
+`beitrag-c-belehrungen-schreibreihenfolge` von `master` (`74ace5a`), Datei
+**nur `routes/belehrungen.js`** plus neue Tests, Umfang S2/S3 mit den
+Zusicherungen Z2a/Z2b/Z2c/Z3 aus
+`plaene/auftrag-schreibreihenfolge.md`, Abschnitt „3b. Der Bau wird GETEILT".
+
+**Zeilennummern vor dem Auftrag am Stand `74ace5a` nachgemessen** — B hat
+`belehrungen.js` nicht angefasst, alle Nummern des Papiers halten:
+`schalteAlleFrei` `:2066`, `/neue-version/:id` `:2104` (Rumpf ab `:2158`),
+`alteDatei` `:2170`, UPDATE `:2171-2173`, Aufruf `schalteAlleFrei` `:2174`,
+`auditAppend` `:2175`, `catch` `:2179`, `unlink` `:2180`; `/loeschen/:id`
+`:2284`, `unlinkSync` `:2299`, UPDATE `:2302`.
+
+**Komplexitätseinordnung vor dem Auftrag** (Hausregel Modellwahl): *nicht*
+sehr komplex — das Papier leitet jede Entscheidung her, und derselbe
+Ausführende hat genau diese Beweisklasse in Beitrag B soeben gebaut. Also
+**Standard-Executer**, kein Fable.
+
+**Stand beim Feuern des Takts:** er fährt seit 02:36:27 UTC die volle Suite
+als Abschlusslauf. Nach der Takt-Regel — läuft ein Agent, wird nichts getan
+ausser den Stand nachziehen — habe ich **`/home/user/gymdocu` nicht
+angefasst** und warte auf seine Benachrichtigung.
+
+**Danach:** volles Prüf-Ritual über Beitrag C (Diff Datei für Datei, zwei
+unabhängige Prüfspuren, eigene volle Suite + Dateizahl-Ritual + Lint +
+Marker-Scan, PR, Review-Bot vor den Checks, CI auf dem passenden `head_sha`,
+Squash mit eigener Botschaft samt Schlusszeile und Zurücklesen, Deploy-Lauf
+auf dem richtigen `head_sha`, Live-Check).
