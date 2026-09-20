@@ -6345,7 +6345,7 @@ Spur hatte.
 Behauptungen weiterreichen" ist damit ZURÜCKGESTELLT — er würde die Prüflast
 erhöhen, und genau die war der Engpass.
 
-### 12:20 UTC — Betreiber-Vorgabe: bis alles fertig ist, dann PENTEST-Reife; S6 eigener Punkt
+### 12:15 UTC — Betreiber-Vorgabe: bis alles fertig ist, dann PENTEST-Reife; S6 eigener Punkt
 
 Wörtlich: „arbeite autonom weiter bis alles fertig ist. danach sollte das
 system für den pentest gerüstet sein. s6 als seperater punkt."
