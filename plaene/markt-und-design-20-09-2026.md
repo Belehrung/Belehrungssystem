@@ -72,11 +72,31 @@ statt in einem Test.
 (`server.js:1174`, `conf('kachel_getraenkeanlage','0') === '1'`). Studios ohne
 sie sind nicht betroffen. Das macht den Befund kleiner, nicht falsch.
 
-**NICHT gemessen:** ob es weitere Module mit derselben Lücke gibt. DeepSeek
-hat nur die Getränkeanlage genannt; ob Spülplan, Verbandbuch oder andere
-Bereiche ebenfalls an der grünen Karte vorbeilaufen, ist eine eigene Messung.
-Der Verdacht ist da — `:518-524` prüft beim Spülplan nur, ob STELLEN fehlen,
-nicht, ob eine Spülung FÄLLIG ist, und das hat DeepSeek ebenfalls angemerkt.
+**Nachgemessen, und es ist NICHT ein vergessenes Modul, sondern die
+Bauweise:** DeepSeek hatte nebenbei angemerkt, beim Spülplan werde nur
+geprüft, ob STELLEN fehlen, nicht ob eine Spülung FÄLLIG ist. Das trägt:
+
+* `routes/admin/dashboard.js` erwähnt `spuel` an **genau zwei** Stellen
+  (`:518-519` und `:524`), und beide fragen nur
+  `SELECT COUNT(*) FROM spuel_stellen … aktiv = 1`.
+* Die Fälligkeit rechnet `core/spuelplan.js:89 ladeStatus()` aus
+  (`turnusFaellig` bei `:98`, dazu die Wiederinbetriebnahme nach einer
+  Schliessphase). Aufgerufen wird sie im Produktivcode von `server.js:974` —
+  **wieder die Trainer-Startseite**, nicht das Dashboard.
+
+Damit stehen ZWEI Pflichtbereiche ausserhalb der grünen Karte, und der zweite
+ist Trinkwasser (§ 31 TrinkwV, 72-Stunden-Regel) — also genau die Sorte
+Nachweis, für die dieses System existiert. Der Befund lautet deshalb nicht
+„die Getränkeanlage fehlt", sondern: **die grüne Karte prüft eine FESTE
+Teilmenge und behauptet Vollständigkeit.** Jedes künftige Modul erbt den
+Fehler, ohne dass jemand etwas falsch macht.
+
+**Weiterhin NICHT gemessen:** ob es über Spülplan und Getränkeanlage hinaus
+weitere Bereiche mit eigener Fälligkeit gibt (Verbandbuch, Betriebszeiten,
+Korrekturen). Das ist eine eigene Kartierung — und nach der Hausregel eine,
+bei der das Suchmuster zuerst an einem BEKANNTEN Fall gelernt wird: hier an
+`zaehleUeberfaelligeReinigungen` und `ladeStatus`, die beide nur von
+`server.js` gerufen werden.
 
 ### Strukturell bestätigt, Wirkung nicht beurteilt
 
