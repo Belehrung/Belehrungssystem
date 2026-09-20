@@ -98,6 +98,17 @@ Bearbeitungsformular schreibt diese beliebige Reihenfolge beim Speichern
    Sortierung: `reihenfolge` mitselektieren und je Gerät zusichern, dass die
    Werte genau `0 … n-1` sind (lückenlos, ohne Dublette). Das ist eine
    Zusicherung über die MENGE, nicht über eine Zahl.
+   **Dass `0 … n-1` der richtige Sollwert ist, ist gemessen, nicht geraten:**
+   `syncAufgaben()` setzt `let idx = 0`, zählt je Soll-Eintrag hoch und führt
+   die Zählung für behaltene Fremdzeilen fort (`[idx++, studioId, z.id]`);
+   deaktivierte Zeilen behalten ihre alte `reihenfolge`, werden aber von der
+   Z2-Abfrage über `aktiv=1` ohnehin nicht gelesen. Die aktiven Zeilen sind
+   damit lückenlos ab null.
+   **Die Zusicherung läuft VOR der Hash-Bildung.** Sonst ist bei einem
+   Defekt nicht der Grund zu sehen, sondern nur ein abweichender Hash — und
+   bei nicht eindeutiger `reihenfolge` wäre die Zeilenreihenfolge ohne
+   `id`-Beistand nicht einmal stabil, der Hash also flatternd statt
+   verlässlich rot.
 2. **Der Test ruft in der PRODUKTIONSFORM ab.** Weil die beiden
    benutzersichtbaren Leser `ORDER BY reihenfolge` OHNE Beistand benutzen,
    liest Z2 ebenfalls OHNE `id` — dann ist der Test nicht länger strenger als
