@@ -6554,3 +6554,54 @@ Kommentar festgehalten.
 dann nach, was gerade fehlt*". **Das ist eine Zusicherung der Oberfläche und
 gehört gemessen** — dreimal im September hat ein von MIR vorgegebener
 Hinweistext einen Weg behauptet, den es nicht gab.
+
+### 13:41 UTC — M3: beide Planprüfungen durch, EINER blockiert. Fassung 2 wird geschrieben.
+
+Vollständig in `plaene/m3-planpruefung-befunde.md`. **22 Befunde aus zwei
+Spuren, davon 16 nach eigener Nachmessung getragen, 2 gefallen, 1
+unbestätigt, 3 ausserhalb des Auftrags.** Die Bündeltrennung hat sich klar
+ausgezahlt: **die Überschneidung liegt bei zwei Befunden von 22.**
+
+**BLOCKIEREND (nur `umkreis` konnte es sehen, weil nur sie die Wächter hatte):**
+`test_landing.js:46-73` prüft einen **SHA-256 je Landing-Datei** gegen
+`landing/manifest.json`. Mein Papier erwähnt das nicht. Nicht nur wäre Tor 1
+unerreichbar gewesen — **jede der fünf Gegenproben hätte auch den Hash fallen
+lassen, und „Z-x ist rot" wäre nicht mehr von „der Hash ist rot" zu
+unterscheiden gewesen.** Alle fünf ROT-Messungen unbrauchbar, ohne dass es
+auffällt.
+
+**Vier Befunde treffen meine eigenen Zusicherungen** (alle nachgemessen):
+Z-d ist wörtlich gelesen logisch unerfüllbar; Z-a fällt bei `href="#"` nicht;
+Z-c fällt bei einer ZIFFER nicht; Z-e fällt bei GROSSSCHREIBUNG nicht.
+
+**Drittens dasselbe Muster an einem Tag:** `22 €` gegen `€22`,
+`manipulationssicher` case-sensitiv (2 statt 6), `fälschungssicher` gegen
+`Fälschungssichere`. **Jedes Muster über Text wird ab jetzt
+case-insensitiv UND leerraum-normalisiert geschrieben, oder es begründet im
+Kommentar, warum nicht.**
+
+**Zwei Befunde gefallen:** `#modules` gibt es gar nicht (aus dem Klassennamen
+geraten); und `§ 31 TrinkwV` stimmt — selbst geholt von
+`gesetze-im-internet.de`, „Untersuchungspflichten in Bezug auf Legionella
+spec.". Die Spur hatte ihn ausdrücklich als Verdacht gekennzeichnet.
+
+**Einer unbestätigt:** ob `§ 24 Abs. 6 DGUV Vorschrift 1` existiert.
+`publikationen.dguv.de` → 404, `dguv.de` → JavaScript-Hülle. Kein Befund und
+kein Freispruch. Dieselbe Zitierung steht bereits im Bestand als ausdrücklich
+ERLAUBTE Aussage (`test_rechtsaussagen.js:140`) — M3 ist also nicht ihr
+Anlass. Gehört zu **M3-f**.
+
+**Eine zweite Landing-Seite**, die mein Papier nicht kannte:
+`landing/ketten.html` (34.190 B), `test_landing.js:44 SEITEN = ['index.html',
+'ketten.html']`. Nachgemessen: **keiner der fünf Defekte steht dort** —
+aber jede Zusicherung braucht ab jetzt ihren Geltungsbereich.
+
+**Nächster Schritt:** Fassung 2 des Papiers. Danach erst ein Bauauftrag.
+
+**Läuft:** der Executer in `/home/user/gymdocu`, Zweig `beitrag-ladebestand`,
+an der Nacharbeit (falscher Hinweistext auf der neuen Fehlerseite — gemessen:
+die Seite hat 0 `<form>` und ihr Link zeigt auf die Übersicht statt auf den
+Assistenten). Mein Diff-Durchgang ist sonst durch, inklusive eigener
+Stichprobe: strengen Ausstattungs-Aufruf zurückgedreht → EXIT 1 mit echter
+AssertionError; per `cp` zurückgenommen, `diff` EXIT 0, md5 identisch;
+danach EXIT 0, 11 PASS / 0 FAIL.
