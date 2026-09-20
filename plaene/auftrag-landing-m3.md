@@ -317,19 +317,72 @@ mit eigener Positivkontrolle. **Keine neue Datei.**
 
 ---
 
-## 6. Offen — Betreiber-Entscheidung, nicht Bauauftrag
+## 6. M3-g — „Manipulationsschutz" statt „manipulationssicher" (ENTSCHIEDEN)
 
-**„manipulationssicher" steht 6× auf der Seite** (`<title>`,
-Meta-Description, Hero, `trust-item`, Säulen-Überschrift, Preiskarte).
-Sachlich ist es dieselbe Anspruchsklasse wie „fälschungssicher": das
-Verfahren macht Manipulation **erkennbar**, nicht unmöglich. Entweder beide
-Begriffe halten oder beide ersetzen — eine halbe Lösung ist inkonsequent.
-**Empfehlung:** ersetzen (etwa „Änderungen werden erkennbar"), weil der
-Begriff im `<title>` und in der Meta-Description steht und damit in der
-Suchergebnis-Anzeige. **Kosten:** Markenkern-Formulierung, deshalb keine
-Entscheidung von mir.
+**Betreiber-Entscheidung 20.09.2026**, auf die Frage aus Fassung 2. Wörtlich:
+„könnte man stattdessen auch das wort ,manipulationsschutz' verwenden?" —
+und danach: „ja nimm das so".
 
----
+**Warum das trägt, und es ist kein Wortspiel:** „-sicher" ist ein
+Ergebnis-Suffix (wasserdicht, kugelsicher, fälschungssicher) — es behauptet,
+das Ergebnis sei garantiert, und kann nicht teilweise wahr sein.
+„-schutz" benennt eine MASSNAHME: etwas wird dagegen getan, ohne Vollständig-
+keit zu versprechen. Ein Schutz darf lückenhaft sein und das Wort bleibt
+richtig. Genau das haben wir: Hash-Kette und Append-only machen nachträgliche
+Änderungen **erkennbar**, nicht unmöglich.
+
+**Ehrlich dazu:** auch „Schutz" klingt für einen Laien nach Verhindern. Die
+vollständig präzise Formulierung wäre „nachträgliche Änderungen werden
+erkennbar". Der Begriff ist der Mittelweg — er nimmt die unhaltbare
+Absolutheit heraus und behält die Werbekraft. Das ist eine Abwägung, keine
+Messung, und steht hier als solche.
+
+**Gemessen: kein bestehender Wächter hängt an dem Wort.** `grep -rni` über
+alle `test_*.js`, `ops/` und `.github/` im Hauptserver-Repo: **null Treffer**.
+Die Änderung reisst nichts mit.
+
+**Die sechs Stellen in `landing/index.html`, im gemessenen Wortlaut:**
+
+| Zeile | heute | SOLL |
+|---|---|---|
+| `:6` `<title>` | `…dokumentieren, manipulationssicher nachweisen` | `…dokumentieren, mit Manipulationsschutz nachweisen` |
+| `:7` `<meta description>` | `Manipulationssicher protokolliert, DSGVO-konform, …` | `Mit Manipulationsschutz protokolliert, DSGVO-konform, …` |
+| `:683` Hero | `einen lückenlosen, manipulationssicheren Nachweis` | `einen lückenlosen Nachweis mit Manipulationsschutz` |
+| `:747` `trust-item` | `🔒 Manipulationssicher <b>signiert</b>` | `🔒 Signiert mit <b>Manipulationsschutz</b>` |
+| `:828` `<h3>` Säule | `Manipulationssicher` | `Manipulationsschutz` |
+| `:1081` `<li>` Preiskarte | `Manipulationssichere Prüfkette` | `Prüfkette mit Manipulationsschutz` |
+
+**Und eine siebte auf der ZWEITEN Seite**, die ohne den Geltungsbereich aus
+0.5 durchgerutscht wäre:
+
+| Zeile | heute | SOLL |
+|---|---|---|
+| `ketten.html:467` | `…beide mit derselben manipulationssicheren Prüfkette wie im Einzelstudio.` | `…beide mit derselben Prüfkette mit Manipulationsschutz wie im Einzelstudio.` — **gemessener Wortlaut**, nicht gekürzt |
+
+**NICHT anzufassen: `revisionssicher`** (`index.html:735`, im Prüfpfad-
+Widget). Das ist ein etablierter Fachbegriff aus den GoBD mit eigener
+Bedeutung, kein Absolutheitswerbewort. Es gehört in dieselbe Prüfung wie die
+Rechtsbezüge (M3-f), nicht in diesen Beitrag. **Ausdrücklich benannt, damit
+es niemand stillschweigend mitändert oder stillschweigend übergeht.**
+
+**Z-e wird entsprechend erweitert** (Geltungsbereich: beide Seiten):
+* `/manipulationssicher/i` kommt **0×** vor — zusätzlich zu
+  `/fälschungssicher/i`, `/gerichtsfest|gerichtsverwertbar/i` und
+  `/vor\s+\S*\s*Gericht/i`.
+* Positiv: `Manipulationsschutz` kommt auf `index.html` **6×** und auf
+  `ketten.html` **1×** vor. *Sollwerte von Hand hergeleitet aus den Tabellen
+  oben, nicht aus dem Lauf abgeschrieben.*
+* Die Gegenprobe dazu: EINE der sieben Stellen auf `manipulationssicher`
+  zurückschreiben → die Negativ- UND die Positivzusicherung müssen fallen.
+
+**Damit entfällt die halbe Lösung**, die beide Planprüfungen an Fassung 1 und
+2 zu Recht kritisiert hatten: „fälschungssicher" und „manipulationssicher"
+sind dieselbe Anspruchsklasse und fallen jetzt in einem Zug.
+
+**Was NICHT hierher gehört:** dieselben Formulierungen im GymDocu-Repo
+(Handbuch-Generator, die Audit-Ansicht in der Anwendung, `docs/SICHERHEIT.md`).
+Das ist ein eigener Beitrag in einem anderen Repo mit eigener Suite —
+`plaene/auftrag-manipulationsschutz-m5.md`.
 
 ## 7. M3-f — eigener offener Punkt: stimmen die Rechtsbezüge INHALTLICH?
 
@@ -367,5 +420,6 @@ geführt — nicht als Befund und nicht als erledigt.
 * **Keine Animation**, auch nicht das Entfernen des endlos pulsierenden
   grünen Punkts (`.pulse`, `@keyframes ping`).
 * **Kein Deploy** (s. Tor 6).
-* **Nichts an `manipulationssicher`** (s. Abschnitt 6).
+* **Nichts im GymDocu-Repo** — Handbuch, Audit-Ansicht und `docs/SICHERHEIT.md`
+  tragen dieselben Formulierungen und sind ein eigener Beitrag (M5).
 * **Nichts an den Sachaussagen der Rechtsbezüge** (s. M3-f).
