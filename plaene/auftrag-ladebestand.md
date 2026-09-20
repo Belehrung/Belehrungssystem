@@ -1,6 +1,11 @@
 # Auftragspapier — `ladeBestand()`: ein stilles falsches Ergebnis wird wieder ein lautes Scheitern
 
-**Repo:** GymDocu (`/home/user/gymdocu`, Stand `5a194ba`).
+**Repo:** GymDocu (`/home/user/gymdocu`). **Zeilennummern am 20.09.2026 gegen
+`ec7a142` (master nach #464) NEU gemessen — sie sind unverändert.** Das ist
+kein Zufall und nachgesehen: Beitrag B hat `routes/admin/geraete.js` zwar
+angefasst, aber ausschliesslich ab Zeile 5455, also hinter `ladeBestand`
+(`:1849`) und hinter allen zehn Aufrufern. Die Aufruferzahl ist nachgezählt
+**zehn**, die Fundstellen unverändert.
 **Herkunft:** B1-02 (SOL-2) aus `plaene/durchgang-befunde.md`, selbst
 nachgemessen.
 **Warum es vorgeht** (STAND.md, Regel 5): Punkt 4 der Prüfreihenfolge
@@ -94,6 +99,43 @@ nicht-leere Map liefern würde.
 `:3576`, `:3766`, `:3903`, `:4011`, `:4151`. **Welche davon aus dem
 Fehlerzustand etwas DESTRUKTIVES ableiten, ist für `:2654` und `:4151`
 gemessen und für die übrigen acht NICHT.** Sie sind Fundorte, keine Befunde.
+
+### 0.6 NACHGETRAGEN 20.09.2026 — die Markierung stammt aus einem FRÜHEREN Beitrag, und es gibt einen Wächter darauf
+
+**Das Papier hat das bis heute nicht erwähnt, und das war eine Lücke.** Selbst
+gefunden beim Zusammenstellen des Prüfbündels, nicht von einer Prüfspur.
+
+`test_feature_ladestand_dbfehler.js` (Auftrag „ladestand-dbfehler",
+02.09.2026) hat die `fehler`-Markierung eingeführt — als Punkt **P4a** seiner
+Nacharbeit. Der Kopfkommentar dort sagt wörtlich: *„Jetzt protokolliert, mit
+einer nicht aufzählbaren fehler-Markierung (**kein Umbau der zehn bestehenden
+Aufrufer nötig**)."* Dieses Papier schlägt also vor, eine damals BEWUSST
+getroffene Entscheidung teilweise zurückzunehmen. Das ist zulässig — aber es
+gehört benannt, nicht übergangen.
+
+**Und es gibt einen bestehenden Wächter auf genau dieser Stelle**
+(`test_feature_ladestand_dbfehler.js:507-526`, Abschnitt 7). Er sichert zu:
+
+    HTTP-Status bei DB-Fehler muss weiterhin 200 sein
+      -> gemessen über  GET /admin/geraetewartung/brandschutz
+    console.error mit dem Präfix "routes/admin/geraete.js ladeBestand:"
+      -> muss bei DB-Fehler kommen
+    Durchlass: mit echter DB KEIN console.error
+
+**Was daraus für den Bau folgt — und das ist eine MESSUNG, die vor der ersten
+Bau-Runde fällig ist:** der Wächter fährt einen **GET**, dieses Papier will
+zwei **POST**-Wege umstellen (`:2654`, `:4151`). Die Vermutung ist, dass sie
+sich nicht berühren. **Vermutung, nicht Messung** — der Ausführende misst es
+und meldet es wörtlich:
+
+> Nach dem Umbau `test_feature_ladestand_dbfehler.js` einzeln fahren. Bleibt
+> er grün, berührt der Beitrag den GET-Weg nicht. Wird er ROT, ist 1.1 in
+> dieser Form falsch und die zweite Wahl aus 1.1 ist richtig.
+
+**Die milde Fassung behält damit eine Pflicht, die das Papier bisher nicht
+genannt hat:** sie muss weiterhin protokollieren (`console.error` mit genau
+diesem Präfix) und weiterhin ein Objekt liefern. Wer sie beim Aufräumen
+„vereinfacht", reisst einen Deploy-Gate-Wächter.
 
 ---
 
