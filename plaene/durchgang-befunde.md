@@ -321,3 +321,19 @@ als es ist): Von den sieben Lesern von `belehrung_freischaltung`
 `dateiname`**. Innerhalb EINES Requests gilt die Lesereihenfolge des
 Unterschriftenwegs also ausnahmslos; das Fenster von U-SIG1 liegt ZWISCHEN
 Requests, nicht in einem.
+
+---
+
+## Offener Fundort aus der Diffprüfung zu Beitrag B (20.09.2026)
+
+| ID | Fundort | Stand |
+|---|---|---|
+| U-NOOP1 | **Ein Test, der nichts ausführt, meldet sich als bestanden.** `test/run.sh:884` ruft `if out=$(node "$t" 2>&1); then …` — gewertet wird NUR der Exit-Code, und die Ausgabe wird mit `tail -1` auf eine Zeile eingedampft. Eine Datei, die gar keine Zusicherung fährt, endet mit Exit 0 und erscheint als grün, mit leerer Ergebniszeile. **Gemessen: neun Testdateien benutzen bereits `require.main === module`** (mit Beitrag B zehn) — bei jeder davon genügte eine Änderung daran, wie die Suite ihre Tests startet, um sie lautlos stillzulegen. Ein Wächter gegen eine FEHLENDE Summenzeile existiert nicht (gesucht, keiner gefunden). | gemessen. **KEIN Regress von Beitrag B** — das Muster ist Hausbestand, der Beitrag ist der zehnte Fall. Behebung wäre ein Wächter, der je registrierter Datei eine `N PASS / M FAIL`-Zeile im Log verlangt: eine Referenz von AUSSEN auf die Ausführung statt auf den Exit-Code. Eigener Beitrag |
+
+**Wie dieser Fundort entstanden ist, gehört dazu:** Ich hatte ihn zuerst als
+Befund GEGEN Beitrag B notiert (er führt das Muster in einer bestehenden
+Deploy-Gate-Datei ein). Die eigene Nachmessung — `grep -rln "require.main ===
+module" test_*.js | wc -l` → **9** — hat die Schwere gekippt: wer ein
+etabliertes Hausmuster als Regress eines einzelnen Beitrags meldet, misst die
+Gewohnheit statt der Änderung. Die zugrundeliegende Lücke ist trotzdem echt
+und deshalb hier.
