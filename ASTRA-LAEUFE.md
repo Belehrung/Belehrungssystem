@@ -2476,3 +2476,50 @@ Prüfauftrag.
 0,05 $ (deepseek) + 0,42 $ (kimi, Runde 2) + 0,30 $ (kimi, Runde 3) =
 **rund 18,19 $ für 45 Befunde, von denen 44 getragen haben** — und keine
 einzige Zeile Produktivcode wurde dafür geschrieben.
+## 20.09.2026 — Kimi gegen einen Diff MIT Lösungsschlüssel
+
+Der erste Lauf, bei dem wir die Antworten vorher kannten: derselbe Diff
+(Beitrag C), dasselbe Bündel (`md5 b1dba825…`), dieselbe Frage
+(`md5 0b59e544…`), nur `model` getauscht. 26 Befunde aus zwei Spuren waren
+vorher von mir einzeln nachgemessen.
+
+| | sol (xhigh) | kimi-k3 (max) |
+|---|---|---|
+| Befunde | 7 | **7** |
+| nach eigener Nachmessung getragen | 5 | **6 ganz, 1 im Kern** |
+| gefallen | **2** | **0** |
+| Kosten | ~1,46 $ | **~1,19 $** |
+| Dauer | 348 s | **1401 s** |
+| Ein-/Ausgabe | 156.450 / 22.586 | 171.502 / 44.944 (37.596 Denk) |
+
+**Was Kimi hatte und sol NICHT: den REGRESS.** K5 = der catch-Zweig lässt die
+hochgeladene Datei bei ungültiger `:id` liegen, obwohl nachweislich nichts
+geschrieben wurde. Das war der teuerste Befund des ganzen Beitrags; sol hat
+ihn nicht gesehen, nur `/code-review`.
+
+**Was NUR Kimi hatte (keine der drei anderen Spuren):** ein konkreter
+Verklemmungsweg zwischen `/freischalten-alle` (Autocommit) und
+`/neue-version` (jetzt in der Transaktion) — dasselbe
+`INSERT … SELECT … ON CONFLICT` ohne `ORDER BY` über dieselbe Schlüsselmenge,
+und die neue Transaktion hält ihre Zeilensperren bis zum COMMIT statt nur
+für die Statementdauer. **Plausibel, aber NICHT gemessen** — es bräuchte eine
+Lastprobe. Als offener Befund geführt.
+
+**Und eine Berichtigung MEINER eigenen Prüffrage, von mir nachgemessen:** ich
+hatte geschrieben, die neue Transaktion halte „FK-Sperren auf `mitarbeiter`".
+`belehrung_freischaltung` hat **gar keinen Fremdschlüssel** (`core/db.js`,
+nur `UNIQUE(studio_id, mitarbeiter_id, belehrung_id)`). Meine Schlussfolgerung
+(kein Kreis) bleibt richtig — eine Sperre, die es nicht gibt, kann keinen
+Kreis schliessen —, aber ein Glied meiner Begründung war falsch.
+
+**Die Schwäche zeigte sich genau dort, wo die Recherche sie verortet.** K2
+beschreibt die Lücke richtig (ohne `t` wird die Mutation von keinem Test
+gefangen) und den SCHADEN falsch: Kimi behauptet, ein Audit-Eintrag bliebe
+als falsche Beweisurkunde stehen. Gemessen am Quelltext hängt der Aufruf
+stattdessen (zweite Poolverbindung auf denselben Advisory-Lock,
+`core/integritaet.js:97`). Selbstbewusst, konkret, im Mechanismus falsch —
+das Profil aus der Recherche im Kleinen.
+
+**Was dieser Lauf NICHT hergibt:** ein Diff, ein Tag. Er sagt nichts darüber,
+ob Kimi bei einem Diff OHNE Lösungsschlüssel ebenso präzise wäre — und der
+Lösungsschlüssel hat die Bewertung erst möglich gemacht, nicht die Befunde.
