@@ -6485,3 +6485,72 @@ misst die SCHREIBWEISE mit.**
 Zweig `beitrag-ladebestand`, mitten im Suite-Lauf (`ps`: seit 3 Minuten,
 gerade `test_feature_design_tokens.js`). Nach der Takt-Regel wird bis zu
 seiner Benachrichtigung nichts anderes angefasst.
+
+### 13:01 UTC — BERICHTIGUNG: M3 liegt in einem DRITTEN Repo, nicht im GymDocu-Repo
+
+Im Eintrag von 12:52 steht M3 so, als wäre es von hier aus baubar. **Das war
+falsch.** Gemessen: die Zeichenketten `nachts wachliegen`, `mod-legal` und
+`pruefpfad` kommen weder in `/home/user/gymdocu` noch in
+`/home/user/Belehrungssystem` vor — die einzigen Treffer waren meine EIGENEN
+frisch geschriebenen Notizen.
+
+Die Startseite liegt in **`Belehrung/gymdocu-hauptserver`**, Datei
+`landing/index.html`. Das Repo war in dieser Sitzung nicht angehängt; es ist
+jetzt geklont (`/home/user/gymdocu-hauptserver`, `master`, `47730a3`).
+
+**Das ist genau die Falle, vor der die CLAUDE.md warnt** („ein Fundort ist
+kein Befund"): Ich hatte vier Startseiten-Befunde am ausgelieferten HTML
+gemessen und daraus stillschweigend geschlossen, wo die Quelle liegt. Die
+Befunde stimmten, der Ort nicht.
+
+**Alle vier gegen die QUELLE nachgemessen — sie tragen auch dort:**
+`href="#module"` 1× gegen `id="module"` **0×** (und nur dieser eine Anker ist
+tot, die übrigen fünf haben ihr `id`); `Vier Dinge` 1× gegen
+`class="pillar"` **5×**; `class="mod"` **14×** gegen `Alle sechs Module` 1×;
+`.mod-legal::before { content:"§" … }` vor **fünf** Angaben, die keine
+Paragraphen sind.
+
+**Der Hauptserver hat eine eigene Testsuite** (`bash test/run.sh`, 87
+registrierte Dateien) und eine eigene CI — das volle Ritual gilt dort.
+**Und er hat KEINEN automatischen Deploy:** nach dem Merge braucht es
+`git pull --ff-only origin master` auf dem Server.
+
+**Zwei bestehende Wächter liegen auf genau dieser Datei:**
+`test_landing.js` (511 Zeilen) und `test_rechtsaussagen.js` (225 Zeilen).
+Gemessen: **keiner sichert das Gegenteil der geplanten Änderungen zu.** Im
+Gegenteil — `test_landing.js` hat für genau diese Klasse Präzedenz (die
+falsche Aussage „isolierte Datenbank" ist weg UND die richtige „streng
+getrennt" steht da, mit Positivkontrolle). Diesem Muster folgt das
+Auftragspapier.
+
+**Und der schärfste Teil des §-Befunds steht auf derselben Seite:** die Säule
+„⚖️ Rechtlich fundiert" verspricht wörtlich „ohne erfundene Pflichten, die im
+Ernstfall nicht halten" — denselben Satz zitiert `test_rechtsaussagen.js` in
+seinem Kopf als seine Daseinsberechtigung. Ein falsches § auf den
+Rechtsabzeichen widerspricht der eigenen Zusage der Seite.
+
+**Auftragspapier:** `plaene/auftrag-landing-m3.md` (245 Zeilen). **Zwei
+Planprüfungen laufen** — `gpt-5.6-sol` mit dem Papier und der Seite,
+`kimi-k3` mit dem Papier und den beiden Wächtern, OHNE die Seite. **Noch kein
+Bauauftrag.**
+
+### Parallel: der Ladebestand-Executer hat einen echten Wächter-Fang gemeldet
+
+Sein Suite-Lauf endete mit **264 PASS / 1 FAIL** in
+`test_feature_design_tokens.js`: `routes/admin/geraete.js` steht in
+`AUSNAHMEN_OHNE_EIGENES_DESIGN_CSS` mit der Begründung, jedes `res.send(...)`
+werde unmittelbar von `await layout(` gefolgt — seine neue Fehlerseite
+erfüllte das nicht.
+
+**Er hat die richtige der beiden angebotenen Behebungen gewählt:** die
+Funktion liefert jetzt nur den INHALT (`ladeBestandFehlerinhalt()`), der
+`layout()`-Aufruf bleibt wörtlich an beiden Aufrufstellen. Die Alternative —
+den Eintrag aus der Ausnahmeliste nehmen — hätte eine 442-KB-Datei in eine
+Prüfung gezogen, die niemand bestellt hat. Er hat den FAIL gemessen und im
+Kommentar festgehalten.
+
+**Offen für MEINE Diff-Prüfung:** der neue Satz der Fehlerseite behauptet
+„*bitte diese Seite jetzt einfach noch einmal speichern — der Abgleich holt
+dann nach, was gerade fehlt*". **Das ist eine Zusicherung der Oberfläche und
+gehört gemessen** — dreimal im September hat ein von MIR vorgegebener
+Hinweistext einen Weg behauptet, den es nicht gab.
