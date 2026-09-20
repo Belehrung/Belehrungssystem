@@ -750,7 +750,13 @@ unten schliesst sie ohnehin als Ganzes statt Weg für Weg.
 
 ---
 
-## DER BAUAUFTRAG DER DRITTEN RUNDE
+## DER BAUAUFTRAG DER DRITTEN RUNDE — FASSUNG 1, ÜBERHOLT
+
+> **NICHT NACH DIESEM ABSCHNITT BAUEN.** Die Planprüfung hat Punkt 7 als
+> Tausch der Lücke widerlegt und sieben weitere Punkte nachgeschärft.
+> Massgeblich ist **FASSUNG 2** am Ende dieser Datei. Dieser Abschnitt
+> bleibt stehen, weil die Begründungen darin weiter gelten — aber gebaut
+> wird nach Fassung 2.
 
 N14 und N20 sind dieselbe Krankheit auf zwei Ebenen: ein Weg zählt gar nicht,
 fünf Wege sind ungeprüft. Sie werden deshalb NICHT Weg für Weg behoben —
@@ -911,3 +917,200 @@ Unterschied, den die CLAUDE.md unter „Referenz von AUSSEN" meint.
   ganze Repo: **genau zwei** Fundstellen — die Produktionszeile und EINE
   Testkonstante in `test_feature_ladebestand_streng.js`.
   `test_feature_brandschutz.js` trägt ihn nicht. Fällt.
+
+---
+
+# FASSUNG 2 — DER MASSGEBLICHE BAUAUFTRAG DER DRITTEN RUNDE
+
+Nach zwei Planprüfungen. Wo diese Fassung und Fassung 1 sich widersprechen,
+gilt DIESE. Die Begründungen stehen oben; hier steht, was zu tun ist.
+
+Zweig `beitrag-ladebestand`, Datei `routes/admin/geraete.js` und
+`test_feature_ladebestand_streng.js`. **Zeilennummern vor dem Bau NEU
+messen** — sie haben sich in dieser Nacharbeit schon zweimal verschoben.
+
+## 1 — Ein Weg für alle Schreibvorgänge der Schleife
+
+Im Rumpf der Brandschutz-Route ein lokaler Helfer:
+
+    async function schreibePruefplan(sql, params) {
+        const r = await db.run(sql, params);
+        praefplanGeaendert += (r && r.rowCount) || 0;
+        return r;
+    }
+
+Alle Schreibvorgänge auf `wartung_geraete` / `wartung_geraete_aufgaben`
+ZWISCHEN dem Beginn der POSITIONEN-Schleife und dem Aufruf von
+`ladeBestandStreng(req.studioId, brandschutz.BEREICH)` gehen durch ihn; die
+drei unbedingten `++` entfallen.
+
+**Der Zähler zählt ab jetzt GETROFFENE ZEILEN, nicht semantische
+Änderungen.** Das ist eine bewusste Entscheidung und gehört in den Kommentar:
+PostgreSQL meldet `rowCount 1` auch bei einem wertgleichen UPDATE, der
+Teiländerungs-Satz kann also bei einem inhaltsgleichen Wiederholungs-POST
+erscheinen. Eine saubere Behebung bräuchte einen Wertvergleich vor dem UPDATE
+und ist ein EIGENER Beitrag. **Benannt statt verdeckt.**
+
+## 2 — `holeOderLegeAn()` meldet, was sie geschrieben hat
+
+Sie liegt ausserhalb des Routenrumpfs und kann den Helfer nicht benutzen.
+**TOTALER Rückgabevertrag mit ZAHLEN**, beide Zweige tragen beide Felder:
+
+    return { ...da, neu: false, artGeaendert: <rowCount des art-UPDATE, sonst 0> };
+    return { ...r,  neu: true,  artGeaendert: 0 };
+
+Aufrufer, ausdrücklich numerisch:
+
+    praefplanGeaendert += eintrag.neu ? 1 : 0;
+    praefplanGeaendert += eintrag.artGeaendert || 0;
+
+**Nicht `+= eintrag.neu + eintrag.artGeaendert`.** Fehlt ein Feld, ist das
+`true + undefined === NaN`, und `NaN > 0` ist `false` — die Seite zeigte dann
+den Null-Text, obwohl ein Gerät angelegt wurde. Gemessen; dieser Zustand
+existiert heute nicht und darf nicht entstehen.
+
+`artGeaendert` kommt aus dem `rowCount` des UPDATE, nicht aus dem Eintritt in
+den `if`-Zweig — sonst meldet eine zwischen SELECT und UPDATE gelöschte Zeile
+eine Änderung, die nicht stattfand.
+
+Der Kommentar „zählt JEDEN echten Schreibvorgang" wird berichtigt: bei einer
+Neuanlage entstehen Gerätezeile UND Aufgabenzeilen, gezählt wird einmal. Der
+Vertrag ist „> 0 heisst: es wurde geschrieben", kein Zahlenvertrag.
+
+## 3 — Statischer Riegel, und er wird ehrlich benannt
+
+Über `GERAETE_QUELLTEXT_OHNE_KOMMENTARE`, **nachdem ALLE Blockkommentare
+entfernt sind** (die bestehende Bereinigung lässt Blockkommentare mitten in
+der Zeile stehen — sonst schlägt der Riegel an einem zitierten Beispiel an).
+
+* **Beide Bereichsmarken MÜSSEN gefunden werden, und in der richtigen
+  Reihenfolge.** Fehlt eine, ist das ein **FAIL**, kein leerer Bereich —
+  „leeres Ergebnis ist nicht sauberes Ergebnis".
+* Im Bereich ist **JEDER direkte Schreib-Aufruf verboten** — `db.run(`,
+  `db.q(`, `db.one(`, `.query(` — **unabhängig vom SQL-Text.** Sonst genügt
+  eine oberhalb hochgezogene SQL-Konstante, um beide Musterbestandteile zu
+  trennen. Erlaubt ist nur `schreibePruefplan(`.
+* **Gegenproben, alle drei:** (a) ein blankes `db.run("UPDATE
+  wartung_geraete …")` in den Bereich setzen ⇒ ROT; (b) eine Bereichsmarke
+  umbauen ⇒ ROT (nicht still grün); (c) ohne Defekt ⇒ GRÜN.
+
+**In den Kommentar, wörtlich:** *Dieser Riegel ist ein KONVENTIONSwächter
+über einen lexikalischen Bereich, kein DML-Wächter. Eine Funktion, die
+ausserhalb dieses Bereichs definiert ist, sieht er NICHT — `holeOderLegeAn()`
+ist der lebende Beleg dafür, und genau deshalb steht Punkt 4c daneben.*
+
+## 4 — DREI Verhaltensproben
+
+Jede mit gestörtem `ladeBestandStreng()` und jede mit **positiver UND
+negativer** Zusicherung (der jeweils andere Text muss FEHLEN — reine
+Anwesenheitsprüfung bestünde auch eine Seite, die beide Sätze trägt).
+
+**4a Neuanlage** — frisches Studio, EIN POST `antwort_rwa=vorhanden`
+⇒ Teiländerungs-Text, NICHT der Keine-Einträge-Text.
+
+**4b Reaktivierung** — anlegen → `nicht_vorhanden` → `vorhanden`.
+**Der Vorzustand wird ZUGESICHERT**, sonst ist Löschen-und-Neuanlegen davon
+nicht zu unterscheiden: vor dem dritten POST genau EINE RWA-Zeile mit
+bekannter ID und `aktiv=0`, danach DIESELBE ID mit `aktiv=1`.
+
+**4c Nur `art` weicht ab** — die Abnahme für N14, den einzigen Schreibweg
+ausserhalb des Helfers. Vorzustand: Eintrag vorhanden, `aktiv=1`,
+`durchfuehrung` gesetzt, kein `notizZusatz`, und `art` auf dem falschen
+zulässigen Wert. Erwartung: Teiländerungs-Text UND `art` ist korrigiert.
+**Ohne diese Probe hat ein blockierender Befund seinen eigenen Fix nicht
+abgesichert.**
+
+## 5 — Wortlaut
+
+    alt:  Am Prüfplan wurde nichts angelegt, geändert oder deaktiviert.
+    neu:  Am Prüfplan wurden keine Einträge angelegt, geändert oder deaktiviert.
+
+Die Zusicherung, die das Wort „Einträge" VERLANGT, bindet an die **gerenderte
+Antwort** bzw. den **PRODUKTIV-Quelltext** — **NIE an die eigene
+Testkonstante.** Eine Prüfung der Konstante gegen sich selbst kann nicht
+falsch werden; Produktionstext und Konstante liessen sich gemeinsam
+umformulieren, ohne dass etwas rot wird.
+
+Fundstellen des alten Satzes im ganzen Repo (gezählt): **genau zwei** —
+`routes/admin/geraete.js` und die Konstante in
+`test_feature_ladebestand_streng.js`. `test_feature_brandschutz.js` ist
+NICHT betroffen.
+
+## 6 — Der leere Ausstattungs-POST
+
+`ladeBestandFehlerinhalt()` bekommt als dritte Eingabe die Zahl der in DIESEM
+Submit gespeicherten Antworten. **Der Seitentitel steht AUSSERHALB der
+Funktion** (`layout(req.studioId, "…", …)` an beiden Aufrufstellen) und muss
+dort ebenfalls abgeleitet werden.
+
+Wörtlich festgelegt, damit eine wörtliche Abnahme möglich ist:
+
+    Titel bei 0 Antworten:  Keine Feststellung gespeichert — Prüfplan nicht abgeglichen
+    Satz  bei 0 Antworten:  In diesem Durchgang wurden keine Antworten gespeichert.
+
+Bei > 0 Antworten bleiben Titel und erster Satz wie heute.
+
+**Abnahme, positiv UND negativ:** der bestehende Leer-POST-Testfall verlangt
+den neuen Titel und den neuen Satz WÖRTLICH und verbietet den alten Titel
+(`Feststellung gespeichert — Prüfplan nicht abgeglichen`) und den alten Satz
+(`Eure Antworten sind gespeichert.`).
+
+## 7 — Die N9-Verfälschung wird KOLLABIEREND
+
+    UPDATE wartung_geraete_aufgaben SET reihenfolge = 1000 WHERE studio_id=$1
+
+statt `+ 100`. Begründung im Kommentar: stehen alle Zeilen eines Geräts auf
+DEMSELBEN Wert, liefert jeder Ausdruck `f(reihenfolge)` für alle denselben
+Wert — `0…n-1` braucht bei n > 1 aber n VERSCHIEDENE. Nur ein Schreiber, der
+den Sollindex je Zeile schreibt, stellt das her.
+
+**`1000`, nicht `0`:** die zwölf Termine haben `[6,3,7,3,3,5,3,9,4,3,3,3]`
+Aufgaben, heute also keiner mit nur einer — bei einem solchen wäre `0` ein
+LEGALER Sollwert und die Verfälschung wirkungslos. `1000` kann nie legal sein.
+
+**Abnahme, alle drei wörtlich gemessen und gemeldet:**
+
+    unmutiert                                            ⇒ GRÜN
+    SET reihenfolge=MOD(reihenfolge,100) + 0 * $1        ⇒ ROT
+    SET reihenfolge=LEAST(reihenfolge,1000-reihenfolge)
+                    + 0 * $1                             ⇒ ROT
+
+Die Vorbedingung (`rowCount > 0` der Verfälschung) bleibt.
+
+## 8 — Sollwert-Karte als Schnappschuss
+
+`erwarteteAufgabenanzahl()` wird **EINMAL auf Top-Level der Testdatei**
+gebildet, VOR jedem POST — nicht bei jedem Aufruf. Grund: `core/ausstattung.js`
+kopiert in `geplanteTermine()` flach, `t.aufgaben` ist dieselbe Referenz, die
+als `soll` in die Produktion geht; eine In-place-Mutation dort veränderte
+sonst auch den Test-Sollwert.
+
+Dazu die Zeile aus N13: **Kartengrösse == Zahl der Termine** (heute 12, aus
+derselben Schleife gezählt, kein Literal). Ein doppelter Termin-Name fiele
+sonst lautlos zusammen.
+
+In den Kommentar: dass Karte und Produktions-Soll weiterhin aus DERSELBEN
+Quelle `FRAGEN` kommen, ist Absicht — verankert ist das über den literalen
+SHA-256 weiter unten.
+
+## 9 — Erfolgs-POSTs von Fehlerseiten unterscheiden
+
+Bei JEDEM Erfolgs-POST zusätzlich zu `status === 200` **zwei** Zusicherungen:
+die Antwort trägt weder `<div class="error">` (generische Fehlerseite des
+äusseren `catch`, HTTP 200!) noch `ABBRUCH_MARKER`.
+
+**`ABBRUCH_MARKER` allein genügt NICHT** — gemessen: die generische
+Fehlerseite (`layout(req.studioId, "Fehler", '<div class="error">…')`) trägt
+diesen Marker gar nicht.
+
+## Abnahme insgesamt
+
+* Volle Suite `bash test/run.sh > <log> 2>&1; echo "SUITE_EXIT=$?"` — kein
+  Pipe, kein äusseres `flock`.
+* `npm run lint`, Ergebnis WÖRTLICH melden, auch bei Grün.
+* Jede neue Zusicherung mit Gegenprobe in BEIDE Richtungen, wörtlich
+  gemeldet (Mutation → ROT mit der Fehlerzeile, Rücknahme gegen eine
+  unabhängige `cp`-Kopie mit `diff` EXIT 0 → GRÜN).
+* Mutationsskript mit Zielpfad als ARGUMENT, Abbruch bei ≠ 1 Fundstelle,
+  Marker mit, `node --check` danach.
+* Am Ende `git status` sauber und der Marker-Scan nur mit Prosatreffern.
