@@ -820,3 +820,94 @@ der generischen Fehlerseite zu unterscheiden.
 
 **Nicht in diesem Auftrag** (begründet oben): das geweitete 700er-Fenster,
 die fehlende `fremdBehalten`-Zusicherung, das wertgleiche Notiz-UPDATE.
+
+---
+
+## PLANPRÜFUNG DER DRITTEN RUNDE — und was sie am Auftrag ändert
+
+Zwei Lesespuren, verschiedene Bündel (Betreiber-Entscheidung 20.09. abends).
+
+* **Spur A** `gpt-5.6-sol` über `tools/gegenleser-repo.js` mit Repo-Leserechten,
+  Schwerpunkt Route. 12 Runden, 5,95 $. **6 Befunde, alle 6 getragen.**
+* **Spur B** `kimi-k3`, festes Bündel Plan + Testdatei, `effort: max`,
+  1676 s Laufzeit. **9 Befunde, 7 getragen, 2 gefallen.** Lauf endete
+  `incomplete` (50.901 von 60.000 Ausgabe-Token gingen ins Nachdenken) — die
+  Befunde kamen vollständig durch, die Rechenschaft am Ende nicht. **Das ist
+  mein Parameterfehler, nicht das Modell:** die CLAUDE.md sagt selbst, `high`
+  ist bei Kimi das bessere Geschäft.
+
+**Überschneidung: 3 von 6 bzw. 9** (die Involution, der falsche Marker, die
+fehlende N14-Abnahme) — das passt zur gemessenen Erwartung, dass
+verschiedene Bündel die Überschneidung etwa halbieren.
+
+### Der Befund, der den Auftrag kippt — beide Spuren, unabhängig
+
+Mein Punkt 7 (`SET reihenfolge = 1000 - reihenfolge`) ist eine INVOLUTION.
+Die Ein-Zeilen-Mutation
+
+    SET reihenfolge = LEAST(reihenfolge, 1000 - reihenfolge) + 0 * $1, aktiv=1
+
+hebt sie auf, OHNE den Sollindex zu schreiben. **In Postgres nachgerechnet:**
+
+    r        1000-r    LEAST darauf    LEAST auf r    r+100   LEAST darauf
+    0        1000      0               0              100     100
+    2         998      2               2              102     102
+
+Das heutige `+100` FÄNGT diese Mutation (der Wert bliebe verschoben), meine
+geplante Umkehrung nicht. Mein Punkt 7 wäre also ein **Tausch der Lücke**
+gewesen, kein strengerer Nachweis — gefunden, bevor eine Zeile gebaut wurde.
+
+### Die Behebung, selbst gemessen — eine KOLLABIERENDE Verfälschung
+
+    UPDATE wartung_geraete_aufgaben SET reihenfolge = 1000 WHERE studio_id=$1
+
+**Warum das die Klasse schliesst statt sie zu verschieben:** stehen alle
+Zeilen eines Geräts auf DEMSELBEN Wert, liefert jeder Ausdruck der Form
+`f(reihenfolge)` für alle Zeilen wieder denselben Wert. `0…n-1` braucht bei
+n > 1 aber n VERSCHIEDENE. Nur ein Schreiber, der den Sollindex je Zeile
+benutzt, kann das herstellen. Das ist ein Konstruktionsargument, kein
+Glücksfall.
+
+**Gemessen, je einzeln:**
+
+    Verfaelschung = 0      korrekter Code  EXIT 0, 15 PASS / 0 FAIL
+                           MOD(...,100)    EXIT 1, war [0,0,0]
+                           LEAST(...)      EXIT 1, war [0,0,0]
+    Verfaelschung = 1000   korrekter Code  EXIT 0, 15 PASS / 0 FAIL
+                           LEAST(...)      EXIT 1, war [0,0,0]
+
+**Und 1000 ist besser als 0, obwohl beide heute messen:** gezählt haben die
+zwölf Termine `[6,3,7,3,3,5,3,9,4,3,3,3]` Aufgaben — kein Gerät mit nur
+EINER. Bei einem solchen Gerät wäre `0` ein LEGALER Sollwert und die
+Verfälschung stillschweigend wirkungslos. **Meine Fassung hing an einer
+Eigenschaft der DATEN, die von Kimi an der KONSTRUKTION.** Genau der
+Unterschied, den die CLAUDE.md unter „Referenz von AUSSEN" meint.
+
+### Was noch am Auftrag geändert wird
+
+| Punkt | Änderung | Quelle |
+|---|---|---|
+| 2 | TOTALER Rückgabevertrag mit ZAHLEN, nicht zwei optionale Booleans — `true + undefined` ist `NaN`, `NaN > 0` ist `false` (gemessen), und die Neuanlagenprobe führte genau dorthin | A4 |
+| 3 | Riegel muss BEIDE Bereichsmarken finden UND ihre Reihenfolge prüfen (sonst leerer Bereich = stilles Grün); verbietet `db.run(`, `db.q(`, `.query(` UNABHÄNGIG vom SQL-Text (sonst hilft eine hochgezogene SQL-Konstante); entfernt ALLE Blockkommentare | A/D, B3 |
+| 3 | **Und er wird ehrlich benannt:** er ist ein KONVENTIONSwächter über einen lexikalischen Bereich, kein DML-Wächter. Helfer, die ausserhalb definiert sind, sieht er NICHT — `holeOderLegeAn` ist der lebende Beleg | A/H, B3 |
+| 4 | DRITTE Verhaltensprobe für den reinen `art`-Fall; sonst hat der blockierende Befund N14 keine eigene Abnahme | A3, B5 |
+| 4 | Die Reaktivierungsprobe sichert ihren VORZUSTAND zu (dieselbe Zeilen-ID, `aktiv=0` davor, `aktiv=1` danach) — sonst wäre Löschen-und-Neuanlegen ununterscheidbar | A6 |
+| 5 | Die „Einträge"-Zusicherung bindet an die gerenderte Seite bzw. den PRODUKTIV-Quelltext, NIE an die eigene Testkonstante — sonst kann sie nicht falsch werden | B7 |
+| 6 | Der neue Titel UND der neue Satz werden WÖRTLICH im Auftrag festgelegt; der Titel steht ausserhalb von `ladeBestandFehlerinhalt()` und muss an beiden Aufrufstellen abgeleitet werden | A2, B6 |
+| 4/6 | Überall NEGATIVE Zusicherungen daneben (alter Satz/Titel muss FEHLEN) — reine Anwesenheitsprüfung besteht auch eine Seite, die beide Sätze trägt | B6 |
+| 8 | Der Bauort der Sollwert-Karte wird gepinnt (Top-Level, vor jedem POST) | B9 |
+| 9 | Abwesenheit von **`<div class="error">`** UND von `ABBRUCH_MARKER` — zwei Zusicherungen. `ABBRUCH_MARKER` allein taugt nicht: die generische Fehlerseite trägt ihn gar nicht (gemessen) | A5, B4 |
+
+### Was NACHGEMESSEN NICHT trägt
+
+* **B1 (blockierend gemeldet): „`syncAufgaben()` schreibt im gezählten
+  Fenster".** Gemessen: die Aufrufe liegen bei **2829** und **2898**
+  (Brandschutz) bzw. **4346** (Ausstattung), das strenge Lesen bei **2793**
+  bzw. **4299** — **alle danach.** Die Prämisse ist falsch, der Befund fällt.
+  Was übrig bleibt, ist kein eigener Befund, sondern dasselbe wie A/H: der
+  Riegel sieht keine ausserhalb definierten Helfer. Das steht jetzt als
+  ehrliche Grenze im Auftrag statt als „schliesst die Klasse".
+* **B8: „der Geschwisterwächter trägt den alten Satz".** `grep` über das
+  ganze Repo: **genau zwei** Fundstellen — die Produktionszeile und EINE
+  Testkonstante in `test_feature_ladebestand_streng.js`.
+  `test_feature_brandschutz.js` trägt ihn nicht. Fällt.
