@@ -6205,7 +6205,7 @@ DOM-Sichtbarkeitsprüfung des Banners. Notiert, nicht gebaut.
 live-check. Regel 6a gilt — keine Nummer und keine URL, bevor das alles
 durch ist.
 
-### 10:15 UTC — Beitrag A: Runde 3 durch, PR offen, CI läuft
+### 10:30 UTC — Beitrag A: Runde 3 durch, PR offen, CI läuft
 
 **Zweigkopf `85f9323`** (Runden 1–3 plus eine eigene Kommentarberichtigung),
 PR gegen `master` steht, **nicht** als Entwurf. Regel 6a gilt: keine Nummer
