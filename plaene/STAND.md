@@ -6415,3 +6415,73 @@ sind reine JavaScript-Anwendungen, aus denen ein Abruf nur die leere Hülle holt
 werden als ungeprüft geführt, bis ich sie selbst gegen die genannte URL halte;
 Vereinfachungsideen gegen den Quelltext. Dieselbe Regel wie bei jedem
 Prüflauf — sie gilt hier sogar schärfer, weil nichts davon rot werden kann.
+
+### 12:52 UTC — die vier Markt-/Design-Läufe sind durch und nachgemessen
+
+Vollständig in `plaene/markt-und-design-20-09-2026.md`. Hier nur, was für die
+ARBEITSLAGE folgt.
+
+**Ertrag der vier Spuren, nach eigener Nachmessung:**
+
+| Spur | Modell | Dauer | geliefert | von mir gemessen |
+|---|---|---|---|---|
+| `mitbewerber` | `gpt-5.6-sol` | 306 s, 13 Suchen | 11 Anbieter, 16 Lücken | 11/11 URLs erreichbar; von 7 Preisangaben **5 bestätigt, 1 teils, 1 GEFALLEN** |
+| `homepage` | `gpt-5.6-sol` | 371 s, 11 Suchen | 16 Ist-Befunde, 12 Vorschläge | **4 von 4 geprüften Befunden tragen** |
+| `einfach-k` | `kimi-k3` | 462 s | 8 Ideen | 2 nachgemessen, **beide tragen**, dazu EIN Fehler, den keine Spur hatte |
+| `einfach-d` | `deepseek-v4-pro` | 128 s | 6 Ideen | 1 nachgemessen, **trägt und ist grösser als gemeldet** |
+
+**Was das über die Spuren sagt — und was NICHT.** Die Materialtrennung hat
+wieder gewirkt: `einfach-d` lieferte sechs Ideen ausschliesslich für den
+Admin, `einfach-k` vier für den Trainer — genau entlang der Bündelgrenze.
+Beide haben ihre Materiallücke von sich aus gemeldet statt geraten. **Das ist
+EIN Tag und vier Läufe zu einer Aufgabenart, die wir vorher nie gefahren
+haben** (Ideen statt Prüfung); es trägt keine Aussage über Prüfgüte.
+
+**Neu auf die Arbeitsliste, alles selbst gemessen:**
+
+* **M1 — Die grüne Karte des Dashboards behauptet Vollständigkeit über eine
+  FESTE Teilmenge.** `routes/admin/dashboard.js:545-548` sagt „alle Kontrollen
+  aktuell"; `getraenke` kommt in der Datei **0×** vor, `spuel` nur 2× und
+  beide Male als Frage nach vorhandenen STELLEN, nicht nach FÄLLIGKEIT. Die
+  beiden Zähler existieren (`routes/getraenkeanlage.js:70`,
+  `core/spuelplan.js:89`) und werden ausschliesslich von `server.js` gerufen —
+  der TRAINER-Startseite, wo `:1181` eine überfällige Reinigung als „harter
+  Verzug" führt. Unsere teuerste Klasse, in der Oberfläche. Jedes künftige
+  Modul erbt den Fehler.
+* **M2 — Der 200-ms-Zeitgeber im PIN-Feld nimmt keinen Schnappschuss.**
+  `routes/mitarbeiter-auth.js:126 pinNumpad()`: `setTimeout(absenden, 200)`
+  bei der sechsten Ziffer, `absenden()` liest `pin` erst beim Auslösen, und
+  `⌫` ist im Fenster nicht gesperrt → abgeschickt wird eine FÜNFSTELLIGE PIN.
+  Dazu die von `kimi-k3` gemeldete, praktisch unerreichbare ✓-Taste. **Beides
+  gehört in EINEN Beitrag** — wer nur die Taste tauscht, lässt den Zeitgeber
+  stehen.
+* **M3 — Fünf Startseiten-Kleinigkeiten**, alle am ausgelieferten HTML
+  gemessen: toter Anker `#module` (`href` 1×, `id` **0×**); „Vier Dinge" gegen
+  **fünf** `.pillar`; „Alle sechs Module" gegen **14** `.mod`; das
+  `.mod-legal::before`-§ vor **fünf** Angaben, die keine Paragraphen sind
+  („§ DGUV Vorschrift 3", „§ VDI/DVGW 6023", „§ Hausrecht",
+  „§ VO (EG) 852/2004", „§ Art. 5 DSGVO"); und die Garantieformulierungen
+  „ein Nachweis, der **vor Gericht zählt**" sowie „**fälschungssicher**"
+  (dazu 2× „manipulationssicher", einmal im `<title>`).
+* **M4 — PIN-Regeln stehen nirgends vor der Eingabe.** `:259-266` sagt einen
+  Satz, `core/pin-regeln.js:18 pinSchwach()` wirkt erst nach dem Absenden.
+
+**Rangfolge-Empfehlung:** M3 zuerst (klein, sichtbar, kein Verhalten), dann
+M1 (falsches Grün), dann M2+M4 zusammen (beide im PIN-Feld). **Alle vier
+stehen HINTER der Pentest-Liste** — sie sind Bedienung und Darstellung, keine
+Angriffsfläche.
+
+**Betreiber-Entscheidungen, NICHT meine** (gefragt, nicht entschieden):
+der Mangel als eigener Vorgang mit zweistufiger Schliessung (grösste Lücke
+gegenüber dem Markt, grösster Bau) und der Umbau der Startseite auf
+„Produkt vor Risiko".
+
+**Eigener Messfehler, protokolliert:** mein erstes Preismuster fand nur
+`22 €`, nicht `€22`, und hätte drei richtige Befunde als unbelegt verworfen.
+Dieselbe Krankheit wie am 19.09.2026 bei den `.trim()`-Stellen — **das Muster
+misst die SCHREIBWEISE mit.**
+
+**Läuft beim Schreiben dieser Zeilen:** der Executer in `/home/user/gymdocu`,
+Zweig `beitrag-ladebestand`, mitten im Suite-Lauf (`ps`: seit 3 Minuten,
+gerade `test_feature_design_tokens.js`). Nach der Takt-Regel wird bis zu
+seiner Benachrichtigung nichts anderes angefasst.
