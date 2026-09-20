@@ -2659,3 +2659,139 @@ MySQL-Semantik. Gemessen an einer Wegwerf-Datenbank, vier Fälle einzeln —
 identischer Wert, geänderter Wert, fehlende Zeile, NULL auf NULL — `rowCount`
 zählt in PostgreSQL die GETROFFENEN Zeilen. Die Schwereeinstufung ist eben in
 beide Richtungen eine Behauptung, bis sie gemessen ist.
+
+---
+
+## 20.09.2026 — sieben weitere Läufe an einem Tag
+
+Vier davon sind **keine Code-Prüfungen**, sondern Markt- und
+Gestaltungsrecherche (Betreiber-Auftrag). Sie stehen hier trotzdem, weil die
+Hausregel jeden Lauf des Gegenlesers zählbar verlangt — und weil ihr Ertrag
+sich nach derselben Regel bemisst: getragen ist, was der Haupt-Agent SELBST
+nachgemessen hat.
+
+**Kosten:** `kimi-k3` und `deepseek-v4-pro` stehen NICHT in der Preistabelle
+von `tools/gegenleser-repo.js`. Sie werden hier als **unbekannt** geführt,
+nicht als Null — genau die Unterscheidung, die der Kommentar bei
+`kostenSchaetzen()` verlangt.
+
+### Planprüfung Ladebestand (Papier), zwei Spuren
+
+| Spur | Modell | Material | rein | raus (denk) | Dauer | Befunde | Kosten |
+|---|---|---|---|---|---|---|---|
+| eng | `gpt-5.6-sol` (xhigh) | Papier + `routes/admin/geraete.js` (alle zehn Aufrufer) | 119.451 | 21.188 (17.562) | 269,5 s | s. u. | 1,23 $ |
+| umkreis | `kimi-k3` (high) | Papier + bestehender Wächter + die Module der destruktiven Ableitung + `core/db.js`, OHNE die Routendatei | 110.508 | 24.396 (17.659) | 661,5 s | s. u. | unbekannt |
+
+**Der teuerste Befund dieses Papiers kam von KEINER der beiden Spuren**,
+sondern aus meiner eigenen Mutationskette: die geplante Umbenennung hätte
+`test_feature_brandschutz.js:410` rot gemacht (Fenster 400 Zeichen). Das ist
+dieselbe Beobachtung wie am 20.09. früh — die ausführende Spur findet, was
+Lesespuren nicht finden können.
+
+### Diffprüfung Ladebestand, EINE Lesespur (nach der Spurenreduktion)
+
+| Spur | Modell | Material | rein | raus (denk) | Dauer | Befunde | getragen | Kosten |
+|---|---|---|---|---|---|---|---|---|
+| geschwister | `deepseek-v4-pro` | Diff + Testausgaben + `test_feature_ladestand_dbfehler.js` + `core/ausstattung.js` + `core/brandschutz-vorlage.js` + `core/db.js`, OHNE die 442-KB-Routendatei | 107.236 | 19.305 (16.741) | 303,0 s | 5 | **1** gebaut, 3 zutreffend aber bewusst nicht gebaut, 1 bekannter offener Punkt | unbekannt |
+
+**Der eine gebaute Befund ist die teuerste Klasse und wurde von ZWEI Spuren
+unabhängig gefunden** — von dieser und von mir beim Diff-Lesen:
+`getRouteExistiertImQuelltext` liest den ROHEN Quelltext, also mit
+Kommentaren. **Selbst gemessen, zweiteilig:** Route umbenannt auf
+`…/ausstattung-x` UND eine Kommentarzeile mit dem alten Pfad eingefügt →
+**EXIT 0, 12 PASS / 0 FAIL**, während der Link in Wirklichkeit 404 liefert.
+Eine Zusicherung, die nicht rot werden kann.
+
+*Methodischer Nebenertrag:* Der erste Mutationsversuch (die Route schlicht
+auskommentieren) ergab einen **SyntaxError** — der Handler-Rumpf hängt dann
+in der Luft. Ohne das vorgeschriebene `node --check` wäre dieses EXIT 1 als
+Beleg durchgegangen. Die Regel hat an diesem Tag zum ersten Mal gemessen
+gegriffen.
+
+**Drei zutreffende Befunde wurden NICHT gebaut**, jeder mit Grund im
+Auftragstext: die verbleibende sichtbare Inkonsistenz (beabsichtigter Tausch
+gegen stille Zerstörung), die spröde SQL-Literalkopplung (absichtlich, ein
+loseres Muster träfe die Nachbarabfragen), und HTTP 200 auf dem Fehlerweg
+(bekannter offener Punkt über das ganze Repo, nicht von diesem Beitrag
+eingeführt).
+
+### Planprüfung M3 (Startseite), zwei Spuren, verschiedene Bündel
+
+| Spur | Modell | Material | rein | raus (denk) | Dauer | Befunde | Kosten |
+|---|---|---|---|---|---|---|---|
+| eng | `gpt-5.6-sol` (xhigh) | Papier + `landing/index.html` | 25.305 | 26.434 (21.754) | 372,9 s | 8 | 0,92 $ |
+| umkreis | `kimi-k3` (high) | Papier + `test_landing.js` + `test_rechtsaussagen.js`, OHNE die Seite | 20.647 | 42.934 (33.181) | 1090,1 s | 14 | unbekannt |
+
+**22 Befunde, 16 nach eigener Nachmessung getragen, 2 gefallen, 1
+unbestätigt, 3 ausserhalb des Auftrags. Überschneidung: 2 von 22.**
+
+**Der blockierende Befund war nur über das WÄCHTER-Bündel erreichbar:**
+`test_landing.js:46-73` prüft einen SHA-256 je Landing-Datei gegen
+`manifest.json`. Ohne ihn wäre nicht nur Tor 1 unerreichbar gewesen — **jede
+der fünf geplanten Gegenproben hätte zugleich den Hash fallen lassen**, und
+„Z-x ist rot" wäre nicht mehr von „der Hash ist rot" zu unterscheiden
+gewesen. Fünf ROT-Messungen ohne Beweiswert, ohne dass es auffällt.
+
+**Vier Befunde trafen meine eigenen Zusicherungen:** Z-d war wörtlich gelesen
+logisch unerfüllbar (eine Konjunktion, die nie wahr werden kann); Z-a fiel bei
+`href="#"` nicht; Z-c nicht bei einer Ziffer; Z-e nicht bei Grossschreibung.
+
+**GEFALLEN, beide sauber widerlegt:**
+1. *„`#modules` bleibt kaputt"* — gemessen `href="#modules"` **0×**. Aus dem
+   Klassennamen `class="modules"` geraten.
+2. *„§ 31 TrinkwV ist vermutlich falsch"* — selbst geholt von
+   `gesetze-im-internet.de/trinkwv_2023/__31.html` (HTTP 200): **„§ 31
+   Untersuchungspflichten in Bezug auf Legionella spec."** Der Bezug stimmt.
+   **Die Spur hatte ihn ausdrücklich als Verdacht und nicht als Nachweis
+   gekennzeichnet** — genau deshalb war er billig zu widerlegen.
+
+**UNBESTÄTIGT (weder Befund noch Freispruch):** ob `§ 24 Abs. 6 DGUV
+Vorschrift 1` existiert. `publikationen.dguv.de` → HTTP 404, `dguv.de` →
+JavaScript-Hülle ohne Normtext. Aus dieser Umgebung nicht entscheidbar.
+
+### Markt- und Gestaltungsrecherche, vier Läufe (KEINE Code-Prüfung)
+
+| Spur | Modell | Suche | rein | raus (denk) | Dauer | Ertrag | Kosten |
+|---|---|---|---|---|---|---|---|
+| mitbewerber | `gpt-5.6-sol` (xhigh) | **13 Suchaufrufe** | 111.443 | 22.941 (12.657) | 306,2 s | 11 Anbieter, 16 Lücken, 9 benannte unerreichbare Quellen | 1,25 $ |
+| homepage | `gpt-5.6-sol` (xhigh) | **11 Suchaufrufe** | 112.264 | 23.568 (14.053) | 371,1 s | 16 Ist-Befunde, 12 Vorschläge, 10 Referenzseiten | 1,27 $ |
+| einfach-k | `kimi-k3` (high) | nein | 20.513 | 14.408 (8.213) | 462,3 s | 8 Ideen (4 für den Trainer), 7 benannte Materiallücken | unbekannt |
+| einfach-d | `deepseek-v4-pro` | nein | 26.492 | 9.569 (6.966) | 127,6 s | 6 Ideen (alle Admin), 2 benannte Materiallücken | unbekannt |
+
+**Eigene Nachmessung, und sie fiel ungleich aus:**
+
+* **Startseite: 4 von 4 geprüften Befunden tragen** — toter Anker `#module`
+  (`href` 1×, `id` **0×**); „Vier Dinge" gegen **fünf** `.pillar`; „Alle sechs
+  Module" gegen **14** `.mod`; das `.mod-legal::before`-§ vor **fünf**
+  Angaben, die keine Paragraphen sind.
+* **Mitbewerber: 11 von 11 URLs erreichbar** (HTTP 200, 117–537 KB), keine
+  erfundene Domain. Von sieben Preisangaben **5 exakt bestätigt, 1 teilweise
+  (Zahlen richtig, Fundstelle falsch), 1 GEFALLEN** — CheckTouchs
+  „Professional ab 79 €" gibt es nicht; die Seite kennt weder den Tarifnamen
+  (0 Treffer) noch den Betrag, sondern einen Rechner ab 39 €.
+* **Der schärfste Marktbefund, selbst nachgeprüft:** KEVOX nennt denselben
+  Premium-Tarif auf `/preise/` mit **168 €** und auf `/software/` mit
+  **162 €**. Beide Seiten selbst abgerufen. Dieselbe Aussage an zwei Orten,
+  beim Preis.
+* **Vereinfachung: 3 von 3 geprüften Ideen tragen**, eine davon grösser als
+  gemeldet — die grüne Dashboard-Karte „alle Kontrollen aktuell" prüft eine
+  FESTE Teilmenge (`getraenke` kommt in `dashboard.js` **0×** vor, `spuel`
+  nur als Frage nach vorhandenen STELLEN). Beide Zähler existieren und werden
+  nur von der Trainer-Startseite gerufen, wo eine überfällige Reinigung als
+  „harter Verzug" gilt.
+
+**Was diese vier Läufe NICHT hergeben:** keine Aussage über die tatsächliche
+Bedienung der Mitbewerber — in neun Fällen stand eine Anmeldung davor, und
+die Spur hat das von sich aus in ein eigenes Feld geschrieben statt zu raten.
+
+**Ein eigener Messfehler, der hierher gehört:** mein erstes Preismuster fand
+nur `22 €`, nicht `€22`, und hätte drei richtige Befunde als unbelegt
+verworfen. Zusammen mit `manipulationssicher` (case-sensitiv 2 statt 6) und
+`fälschungssicher` gegen `Fälschungssichere` waren das **drei Musterfehler
+derselben Art an einem Tag**. Folge für die Arbeitsweise: jedes Muster über
+Text ist case-insensitiv und leerraum-normalisiert, oder es begründet im
+Kommentar, warum nicht.
+
+**Summe der bezifferbaren Kosten dieses Abschnitts: 4,67 $** (vier
+OpenAI-Läufe). Drei Läufe auf `kimi-k3` und zwei auf `deepseek-v4-pro` sind
+angefallen und nicht bezifferbar, solange die Preistabelle sie nicht führt.
