@@ -718,3 +718,105 @@ Sammel-Deaktivierung (`rowCount` addieren).
   identischen Werten `rowCount 1`, eine saubere Behebung müsste den Wert
   vorher vergleichen. Das ist ein eigener Umbau und steht als benannte
   Ungenauigkeit im Kommentar, nicht als stiller Mangel.
+
+### N20 (BLOCKIEREND) — fünf von sechs Erhöhungswegen des Zählers sind ungeprüft
+
+Befund der AUSFÜHRENDEN Prüfspur (eigener Arbeitsbaum, eigene Wegwerf-DB).
+Sie durfte messen, und sie hat gemessen: vier Ein-Zeilen-Mutationen im
+Produktivcode, die je ein `praefplanGeaendert++` ersatzlos entfernen, lassen
+BEIDE berührten Testdateien vollständig grün.
+
+**Selbst nachgemessen — der folgenreichste Fall und die Positivkontrolle:**
+
+    M5  praefplanGeaendert++ beim NEUANLEGEN entfernt (angelegt++ bleibt)
+        test_feature_ladebestand_streng.js   EXIT 0, 15 PASS / 0 FAIL
+        test_feature_brandschutz.js          EXIT 0, 55 PASS / 0 FAIL
+
+    M6  dasselbe beim DEAKTIVIEREN (Positivkontrolle)
+        EXIT 1, Abbruch nach 8 Haken:
+        „N1/N5: Brandschutz-Abbruch-Antwort trägt nicht den wegspezifischen
+         Text 'Ein Teil des Prüfplans wurde bereits angepasst, der Rest nicht.'"
+
+M6 ist der Beleg, dass die Fixtur diese Klasse GRUNDSÄTZLICH fangen kann —
+sie erreicht nur den einen Weg. Und M5 ist der häufigste Weg überhaupt: die
+erste Bestandsfeststellung jedes Studios.
+
+Die Spur meldet dieselbe Beobachtung zusätzlich für Reaktivierung (2734,
+mit eigenem HTTP-Nachbau belegt), Zuständigkeits-Nachtrag (2745),
+Stückzahl-Nachführung (2762, ebenfalls nachgebaut) und die
+Feuerlöscher-Ablösung (2699). **Diese vier habe ich NICHT einzeln
+nachgemessen** — M5 und M6 zusammen belegen die Klasse, und die Behebung
+unten schliesst sie ohnehin als Ganzes statt Weg für Weg.
+
+---
+
+## DER BAUAUFTRAG DER DRITTEN RUNDE
+
+N14 und N20 sind dieselbe Krankheit auf zwei Ebenen: ein Weg zählt gar nicht,
+fünf Wege sind ungeprüft. Sie werden deshalb NICHT Weg für Weg behoben —
+das wären sechs Fixturen und beim siebten Schreibweg dasselbe Problem von
+vorn. Stattdessen:
+
+**1. Jeder Schreibvorgang der Schleife geht durch EINEN Weg** (schliesst N19
+und die künftige siebte Stelle mit). Ein lokaler Helfer in der Route:
+
+    async function schreibePruefplan(sql, params) {
+        const r = await db.run(sql, params);
+        praefplanGeaendert += (r && r.rowCount) || 0;
+        return r;
+    }
+
+Alle Schreibvorgänge auf `wartung_geraete` / `wartung_geraete_aufgaben`
+zwischen Schleifenbeginn und `ladeBestandStreng()` benutzen ihn. Damit zählt
+der Zähler ECHTE getroffene Zeilen statt Absichten — die drei unbedingten
+`++` verschwinden.
+
+**2. `holeOderLegeAn()` meldet, ob es geschrieben hat** (N14). Es liegt
+ausserhalb der Schleife und kann den Helfer nicht benutzen; es gibt deshalb
+`artGeaendert` bzw. `neu` zurück, und der Aufrufer addiert beides.
+`neu === true` deckt Gerätezeile UND Aufgabenzeilen ab — eine Zahl, kein
+Vertrag über die genaue Anzahl (der Kommentar „zählt JEDEN echten
+Schreibvorgang" wird entsprechend berichtigt, er stimmt heute nicht).
+
+**3. Ein STATISCHER Riegel gegen den nächsten ungezählten Weg** (schliesst
+N20 als KLASSE statt als sechs Einzelfälle). Über den
+KOMMENTARBEREINIGTEN Quelltext (`GERAETE_QUELLTEXT_OHNE_KOMMENTARE` gibt es
+in der Testdatei schon): zwischen dem Schleifenbeginn und dem Aufruf von
+`ladeBestandStreng(req.studioId, brandschutz.BEREICH)` darf KEIN blankes
+`db.run(` mit `wartung_geraete` vorkommen — nur `schreibePruefplan(`.
+**Gegenprobe:** ein blankes `db.run("UPDATE wartung_geraete …")` in diesen
+Bereich setzen ⇒ ROT.
+
+**4. ZWEI Verhaltensproben, nicht sechs** — für die beiden Wege, die die
+Prüfspur live nachgebaut hat:
+   * **Neuanlage:** frisches Studio, EIN POST `antwort_rwa=vorhanden` mit
+     gestörtem strengen Lesen ⇒ Seite MUSS den Teiländerungs-Text tragen.
+     (Heute trägt sie ihn, aber M5 zeigt: ohne Zusicherung.)
+   * **Reaktivierung:** POST anlegen → POST `nicht_vorhanden` → POST
+     `vorhanden` mit gestörtem Lesen ⇒ ebenfalls Teiländerungs-Text.
+
+**5. Wortlaut (N12):** „Am Prüfplan wurden keine **Einträge** angelegt,
+geändert oder deaktiviert." Dazu eine Zusicherung, die dem Satz das Wort
+„Einträge" VERLANGT.
+
+**6. Der leere Ausstattungs-POST (N15):** `ladeBestandFehlerinhalt()` bekommt
+die Zahl der in diesem Submit gespeicherten Antworten. Bei 0 darf weder der
+Seitentitel („Feststellung gespeichert") noch der erste Satz („Eure Antworten
+sind gespeichert.") eine Speicherung behaupten. **Abnahme:** der bestehende
+Leer-POST-Testfall (`:458-470`) sichert den neuen Satz wörtlich zu.
+
+**7. N9 permutierend statt verschiebend (N16):** `SET reihenfolge = 1000 -
+reihenfolge` statt `+ 100`. **Abnahme, wörtlich:** die Mutation
+`SET reihenfolge = MOD(reihenfolge,100) + 0 * $1, aktiv=1` muss danach ROT
+sein — heute gemessen EXIT 0, 15 PASS / 0 FAIL.
+
+**8. N10-Sollwert als Schnappschuss (N17 + N13):** die Karte EINMAL beim Laden
+der Testdatei bilden, nicht bei jedem Aufruf; dazu eine Zeile, die die
+Kartengrösse gegen die Zahl der Termine hält (heute 12).
+
+**9. Erfolgs-POSTs (N18):** zusätzlich zusichern, dass die Antwort den
+Fehlerseiten-Marker NICHT trägt — sonst ist ein Erfolg an HTTP 200 nicht von
+der generischen Fehlerseite zu unterscheiden.
+
+**Nicht in diesem Auftrag** (begründet oben): das geweitete 700er-Fenster,
+die fehlende `fremdBehalten`-Zusicherung, das wertgleiche Notiz-UPDATE.
