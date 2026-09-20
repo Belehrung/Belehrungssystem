@@ -6262,3 +6262,59 @@ Isolationstests brauchten auf dem Runner diesmal gut neun Minuten.
 (#…, Geräte), Beitrag C (#463) und Beitrag A (#464) sind durch, S6 ist
 herausgenommen. Was aus dem Papier offen bleibt, steht als eigener Punkt in
 `plaene/durchgang-befunde.md`.
+
+### 10:52 UTC — Beitrag A AUSGELIEFERT, Papier abgearbeitet
+
+**Deploy-Lauf 432, `head_sha = ec7a142d1a51…` (identisch mit `master`),
+`conclusion: success`.** Die Master-CI davor war Lauf 1184, ebenfalls auf
+demselben `head_sha`.
+
+**`bash tools/live-check.sh` EXIT 0** — Landingpage (HTTP 200), Echtheits-
+prüfung rendert, Studio-Subdomain weist korrekt ab (302), Handbuch 2.9.11
+ausgeliefert. Zwei Punkte ehrlich als NICHT GEPRÜFT gemeldet und nicht als
+grün verbucht: die Zertifikatslaufzeit (der Egress-Proxy signiert jede
+TLS-Verbindung aus dieser Umgebung neu — gemessen würde dessen Zertifikat)
+und der Health-Endpunkt (`/intern` ist von aussen nicht erreichbar).
+
+**Was das belegt und was NICHT:** der Betrieb läuft und ist aktuell. Ob die
+Änderung in der Datenbank richtig wirkt, sagt das nicht — was dort steht,
+bleibt unsichtbar und soll es bleiben.
+
+## `plaene/auftrag-schreibreihenfolge.md` ist ABGEARBEITET
+
+| Beitrag | Datei | PR | Deploy |
+|---|---|---|---|
+| B | `routes/admin/geraete.js` (S1, S4, S4b) | #462 | 430 |
+| C | `routes/belehrungen.js` (S2, S3) | #463 | 431 |
+| A | `routes/admin/mitarbeiter.js` (nur S5) | #464 | 432 |
+
+**S6 ist auf Betreiber-Entscheidung herausgenommen** („ohne s6") — der
+Kandidat für einen eigenen Beitrag steht samt seiner gemessenen Schwäche im
+Papier.
+
+## Was als Nächstes ansteht
+
+1. **`plaene/auftrag-ladebestand.md`** — hat als einziges Papier noch NIE
+   eine Planprüfung gehabt. Nach der Regel vom 18.09. geht es vor der ersten
+   Bau-Runde raus.
+2. **Die 22+2 offenen Befunde** in `plaene/durchgang-befunde.md`. Die
+   gewichtigsten: U-LOCK1 (studioweiter Advisory-Lock über eine blockierende
+   Anweisung gehalten), U-IDW1 (`routes/belehrungen.js` hat keine ID-Wache),
+   U-GEN1/U-TS1 (Generationstoken und Zeitstempel in EINER Spalte),
+   U-AUDT1 (die `auditAppend`-ohne-`t`-Klasse braucht AST), U-TOK1 (ein
+   Einladungs-Token kann seinen Mitarbeiter überleben).
+3. **S6 als eigener Beitrag**, falls der Betreiber ihn wiederaufnimmt.
+4. **B1-09/B1-10** (Namensinvariante Seilgeräte) — noch kein Papier, braucht
+   zuerst die Lock-Ordnungsanalyse.
+5. **Die Textfeld-Wache** braucht einen neuen Erfassungsentwurf (AST statt
+   Muster).
+6. Danach **Bündel 2 des Durchgangs** (Anmeldung und Rechte).
+
+## Noch nicht gemessen, ausdrücklich offen
+
+Die Runde, in der die Befunde EINER Spur als **ungeprüfte Behauptungen** an
+eine weitere gehen, mit der Frage „was haben diese übersehen?" statt
+„stimmen diese?". Aufbau und die beiden Risiken (Verankerung; eine falsche
+Prämisse wandert weiter) stehen in der CLAUDE.md. Beitrag A wäre der
+Kandidat gewesen — es kam nicht dazu, weil die vier Spuren schon 29 Befunde
+lieferten und das eigene Nachmessen das Nadelöhr war, nicht das Finden.
