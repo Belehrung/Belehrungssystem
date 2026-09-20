@@ -134,6 +134,7 @@ sondern falsch.
 | 20.09.2026 | Diffpruefung Z2-Kollationsbehebung | Diff 819 Zeilen, Suchen 49, Lesungen 50, Token rein 2839786, Token raus 31454, Runden 27 | 6 | **6** (5 Maengel + 1 zutreffende Beobachtung ohne Mangelcharakter) | 0 | 15,14 $ |
 | 20.09.2026 | Diffpruefung M3 Startseite | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 773 Zeilen, Suchen 4, Lesungen 12, Token rein 68913, Token raus 8136, Runden 3 | — | — | — | mind. 0,59 $ |
 | 20.09.2026 | Diffpruefung M3 Startseite (zweiter Versuch nach Ueberlast-Abbruch) | Diff 773 Zeilen, Suchen 45, Lesungen 36, Token rein 1574605, Token raus 27412, Runden 20 | 9 | **7** | 2 (eine als *blockierend* eingestufte Musterbehauptung, nachgemessen falsch; eine Zustandsbehauptung, die eine fremde Gegenprobe im Arbeitsbaum fuer den Repo-Stand hielt) | 8,70 $ |
+| 20.09.2026 | Planpruefung M3-Haertung Spur A (Buendel: Papier + heutiger test_landing.js) | Diff 1021 Zeilen, Suchen 37, Lesungen 31, Token rein 1127792, Token raus 35652, Runden 15 | — | — | — | 6,71 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
