@@ -59,17 +59,19 @@ Testfehlschläge (`test_feature_login_sperre_failclosed.js`,
 `test_feature_dashboard.js`) waren NICHT echt. Ich hatte während eines
 laufenden Suite-Laufs Wegwerf-Datenbanken verworfen und Abfragen gegen
 dieselbe Datenbank gefahren. Der ruhige Nachlauf ist sauber: **SUITE_EXIT=0,
-Dateizahl 350 = 350, `diff` EXIT 0**, selbst nachgemessen. Die Hausregel
+Dateizahl 350 = 350, `diff` EXIT 0**, selbst nachgemessen — und zwar mit
+dem WEITEREN Sieb aus dem Takt (`── …\.(js|sh) ──` gegen
+`test_…\.js|ops/boot-smoke\.js|test/…\.sh`, `test/run.sh` selbst
+gestrichen), nicht nur mit dem engeren, das nur `.js` trifft. Die Hausregel
 „während des Laufs keine parallelen Skripte gegen dieselbe DB" hat einen
 gemessenen Preis.
 
-**Nebenbefund, kein Befund:** die Schlusszeile der Suite meldet hier
-`Studio-Wächter: NICHT GEPRÜFT (Messung fehlgeschlagen)`. Nachgesehen: in
-diesem Container existiert gar keine Datenbank `gymdocu`
+**Nebenbefund, kein neuer Befund:** die Schlusszeile der Suite meldet hier
+`Studio-Wächter: NICHT GEPRÜFT (Messung fehlgeschlagen)` — das ist
+Berichtigung 14 weiter unten und kein Defekt. Neu daran ist nur die
+Messung dazu: in diesem Container existiert gar keine Datenbank `gymdocu`
 (`SELECT datname FROM pg_database …` liefert für `gymdocu`, `gymdocu_dev`
-und `gymdocu_test` nichts). Der Wächter kann hier nicht messen und sagt das
-ehrlich, statt grün zu melden — das ist die gewünschte Bauart, nicht ein
-Defekt.
+und `gymdocu_test` nichts).
 
 
 ## ZIEL, dem alles untergeordnet ist (Betreiber, 17.09. und 18.09.2026)
