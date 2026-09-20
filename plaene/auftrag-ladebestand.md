@@ -1,5 +1,9 @@
 # Auftragspapier — `ladeBestand()`: ein stilles falsches Ergebnis wird wieder ein lautes Scheitern
 
+**FASSUNG 2, 20.09.2026 — nach der Planprüfung durch zwei Spuren und drei
+eigenen Mutationsmessungen.** Was sich geändert hat, steht in Abschnitt 6;
+die Befunde und Nachmessungen in `plaene/planpruefung-ladebestand-20-09-2026.md`.
+
 **Repo:** GymDocu (`/home/user/gymdocu`). **Zeilennummern am 20.09.2026 gegen
 `ec7a142` (master nach #464) NEU gemessen — sie sind unverändert.** Das ist
 kein Zufall und nachgesehen: Beitrag B hat `routes/admin/geraete.js` zwar
@@ -139,51 +143,154 @@ diesem Präfix) und weiterhin ein Objekt liefern. Wer sie beim Aufräumen
 
 ---
 
+## 0.7 GEMESSEN 20.09.2026 — zwei Wächter sichern auf den AUFRUFNAMEN zu
+
+**Der blockierende Befund dieses Papiers, und er stammt aus einer eigenen
+Mutationsmessung, nicht aus einer Prüfspur.**
+
+`test_feature_brandschutz.js:410` prüft STATISCH den Quelltext im Block von
+`router.post("/geraetewartung/brandschutz")` (`:2396`) — auf den WÖRTLICHEN
+Aufruf:
+
+    /ladeBestand\(req\.studioId, brandschutz\.BEREICH\)[\s\S]{0,400}begehungsAufgaben/
+
+**`:2654` liegt in genau diesem Block** (gemessen: die letzte
+Routendefinition davor ist `:2396`). **Gemessen mit der geplanten
+Umbenennung** (`node --check` bestanden, Muster genau einmal getroffen):
+
+    test_feature_brandschutz.js -> EXIT 1
+    FEHLGESCHLAGEN: Die Begehungs-Checkliste wird nicht aus den
+                    gespeicherten Antworten zusammengesetzt
+
+Eine echte Zusicherung, kein Absturz. **Dieser Wächter ist Deploy-Gate.**
+
+**Eine ZWEITE Stelle in derselben Datei** (`:971`) ist eine NEGATIV-Zusicherung
+über einen ANDEREN Block (die Wartungsseite): *„Die Wartungsseite lädt den
+Brandschutz-Bestand, obwohl sie ihn nicht mehr anzeigt"*. Sie benutzt das
+String-Literal `'brandschutz'` statt `brandschutz.BEREICH` und ist von diesem
+Beitrag NICHT betroffen. Sie wird ausdrücklich NICHT angefasst — wer beim
+Umstellen die falsche der beiden erwischt, kehrt eine Zusicherung um.
+
+**Für die zweite Zielroute (`:4151`, Ausstattung) gibt es keine solche
+Zusicherung** — und das ist jetzt eine Messung, kein Nicht-Fund. Suchmuster
+`ladeBestand\\(req` über alle Testdateien: **zwei Treffer, beide in
+`test_feature_brandschutz.js`** (Positivkontrolle: dasselbe Muster findet den
+bekannten Fall, Trefferzahl 2). Für Ausstattung: null.
+
+---
+
+## 0.8 GEMESSEN 20.09.2026 — die Klasse ist NICHT ungedeckt
+
+Volle Suite mit `return leer;` → `throw e;` in `ladeBestand`:
+**`SUITE_EXIT=1`**, gefangen von `test_feature_gefaehrdungsbeurteilung.js:318`:
+
+    FEHLGESCHLAGEN: Auch mit kaputtem ladeBestand() muss die Seite noch
+                    die Erfolgsmeldung zeigen
+
+**Der Wächter aus 0.6 fängt dieselbe Mutation NICHT** (gemessen: EXIT 0,
+78 PASS / 0 FAIL) — er prüft Status und Protokollpräfix, nicht den
+Seiteninhalt; der äussere `catch` der Route (`:2391-2393`) sendet seine
+Fehlerseite mit `res.send(...)` ohne `.status(...)`, also ebenfalls HTTP 200.
+
+**Folge für dieses Papier:** der Wächter aus 0.6 ist KEIN Beleg dafür, dass
+der GET-Vertrag unberührt bleibt. Die Suite als Ganzes ist einer. Die Messung
+aus 0.6 bleibt trotzdem Pflicht — sie beantwortet, ob der Beitrag den GET-Weg
+anfasst, nicht ob der Wächter stark ist.
+
+**Und `test_feature_gefaehrdungsbeurteilung.js:318` sichert ausdrücklich das
+GEGENTEIL des hier gebauten Prinzips zu** — für die Gefährdungsbeurteilungs-
+Route: bei kaputtem `ladeBestand` soll die Seite weiterhin Erfolg melden. Das
+ist eine der ACHT ungemessenen Aufrufstellen und wird deshalb NICHT angefasst.
+Wer die strenge Fassung später dorthin zieht, stellt zuerst diesen Wächter
+fachlich um.
+
+---
+
 ## 1. Was gebaut wird
 
-### 1.1 Der Fehler wird wieder ein Fehler — an den DESTRUKTIVEN Stellen
+### 1.1 `ladeBestand` wird die milde Hülle um die strenge Fassung
 
-**Nicht** den `catch` ersatzlos entfernen: zehn Aufrufer verlassen sich heute
-auf „liefert immer ein Objekt", und acht davon sind ungemessen. Ein
-ersatzloses `throw` wäre eine Verhaltensänderung an acht ungeprüften Stellen.
-
-**Stattdessen:** `ladeBestand` bekommt eine Schwester, die LAUT scheitert, und
-die beiden gemessenen destruktiven Wege (`:2654`, `:4151`) rufen sie.
+**Geändert gegenüber Fassung 1**, die zwei getrennte Funktionen mit
+dupliziertem SELECT vorsah:
 
     async function ladeBestandStreng(studioId, bereich) {
-        // kein catch — ein DB-Fehler gehört an den Aufrufer, der daraus
-        // etwas UNWIDERRUFLICHES ableitet.
+        const rows = await db.q(
+            "SELECT * FROM pruefbereich_bestand WHERE studio_id=$1 AND bereich=$2", [studioId, bereich]);
+        const map = {}; for (const r of rows) map[r.schluessel] = r; return map;
     }
 
-Beide Wege liegen ohnehin in einem `try`, dessen `catch` eine saubere
-Fehlerseite liefert. Der Aufwand ist klein, die Wirkung vollständig.
+    async function ladeBestand(studioId, bereich) {
+        try { return await ladeBestandStreng(studioId, bereich); }
+        catch (e) { … console.error … fehler-Markierung … return leer; }
+    }
 
-**Alternative, falls die Schwester beim Bauen als schlechter erweist:** die
-beiden Aufrufer fragen `bestandRoh.fehler` ab und brechen ab. Das ist
-schwächer (die Markierung bleibt etwas, das man vergessen kann) und deshalb
-zweite Wahl. **Welche Fassung gebaut wird, entscheidet der Ausführende mit
-einer MESSUNG** — ob die strenge Schwester irgendeinen anderen Aufrufer
-berührt —, nicht nach Geschmack, und meldet das Ergebnis wörtlich.
+**Damit existiert die Abfrage genau EINMAL.** Fassung 1 hätte denselben
+SQL-Text an zwei Orten gehabt — gegen die Hausregel, und beide Test-Stubs
+matchen je ein Literal davon.
 
-### 1.2 Die Markierung `fehler` wird NICHT entfernt
+**Der `catch` der milden Fassung behält BEIDE Pflichten**, die ein bestehender
+Wächter zusichert (0.6): `console.error` mit dem Präfix
+`"routes/admin/geraete.js ladeBestand:"`, und die Rückgabe eines Objekts mit
+nicht aufzählbarer `fehler`-Markierung.
 
-Sie kostet nichts und bleibt für die acht ungemessenen Aufrufer die einzige
-Möglichkeit, den Unterschied überhaupt zu sehen. **Aber der Kommentar bei
-`:1866` wird berichtigt:** er behauptet heute implizit, jemand frage sie ab.
-Stattdessen: wer sie einführt, benennt, wer sie liest — und heute liest sie
-genau der neue Weg.
+### 1.2 Zwei Aufrufer rufen die strenge Fassung
+
+`:2654` (POST Brandschutz) und `:4151` (POST Ausstattung). Beide liegen in
+einem `try`, dessen `catch` eine Fehlerseite liefert.
+
+**MITZUZIEHEN, weil es sonst rot wird (0.7):**
+`test_feature_brandschutz.js:410` — das Muster wird auf
+`ladeBestand(Streng)?\(req\.studioId, brandschutz\.BEREICH\)` erweitert, mit
+einem Kommentar, warum beide Namen zulässig sind. **Die Zusicherung wird
+FACHLICH umgestellt, nicht gestrichen**: sie sichert zu, dass die
+Begehungs-Checkliste aus den GESPEICHERTEN Antworten entsteht, und das ändert
+der Beitrag nicht. **`:971` bleibt unangetastet.**
+
+### 1.3 Der neue Zustand wird BENANNT, nicht versteckt
+
+**Gemessen** (`:4126-4151`): im Ausstattungs-POST laufen die Antwort-INSERTs
+samt Audit in einer Schleife, erst DANACH kommt `ladeBestand`. Alles
+Autocommit, kein `db.tx`. Scheitert die strenge Fassung, bleiben die Antworten
+gespeichert und der Benutzer sieht eine Fehlerseite.
+
+**Das ist gewollt und besser als heute** — heute werden bei demselben Fehler
+zwölf Termine deaktiviert und Erfolg gemeldet. **Aber die Fehlerseite darf
+nicht behaupten, es sei nichts passiert.** Der Text nennt, was gespeichert
+wurde und dass der Prüfplan-Abgleich nicht gelaufen ist; ein erneuter Aufruf
+holt ihn nach.
+
+**Kein Umbau auf eine Transaktion.** Die würde eine neue Lock-Ordnung über
+`pruefbereich_bestand` und `wartung_geraete` einführen, und `auditAppend`
+nimmt den studioweiten Advisory-Lock mit hinein — das ist die Klasse, für die
+die CLAUDE.md eine eigene Analyse verlangt. **Eigener Beitrag, nicht dieser.**
+
+### 1.4 Die Markierung `fehler` bleibt — und der Kommentar sagt die Wahrheit
+
+Sie bleibt für die acht ungemessenen Aufrufer die einzige Möglichkeit, den
+Unterschied zu sehen. **Der Kommentar bei `:1863` wird berichtigt, aber ANDERS
+als Fassung 1 es wollte:** er sagt ab jetzt ausdrücklich, dass **kein**
+Aufrufer sie abfragt und sie eine reine Diagnose-Markierung für die acht
+ungemessenen Wege ist. Fassung 1 hätte dort „heute liest sie genau der neue
+Weg" hingeschrieben — bei der strengen Fassung liest sie niemand, das wäre eine
+frisch geschriebene falsche Zusicherung gewesen.
+
+**Und der Kopfkommentar von `test_feature_ladestand_dbfehler.js`** (P4a: „kein
+Umbau der zehn bestehenden Aufrufer nötig") wird um einen Satz ergänzt: für
+zwei der zehn gilt das seit diesem Beitrag nicht mehr.
 
 ---
 
 ## 2. Was ausdrücklich NICHT gebaut wird
 
-* **Die acht ungemessenen Aufrufer** (0.5). Ob sie aus dem Fehlerzustand
-  etwas Destruktives ableiten, ist nicht gemessen. Wer sie mitnimmt, baut auf
-  Fundorten. Sie kommen als offener Punkt in `plaene/durchgang-befunde.md`.
-* **Ein Umbau von `syncAufgaben` oder `alleTerminNamen`.** Die sind richtig;
-  falsch ist, womit sie gefüttert werden.
-* **Eine Wiederholung des fehlgeschlagenen SELECT.** Ein Retry verdeckt die
-  Ursache und ist eine eigene Entscheidung.
+* **Die acht ungemessenen Aufrufer** (0.5). Einer davon
+  (Gefährdungsbeurteilung) trägt sogar einen Wächter, der das GEGENTEIL
+  zusichert (0.8).
+* **Ein Umbau auf `db.tx`** (1.3) — eigene Lock-Ordnungsanalyse nötig.
+* **Eine Inhaltsprüfung im Wächter aus 0.6.** Sie wäre richtig (er kann für
+  die `throw`-Mutation nicht rot werden), aber sie ist ein eigener Befund am
+  Bestand und nicht Gegenstand dieses Beitrags. Steht als **U-LBW1** in
+  `plaene/durchgang-befunde.md`.
+* **Ein Umbau von `syncAufgaben` / `alleTerminNamen`** und **ein Retry**.
 
 ---
 
@@ -191,61 +298,124 @@ genau der neue Weg.
 
 ### Z1 — Ein DB-Fehler deaktiviert NICHTS
 
-Über den echten POST-Weg, gegen eine Wegwerf-DB, für **beide** Wege einzeln
-(`/geraetewartung/ausstattung` und der Brandschutz-Weg):
+Über den echten POST-Weg, gegen eine Wegwerf-DB, für **beide** Wege einzeln.
 
-1. **Vorzustand herstellen und MESSEN:** über den echten Weg Antworten
-   speichern, dann zählen, wie viele Termine bzw. Zeilen aktiv sind. Die Zahl
-   wird literal im Test festgehalten, nicht aus dem Lauf abgeleitet.
-2. **Fehler stellen für GENAU den nächsten SELECT auf `pruefbereich_bestand`**
-   — nicht für alle DB-Aufrufe. Trifft die Probe mehr, misst sie etwas
-   anderes.
-3. **Erwartet:** die Antwort ist eine ABBRUCH-Antwort, und **keine einzige**
-   der vorher aktiven Zeilen ist deaktiviert. Gemessen wird die MENGE der noch
-   aktiven Namen gegen die literale Erwartung, nicht nur ihre Anzahl (eine
-   Zahl ist keine Zusicherung über eine Menge).
-4. **Positivkontrolle in die Gegenrichtung:** derselbe POST OHNE gestellten
-   Fehler lässt die Termine aktiv — sonst prüft Z1 nur, dass ein leeres Studio
-   leer ist.
+**Der Fehler wird über den EXAKTEN SQL-Literaltext gestellt:**
+
+    'SELECT * FROM pruefbereich_bestand WHERE studio_id=$1 AND bereich=$2'
+
+Muster ist `mitGestoertemQ` aus `test_feature_ladestand_dbfehler.js:141`.
+**AUSDRÜCKLICH NICHT `mitGestoertemBereich`** und nicht der blosse
+Tabellenname — beides misst etwas anderes, und beides ist gemessen:
+
+* `mitGestoertemBereich` matcht `sql.includes('pruefbereich_bestand') &&
+  params[1] === bereich`; die Antwort-INSERTs tragen genau diese Signatur
+  (`[req.studioId, ausstattung.BEREICH, …]`, `:4127-4135`). Der Stub würde die
+  Antworten killen, BEVOR die strenge Fassung läuft — Z1 wäre grün, auch ohne
+  jede Behebung.
+* Der blosse Tabellenname trifft im Brandschutz-POST zusätzlich `:2485`
+  (`SELECT antwort, bemerkung … AND schluessel=$3`), das VOR `:2654` läuft.
+
+**Der Test sichert zu, dass der Stub GENAU EINMAL gegriffen hat** — greift er
+null- oder mehrmals, fällt die Zusicherung, statt grün zu bleiben.
+
+**Ablauf je Weg:**
+
+1. Vorzustand über den echten Weg herstellen, dann die MENGE der aktiven
+   Namen messen und **literal** im Test festhalten.
+2. Fehler stellen, POST absetzen.
+3. **Erwartet:** Abbruch-Antwort mit festem Inhaltsmarker, und die Menge der
+   aktiven Namen ist unverändert — die MENGE, nicht ihre Anzahl.
+4. **Positivkontrolle im selben Lauf:** derselbe POST OHNE gestellten Fehler
+   lässt die Termine aktiv und ändert den Wert wirklich.
+5. **Leerer und teilweiser POST** als eigene Fälle — sonst überlebt eine
+   bedingte Mutation wie `beantwortet === 0 ? ladeBestand(...) :
+   ladeBestandStreng(...)`.
+
+**Jede Messabfrage trägt `studio_id`.** Derselbe Testaufbau legt viele Studios
+in EINER Wegwerf-DB an; eine Zählung ohne Filter misst fremde Fixturen mit.
 
 **Gegenproben:**
-1. Den strengen Weg wieder auf `ladeBestand` zurückdrehen → Z1 muss ROT
-   werden, und zwar mit einer FAIL-Zeile, nicht mit einem Absturz.
-2. **Der Beleg, dass die Probe überhaupt ankommt:** eine ZAHL suchen, die sich
-   ohne die Behebung ändern MUSS — hier die Zahl deaktivierter Zeilen (12
-   bzw. 14). Ändert sie sich bei der Gegenprobe nicht, ist der gestellte
-   Fehler gar nicht angekommen.
+1. Den strengen Aufruf auf `ladeBestand` zurückdrehen → ROT, mit FAIL-Zeile.
+2. **Der Beleg, dass die Probe ankommt:** ohne die Behebung müssen 12 bzw. 14
+   Zeilen deaktiviert werden. Ändert sich diese Zahl bei der Gegenprobe
+   nicht, ist der gestellte Fehler gar nicht angekommen.
 
 ### Z2 — Der normale Weg bleibt unverändert
 
-Für beide Wege: ein vollständiger, fehlerfreier Durchlauf erzeugt exakt
-dieselben Termine bzw. Zeilen wie vor dem Umbau. **Der Sollwert wird VOR dem
-Umbau gemessen und literal eingetragen** — sonst misst der Test den neuen Code
-gegen sich selbst.
+**Verengt gegenüber Fassung 1.** Verglichen wird die **volle Zeilenmenge** der
+erzeugten `wartung_geraete`-Einträge (`name`, `intervall_monate`,
+`durchfuehrung`, `notizen`) plus die Aufgabenzeilen je Eintrag — nicht Namen
+oder Anzahl. Der Sollwert wird VOR dem Umbau gemessen und literal eingetragen.
 
-### Z3 — Die acht ungemessenen Aufrufer sind unberührt
+**Gegenprobe — Fassung 1 hatte für Z2 gar keine:** `intervallMonate` eines
+Eintrags in `core/ausstattung.js` um 1 ändern → Z2 muss ROT werden.
 
-Statisch: `ladeBestand` (die milde Fassung) wird weiterhin von genau acht
-Stellen gerufen, namentlich aufgeführt. **Gegenprobe:** einen davon auf die
-strenge Fassung umstellen → ROT. Das hält fest, dass der Beitrag seinen
-Rahmen nicht heimlich ausweitet.
+### Z3 — Die milde Fassung behält ihren Vertrag
+
+**Umgeschrieben.** Fassung 1 zählte Aufrufstellen; das kann nicht rot werden
+(`return leer;` → `throw e;` lässt acht Aufrufstellen stehen und stellt
+trotzdem alle acht um).
+
+Zugesichert wird jetzt das VERHALTEN: `ladeBestand` einmal direkt mit
+werfender Datenbank aufrufen und prüfen, dass
+
+* ein Objekt herauskommt (kein Wurf),
+* es eine **nicht aufzählbare** `fehler`-Markierung trägt
+  (`Object.keys()` leer, `bestand.fehler === true`),
+* und `console.error` mit dem Präfix `routes/admin/geraete.js ladeBestand:`
+  lief.
+
+Dazu weiterhin die Liste der acht mild rufenden Stellen, namentlich.
+
+**Gegenproben:** `return leer;` → `throw e;` → ROT. Die Markierung
+aufzählbar machen → ROT. Einen der acht auf die strenge Fassung umstellen
+→ ROT.
 
 ---
 
 ## 4. Abnahme
 
-Wie `plaene/auftrag-id-wache.md`, Abschnitt 4: volle Suite ohne Pipe und ohne
-äusseres `flock`, Dateizahl-Ritual mit `diff` EXIT 0, `npm run lint`
-**wörtlich gemeldet auch bei Grün**, alle Gegenproben beidseitig mit
-`node --check` vorab, Mutationsskripte mit Zielpfad als ARGUMENT und Abbruch
-bei ≠ 1 Treffer, Marker-Scan mit Pfad-Ausschluss, Commit und Push VOR dem
-Warten.
+Volle Suite ohne Pipe und ohne äusseres `flock`, Dateizahl-Ritual mit `diff`
+EXIT 0, `npm run lint` **wörtlich gemeldet auch bei Grün**, alle Gegenproben
+beidseitig mit `node --check` vorab, Mutationsskripte mit Zielpfad als
+ARGUMENT und Abbruch bei ≠ 1 Treffer, Marker-Scan mit Pfad-Ausschluss, Commit
+und Push VOR dem Warten.
+
+**Zusätzlich, als harte Tore:**
+
+1. **`test_feature_ladestand_dbfehler.js` einzeln VOR dem ersten Commit** —
+   Ergebnis wörtlich. Bleibt er grün, berührt der Beitrag den GET-Weg nicht.
+2. **`test_feature_brandschutz.js` einzeln nach der Umstellung von `:410`** —
+   Ergebnis wörtlich.
+3. **`test_feature_gefaehrdungsbeurteilung.js` einzeln** — er sichert das
+   Gegenteil für eine der acht Stellen zu und muss unberührt grün bleiben.
+4. Das Deaktivierungs-UPDATE bei `:4151`ff. im Bericht **wörtlich** zitieren,
+   mitsamt seinem `studio_id`-Vorkommen — das Papier zitiert es elliptisch.
 
 ## 5. Was der Ausführende MELDEN soll, statt es zu lösen
 
-* **Wenn die strenge Schwester einen der acht ungemessenen Aufrufer berührt**
-  — dann ist 1.1 falsch und die zweite Wahl ist richtig.
-* **Wenn sich ein Fehler nicht für GENAU EINEN SELECT stellen lässt**, ohne
-  andere mitzutreffen. Eine Probe, die alle Aufrufe trifft, misst nicht Z1.
+* **Wenn die strenge Fassung einen der acht ungemessenen Aufrufer berührt.**
+* **Wenn `mitGestoertemQ` mit dem vollen Literaltext mehr als den einen
+  SELECT trifft.**
 * **Einen elften Aufrufer von `ladeBestand`.**
+* **Eine weitere Zusicherung, die auf den AUFRUFNAMEN zeigt** — gesucht wurde
+  mit `ladeBestand\\(req` über alle Testdateien, zwei Treffer, beide in
+  `test_feature_brandschutz.js`. Wer einen dritten findet, meldet ihn.
 * **Jeden Widerspruch zu einer Messung in diesem Papier.**
+
+---
+
+## 6. Was sich gegenüber Fassung 1 geändert hat
+
+| | Fassung 1 | Fassung 2 | Anlass |
+|---|---|---|---|
+| Aufbau | zwei Funktionen, SQL doppelt | `ladeBestand` = milde Hülle um die strenge Fassung, SQL einmal | kimi K8, bessere Variante von ihm selbst genannt |
+| `test_feature_brandschutz.js:410` | nicht erwähnt | **wird fachlich umgestellt** — sonst ROT | eigene Mutationsmessung |
+| Fehlerstellung | „für genau den nächsten SELECT" | **exakter SQL-Literaltext**, ausdrücklich nicht `mitGestoertemBereich` | sol S7 und kimi K1, zwei verschiedene Fallen |
+| Teilpersistenz | nicht erwähnt | **benannt**, samt Anforderung an den Antworttext | sol S1, kimi K6 |
+| Z2 | „dieselben Termine", keine Gegenprobe | volle Zeilenmenge **plus Gegenprobe** | sol S5, kimi K5 |
+| Z3 | Aufrufstellen zählen | **Verhaltensvertrag der milden Fassung** | sol S6, kimi K2 |
+| 1.4 | „heute liest sie genau der neue Weg" | **niemand liest sie** — das wäre eine frisch geschriebene falsche Zusicherung gewesen | sol S9, kimi K4 |
+| `studio_id` im Test | nicht verlangt | **Pflicht in jeder Messabfrage** | sol S8, kimi K7 |
+| Abnahme | allgemein | **vier harte Tore**, einzeln zu melden | kimi K3 |
