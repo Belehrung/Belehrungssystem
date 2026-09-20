@@ -283,3 +283,46 @@ startet heute schon `bash` (`test_landing.js:391,415`) unter einer
 ausdrücklich dokumentierten Ausnahme
 (`test_feature_keine_systemeingriffe.js:111-118,319`). Ein Browser im
 Live-Gate bleibt trotzdem abgelehnt.
+
+---
+
+## 20.09.2026 — bei erschöpftem OpenAI-Guthaben übernehmen die anderen Modelle
+
+**Betreiber, wörtlich:** „open ia hat wieder guthaben. wenn das wieder
+aufgebraucht ist, könnten die anderen ki mehr arbeit übernehmen."
+
+**Nachgemessen, nicht geglaubt:** ein Minimalaufruf gegen
+`/v1/responses` liefert HTTP 200, `status: completed`, und das frei
+erfundene Kontrollwort kam wörtlich zurück. Das Guthaben ist also wirklich
+wieder da.
+
+**Was ab jetzt gilt:** Ein `credit_balance_exhausted` hält die Arbeit NICHT
+auf. Die Prüfspur wird auf `kimi-k3` (`api.moonshot.ai`) bzw.
+`deepseek-v4-pro` umgehängt, und der ausgefallene Lauf bekommt trotzdem
+seine Zeile im Protokoll — mit Strichen und dem Vermerk „abgebrochen",
+niemals mit einer Null.
+
+**Was das NICHT heisst:** dass die Spuren austauschbar sind.
+
+* Gemessen am 20.09.2026 über EINEN Diff mit Lösungsschlüssel: gleich viele
+  Befunde, aber Kimi fand den Regress, den die OpenAI-Spur übersah, hatte
+  einen Verklemmungsweg, den keine andere Spur hatte, und **null Fehlalarme
+  gegen zwei**. Das ist eine Stichprobe von eins — sie trägt „Kimi ist
+  brauchbar", nicht „Kimi ist besser".
+* **Der grösste Unterschied ist kein Güteunterschied, sondern ein
+  WERKZEUGunterschied:** `tools/gegenleser-repo.js` gibt dem Prüfer zwei
+  LESENDE Werkzeuge und lässt ihn im Repo nachsehen; der Kimi-Weg ist heute
+  ein einzelner Aufruf mit mitgeschicktem Bündel. Am 13.09.2026 war genau
+  das der Unterschied zwischen „findet eine Stelle" und „findet beide".
+  Wer auf Kimi umhängt, **legt die Geschwisterstellen selbst ins Bündel** —
+  sonst misst er, was er mitgeliefert hat.
+* **Kimi nimmt ein frei erfundenes Feld mit HTTP 200 an** (gemessen
+  19.09.2026). Bei OpenAI gäbe es dafür „Unknown parameter". Unsere
+  Gegenprobe-Methode für Schalter trägt dort also NICHT; jeder Schalter ist
+  an seiner WIRKUNG zu messen.
+* **`stream: true` ist bei beiden Endpunkten Pflicht** — der Egress-Proxy
+  schneidet sonst bei rund 300 s ab.
+
+**Und die Positivkontrolle bleibt Pflicht, gerade beim Ausweichen:** vor dem
+echten Lauf ein frei erfundenes Wort abfragen. Ein „nichts gefunden" von
+einem stummen Endpunkt sieht genauso aus wie ein sauberes Ergebnis.
