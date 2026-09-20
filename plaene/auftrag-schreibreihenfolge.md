@@ -1233,3 +1233,42 @@ ERZEUGT, stand in keiner meiner Fragen — gefunden wurde er trotzdem, weil die
 Frage „welchen Zustand erzeugt das, den es heute nicht gibt?" offen genug
 gestellt war. **Eine Frage nach einem ZUSTAND findet mehr als eine Frage nach
 einem MECHANISMUS.**
+
+
+---
+
+# ENTSCHEIDUNG 20.09.2026 — S6 bekommt VOR Beitrag A eine vierte Lesung
+
+**Begründung ist eine Quote, keine Vorsicht.** S6 hat inzwischen DREI Entwürfe
+gehabt, und die ersten beiden waren beide falsch:
+
+| Entwurf | Woran er scheiterte | Gefunden von |
+|---|---|---|
+| Transaktion um beide UPDATEs | echter Verklemmungskreis mit `mitarbeiter-auth.js:295-299` (`40P01`) | Runde 2 (sol) |
+| zwei Autocommits, umgedrehte Reihenfolge | übersah den Weg, der Tokens ERZEUGT — PIN neu UND Token offen | Runde 3 (kimi) |
+| **drei Autocommits** (entwerten – setzen – entwerten) | **ungeprüft** | — |
+
+**Drei von drei meiner S6-Entwürfe sind bisher gefallen, jeder erst beim
+Gegenlesen.** Die dritte Fassung habe ich selbst durchgedacht (das
+Erzeugungsfenster ist geschlossen, ein Token nach Schritt 3 ist legitim) — und
+genau so hatte ich auch die zweite durchgedacht.
+
+**Ein Lauf kostet rund 0,30 $ und Beitrag A steht ohnehin als LETZTER in der
+Reihenfolge**, kostet also keine Kalenderzeit. Gegen eine gemessene Quote von
+3 aus 3 diesen Betrag zu sparen, wäre Sturheit, nicht Disziplin.
+
+**Zuschnitt des Laufs** (eng, nicht das ganze Papier):
+
+* nur S6 samt Z6a/Z6b,
+* Material: alle Schreiber und Leser von `mitarbeiter_token` und
+  `mitarbeiter.pin_hash` — `admin/mitarbeiter.js`, `mitarbeiter-auth.js`
+  (beide `db.tx`), `webhooks.js`, `tablet-sperre.js`, das Schema,
+* **Leitfrage in Zustandsform** (die hat zweimal mehr gefunden als eine
+  Mechanismusfrage): *welchen Zustand erzeugen diese drei Autocommits, den es
+  heute nicht gibt — über JEDE Verschränkung mit jedem anderen Schreiber?*
+* dazu ausdrücklich: *was wird durch diese Behebung SCHLECHTER?*
+
+**Was das NICHT heisst:** dass jede Behebung eine weitere Runde bekommt. Der
+Auslöser ist hier gemessen und benannt — dreimal gefallene Entwürfe an
+DERSELBEN Fundstelle. Wo dieser Auslöser fehlt, gilt weiter die
+Rundenbegrenzung aus CLAUDE.md.
