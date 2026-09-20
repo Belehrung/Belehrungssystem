@@ -6686,3 +6686,53 @@ Stellen steht (Verkaufsunterlagen, weitere Handbuchkapitel). Ein `grep` auf
 
 **Reihenfolge ab hier:** Ladebestand durch CI und Merge → M5 bauen → M3
 (Startseite, anderes Repo) → dann die Pentest-Liste ab U-IDW1.
+
+### 15:16 UTC — CI ROT an Z2, lokal nicht reproduzierbar. Sieben Hypothesen, sieben widerlegt.
+
+**Der Ladebestand-Beitrag ist NICHT fertig.** Die CI meldet die Isolationstests
+rot, und zwar an meiner eigenen Zusicherung Z2 (SHA-256 über die volle
+Zeilenmenge der Ausstattungstermine):
+
+    actual   b36f633930c761358d8a1b3bdc4d48f87587f5de32e1ea62c76b401ab0c28261
+    expected bfe537bf220df3220637698e901f08bd80d86867ab7b16e1e45195689f199b8b
+
+Die Vorbedingung davor hielt — **zwölf Einträge auf beiden Seiten**, und das
+erste Element ist im Diagnosetext byte-identisch mit meinem lokalen.
+
+**Was ausgeschlossen ist, jedes einzeln gemessen:**
+
+| Hypothese | Messung | Ergebnis |
+|---|---|---|
+| Kollation | `(Standard)`, `C`, `en-US-x-icu`, `de-DE-x-icu` über dieselbe Menge | alle vier `bfe537bf…` — **widerlegt** |
+| Umlaut-Sortierung | Aufgaben mit Umlaut am Wortanfang | **0** — widerlegt |
+| `CI=true` ändert Verhalten | Einzeltest mit gesetzter Variable | 12 PASS — widerlegt |
+| frische vs. gewachsene DB | frische DB; zwei Studios nacheinander | identischer Hash — widerlegt |
+| voller CI-Codepfad lokal | `CI=true`, `gymdocu_test`, Schema-Drop, 350 Dateien | **12 PASS** — nicht reproduzierbar |
+| Node-Version | CI 22.23.2 gegen lokal 22.22.2 | Patch-Unterschied — ausgeschlossen |
+| Konfigurations-Kontamination | `getConfig` liest streng je Studio, kein globaler Rückfall; `core/ausstattung.js` fragt gar keine Konfiguration | **widerlegt** |
+
+**Der einzige belastbare Unterschied — und er stand NICHT im Konsolenlog:**
+der fehlgeschlagene Testprozess meldete `IDENTITY-Sequenzen geprüft (61
+Tabellen)`, beim Suite-Start waren es 57. Auf CI lief der Test gegen eine
+Datenbank, in der frühere Tests vier weitere Tabellen angelegt hatten. Lokal
+ist dieser Zustand nicht herstellbar: der Test, der sie anlegt
+(`test_feature_s20_migrate_functional.js`), scheitert hier an
+`permission denied to set parameter "session_replication_role"` — ein reines
+Rechteproblem dieser Umgebung, auf CI grün.
+
+**Methodisch wichtig:** die vollständige Testausgabe steht NUR im
+hochgeladenen CI-Artefakt (`suite-failure-logs`), nicht im Konsolenlog — dort
+fehlte sogar eine ✓-Zeile, die im Artefakt steht. **Wer bei einem
+CI-Fehlschlag nur das Job-Log liest, liest einen Auszug.**
+
+**Entschieden, und zwar bewusst:** die Zusicherung wird NICHT angepasst,
+der erwartete Hash NICHT nachgezogen, die verglichenen Felder NICHT reduziert
+— solange nicht feststeht, ob hier ein echter Verhaltensunterschied steckt.
+Gebaut wird nur die **DIAGNOSE**: sie schneidet heute nach 400 Zeichen mitten
+im ersten von zwölf Elementen ab und ist damit für diese Menge nutzlos —
+unabhängig von diesem Fehlschlag ein Mangel des Tests. Der nächste CI-Lauf
+benennt die Stelle dann eindeutig.
+
+**Offen und ausdrücklich unbeantwortet:** ob Z2 einen echten Unterschied
+gefunden hat (dann Befund) oder zu spröde ist (dann Testmangel). Beides ist
+möglich; das zu unterscheiden ist der ganze Zweck der nächsten Runde.
