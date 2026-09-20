@@ -624,6 +624,38 @@ Sachfrage):
   ERSETZT die vorhandenen Spuren nicht, sie kommt daneben — derselbe Grund wie
   am 13.09.: verschiedene Sucher finden verschiedene Klassen. Ohne Websuche,
   also nicht für das Abhängigkeits-Audit.
+- **BETREIBER-ENTSCHEIDUNG 20.09.2026: Kimi UND DeepSeek werden benutzt.**
+  Wörtlich: „wir nutzen kimi und deepseak. es macht mir den eindruck als würde
+  jede ki punkte finden, die eine andere übersieht."
+  **Der Eindruck ist gemessen, nicht geraten** — vier Messungen, jede an einem
+  echten Diff oder Papier:
+  * 13.09.: zwei Spuren über EINEN Diff, **neun Befunde, NULL Überschneidung.**
+  * 18.09.: `deepseek-v4-pro` im A/B, acht Befunde, sechs getragen,
+    **zwei hatte keine andere Spur.**
+  * 19.09.: `kimi-k3` im A/B über dieselbe Planprüfung — die Klasse, die nur
+    Kimi traf, war einheitlich.
+  * 20.09.: `kimi-k3` gegen `gpt-5.6-sol`, wortgleich, über einen Diff MIT
+    Lösungsschlüssel. Gleich viele Befunde, aber **Kimi fand den REGRESS, den
+    sol übersah**, hatte einen Verklemmungsweg, den KEINE andere Spur hatte,
+    und **null Fehlalarme gegen sols zwei**. Dazu eine Berichtigung meiner
+    eigenen Prüffrage (behauptete FK-Sperren auf einer Tabelle ohne
+    Fremdschlüssel).
+  **WARUM sie Verschiedenes finden — das ist der brauchbare Teil, nicht die
+  Zahl.** Zwei Ursachen, beide gemessen:
+  1. **Was eine Spur DARF.** Am 13.09. durfte die Claude-Spur AUSFÜHREN, die
+     Lesespur nur LESEN. Claudes Befunde lauten durchweg „diese Zeile
+     zurückdrehen, der Lauf bleibt grün" (gemessene Mutationen), die der
+     Leser durchweg „es gibt einen Zustand, den keine Fixtur je herstellt"
+     (durchdachter Kontrollfluss). Zwei SUCHVERFAHREN, nicht zwei Meinungen.
+  2. **Was eine Spur SIEHT.** Am 12.09. fand der Prüfer eine von zwei Stellen
+     derselben Regelverletzung — die zweite lag in einer Datei, die nicht im
+     Bündel war. Er KONNTE sie nicht finden.
+  **Folge für die Praxis:** mehr Spuren bringen mehr Befunde, aber der Engpass
+  bleibt das eigene NACHMESSEN, und das wächst mit. Der Hebel ist deshalb
+  nicht „noch ein Modell", sondern **verschiedene FÄHIGKEITEN und verschiedenes
+  MATERIAL**: eine Spur, die ausführen darf, neben Lesespuren; und ein Bündel,
+  das die Geschwisterstellen enthält. Eine vierte Lesespur, die dasselbe
+  Bündel mit denselben Rechten liest, kauft am wenigsten.
 - **Ein Modellwechsel ist nie die Erklärung für ein besseres Ergebnis**,
   solange sich am selben Tag auch die Aufträge geändert haben. Das gilt nach
   dem Wechsel genauso wie davor: wird eine Gegenlesung ab jetzt schwächer,
