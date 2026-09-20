@@ -2578,3 +2578,84 @@ Erzeuger / Sichtbarkeitsfenster).
 bisher klarste Beleg. Zwei Spuren, zwei blockierende Befunde, NULL
 Überschneidung bei den blockierenden — und die billigere (0,06 $) fand den
 Befund, der den Entwurf kippt. Der Preis sagt weiterhin nichts über den Ertrag.
+
+---
+
+## 20.09.2026 — Planprüfung Beitrag A (S5): DREI Spuren, VERSCHIEDENE Bündel
+
+**Erster Lauf nach der Betreiber-Entscheidung „verschiedene Bündel statt
+desselben".** Geprüft wurde ein AUFTRAGSPAPIER vor der ersten Bau-Runde, nicht
+ein Diff. Frage und Vorspann bei allen drei Spuren wörtlich gleich; nur das
+Material unterschied sich.
+
+| Spur | Modell | Bündel | Eingabe-Token | Ausgabe (davon Denken) | Dauer | Befunde | tragen |
+|---|---|---|---|---|---|---|---|
+| eng | `gpt-5.6-sol` (xhigh) | Papier + `routes/admin/mitarbeiter.js` | ~20.100 | – | ~330 s | 8 | 6 |
+| tests | `deepseek-v4-pro` | + fünf Prüfdateien | 49.145 | 18.253 (16.545) | 324 s | 4 | 3 |
+| umkreis | `kimi-k3` (high) | + PIN-Weg, `core/ui-feedback.js`, `core/db.js` | 79.660 | 28.577 (21.158) | 883 s | 9 | 7 |
+
+**21 Befunde, 16 tragen nach eigener Nachmessung.** Kosten grob: sol der
+teuerste, deepseek und kimi im Cent- bis Ein-Dollar-Bereich.
+
+**ZWEI ABGEBROCHENE LÄUFE, beide mit Strichen statt Nullen:**
+
+| Spur | Modell | Abbruch | Befunde | Kosten |
+|---|---|---|---|---|
+| tests | `deepseek-v4-pro` | `finish_reason: length`, 16.000/16.000 Ausgabe-Token ins Denken | — | angefallen |
+| umkreis | `kimi-k3` (xhigh) | `status: incomplete`, `max_output_tokens`, **44.997 von 45.000** ins Denken, drei Token Antwort | — | angefallen |
+
+Beide hätten als „0 Befunde" durchgehen können. Aufgefallen sind sie nur,
+weil bei JEDEM Aufruf der `status` geprüft wird.
+
+**GEMESSEN und für die Praxis brauchbar: `kimi-k3` mit `reasoning.effort:
+xhigh` braucht auf einem Bündel von ~80.000 Eingabe-Token mehr als 45.000
+Ausgabe-Token allein fürs Denken.** Mit `high` auf demselben Material: 21.158
+Denk-Token, `completed`, neun Befunde. Also weniger Denken UND ein Ergebnis —
+die CLAUDE.md-Notiz „für Sachfragen ist `high` das bessere Geschäft"
+bestätigt sich hier an einer echten Prüfaufgabe.
+
+### Was die verschiedenen Bündel gebracht haben
+
+**Überschneidung bei allem, was IM PAPIER steht** — vier Punkte fanden
+mehrere Spuren unabhängig (Z5a-1b schwach; Z5c ohne Positivkontrolle;
+`email_fehler` mit zwei Erzeugern; die beiden Riegel decken einander zu). Das
+ist keine Überraschung: alle drei lasen dasselbe Papier.
+
+**Die Ergänzung kam aus dem ZUSATZmaterial**, und jede Spur hatte etwas, das
+keine andere hatte:
+
+* **kimi (Umkreis), allein:** der `tone`-Befund (nur mit
+  `core/ui-feedback.js` sichtbar — ohne `tone: "error"` rendert die
+  Fehlermeldung als grünes Erfolgsbanner), das dreifach vorkommende
+  SQL-Muster, die dreigeteilte Formatfehler-Antwort, die Wurzel in
+  `loeschen`.
+* **deepseek (Tests), allein:** dass die bestehenden No-Op-Gegenproben nur
+  Status 302 prüfen.
+* **sol (eng), allein:** die fehlende `studio_id`-Vorschrift für die
+  Löschabfrage des Tests.
+
+**Der blinde Fleck ist NICHT gratis — das ist der neue Teil der Messung.**
+Alle drei gefallenen Befunde (sol E1 und E6, kimi K1) fallen an einer
+Tatsache, die in den TESTDATEIEN steht: dass die Suite nur gegen eine
+`_test`-Datenbank läuft, dass keine der Dateien `db.run` stubbt, und dass es
+sehr wohl einen Erfolgspfad-Test für `pin-direkt` gibt. Wer das Material
+verteilt, kauft Ergänzung mit Fehlalarmen, die der Haupt-Agent nachmessen
+muss.
+
+### Das Ergebnis, das nur mehrere Spuren liefern konnten
+
+**sol und kimi gaben zur selben Entscheidung ENTGEGENGESETZTE Empfehlungen** —
+gestützt auf dieselbe, von beiden richtig gelesene Tatsache (dass
+`pin-direkt:762` heute ein verwaistes Token nebenbei abräumt). sol wollte die
+Aufräumung erhalten, kimi sie fallen lassen. Entschieden wurde am Argument:
+ein unprotokollierter Schreibzugriff auf einem als gescheitert gemeldeten Weg
+ist in einem System, dessen Kern die Beweiskette ist, teurer als eine
+zufällige Aufräumung. **Ein einzelner Prüfer hätte mir eine der beiden als
+„die" Antwort geliefert.**
+
+**Und ein „blockierend" fiel wieder an einer Prämisse:** deepseek T1
+behauptete, ein UPDATE mit unverändertem Wert liefere `rowCount = 0`. Das ist
+MySQL-Semantik. Gemessen an einer Wegwerf-Datenbank, vier Fälle einzeln —
+identischer Wert, geänderter Wert, fehlende Zeile, NULL auf NULL — `rowCount`
+zählt in PostgreSQL die GETROFFENEN Zeilen. Die Schwereeinstufung ist eben in
+beide Richtungen eine Behauptung, bis sie gemessen ist.
