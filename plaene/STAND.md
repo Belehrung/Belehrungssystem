@@ -6083,7 +6083,7 @@ Befunde, wie viele Prämissen-Berichtigungen, und ob eine Spur ihre eigene
 Klasse verliert (Verankerung). Kein Befund wird verworfen, weil eine andere
 Spur das sagt.
 
-### 08:00 UTC — Beitrag A: Planprüfung läuft, Spur „eng" ausgewertet
+### 07:53 UTC — Beitrag A: Planprüfung läuft, Spur „eng" ausgewertet
 
 **Arbeitszweig** `beitrag-a-mitarbeiter-rowcount` in `/home/user/gymdocu`,
 abgezweigt von `master` = `7b955ec`. **Noch kein Code geändert** — erst geht
