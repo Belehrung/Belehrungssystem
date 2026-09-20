@@ -6237,3 +6237,28 @@ nachgemessen.
 `plaene/durchgang-befunde.md` — U-PINAUD1 ist mit diesem Beitrag geschlossen
 (der Erfolgspfad-Audit von `pin-direkt` ist jetzt zugesichert), U-TOK1 bleibt
 und braucht eine eigene Lock-Ordnungsanalyse.
+
+### 10:47 UTC — Beitrag A GEMERGT, Deploy steht aus
+
+**`master` = `ec7a142`** (Squash von #464). CI auf dem Zweigkopf `85f9323`
+war **vollständig grün** — vier Checks (Lint & Syntax, Dependency audit,
+Browser E2E, Isolation tests), und der `head_sha` des grünen Laufs war mit
+dem Zweigkopf identisch (geprüft, nicht angenommen).
+
+**Review-Bot: nichts zu lesen.** `get_comments`, `get_reviews` und
+`get_review_comments` alle leer — kein Check von ihm, kein Kommentar. Das
+ist kein „grünes Häkchen ohne gelesene Kommentare", sondern die Abwesenheit
+jeder Äußerung.
+
+**Merge-Botschaft zurückgelesen:** sie endet GENAU an `-- Ende der
+Botschaft --`, kein Markup hineingeraten.
+
+**Steht aus:** der Deploy-Lauf (`deploy.yml`, ein Lauf mit dem richtigen
+`head_sha` auf `success`) und danach `bash tools/live-check.sh`. Der Deploy
+feuert per `workflow_run` erst nach grüner CI FÜR MASTER — die
+Isolationstests brauchten auf dem Runner diesmal gut neun Minuten.
+
+**Damit ist `plaene/auftrag-schreibreihenfolge.md` abgearbeitet:** Beitrag B
+(#…, Geräte), Beitrag C (#463) und Beitrag A (#464) sind durch, S6 ist
+herausgenommen. Was aus dem Papier offen bleibt, steht als eigener Punkt in
+`plaene/durchgang-befunde.md`.
