@@ -1157,6 +1157,65 @@ bestätigten.
 verkleinert nicht die Arbeit. Wer es als Filter einsetzt, spart nichts und
 verliert Befunde.
 
+### BETREIBER-ENTSCHEIDUNG 20.09.2026 — verschiedene BÜNDEL statt desselben
+
+Wörtlich: „so machen wir das." **Ab jetzt bekommt jede Lesespur ein ANDERES
+Bündel**, nicht dasselbe: eine den Diff mit den direkten Nachbarn, eine den
+weiteren Umkreis, eine nur die Zusicherungen und Testdateien. Frage und
+Vorspann bleiben gleich.
+
+**Begründung, am selben Tag gemessen — und sie unterscheidet zwei Fälle:**
+
+| Aufbau | Überschneidung |
+|---|---|
+| **gleiches** Bündel, gleiche Frage, gleiche Rechte (sol × kimi, Beitrag C) | je 7 Befunde, **4 davon dieselben** |
+| **andere Rechte** (13.09., ausführen vs. nur lesen) | neun Befunde, **NULL** |
+| **anderes Vorwissen** (20.09., S6: deepseek kannte die Stelle nie) | beide blockierend, **NULL** |
+
+Die Ergänzung ist also in jedem Aufbau da, aber sie **verdoppelt sich
+ungefähr, wenn sich der Aufbau unterscheidet**. Bei identischem Aufbau
+überlappt mehr als die Hälfte.
+
+**Warum das mehr ist als Eleganz:** die Prüflast des Haupt-Agenten wächst mit
+der GESAMTZAHL der Befunde, der Nutzen nur mit den VERSCHIEDENEN. Sol und
+Kimi über dasselbe Material hiess: **14 Befunde nachmessen für 10
+verschiedene** — vier waren bezahlte Doppelarbeit. Verschiedene Bündel kosten
+keinen Cent mehr.
+
+### NOCH NICHT GEMESSEN: Befunde WEITERREICHEN statt nur widerlegen lassen
+
+Betreiber-Frage 20.09.2026: können die Modelle ihre Arbeiten austauschen und
+sich gegenseitig prüfen, damit der Haupt-Agent eine bessere Grundlage bekommt?
+
+**Die eine Form ist gebaut und gemessen** — das Kreuzverhör oben (widerlegen
+lassen). Ergebnis: Präzision ja, Arbeitslast nein.
+
+**Die andere Form ist NICHT gemessen:** die Befunde der früheren Spuren als
+KONTEXT an eine spätere geben, mit der Frage *„was haben diese drei
+übersehen?"* statt *„stimmen diese drei?"*. Das zielt auf die Überlappung,
+nicht auf die Filterung.
+
+**Zwei gemessene Risiken, die den Aufbau vorgeben:**
+* **Verankerung** (nicht gemessen, deshalb zu messen): wer die Befunde der
+  anderen sieht, übernimmt womöglich deren Rahmen und hört auf, die eigene
+  Klasse zu suchen. Genau die Klassentrennung ist aber der ganze Wert.
+* **Eine falsche Prämisse wandert weiter.** Am 20.09. beschrieb kimi eine
+  Folge selbstbewusst und FALSCH (behauptete einen bleibenden Audit-Eintrag,
+  tatsächlich hängt der Aufruf). Wäre das als Tatsache weitergereicht worden,
+  hätte die nächste Spur darauf aufgebaut.
+
+**Daraus der Aufbau, falls es gefahren wird:** weitergereichte Befunde werden
+ausdrücklich als **UNGEPRÜFTE BEHAUPTUNGEN** gekennzeichnet, nie als Tatsachen,
+und die Frage lautet „was fehlt" plus „welche dieser Behauptungen stützt sich
+auf etwas, das im Material nicht steht". Gemessen wird: wie viele NEUE Befunde,
+wie viele Prämissen-Berichtigungen — und ob eine Spur ihre eigene Klasse
+verliert (Verankerung).
+
+**Was sich dadurch NICHT ändert:** kein Befund wird verworfen, weil ein
+anderes Modell das sagt. Der Grund ist die Studie oben — als Filter wirft
+dieser Aufbau 22 % der echten Befunde weg, und unsere Klassen sind die am
+schlechtesten getroffenen.
+
 ### Wie die Praxis es nennt (19.09.2026, recherchiert)
 
 Unsere Verfahren haben Fachnamen; sie zu kennen macht Befunde auffindbar:
