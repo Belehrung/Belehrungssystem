@@ -326,3 +326,37 @@ niemals mit einer Null.
 **Und die Positivkontrolle bleibt Pflicht, gerade beim Ausweichen:** vor dem
 echten Lauf ein frei erfundenes Wort abfragen. Ein „nichts gefunden" von
 einem stummen Endpunkt sieht genauso aus wie ein sauberes Ergebnis.
+
+---
+
+## 20.09.2026 — Lesewerkzeuge für alle drei Anbieter: JA, aber erst danach
+
+**Betreiber, wörtlich:** „mach das wenn der rest fertig ist."
+
+Bezieht sich auf die Messung in
+`plaene/werkzeugfaehigkeit-kimi-deepseek-20-09-2026.md`: Kimi und DeepSeek
+beherrschen Werkzeugaufrufe nachweislich (volle Zweirundenschleife,
+Kontrollwort wörtlich zurück). `tools/gegenleser-repo.js` soll deshalb einen
+Anbieterschalter bekommen, damit auch sie im Repo nachsehen können statt nur
+ein fertiges Bündel zu lesen.
+
+**Die Reihenfolge ist Teil der Entscheidung** — „wenn der Rest fertig ist"
+heisst: NACH der Startseiten-Härtung und der Ladebestand-Nacharbeit, nicht
+dazwischen. Grund, gemessen am 20.09.2026: der Engpass ist das eigene
+Nachmessen jedes Befunds, nicht das Finden; eine weitere Prüfspur erhöht
+zuerst die Prüflast.
+
+**Was gebaut wird:** ein Schalter für Endpunkt, Modellname und
+Schlüsseldatei. **Was NICHT angefasst wird**, weil es anbieterunabhängig ist
+und trägt: Erlaubnisliste über `git ls-files`, Geheimnis-Riegel auf jedes
+Funktionsergebnis, Lesedeckel samt Liste der abgelehnten Lesungen,
+Lauf-Protokoll.
+
+**Was NICHT dazukommt:** Ausführung und Schreibzugriff. Die Ablehnung vom
+11.09.2026 steht; erlaubt ist ausschliesslich Lesen.
+
+**Drei Stolperstellen stehen im Messpapier** und gehören in den Bauauftrag:
+`stream: true` ist bei beiden Pflicht; das Ausgabebudget muss das Nachdenken
+mittragen (ein Lauf kam mit HTTP 200 und LEERER Antwort zurück, weil das
+ganze Budget ins Nachdenken ging); und die Argumente eines Werkzeugaufrufs
+kommen in Stücken und müssen je `index` zusammengesetzt werden.
