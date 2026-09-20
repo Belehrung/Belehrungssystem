@@ -6318,3 +6318,29 @@ eine weitere gehen, mit der Frage „was haben diese übersehen?" statt
 Prämisse wandert weiter) stehen in der CLAUDE.md. Beitrag A wäre der
 Kandidat gewesen — es kam nicht dazu, weil die vier Spuren schon 29 Befunde
 lieferten und das eigene Nachmessen das Nadelöhr war, nicht das Finden.
+
+### 11:05 UTC — Betreiber-Entscheidung: WENIGER Prüfspuren
+
+Wörtlich: „deine idee zu den reduktion der spuren machen wir."
+
+**Ab jetzt: Planprüfung ZWEI Lesespuren, Diffprüfung die ausführende
+Claude-Spur plus EINE Lesespur.** Vorher drei bzw. vier. Eine dritte Spur
+nur auf benannten Anlass (unwiderruflicher Beitrag, oder die beiden Spuren
+widersprechen sich in einer ENTSCHEIDUNG). Eingetragen in `CLAUDE.md`,
+Abschnitt „BETREIBER-ENTSCHEIDUNG 20.09.2026 (abends)".
+
+**Vor dem Eintragen nachgezählt statt geschätzt — und mein Eindruck war
+falsch.** Von den zwölf Bauaufträgen der Diffprüfung kamen sieben von der
+ausführenden Claude-Spur (vier nur von ihr), vier von `gpt-5.6-sol` (drei
+nur von ihr), zwei von `deepseek-v4-pro` (einer nur von ihr) und drei von
+`kimi-k3` (**keiner** nur von ihr). Ich hatte `gpt-5.6-sol` für die
+schwächste gehalten — sie war unter den Lesespuren die ergiebigste.
+
+Deshalb wird KEINE Spur abgeschafft, nur die Anzahl gesenkt: welche Lesespur
+läuft, wird je Beitrag nach dem Bündel gewählt, das er braucht. `kimi-k3`
+hatte in der PLANprüfung desselben Tages drei Befunde, die keine andere
+Spur hatte.
+
+**Mitentschieden:** der noch ungemessene Aufbau „Befunde als ungeprüfte
+Behauptungen weiterreichen" ist damit ZURÜCKGESTELLT — er würde die Prüflast
+erhöhen, und genau die war der Engpass.

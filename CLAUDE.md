@@ -1182,6 +1182,71 @@ Kimi über dasselbe Material hiess: **14 Befunde nachmessen für 10
 verschiedene** — vier waren bezahlte Doppelarbeit. Verschiedene Bündel kosten
 keinen Cent mehr.
 
+### BETREIBER-ENTSCHEIDUNG 20.09.2026 (abends) — WENIGER Spuren, nicht mehr
+
+Wörtlich: „deine idee zu den reduktion der spuren machen wir." Sie ändert die
+Anzahl, nicht das Prinzip: verschiedene Bündel bleiben, es werden nur weniger.
+
+**Ab jetzt gilt:**
+
+| Stufe | Spuren | Aufbau |
+|---|---|---|
+| **Planprüfung** (vor der ersten Bau-Runde) | **ZWEI** Lesespuren | verschiedene Bündel |
+| **Diffprüfung** (nach dem Bau) | **die Claude-Spur, die AUSFÜHREN darf, plus EINE Lesespur** | Lesespur mit einem anderen Bündel als dem, was die Claude-Spur ohnehin liest |
+
+Vorher waren es drei bzw. vier. **Eine DRITTE Spur wird nur auf einen
+benannten Anlass gefahren, und der Anlass steht im Zwischenstand:** der
+Beitrag ist unwiderruflich (Nummernbuch, harte Löschung, append-only), ODER
+die beiden Spuren widersprechen sich in einer ENTSCHEIDUNG (nicht in einem
+Befund).
+
+**Der Grund ist gemessen, und er ist nicht „die dritte Spur findet nichts".**
+Am 20.09.2026 lieferten vier Spuren über EINEN Diff 29 Befunde, aus denen
+zwölf Bauaufträge wurden. Wer sie beigesteuert hat:
+
+| Spur | Bauaufträge | davon NUR von ihr |
+|---|---|---|
+| Claude (darf ausführen) | 7 | **4** |
+| `gpt-5.6-sol` (eng) | 4 | **3** |
+| `deepseek-v4-pro` (Tests) | 2 | **1** |
+| `kimi-k3` (Umkreis) | 3 | **0** |
+
+**Der Engpass ist das NACHMESSEN, nicht das Finden.** Jeder der 29 Befunde
+musste vom Haupt-Agenten selbst gemessen werden, bevor er ein Auftrag wurde;
+drei fielen dabei, darunter ein als blockierend eingestufter. Die vierte Spur
+hat die Prüflast erhöht und keinen einzigen eigenen Auftrag gebracht.
+
+**Was diese Zahl NICHT hergibt — und der Irrtum lag bei mir:** Sie sagt
+NICHT, dass `kimi-k3` die schwächste Spur ist. In der PLANprüfung desselben
+Tages fand genau diese Spur drei Dinge, die keine andere hatte (der
+`tone`-Befund, der nur mit `core/ui-feedback.js` im Bündel sichtbar war; das
+dreifach vorkommende SQL-Muster; die Wurzel in `loeschen`). Mein erster
+Eindruck war, `gpt-5.6-sol` sei die teuerste und schwächste — nachgezählt
+hatte sie die meisten EIGENEN Bauaufträge der drei Lesespuren. **Wer Spuren
+nach Eindruck aussortiert, sortiert falsch; wer sie nach EINER Messung
+aussortiert, auch.** Deshalb wird hier keine Spur abgeschafft, sondern die
+ANZAHL gesenkt — welche Spur läuft, wird je Beitrag nach dem Bündel gewählt,
+das er braucht.
+
+**Die Rangfolge, die die Messungen stützen** (und nach der die verbleibende
+Spur zu wählen ist):
+
+1. **Verschiedene FÄHIGKEIT** schlägt alles. Ausführen gegen Lesen: 13.09.
+   neun Befunde mit NULL Überschneidung; 20.09. brachte allein die
+   ausführende Spur beide blockierenden Befunde, jeweils mit eigener
+   Messung. Diese Spur fällt nie weg.
+2. **Verschiedenes MATERIAL.** Bringt Ergänzung — und kostet Fehlalarme:
+   alle drei gefallenen Befunde des 20.09. fielen an einer Tatsache, die in
+   dem Material stand, das der jeweiligen Spur FEHLTE.
+3. **Verschiedenes MODELL bei gleichem Bündel und gleichen Rechten.** Kauft
+   am wenigsten — gemessen über die Hälfte Überschneidung.
+
+**Was sich NICHT ändert:** wann überhaupt geprüft wird (der Auslöser von
+11./12.09. bleibt: bei allem ausser reinen Text-, Doku- und
+Kosmetikänderungen), die Planprüfung VOR der ersten Bau-Runde, und dass
+jeder Befund eine Behauptung bleibt, bis der Haupt-Agent sie selbst gemessen
+hat.
+
 ### NOCH NICHT GEMESSEN: Befunde WEITERREICHEN statt nur widerlegen lassen
 
 Betreiber-Frage 20.09.2026: können die Modelle ihre Arbeiten austauschen und
@@ -1215,6 +1280,14 @@ verliert (Verankerung).
 anderes Modell das sagt. Der Grund ist die Studie oben — als Filter wirft
 dieser Aufbau 22 % der echten Befunde weg, und unsere Klassen sind die am
 schlechtesten getroffenen.
+
+**NACHTRAG 20.09.2026 abends, nach der Spurenreduktion eine Zeile weiter
+oben: dieser Aufbau ist damit VORERST ZURÜCKGESTELLT.** Er würde die
+Prüflast des Haupt-Agenten ERHÖHEN — eine weitere Spur, die weitere Befunde
+liefert, von denen jeder einzeln nachgemessen werden muss —, und genau die
+war am 20.09. der gemessene Engpass. Er bleibt eine offene Messung, aber er
+wird erst gefahren, wenn das Nachmessen billiger geworden ist, nicht
+vorher.
 
 ### Wie die Praxis es nennt (19.09.2026, recherchiert)
 
