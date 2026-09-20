@@ -1,4 +1,4 @@
-# Stand — 20.09.2026, ~18:40 UTC
+# Stand — 20.09.2026, ~19:45 UTC
 
 Diese Datei ist der Übergabepunkt. Der Takt-Prompt ist beim Bau von
 Beitrag 1 stehengeblieben. **Hier steht, was wirklich gilt.**
@@ -127,11 +127,30 @@ Punkt 4 ist die Lehre des Tages: Die Upload-Spur war sachlich richtig (sie
 hat ein echtes Informationsleck gefunden), aber sie ist ohne Entscheidung an
 das Programm vorbeigewachsen, und gemerkt hat es der Betreiber, nicht ich.
 
-## LÄUFT GERADE (20.09.2026, ~18:40 UTC)
+## LÄUFT GERADE (20.09.2026, ~19:45 UTC)
 
-* **Bau der Ladebestand-Nacharbeit** im Arbeitsbaum `/home/user/gymdocu`,
-  Zweig `beitrag-ladebestand`. Papier:
-  `plaene/auftrag-ladebestand-nacharbeit.md` (nach Planprüfung berichtigt).
+**Ladebestand-Nacharbeit, ZWEITE Runde** im Arbeitsbaum `/home/user/gymdocu`,
+Zweig `beitrag-ladebestand` (Kopf `95c52ed`, CI auf diesem Stand grün).
+Papier: `plaene/auftrag-ladebestand-nacharbeit.md`, Abschnitt „ZWEITE RUNDE".
+
+**Stand der ersten Runde — alles selbst nachgemessen:**
+
+* Meine volle Suite: `SUITE_EXIT=0`, Dateizahl 350 = 350, `diff` EXIT 0,
+  `test_feature_ladebestand_streng.js` 14 PASS / 0 FAIL.
+* Die Maskierungs-Diagnose des Ausführenden ist bestätigt: INSERT-Zweig
+  mutiert → `SUITE_EXIT=1`, `+ actual [0,0,0] / - expected [0,1,2]`,
+  gefallen an Zeile 478 = dem ERSTEN Prüfzeitpunkt. Die zwei Zeitpunkte sind
+  also nötig, nicht doppelt. Zurückgenommen, `diff` EXIT 0, Marker-Scan 6.
+* Diffprüfung: elf Befunde, vier blockierend, **vier selbst nachgemessen und
+  getragen**, keiner gefallen.
+
+**Der schwerste Befund ist wieder meiner:** der neue Fehlertext hängt an der
+ROUTE statt am tatsächlichen Schreibzustand. Bei lauter „Weiß ich nicht"
+springt `routes/admin/geraete.js:2621` über alle Schreibvorgänge (der
+Kommentar dort sagt „mehr passiert nicht") — die Seite behauptet dann eine
+Änderung, die es nicht gab. Ein Satz, der auf einem WEG falsch war, gegen
+einen getauscht, der in einem FALL falsch ist.
+
 
 ## ERLEDIGT UND AUSGELIEFERT — Startseite
 
