@@ -594,3 +594,127 @@ vergeben, und der Sollwert wäre ab da eine Behauptung.
 Zeile muss rot werden. (`t.aufgaben.length` an einem Termin ohne
 `aufgaben`-Array wirft laut — das ist kein stiller Ausfall und braucht keinen
 eigenen Riegel.)
+
+---
+
+## DRITTE RUNDE — Befunde der Lesespur, alle selbst nachgemessen
+
+Lesespur `gpt-5.6-sol` über `tools/gegenleser-repo.js` (mit Repo-Leserechten),
+14 Runden, 1.580.722 Token rein, 8,78 $. Bündel: der Diff `95c52ed..70d1489`;
+die 30 weiteren Lesungen hat sie selbst gewählt.
+
+### N14 (BLOCKIEREND) — `holeOderLegeAn()` schreibt, ohne dass der Zähler es erfährt
+
+`routes/admin/geraete.js:2010-2021` schreibt bei einem VORHANDENEN Eintrag
+dessen `art` nach, wenn sie abweicht — und gibt dem Aufrufer nicht zurück,
+dass geschrieben wurde (`return { ...da, neu: false }`). Der Aufrufer erhöht
+`praefplanGeaendert` nur bei `!aktiv`, `!durchfuehrung` und `notizZusatz`.
+
+**Selbst nachgemessen, zwei Schritte:**
+
+1. Die Bearbeiten-Route schreibt `art` NICHT mit — die UPDATE-Spaltenliste
+   (`:6495-6498`) nennt `name … durchfuehrung … geraet_id`, kein `art`.
+   Ein umbenannter Vorgang behält also `art='vorgang'`, während der Assistent
+   für denselben Namen `art='geraet'` erwartet.
+2. `notizZusatz` ist nur bei Positionen mit Stückzahl gesetzt — gezählt:
+   **1 von 9** geplanten Einträgen trägt ihn, **8 nicht**. Bei einem aktiven
+   Eintrag mit gesetzter Zuständigkeit und ohne `notizZusatz` laufen also
+   ALLE drei anderen Zählstellen nicht.
+
+Ergebnis: `praefplanGeaendert === 0`, obwohl das `art`-UPDATE committet ist —
+die Seite behauptet „Am Prüfplan wurde nichts angelegt, geändert oder
+deaktiviert".
+
+**Und das ist eine VERSCHLECHTERUNG durch diesen Beitrag**: vor N8 übergab der
+Brandschutzweg immer `true`, der Teiländerungs-Text war für genau diesen
+Zustand richtig.
+
+**Behebung:** `holeOderLegeAn()` gibt zurück, ob es geschrieben hat
+(`artGeaendert`), der Aufrufer zählt es mit. Ein Feld, eine Zeile — nicht ein
+dritter Umbau der Textlogik.
+
+### N15 (BLOCKIEREND) — der leere Ausstattungs-POST behauptet gespeicherte Antworten
+
+`routes/admin/geraete.js:4291` hält bei `beantwortet === 0` selbst fest
+*„nichts gespeichert — es wurde keine Frage beantwortet"*, ruft danach aber
+unbedingt `ladeBestandStreng()`. Scheitert die, liefert die Seite Titel
+**„Feststellung gespeichert — Prüfplan nicht abgeglichen"** und Text
+**„Eure Antworten sind gespeichert."** — beides falsch.
+
+Der Test sendet genau diesen leeren POST (`:458-470`) und prüft dort nur den
+Abbruchmarker, nicht den Satz.
+
+**Nur der Ausstattungsweg ist betroffen** (selbst nachgemessen): beim
+Brandschutz ist `brauchtKategorie` ohne gültige Antwort falsch, `kategorieId`
+bleibt null, der `if (kategorieId)`-Block mit dem strengen Lesen läuft gar
+nicht.
+
+**Behebung:** die Zahl der gespeicherten Antworten mitgeben; bei 0 weder Titel
+noch Satz eine Speicherung behaupten.
+
+### N16 (BLOCKIEREND) — N9 beweist nicht, dass der Sollindex geschrieben wird
+
+Der wichtigste Befund des Laufs, und er trifft genau die Zusicherung, die
+diese Runde neu gebaut hat. Die Verfälschung `+100` verschiebt nur den
+OFFSET, nicht die ZUORDNUNG Aufgabentext → Position. Ein UPDATE-Zweig, der
+den gebundenen Sollindex `$1` gar nicht benutzt, kann sie trotzdem aufheben.
+
+**Selbst gemessen**, Produktionszeile `routes/admin/geraete.js:2167`:
+
+    SET reihenfolge = MOD(reihenfolge,100) + 0 * $1, aktiv=1
+    ->  EXIT 0, 15 PASS / 0 FAIL
+
+Der Sollindex wird nicht geschrieben, `pruefeReihenfolgeLueckenlos()` UND der
+SHA-256 sehen trotzdem den Sollzustand.
+
+**Behebung:** eine PERMUTIERENDE statt einer verschiebenden Verfälschung,
+z. B. `SET reihenfolge = 1000 - reihenfolge` — sie dreht die Ordnung um, und
+dann kann nur ein echtes Schreiben des Sollindex sie wiederherstellen. Der
+Hash trägt die Aufgabentexte in Reihenfolge und fällt mit.
+**Abnahme: genau die obige MOD-Mutation muss danach ROT sein.**
+
+### N17 — der N10-Sollwert teilt sich die Array-Referenz mit der Produktion
+
+`core/ausstattung.js:493` kopiert flach (`{ ...t, frage: f.schluessel }`) —
+`t.aufgaben` bleibt dieselbe Referenz, die als `soll` an `syncAufgaben()`
+geht. Eine In-place-Mutation dort (`soll.pop()`, eine Sortierung) veränderte
+gleichzeitig den Produktions-Sollwert UND den später gelesenen Test-Sollwert.
+
+**Behebung:** die Karte EINMAL beim Laden der Testdatei bilden, nicht bei
+jedem Aufruf nach den POSTs — dann ist sie ein Schnappschuss von vorher.
+Zusammen mit **N13** (Kartengröße gegen die Terminzahl) ist das eine Stelle.
+
+### N18 — ein Erfolgs-POST ist an HTTP 200 nicht von einer Fehlerseite zu unterscheiden
+
+Der äußere `catch` beider Routen (`routes/admin/geraete.js:4403`) sendet ohne
+Statuscode, also **HTTP 200**. Jede Zusicherung der Form
+`assert.strictEqual(r.status, 200)` für einen ERFOLGS-POST ist damit auch von
+der generischen Fehlerseite erfüllt.
+
+**Behebung:** bei den Erfolgs-POSTs zusätzlich zusichern, dass die Antwort den
+Fehlerseiten-Marker NICHT trägt.
+
+### N19 — drei Zählstellen lesen `rowCount` nicht
+
+`:2734`, `:2745`, `:2762` erhöhen unbedingt nach einem Einzel-UPDATE. Wird die
+zuvor gelesene Zeile parallel gelöscht, trifft das UPDATE null Zeilen und der
+Zähler steigt trotzdem. **Behebung:** dieselbe Form wie bei der
+Sammel-Deaktivierung (`rowCount` addieren).
+
+### Was NACHGEMESSEN NICHT trägt bzw. nicht gebaut wird
+
+* **Der Vorwurf gegen das 700er-Fenster trägt nur zur Hälfte.** Dass
+  Kommentare das Muster erfüllen oder aufblasen können, stimmt (habe ich
+  selbst notiert). Dass 700 „den Bereich erweitert, in dem ein anderer Text
+  das Muster erfüllen kann", ist theoretisch richtig und praktisch ohne
+  Fundstelle: gezählt liegt die einzige andere 36173 Zeichen entfernt. Kein
+  Bauauftrag — die Verdrahtung hängt ohnehin zusätzlich an einer
+  Verhaltens-Zusicherung („24 Begehungszeilen … waren 10", selbst gemessen).
+* **`fremdBehalten` hat keine ausführbare Zusicherung** — gezählt: 0
+  `assert`-Zeilen, nur zwei Kommentarzeilen. Das ist richtig beobachtet und
+  im Test bereits als bekannte Lücke benannt, kein neuer Befund.
+* **Das Notiz-UPDATE zählt auch einen wertgleichen Schreibvorgang mit.**
+  Trägt sachlich, wird aber NICHT gebaut: PostgreSQL meldet auch bei
+  identischen Werten `rowCount 1`, eine saubere Behebung müsste den Wert
+  vorher vergleichen. Das ist ein eigener Umbau und steht als benannte
+  Ungenauigkeit im Kommentar, nicht als stiller Mangel.
