@@ -192,11 +192,23 @@ unterschrieben wurde". Ein Zeitwert, den wir selbst setzen, ist kein Beleg
 gegenüber einem Dritten. Das ist keine Verschlechterung des Produkts, sondern
 das Ende einer Zusage, die wir nicht halten können.
 
-**Zu messen und zu melden, NICHT hier zu bauen:** ob dieselbe Zusage an
-weiteren Stellen steht (Handbuch, Landingpage, Verkaufsunterlagen). Der
-Verdacht ist da — die Startseite trägt „ein Nachweis, der vor Gericht zählt",
-was M3 bereits entschärft. Ein `grep` auf „Streitfall", „belegen" und „wann
-unterschrieben" gehört in den Bericht, das Ergebnis in einen eigenen Punkt.
+**GEMESSEN, und damit geschlossen:** Ich hatte die Frage offengelassen, ob
+dieselbe Zusage an weiteren Stellen steht. `grep -rniE "im streitfall|vor
+gericht|gerichtsfest|beweiskraft|wann unterschrieben|rechtssicher"` über
+BEIDE Repos (ohne `node_modules`, ohne Testdateien) liefert **genau fünf
+Treffer, und nur zwei davon sind Zusagen an einen Kunden**:
+
+* `tools/baue_handbuch.py:1122-1123` — **dieser Punkt (M5-e).**
+* `landing/index.html:992` — „ein Nachweis, der vor Gericht zählt", **bereits
+  in M3-e erfasst.**
+
+Die übrigen drei sind keine Zusagen: `docs/qr-codes-konzept.md:431`
+beschreibt ein PROBLEM („im Streitfall wäre nicht mehr feststellbar, wann
+…"), `core/hilfe-texte.js:1107` handelt von DSGVO-Bußgeldern, und
+`routes/superadmin.js:391` ist ein Entwicklerkommentar über eine Umrechnung.
+
+**Es gibt also keinen dritten Ort.** Kein eigener Punkt nötig — mit M3-e und
+M5-e ist die Klasse vollständig erfasst.
 
 ---
 
