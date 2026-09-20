@@ -47,10 +47,25 @@ den Umfang und liefert zwei Texte:
 * **Brandschutz (teilweise geschrieben):** der absolute Satz entfällt. Statt
   dessen wörtlich: *„Ein Teil des Prüfplans wurde bereits angepasst, der Rest
   nicht. Bitte den Assistenten unten noch einmal öffnen und dort speichern
-  (auch ohne Änderung), sobald die Datenbank wieder erreichbar ist — der
-  Abgleich holt dann nach, was fehlt."*
-  Der erste Satz („Eure Antworten sind gespeichert.") bleibt auf BEIDEN
-  Wegen, er ist auf beiden wahr (`:2555-2574` speichert vor der Schleife).
+  (auch ohne Änderung), sobald die Datenbank wieder erreichbar ist."*
+  **Der Halbsatz „der Abgleich holt dann nach, was fehlt" ist GESTRICHEN.**
+  Er wäre eine Idempotenz-Zusage über den Produktivcode, und nichts misst
+  sie — das ist genau die Klasse, die dieser Beitrag bekämpft: nicht
+  fehlende Abdeckung, sondern eine falsche Zusicherung von Abdeckung. Wer
+  sie behalten will, misst sie zuerst (Aufbau in N1a).
+* **Der erste Satz („Eure Antworten sind gespeichert.") bleibt auf BEIDEN
+  Wegen — und das ist jetzt für beide belegt, nicht nur für einen:**
+  Brandschutz speichert bei `:2555-2574` vor der Schleife, Ausstattung bei
+  **`:4205-4211`** (`INSERT INTO pruefbereich_bestand … ON CONFLICT … DO
+  UPDATE`) vor dem strengen Lesen bei `:4233`. Eine Prüfspur hatte hier
+  vermutet, auf dem Ausstattungsweg sei der Satz womöglich falsch;
+  nachgemessen trägt er.
+* **ABER der absolute Satz ist auch auf dem Ausstattungsweg wörtlich zu
+  weit** — dieselbe Prüfspur hat es im Nebensatz richtig gesehen: es wurde
+  sehr wohl etwas „angelegt oder geändert", nämlich die Antwortzeile selbst.
+  Gemeint war immer der Prüfplan. **Deshalb heisst der Satz dort ab jetzt:
+  „Am Prüfplan wurde nichts angelegt, geändert oder deaktiviert."** Ein Wort,
+  und die Aussage stimmt wörtlich.
 
 **AUSDRÜCKLICH NICHT in diesem Beitrag:** alle Schreibvorgänge hinter das
 strenge Lesen zu ziehen. Das wäre die saubere Lösung, ist aber ein
@@ -104,6 +119,21 @@ Bearbeitungsformular schreibt diese beliebige Reihenfolge beim Speichern
    deaktivierte Zeilen behalten ihre alte `reihenfolge`, werden aber von der
    Z2-Abfrage über `aktiv=1` ohnehin nicht gelesen. Die aktiven Zeilen sind
    damit lückenlos ab null.
+   **Eine Prüfspur wollte den Sollwert auf „paarweise verschieden" absenken**
+   — die Produktion brauche nur Eindeutigkeit, und eine Deaktivierung ohne
+   Neuvergabe erzeuge legitime Lücken. **Der zweite Teil ist nachgemessen
+   FALSCH:** es gibt im ganzen Bestand genau EINEN Weg, der eine
+   Aufgabenzeile deaktiviert (`routes/admin/geraete.js:2141`), und der liegt
+   INNERHALB von `syncAufgaben()` — dieselbe Funktion nummeriert die
+   verbleibenden aktiven Zeilen im selben Lauf neu. Lücken können so nicht
+   entstehen. `0 … n-1` bleibt deshalb und ist schärfer: es fängt auch einen
+   Schreiber, der eindeutige, aber willkürliche Zahlen vergibt und damit die
+   Reihenfolge des Moduls verliert.
+   **Was dabei bewusst in Kauf genommen wird und in den Kommentar gehört:**
+   eine künftige, für sich genommen richtige Umstellung der Zählweise (etwa
+   Zehnerschritte, um später einfügen zu können) macht die Zusicherung rot.
+   Das ist gewollt — sie erzwingt dann eine bewusste Entscheidung statt einer
+   stillen Änderung.
    **Die Zusicherung läuft VOR der Hash-Bildung.** Sonst ist bei einem
    Defekt nicht der Grund zu sehen, sondern nur ein abweichender Hash — und
    bei nicht eindeutiger `reihenfolge` wäre die Zeilenreihenfolge ohne
@@ -115,9 +145,23 @@ Bearbeitungsformular schreibt diese beliebige Reihenfolge beim Speichern
    die Produktion. Die Eindeutigkeit stellt Teil 1 sicher; ohne ihn wäre das
    Ergebnis nicht deterministisch, mit ihm ist es das.
 
-**Gegenprobe (Abnahmekriterium, wörtlich gemessen):** `:2121` von `idx` auf
-`0` → Z2 muss ROT werden. Ebenso `:2118` und `:2137`. Und die
-Positivkontrolle: unverändert → GRÜN.
+**Gegenprobe (Abnahmekriterium):** `:2121` von `idx` auf `0` → Z2 muss ROT
+werden. Positivkontrolle: unverändert → GRÜN.
+
+**BERICHTIGUNG an diesem Papier, gefunden von der Planprüfung und selbst
+nachgelesen:** hier stand zuerst „ebenso `:2118` und `:2137`". Das ist mit
+der heutigen Fixtur **nicht erfüllbar** und widerspricht einem Satz, den
+dieses Papier zwei Absätze weiter oben selbst schreibt: Z2 fährt EINEN POST
+in ein FRISCHES Studio, also ausschliesslich den INSERT-Zweig. Die beiden
+UPDATE-Zweige setzen bestehende Zeilen voraus und werden nie betreten — eine
+Mutation dort kann Z2 gar nicht rot machen. Ein Abnahmekriterium, das die
+eigene Fixtur nicht erreichen kann, ist keines.
+
+**Folge, und sie gehört gebaut:** die Z2-Fixtur bekommt einen ZWEITEN POST
+auf dasselbe Studio (eine Frage auf `nicht_vorhanden` und wieder zurück),
+damit die UPDATE-Zweige wirklich laufen. **Erst dann** sind `:2118` und
+`:2137` Abnahmekriterien — und erst dann bewacht die Zusicherung den
+Schreiber, den jedes eingerichtete Studio bei jedem weiteren POST nimmt.
 
 **NICHT in diesem Beitrag:** den beiden produktiven Lesestellen einen
 Beistand zu geben. Das ändert Verhalten (heute beliebige, morgen feste
@@ -209,3 +253,64 @@ korrekt rot). Wird notiert, nicht gebaut.
 4. Am Ende Marker-Scan mit Ausschluss auf dem PFAD: **6 Treffer**, alle in
    `docs/offene-befunde-31-08-2026.md`.
 5. Kein Modellname in Commit-Botschaft oder Dateien. Kein PR.
+
+
+---
+
+## N7 — der Kopfkommentar des Tests behauptet nach N1 Falsches
+
+**Gemessen:** `test_feature_ladebestand_streng.js:19` schreibt
+
+    //   Z1 — Ein DB-Fehler deaktiviert NICHTS (beide strengen Wege)
+
+Nach der Messung aus N1 deaktiviert der Brandschutzweg im Fehlerfall sehr
+wohl (`:2606`, `:2635`) und legt Aufgabenzeilen an (`:2704`). Der Satz ist
+für einen der beiden Wege falsch — und er steht an der Stelle, die ein
+Prüfender zuerst liest.
+
+**Nicht betroffen sind die beiden `ok()`-Texte** (`:322`, `:464`): sie sagen
+„aktive Termine UNVERÄNDERT" bzw. „Begehungs-Checkliste UND
+Funktionstest-Sammelblatt UNVERÄNDERT", und das trifft weiterhin zu — sie
+behaupten nichts über die Fachfirmen-Termine. Das ist eine eigene Messung;
+die Prüfspur hatte beide zusammen als falsch gemeldet.
+
+**Behebung:** den Kopfkommentar wegspezifisch machen — Ausstattung: nichts
+geschrieben; Brandschutz: Abbruch nach Teilschreiben, Checkliste und
+Sammelblatt unverändert, Fachfirmen-Termine teilweise deaktiviert.
+
+---
+
+## N1a — die Idempotenz-Zusage, falls sie zurück in den Text soll
+
+Der Halbsatz „der Abgleich holt dann nach, was fehlt" ist in N1 **gestrichen**,
+weil ihn nichts misst. Wer ihn zurückhaben will, misst ihn so — der Aufbau
+stammt aus der Planprüfung und ist brauchbar:
+
+* **Studio A:** POST (alles vorhanden) → POST mit gestörtem Bestandslesen →
+  POST ungestört.
+* **Studio B:** zweimal ungestört, ohne Störung dazwischen.
+* Danach die VOLLE Kategoriemenge beider Studios vergleichen (Geräte
+  einschliesslich `aktiv`, alle Aufgabenzeilen).
+
+Weichen A und B ab, holt der Abgleich eben NICHT nach — dann wäre der Satz
+eine zweite Lüge an derselben Stelle. **Erst wenn A und B gleich sind, darf
+der Halbsatz in den Text, und dann mit genau dieser Zusicherung daneben.**
+
+---
+
+## Was aus der Planprüfung GEFALLEN ist
+
+**„Auf dem Ausstattungsweg sind die Antworten im Fehlerfall womöglich gar
+nicht gespeichert."** Nachgemessen: `routes/admin/geraete.js:4205-4211`
+schreibt `INSERT INTO pruefbereich_bestand … ON CONFLICT … DO UPDATE`
+**vor** dem strengen Lesen bei `:4233`. Der Satz „Eure Antworten sind
+gespeichert." trägt auf beiden Wegen.
+**Was aus demselben Befund TRÄGT**, ist sein Nebensatz: dann ist „es wurde
+nichts angelegt, geändert oder deaktiviert" wörtlich zu weit, weil die
+Antwortzeile sehr wohl geschrieben wurde. Daraus ist die Wortänderung „Am
+Prüfplan wurde nichts …" in N1 geworden.
+
+**„Eine Deaktivierung ohne Neuvergabe erzeugt legitime Lücken in der
+`reihenfolge`."** Nachgemessen: es gibt genau einen Deaktivierungsweg
+(`routes/admin/geraete.js:2141`), und er liegt in `syncAufgaben()`, das im
+selben Lauf neu nummeriert. Siehe N2.
