@@ -5845,7 +5845,7 @@ nicht der Befund, sondern die BEHEBUNG die Gefahr war.
 **Danach:** Executer-Auftrag (Standard, nicht Fable — jede Entscheidung steht
 im Papier), dann volles Prüf-Ritual von vorn.
 
-### 05:55 UTC — Planprüfung hat N4 gestrichen; Nacharbeit beauftragt
+### 03:49 UTC — Planprüfung hat N4 gestrichen; Nacharbeit beauftragt
 
 **Die Planprüfung des Nacharbeits-Papiers hat sich sofort bezahlt gemacht**
 (`gpt-5.6-sol`, `xhigh`, 99.201 ein / 27.812 aus, 418 s, ≈ 1,33 $):
@@ -5892,3 +5892,28 @@ rückwärts springen), U-AUDT1 (repoweiter `auditAppend`-Wächter braucht AST).
 **Laufend:** Der Ausführende baut die Nacharbeit (N1, N2, N3, N4-Ersatz, N5b/c,
 N6 eng, N7-N10) auf demselben Zweig. Baum für mich gesperrt bis zu seiner
 Meldung. Danach volles Prüf-Ritual von vorn.
+
+### 04:40 UTC — Takt: der Ausführende baut, nichts sonst getan
+
+**Die Überschrift des vorigen Abschnitts stand falsch da („05:55 UTC").**
+Der Commit lief um **03:49:17 UTC**; ich hatte die Uhrzeit aus einer
+PostgreSQL-Messausgabe (`2026-09-20 05:46:37`) abgeschrieben statt sie mit
+`date -u` zu messen. Berichtigt. Dieselbe Klasse, die dieser Durchgang
+gerade viermal bei anderen angestrichen hat — eine Zahl im Fliesstext, die
+niemand gemessen hat.
+
+**Stand:** Der Ausführende arbeitet seit ~03:50 UTC an der Nacharbeit zu
+Beitrag C (N1, N2, N3, N4-Ersatz, N5b/c, N6 eng, N7-N10; Papier
+`plaene/nacharbeit-beitrag-c.md`). Nach der Takt-Regel — läuft ein Agent,
+wird nichts getan ausser den Stand nachziehen — habe ich
+**`/home/user/gymdocu` nicht angefasst** und warte auf seine Meldung.
+
+**Nebenbefund, gemessen:** Der Takt-Prompt nennt als Marker-Sollwert für das
+Belehrungssystem-Repo „2". Tatsächlich sind es **19**, verteilt auf zehn
+Markdown-Dateien (STAND, CLAUDE.md, ASTRA-LAEUFE, sieben Auftragspapiere).
+**Keiner steht in ausführbarem Code**, die Bedingung aus CLAUDE.md ist also
+erfüllt — dort steht seit dem 16.09.2026 ausdrücklich, dass die ZAHL in
+diesem Repo kein Sollwert mehr ist, weil der Scan mitmisst, wie oft wir über
+ihn schreiben. Der Prompt ist an dieser Stelle die veraltete Kopie; nach
+seiner eigenen Vorrangregel gilt CLAUDE.md. Festgehalten hier statt im
+Prompt, weil der Prompt selbst sagt, der Stand gehöre ins Repo.
