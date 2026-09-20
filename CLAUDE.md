@@ -1242,6 +1242,25 @@ Ergebnis dann als das benennen, was es ist: ungeprüft.
   statt in der WHERE-Klausel steht (`routes/admin/qr-druckdaten.js:246-249`:
   `SELECT … WHERE id = $1`, danach `if (charge.studio_id !== studioId)`).
   Dafür sind der Gegenleser mit Repo-Lesezugriff und das eigene Lesen da.
+- **Eine grüne Gegenprobe hat ZWEI mögliche Ursachen, und wir kannten bisher
+  nur eine.** Bekannt war: der Defekt ist gar nicht angekommen. Gemessen am
+  20.09.2026 kam die zweite dazu: **er ist angekommen, und ein ZWEITER,
+  unabhängiger Riegel hat ihn aufgehalten.**
+  Der Fall: Ich hatte als Gegenprobe vorgegeben, `studio_id` aus der LESE-Abfrage
+  einer Route zu entfernen — dann müsse die Mandanten-Zusicherung rot werden.
+  Der Ausführende hat gemessen und WIDERSPROCHEN: sie bleibt grün. Grund ist
+  kein Frühausstieg, sondern Tiefenstaffelung — die Route trägt `studio_id`
+  auch im UPDATE, das dann gegen das Studio des ANFRAGENDEN prüft und die
+  fremde Zeile nie trifft (`rowCount 0`). Erst die Mutation BEIDER Stellen
+  erzeugt den Leck; gemessen landete der Eintrag dann unter dem fremden
+  Studio, wo die alte, falsch gescopte Zählung ihn nie gesehen hätte.
+  **Folge für jede Gegenprobe-Vorgabe:** nicht „die eine Zeile“ benennen,
+  sondern **alle Riegel abzählen, die zwischen der Eingabe und dem Schaden
+  stehen**, und genau diese Menge mutieren. Und bei einem grünen Ergebnis
+  immer BEIDE Ursachen prüfen: nicht angekommen — oder angekommen und von
+  etwas anderem gefangen. Die zweite ist die angenehmere Nachricht (der
+  Bestand ist besser als gedacht) und die gefährlichere Fehldeutung (man
+  hält die Zusicherung für wertlos und schwächt sie ab).
 - **Gegenprobe zu jeder neuen Prüfung.** Fehler herstellen, ROT messen,
   zurücknehmen, GRÜN messen — beides wörtlich melden. Ohne diesen Nachweis ist
   eine Prüfung Dekoration. Am 17.08.2026 rutschten fünf konstruierte Verstöße
