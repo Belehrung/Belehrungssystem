@@ -34,15 +34,16 @@ Zeichenkette `"NaN"` (gemessen: `prepareValue(NaN) === "NaN"`).
 **Zu bauen:** eine Merkvariable, die NUR sagt, ob `db.tx` überhaupt BETRETEN
 wurde.
 
-    let txBetreten = false;
+    let txCallbackBetreten = false;
     …
-    txBetreten = true;              // unmittelbar VOR await db.tx(
-    await db.tx(async (t) => { … });
+    await db.tx(async (t) => {
+        txCallbackBetreten = true;   // ERSTE Anweisung IM Callback, nicht davor
+        … });
     …
     } catch (e) {
         if (req.file) {
-            let darfWeg = !txBetreten;      // nie begonnen -> es KANN nichts geschrieben sein
-            if (txBetreten) {
+            let darfWeg = !txCallbackBetreten;   // Callback nie betreten -> nichts geschrieben
+            if (txCallbackBetreten) {
                 try { … Nachsehe-Abfrage wie jetzt … } catch (_) { darfWeg = false; }
             }
             if (darfWeg) fs.unlink(req.file.path, () => {});
@@ -55,9 +56,24 @@ nach einem Wurf nicht beweisbar. Erlaubt und nötig ist die Gegenrichtung
 „die Transaktion wurde NIE BEGONNEN, also kann nichts geschrieben sein" —
 das ist rein clientseitig und braucht keine Quittung.
 
-**Zusicherung + Gegenprobe:** neuer Testfall mit kaputter `studioId` (oder
-einer anderen Ursache, die vor `db.tx` wirft): Datei MUSS aufgeräumt sein.
-Gegenprobe: `darfWeg = !txBetreten` durch `darfWeg = false` ersetzen → ROT.
+**BERICHTIGT nach der Planprüfung (P-3), und die Berichtigung ist der Punkt:**
+Meine erste Fassung setzte die Variable UNMITTELBAR VOR `await db.tx(...)`.
+Das ist falsch. `db.tx` kann bei `pool.connect()` oder bei `BEGIN` werfen,
+BEVOR der Callback je läuft — die Variable stünde dann auf `true`, obwohl
+nichts betreten wurde, und bei einer Poolstörung scheitert auch die
+Nachsehe-Abfrage: die Datei bliebe wieder liegen. **Gemessen:**
+`core/db.js:457-458` führt `await client.query("BEGIN")` VOR
+`await callback(bound)` aus. Als erste Anweisung IM Callback ist `BEGIN`
+also nachweislich durch.
+
+**Zusicherung + Gegenproben — DREI Fälle:**
+1. Fehler VOR `db.tx` (kaputte `studioId`): Datei MUSS aufgeräumt sein.
+   Gegenprobe: `darfWeg = !txCallbackBetreten` → `darfWeg = false` → ROT.
+2. `db.tx` wirft VOR dem Callback (Wrapper, der vor dem Aufruf wirft) UND
+   die Nachsehe-Abfrage scheitert: Datei MUSS aufgeräumt sein. Selbst
+   zusichern, dass der Callback nie lief und kein UPDATE passierte.
+   Gegenprobe: die Zuweisung VOR `await db.tx` ziehen → ROT.
+3. Callback betreten, Wurf darin: Verhalten wie bisher (Nachsehen).
 
 ---
 
@@ -106,35 +122,58 @@ Gegenprobe: eine zweite Verbindung auf eine ANDERE Datenbank desselben
 Clusters mit passendem Anfragetext blockieren lassen → mit Filter wird sie
 NICHT mitgezählt, ohne Filter schon.
 
----
+**Die Grenze gehört in den Kopfkommentar der Datei, nicht verschwiegen**
+(Planprüfung P-2): `datname` schliesst Fremdtreffer aus ANDEREN Datenbanken
+aus, nicht aus DERSELBEN. Zwei Sitzungen in `gymdocu_test` mit passendem
+Anfragetext könnten die Zähler weiterhin erfüllen. Das ist hinnehmbar, weil
+`test/run.sh:330` diese Datenbank je Lauf frisch anlegt und die Suite
+sequenziell läuft — aber es ist eine ANNAHME über den Aufrufer, und die
+gehört benannt.
 
-## N4 (BLOCKIEREND, Produktivcode + Test) — eine Zusicherung, die nicht fallen kann
-
-`routes/belehrungen.js:2055` und `:2078` schreiben `freigeschaltet_am` als
-rohes `CURRENT_TIMESTAMP`. Der Spalten-DEFAULT ist `TS_DEFAULT`
-(`core/db.js:526/1743`), also `to_char(now() AT TIME ZONE 'Europe/Berlin',
-'YYYY-MM-DD HH24:MI:SS')`. **Gemessen gegen PostgreSQL:**
-
-    DEFAULT-Form      2026-09-20 05:34:54
-    CURRENT_TIMESTAMP 2026-09-20 03:34:54.144842+00
-
-Zwei Formate in EINER TEXT-Spalte. Folge:
-`test_feature_belehrung_neue_version_wettlauf.js:231`
-(`genNach.freigeschaltet_am !== genVor.freigeschaltet_am`) ist
-**strukturell immer wahr** — `genVor` stammt aus einem INSERT mit DEFAULT,
-`genNach` aus dem ON-CONFLICT-Zweig. Die Zusicherung kann nicht fallen.
-
-**Zu bauen:** beide ON-CONFLICT-Zweige schreiben dieselbe `to_char`-Form wie
-der DEFAULT. **Vorher MESSEN, nicht annehmen**, dass das den
-Gleichheitsvergleich bei `:963-964` nicht bricht (`DELETE … AND
-freigeschaltet_am = $4`): der Wert wird vorher gelesen und unverändert
-zurückgeschrieben, sollte also formatunabhängig treffen — das ist meine
-Erwartung, kein Messwert. Bestandszeilen tragen beide Formate; das ist
-hinzunehmen, NICHT zu migrieren.
-Danach für die Zusicherung bei `:231` eine Gegenprobe bauen, die sie
-tatsächlich fallen lässt.
+**Was ausdrücklich NICHT gebaut wird:** beide Prüfspuren schlagen vor, die
+Katalogabfragen ganz zu entfernen und durch testlokale Promise-Barrieren zu
+ersetzen. Das wird ABGELEHNT: eine Barriere belegt, dass der eigene Wrapper
+gefeuert hat — sie kann nicht belegen, dass ZWEI Backends gleichzeitig auf
+Datenbankebene blockiert waren. `pg_stat_activity` ist hier die Referenz von
+AUSSEN, und die Hausregel sagt, dass der Regress genau dort endet. Eine
+Barriere DANEBEN wäre eine Verbesserung; sie ist kein Ersatz.
 
 ---
+
+## N4 — **GESTRICHEN nach der Planprüfung.** Stattdessen: nur der TEST
+
+**Was ich beauftragt hatte:** beide `ON CONFLICT`-Zweige sollten
+`freigeschaltet_am` im `to_char`-Format des Spalten-DEFAULT schreiben, damit
+die Z2c-Zusicherung „es ist die NEUE Generation" überhaupt fallen kann.
+
+**Warum das NICHT gebaut wird — gemessen, und es ist der teuerste Befund
+dieses Papiers.** Die Spalte ist NICHT nur eine Anzeigezeit, sie ist zugleich
+das GENERATIONSTOKEN: `routes/belehrungen.js:963` löscht die verbrauchte
+Freischaltung mit `AND freigeschaltet_am = $4` gegen den früh gelesenen Wert
+— das ist der Schutz (M4/M13) dagegen, dass eine zwischenzeitlich NEU
+angeforderte Pflicht mitgelöscht wird.
+
+Die `to_char`-Form hat **Sekundenauflösung** (gemessen: `now()` und
+`clock_timestamp()` liefern beide `2026-09-20 05:46:37`). Nach der
+Vereinheitlichung trügen zwei Erneuerungen innerhalb derselben Sekunde
+denselben Wert — der Vergleich träfe die NEUE Pflicht und löschte sie.
+Heute ist das mikrosekunden-unwahrscheinlich, weil die beiden Formen
+verschieden sind; meine Vereinheitlichung hätte daraus ein Rennen im
+Sekundentakt gemacht. **Ich hätte mit der Behebung genau das Rennen wieder
+geöffnet, das der Vergleich schliesst.**
+
+**Was STATTDESSEN gebaut wird (nur Test, keine Produktivänderung):** die
+Zusicherung bei `test_feature_belehrung_neue_version_wettlauf.js:231`
+unterscheidet auf einem Feld, das TATSÄCHLICH unterscheidet — `grund`. Der
+`ON CONFLICT`-Zweig setzt `grund = excluded.grund`, der Vorzustand des Tests
+schreibt `'Vor dem Rennen'`, die Route schreibt `'Neue Version vom …'`.
+Zusichern: `genNach.grund` ist der neue Text, NICHT `'Vor dem Rennen'`.
+Die Zeitzusicherung entfällt ersatzlos — sie behauptet mehr, als sie hält.
+
+**Gegenprobe:** `grund = excluded.grund` im `ON CONFLICT`-Zweig
+(`routes/belehrungen.js:2078`) auf `grund = belehrung_freischaltung.grund`
+ändern (alter Wert bleibt stehen) → die neue Zusicherung MUSS ROT werden.
+Danach zurücknehmen und GRÜN messen.
 
 ## N5 (BLOCKIEREND, Test) — Inventar ohne Zeilenanker, Lock-Position ungeprüft
 
@@ -153,16 +192,24 @@ verschoben → volle Suite grün (der eine FAIL des Laufs kam von einer
 unabhängigen zweiten Mutation). Die Position ist also ungeprüft, obwohl die
 ganze Verklemmungsfreiheit daran hängt.
 
-**Zu bauen:** (a) `tr.zeile` in den Inventar-Eintrag aufnehmen (steht schon
-zur Verfügung, `tagesNehmer` benutzt sie) und die Erwartungsliste entsprechend
-nachziehen; (b) Diagnose so, dass ein Vielfachheitsunterschied sichtbar wird;
-(c) die vorhandene `ersteAnweisung`-Prüfung (heute nur für den
-`seilkontrolle`-Lock, `ERSTE_ANWEISUNG_RE`) auf die BEIDEN
-`belehrungen.js`-Studio-Locks ausweiten: jeder muss die ERSTE Anweisung
-seiner `db.tx` sein.
-Gegenprobe zu (c): Lock hinter das UPDATE verschieben → ROT.
+**BERICHTIGT nach der Planprüfung (P-5): Teil (a) ist GESTRICHEN.** Ich
+hatte die Zeilennummer in die ERWARTUNGSLISTE aufnehmen wollen. Das tauscht
+eine blinde Zusicherung gegen eine, die bei jeder eingefügten Kommentarzeile
+rot wird, ohne dass sich an einer Sperre etwas geändert hat — und eine
+Zusicherung, die ständig ohne Grund anschlägt, wird weggeklickt.
 
----
+**Zu bauen:** (b) die Diagnose so, dass ein VIELFACHHEITS-Unterschied
+sichtbar wird (`nurIst`/`nurErwartet` über `includes` können ihn heute nicht
+zeigen — bei einer Abweichung ist die Diagnose LEER); (c) die vorhandene
+`ersteAnweisung`-Prüfung (heute nur für den `seilkontrolle`-Lock,
+`ERSTE_ANWEISUNG_RE`) auf die BEIDEN `belehrungen.js`-Studio-Locks
+ausweiten: jeder muss die ERSTE Anweisung seiner `db.tx` sein, und es muss
+GENAU ZWEI solcher `db.tx`-Blöcke mit Studio-Lock in dieser Datei geben.
+
+**(c) trägt dabei auch die Lokalisierung, die (a) leisten sollte:** wer den
+Lock bei `:946` löscht und den bei `:2212` dupliziert, hat danach einen
+`db.tx`-Block OHNE Lock als erste Anweisung → ROT. Kein Zeilenanker nötig.
+Gegenprobe zu (c): Lock hinter das UPDATE verschieben → ROT.
 
 ## N6 (BLOCKIEREND, Test) — `auditAppend` ohne `t` innerhalb einer `db.tx` hängt
 
@@ -177,14 +224,30 @@ nie zurück, die Poolverbindung bleibt gebunden, Wiederholung erschöpft `max`.
 Der Beitrag fügt den ZWEITEN Ort dieser Klasse hinzu (`:2217`); nichts
 sichert das sechste Argument zu.
 
-**Zu bauen:** ein statischer Wächter, repoweit: jeder `auditAppend`-Aufruf,
-der lexikalisch innerhalb eines `db.tx(async (t) => {`-Rumpfs steht, übergibt
-`t` als letztes Argument. Vorbild für die Technik:
-`test_feature_geistersperre_nachtrag_rennen.js` (Kommentare vorher abziehen,
-Positivkontrolle, dass nach dem Abzug noch etwas übrig ist).
-Gegenprobe: an EINER Aufrufstelle das `t` entfernen → ROT; zurück → GRÜN.
+**BERICHTIGT nach der Planprüfung (P-4) — der Wächter wird ENGER gebaut,
+als ich ihn beauftragt hatte, und sagt das selbst.** Zwei Messungen:
+* Ein Wächter auf das LITERAL `t` hätte schon heute einen Fehlalarm:
+  **53 Callbacks heissen `t`, EINER heisst `tx`** (gemessen über den ganzen
+  Produktivbaum). Gebunden wird deshalb an den TATSÄCHLICHEN Parameternamen
+  des nächstgelegenen `db.tx`-Callbacks, nicht an einen festen Bezeichner.
+* Ein LEXIKALISCHER Wächter kann die Klasse nicht schliessen: wird der
+  `auditAppend`-Aufruf in eine ausserhalb definierte Hilfsfunktion
+  verschoben, ist lexikalisch nichts mehr im Callback — zur Laufzeit hängt
+  es trotzdem. **Der Wächter darf deshalb nicht „repoweit jeder Fall"
+  behaupten.**
 
----
+**Zu bauen:** ein statischer Wächter über `routes/belehrungen.js`, der für
+die beiden `db.tx`-Blöcke dieser Datei zusichert, dass JEDER darin
+lexikalisch enthaltene `auditAppend`-Aufruf den Callback-Parameter dieses
+Blocks als letztes Argument übergibt. **Die Beschriftung nennt die Grenze
+ausdrücklich:** direkte Aufrufe im Rumpf, keine über Hilfsfunktionen
+ausgelagerten. Kommentare vorher abziehen, Positivkontrolle, dass danach
+noch etwas übrig ist.
+Gegenprobe: an EINER Aufrufstelle das `t` entfernen → ROT; zurück → GRÜN.
+Dazu eine Fixtur mit einem Callback-Parameter `conn` → darf NICHT anschlagen.
+
+Die repoweite Fassung (AST, Aliasauflösung, Inventar der aus Transaktionen
+gerufenen Audit-Helfer) ist ein eigener Beitrag — s. offene Befunde.
 
 ## N7-N10 (billige Mitnahmen, im SELBEN Auftrag)
 
@@ -241,3 +304,16 @@ Mitarbeiter), damit eine Abhängigkeit überhaupt sichtbar werden kann.
 * Ein `lock_timeout` auf der neuen Transaktion.
 * Die gestaffelte Wettlauf-Gegenprobe in der Suite.
 * Alles unter „offene Befunde" in `plaene/durchgang-befunde.md`.
+* **Die Vereinheitlichung von `freigeschaltet_am`** (war N4) — Begründung
+  oben; die Wurzel ist, dass die Spalte zugleich Anzeigezeit und
+  Generationstoken ist. Die saubere Lösung ist eine EIGENE Generation
+  (BIGINT hochzählen oder UUID) und ein `clock_timestamp()` für die
+  Anzeigezeit. Eigener Beitrag, s. U-GEN1.
+* **Der Rückwärtssprung von `freigeschaltet_am`** (Planprüfung P-6):
+  `CURRENT_TIMESTAMP` ist auf den TRANSAKTIONSBEGINN eingefroren, und unsere
+  Transaktion beginnt jetzt VOR der Lock-Wartezeit. Ein später ausgeführter
+  Autocommit-Weg kann damit einen NEUEREN Wert schreiben, den unser
+  `ON CONFLICT` anschliessend mit dem ÄLTEREN überschreibt. Neu durch diesen
+  Beitrag. s. U-TS1.
+* **Die repoweite Fassung des `auditAppend`-Wächters** (AST, Aliase,
+  ausgelagerte Helfer), s. U-AUDT1.
