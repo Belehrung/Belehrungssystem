@@ -1272,3 +1272,60 @@ Reihenfolge**, kostet also keine Kalenderzeit. Gegen eine gemessene Quote von
 Auslöser ist hier gemessen und benannt — dreimal gefallene Entwürfe an
 DERSELBEN Fundstelle. Wo dieser Auslöser fehlt, gilt weiter die
 Rundenbegrenzung aus CLAUDE.md.
+
+
+---
+
+# ENTSCHEIDUNG 20.09.2026 — S6 wird AUS dem Papier HERAUSGENOMMEN
+
+**Betreiber-Entscheidung, wörtlich: „ohne s6."**
+
+**Beitrag A besteht damit nur noch aus S5.** S6 und seine Zusicherungen
+Z6a/Z6b fahren NICHT mit; die Abschnitte bleiben als Vorgeschichte stehen,
+sind aber KEIN Bauauftrag mehr.
+
+## Warum — drei Entwürfe, drei gefallen, jeder an einer ANDEREN Klasse
+
+| Entwurf | Woran er fiel | gefunden von |
+|---|---|---|
+| Transaktion um beide UPDATEs | echter Verklemmungskreis mit dem öffentlichen PIN-Weg | sol (Runde 2) |
+| zwei Autocommits, Reihenfolge getauscht | übersah den Weg, der Tokens ERZEUGT | kimi (Runde 3) |
+| **drei Autocommits** (entwerten – setzen – entwerten) | **Schritt 3 schliesst das Fenster nicht** — unter READ COMMITTED sieht sein UPDATE nur, was beim Statement-Beginn sichtbar war | **deepseek (Runde 4)** |
+
+Dazu aus derselben Runde, beide selbst nachgemessen:
+
+* **Z6b sichert Falsches zu** (kimi): „kein 40P01 in JEDER Verschränkung"
+  stimmt nicht. Kein Index auf `mitarbeiter_token(mitarbeiter_id)` → Seqscan
+  in physischer Reihenfolge, und der öffentliche Weg hält vorher schon eine
+  Ein-Zeilen-Sperre. Auf dem Live-Deploy-Gate wäre das ein Test, der auf
+  KORREKTEM Code rot werden kann.
+* **Weder Z6a noch Z6b bewacht Schritt 3** (deepseek und kimi unabhängig):
+  ihn ersatzlos zu streichen lässt beide grün — die Suite würde den bereits
+  gefallenen Entwurf 2 wortwörtlich durchwinken.
+
+**Drei Entwürfe an derselben Fundstelle, drei verschiedene Fehlerklassen, jede
+erst beim Gegenlesen gefunden.** Das ist kein Pech mehr. Es heisst, dass S6
+unter den hier gesetzten Randbedingungen — keine neue globale Lock-Klasse
+(CLAUDE.md, wegen des ungelösten Kreises in `routes/module.js`), keine
+Transaktion (wegen Entwurf 1) — mit Schreibwegen allein nicht lösbar ist.
+
+## Der Kandidat für einen eigenen Beitrag — mit seiner bekannten Schwäche
+
+Nicht beim SCHREIBEN entwerten, sondern beim **EINLÖSEN** abweisen: ein Token
+gilt nicht mehr, wenn es älter ist als die letzte PIN-Änderung. Dann ist kein
+Rennen möglich, weil beide Werte zum Prüfzeitpunkt längst committet sind.
+
+**Tatsachen, von mir gemessen (nicht angenommen):**
+
+* `mitarbeiter_token.erstellt_am TEXT DEFAULT to_char(… 'YYYY-MM-DD HH24:MI:SS')`
+* `mitarbeiter.pin_gesetzt_am TEXT`, dasselbe Format
+* **genau EIN Einlöse-Punkt**: `routes/mitarbeiter-auth.js:240`
+* einziger Erzeuger: `routes/mitarbeiter-auth.js:183-186`
+
+**Die Schwäche steht HIER und nicht erst in Runde 5:** beide Spalten haben
+**Sekundenauflösung**. Ein Token aus derselben Sekunde wie die PIN-Änderung
+bleibt mehrdeutig — dieselbe Falle, die am selben Tag bei `freigeschaltet_am`
+zur Streichung von N4 geführt hat. Das Fenster wäre also von unbegrenzt auf
+eine Sekunde verkleinert, nicht geschlossen. Wer diesen Beitrag baut,
+entscheidet zuerst, ob eine Sekunde genügt oder ob die Spalte eine feinere
+Auflösung braucht — und misst es, statt es anzunehmen.
