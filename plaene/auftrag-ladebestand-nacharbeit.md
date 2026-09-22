@@ -1259,6 +1259,18 @@ Mutation in `feuerloescherOhneProtokoll()`:
 **Gemessen:** `test_feature_brandschutz.js` **EXIT 0, 55 PASS / 0 FAIL**,
 `test_feature_ladebestand_streng.js` **EXIT 0, 20 PASS / 0 FAIL**.
 
+**Und die GESAMTE Suite ebenfalls — nachgetragen 22.09.2026.** Zwei Dateien
+sind kein Beleg dafür, dass kein Geschwisterwächter einspringt; der `grep -l`
+über die fünf `mandantengrenze`/`studio`-Dateien war ein Indiz, keine Messung.
+Mit derselben Mutation im eigenen Prüf-Arbeitsbaum auf `9d3fc3b`:
+
+    bash test/run.sh   →   SUITE_EXIT=0   (270 s, kein einziges FAIL)
+
+Die Mutation lag dabei nachweislich an Ort und Stelle (`git diff` zeigt genau
+die zwei Zeilen und sonst nichts, Marker `GEGENPROBE-`+`DEFEKT M13` gesetzt) —
+die Prüfung, die die CLAUDE.md nach jedem unerwarteten Grün verlangt. Sie war
+hier nicht unerwartet, gehört aber trotzdem gemacht.
+
 Und es gibt auch keinen Geschwisterwächter, der einspringt: von den fünf
 Dateien mit `mandantengrenze`/`studio` im Namen liest **keine einzige**
 `routes/admin/geraete.js` (gezählt mit `grep -l`).
@@ -1271,3 +1283,305 @@ ZWEITES Studio**: eine gleichnamige `Feuerlöscher N`-Zeile ohne Prüfprotokoll
 im FREMDEN Studio muss nach dem POST unangetastet und aktiv bleiben.
 Dann fällt dieselbe Probe sowohl bei `const alt = []` (R1) als auch bei der
 aufgehobenen Mandantentrennung (R6).
+
+---
+
+## EIGENE NACHMESSUNG 22.09.2026 — R6 ist BERICHTIGT, und meine Probe hätte nichts gemessen
+
+Vor dem Bauauftrag habe ich die R6-Probe entworfen („eine gleichnamige
+`Feuerlöscher N`-Zeile ohne Prüfprotokoll im FREMDEN Studio muss unangetastet
+bleiben"). Beim Nachrechnen des Kontrollflusses fällt sie — es ist die
+**sechste** eigene Vorgabe dieses Beitrags, die beim Messen fällt.
+
+### Der Fehler in meinem Probenentwurf
+
+`feuerloescherOhneProtokoll()` filtert mit ZWEI Klauseln:
+
+    WHERE g.studio_id=$1 AND g.kategorie_id=$2 AND g.aktiv=1 …
+
+`wartung_kategorien` ist studio-eigen — `core/db.js:797` hat
+`CREATE UNIQUE INDEX idx_wkat_studio_name ON wartung_kategorien(studio_id, name)`,
+jedes Studio bekommt also eine EIGENE Zeile mit eigener `id`. Eine realistisch
+angelegte Fremdstudio-Zeile trägt damit eine ANDERE `kategorie_id` und fällt
+schon an `g.kategorie_id=$2` heraus — **mit oder ohne Mandantenklausel.**
+Meine Probe wäre bei der R6-Mutation grün geblieben und hätte genau das
+behauptet, was sie widerlegen sollte.
+
+Das ist wörtlich die Klasse aus der CLAUDE.md vom 20.09.2026: *„nicht ‚die eine
+Zeile' benennen, sondern alle Riegel abzählen, die zwischen der Eingabe und dem
+Schaden stehen, und genau diese Menge mutieren."* Hier sind es zwei, ich hatte
+einen gezählt.
+
+### Und daraus folgt zugleich die Berichtigung der SCHWERE
+
+Die zweite Klausel ist kein zufälliger Filter, sondern selbst
+mandantengesichert. **Gemessen am Quelltext, alle Wege einzeln:**
+
+    routes/admin/geraete.js:2632   SELECT id FROM wartung_kategorien
+                                   WHERE studio_id=$1 AND name=$2     ← kategorieId des POST
+    routes/admin/geraete.js:5752   SELECT id,name FROM wartung_kategorien
+                                   WHERE id=$1 AND studio_id=$2  + !kat-Abweisung (5753)
+    routes/admin/geraete.js:6184   SELECT * FROM wartung_kategorien
+                                   WHERE id=$1 AND studio_id=$2       ← CSV-Import
+    core/demo_daten.js:165/171/175 katId frisch für dasselbe studioId angelegt
+
+`INSERT INTO wartung_geraete` kommt im Produktivcode **fünfmal** vor (gezählt
+über `routes/ core/ ops/ workers/`, `wartung_geraete_aufgaben` abgezogen), und
+in allen fünf stammt `kategorie_id` aus einer dieser Quellen. Es gibt **keinen
+Produktivweg**, der eine Gerätezeile mit einer FREMDEN `kategorie_id` erzeugt —
+die Datenbank erzwingt das allerdings NICHT: der Fremdschlüssel steht auf
+`kategorie_id` allein (`core/db.js:874`), nicht zusammengesetzt.
+
+**Damit ist R6 nicht mehr BLOCKIEREND, sondern:** die Mandantenklausel ist
+UNBEWACHT (keine Zusicherung merkt ihre Entfernung — das bleibt richtig und
+wird behoben), in Produktion heute aber durch einen zweiten, unabhängigen,
+selbst studio-gesicherten Riegel gedeckt. Genau der zweite der beiden Gründe
+für eine grüne Gegenprobe aus der CLAUDE.md — „die angenehmere Nachricht und
+die gefährlichere Fehldeutung".
+
+### Was die Probe stattdessen braucht — ZWEI Fremdzeilen, nicht eine
+
+* **Fremdzeile A, realistisch:** fremdes Studio, EIGENE Kategorie des fremden
+  Studios, `Feuerlöscher 7`, ohne Prüfprotokoll. Muss aktiv bleiben. Sie fällt
+  nur, wenn BEIDE Klauseln weg sind — sie bewacht die Tiefenstaffelung als
+  Ganzes.
+* **Fremdzeile B, konstruiert:** fremdes Studio, aber die `kategorie_id` des
+  EIGENEN Studios, `Feuerlöscher 8`, ohne Prüfprotokoll. Muss aktiv bleiben.
+  Sie ist die einzige, die bei der R6-Mutation allein rot wird, weil sie den
+  zweiten Riegel bewusst neutralisiert.
+
+Fremdzeile B ist ein Zustand, den heute **kein Produktivweg herstellt** — das
+gehört als Kommentar an die Fixtur, sonst räumt sie jemand als „unrealistisch"
+wieder weg. Sie ist trotzdem richtig: der Fremdschlüssel verbietet sie nicht,
+und sobald sich die Herkunft von `kategorie_id` an EINER der fünf Stellen
+ändert, ist die Mandantenklausel der einzige verbliebene Riegel.
+
+### Abnahme der Probe — drei Messungen, nicht eine
+
+    unmutiert                                   GRÜN
+    const alt = []                          (R1) ROT  — Fremdzeile A und B unberührt,
+                                                       aber Eigenzeile 1 bleibt aktiv
+    (g.studio_id=$1 OR TRUE)                (R6) ROT  — allein über Fremdzeile B
+    beide WHERE-Klauseln entfernt                ROT  — auch über Fremdzeile A
+
+Die dritte Messung ist die Positivkontrolle für Fremdzeile A: ohne sie wäre
+nicht belegt, dass die realistische Zeile überhaupt fallen KANN.
+
+---
+
+# DER BAUAUFTRAG DER VIERTEN RUNDE — FASSUNG 1
+
+**Sechs Punkte, EINE Runde.** Grundlage: R1–R6 oben plus die eigene
+Nachmessung vom 22.09.2026 (R6 berichtigt). Arbeitsbaum `/home/user/gymdocu`,
+Zweig `beitrag-ladebestand`, Kopf `9d3fc3b`.
+
+Reihenfolge ist Absicht: Punkt 1 ist der einzige, der Produktionsverhalten
+absichert statt es zu ändern; Punkt 5 ändert Produktionsverhalten und braucht
+deshalb die eigene Gegenprobe zuerst.
+
+---
+
+## 1 — EINE Verhaltensprobe für die Feuerlöscher-Ablösung (schliesst R1 UND R6)
+
+Neu in `test_feature_ladebestand_streng.js`, eigenes frisches Studio, KEIN
+Anhängen an ein bestehendes.
+
+**Fixtur, vier Zeilen, alle `name ~ '^Feuerlöscher [0-9]+$'`, alle `aktiv=1`:**
+
+| Zeile | Studio | `kategorie_id` | Prüfprotokoll | Sollverhalten nach dem POST |
+|---|---|---|---|---|
+| `Feuerlöscher 1` | eigenes | eigene Brandschutz-Kategorie | nein | `aktiv=0`, Name steht auf der Ergebnisseite |
+| `Feuerlöscher 2` | eigenes | eigene Brandschutz-Kategorie | **ja** | `aktiv=1`, Name steht NICHT auf der Seite |
+| `Feuerlöscher 7` | **fremdes** | Kategorie des FREMDEN Studios | nein | `aktiv=1`, unberührt |
+| `Feuerlöscher 8` | **fremdes** | Kategorie des **EIGENEN** Studios | nein | `aktiv=1`, unberührt |
+
+`Feuerlöscher 8` ist ein Zustand, den heute **kein Produktivweg herstellt**
+(alle fünf `INSERT INTO wartung_geraete` leiten `kategorie_id` studio-gesichert
+her — Fundstellen im Abschnitt „EIGENE NACHMESSUNG 22.09.2026"). Der
+Fremdschlüssel auf `wartung_kategorien(id)` ist einspaltig und verbietet sie
+nicht. **Diese Begründung gehört als Kommentar an die Fixtur**, sonst räumt sie
+der nächste als unrealistisch weg — sie ist die EINZIGE Zeile, die bei
+aufgehobener Mandantenklausel allein fällt.
+
+Das Prüfprotokoll für `Feuerlöscher 2` ist eine Zeile in `wartung_pruefungen`
+mit `studio_id` und `geraet_id` der Zeile (der Helfer prüft
+`NOT EXISTS (… WHERE p.studio_id=g.studio_id AND p.geraet_id=g.id)`).
+
+**Ausgelöst wird die Ablösung durch einen POST mit
+`antwort_feuerloescher=vorhanden`** (plus Stückzahl), also über den echten Weg,
+nicht durch Direktaufruf des Helfers.
+
+**Zusicherungen, je einzeln und benannt:**
+1. `Feuerlöscher 1` → `aktiv=0` (DB-Abfrage, nicht HTML).
+2. `Feuerlöscher 2` → `aktiv=1`.
+3. `Feuerlöscher 7` → `aktiv=1`, und `studio_id` unverändert.
+4. `Feuerlöscher 8` → `aktiv=1`.
+5. Die Ergebnisseite nennt `Feuerlöscher 1` und nennt `Feuerlöscher 2` NICHT.
+
+**Gegenproben — DREI, und alle drei wörtlich melden:**
+
+    (a) unmutiert                                  → muss GRÜN sein
+    (b) `const alt = await feuerloescher…(…)`  →  `const alt = []`
+                                                   → muss ROT werden (Zus. 1 und 5)
+    (c) `g.studio_id=$1`  →  `(g.studio_id=$1 OR TRUE)`
+                                                   → muss ROT werden, und zwar
+                                                     über Zusicherung 4
+    (d) BEIDE WHERE-Klauseln (`g.studio_id=$1 AND g.kategorie_id=$2`) entfernt
+                                                   → muss ROT werden, und zwar
+                                                     AUCH über Zusicherung 3
+
+(d) ist die Positivkontrolle für `Feuerlöscher 7`: ohne sie ist nicht belegt,
+dass die realistische Fremdzeile überhaupt fallen KANN.
+
+**Bei (c) ausdrücklich melden, WELCHE Zusicherung fällt.** Fällt sie über
+Zusicherung 3 statt 4, stimmt die Fixtur nicht und der Befund ist ein anderer.
+
+---
+
+## 2 — R2: Titel-Wortlaut
+
+`routes/admin/geraete.js`, `ladeBestandFehlerTitel()`:
+
+    "Keine Feststellung gespeichert — Prüfplan nicht abgeglichen"
+      →  "Keine neue Feststellung gespeichert — Prüfplan nicht abgeglichen"
+
+Die Testkonstante `LEERER_POST_TITEL_NEU` zieht wörtlich mit. Der exakte
+`<title>`-Vergleich über `titelAus(html)` bleibt, wie er ist.
+
+**Gegenprobe:** alte Zeichenkette im Produktivcode wiederherstellen → der
+Vergleich muss rot werden. (Er vergleicht exakt, `ALT` ist kein Teilstring von
+`NEU` in dieser Richtung — das ist genau der Grund, warum er exakt vergleicht.)
+
+---
+
+## 3 — R3: `pruefeKeinFehlerseiten()` verbraucht den Körper nicht mehr
+
+`await r.text()`  →  `await r.clone().text()`.
+
+Kein Verhaltenswechsel heute (kein Aufrufer greift danach erneut zu), reine
+Fallenbeseitigung. **Keine eigene Gegenprobe nötig** — die bestehenden
+Aufrufer dieser Funktion sind der Nachweis, dass sie weiter trägt.
+
+---
+
+## 4 — R4: Der Bereichs-Riegel verbietet `db` statt einer Methodenliste
+
+`test_feature_ladebestand_streng.js`, Punkt-3-Riegel. Heute verbotenes Muster:
+
+    /\bdb\.(run|q|one)\(|\.query\(/
+
+Neu: im kommentarbereinigten Bereich ist der Bezeichner **`db` selbst**
+verboten — `/\bdb\b/`. Gemessen (20./21.09.2026): er kommt dort heute
+**null mal** vor, bei sechs `schreibePruefplan(`-Aufrufen. Das deckt
+Klammer- (`db["run"]`), Template- und `db.pool.query`-Schreibweise mit ab,
+ohne Wettrüsten.
+
+Die Fehlermeldung nennt den Ausweg: *jeder Datenbankzugriff im Bereich läuft
+über `schreibePruefplan()`; reine Lesezugriffe werden wie
+`feuerloescherOhneProtokoll()` AUSSERHALB des Bereichs definiert.*
+
+Die Positivkontrolle (`abschnitt.includes('schreibePruefplan(')`) bleibt
+unverändert — sie ist die Bremse gegen einen LEEREN Bereich, nicht der
+Nachweis der einzelnen Wege.
+
+**Gegenproben, beide wörtlich melden:**
+
+    (a) `await schreibePruefplan("UPDATE wartung_geraete SET aktiv=0 …", …)`
+        →  `await db["run"]("UPDATE wartung_geraete SET aktiv=0 …", …)`
+        → muss ROT werden (wurde mit dem ALTEN Muster gemessen: EXIT 0, 20 PASS)
+    (b) dieselbe Zeile  →  `await db.run(…)`
+        → muss ebenfalls ROT werden (Nachweis, dass der alte Fall weiter trägt)
+
+---
+
+## 5 — R5: Der wertgleiche Notiz-UPDATE zählt nicht mehr mit
+
+**Der Befund, gemessen (Abschnitt R5 oben):** ein zweiter POST mit identischer
+Stückzahl meldet eine Teiländerung, weil PostgreSQL für ein wertgleiches
+UPDATE `rowCount 1` zurückgibt.
+
+**Behebung — NICHT die im R5-Abschnitt skizzierte `includes()`-Bedingung.**
+Ich habe sie verworfen: sie sagt in JavaScript voraus, was die
+`regexp_replace`-Ersetzung tun wird, und liegt in einem Fall daneben (stehen
+durch eine Handbearbeitung ZWEI „Erfasster Bestand"-Zeilen in den Notizen,
+ersetzt `regexp_replace` ohne `g`-Flag nur die erste — eine echte Änderung,
+die `includes()` unterdrücken würde). Statt einer Vorhersage entscheidet die
+Datenbank selbst:
+
+    await schreibePruefplan(`
+        WITH neu AS (
+            SELECT id, notizen AS alt, CASE
+                     WHEN notizen IS NULL THEN $1
+                     WHEN notizen ~ 'Erfasster Bestand: [0-9]+ Stück'
+                       THEN regexp_replace(notizen, 'Erfasster Bestand: [0-9]+ Stück', $1)
+                     ELSE notizen || E'\\n' || $1 END AS text
+              FROM wartung_geraete WHERE id=$2 AND studio_id=$3)
+        UPDATE wartung_geraete g
+           SET notizen = neu.text
+          FROM neu
+         WHERE g.id = neu.id AND g.studio_id = $3
+           AND neu.text IS DISTINCT FROM neu.alt`,
+        [g.notizZusatz, schonDa.id, req.studioId]);
+
+Der `CASE`-Ausdruck steht weiterhin **genau einmal** da. `g.studio_id = $3`
+bleibt im UPDATE stehen, obwohl die CTE bereits danach filtert — Prüfreihenfolge
+Punkt 1, und eine Abfrage ohne `studio_id` in ihrer eigenen WHERE-Klausel wäre
+für jeden Leser und jeden Wächter eine Lücke.
+
+`holeOderLegeAn()` bleibt damit **unverändert** — kein zusätzliches
+Rückgabefeld, kein breiterer Vertrag.
+
+**Ein Kommentar daneben nennt den Grund**, sonst zieht der nächste die CTE als
+„umständlich" wieder zurück: *ein wertgleiches UPDATE liefert in PostgreSQL
+`rowCount 1`; der Zähler des Prüfplan-Abgleichs würde daraus eine Teiländerung
+melden, die nicht stattgefunden hat.*
+
+**Abnahme, drei Fälle, je frisches Studio, POST zweimal mit identischem Rumpf,
+beim zweiten das strenge Lesen gestört (Aufbau wie in der R5-Messung):**
+
+    A  antwort_rwa=vorhanden (kein notizZusatz)
+       → unverändert: "keine Einträge"-Text, KEIN Teiländerungs-Text
+    B  antwort_feuerloescher=vorhanden, anzahl=2 (beide Male 2)
+       → NEU: "keine Einträge"-Text, KEIN Teiländerungs-Text
+    C  antwort_feuerloescher: erst anzahl=2, dann anzahl=5
+       → weiterhin Teiländerungs-Text, KEIN "keine Einträge"-Text
+
+C ist die Positivkontrolle: ohne sie belegt B nur, dass der Zähler nicht mehr
+erhöht — nicht, dass er es bei einer ECHTEN Änderung noch tut.
+
+**Gegenprobe:** `AND neu.text IS DISTINCT FROM neu.alt` entfernen → Fall B muss
+ROT werden, Fall C GRÜN bleiben. Beides wörtlich melden.
+
+**Und die Frage aus der CLAUDE.md dazu beantworten, nicht überspringen:**
+welche BESTEHENDE Zusicherung kann der neue Leerzustand (`rowCount 0`, wo
+vorher immer 1 stand) ab jetzt erfüllen, ohne dass das Bewachte noch da ist?
+Konkret zu prüfen sind die Zählstellen um `praefplanGeaendert` und die
+Zusicherungen, die am „keine Einträge"-Text hängen.
+
+---
+
+## 6 — Die Fixtur-Grösse zieht mit
+
+`ERWARTETE_AUFGABENANZAHL` und `terminAnzahlGesamt()` (N13) sind
+Schnappschuss-Sollwerte. Punkt 1 legt vier zusätzliche `wartung_geraete`-Zeilen
+an. **Vor dem Commit prüfen, ob eine dieser Zusicherungen dadurch verschoben
+wird** — und wenn ja, den Sollwert NICHT blind nachziehen, sondern im Bericht
+benennen, welcher Wert sich um wie viel ändert und warum das richtig ist.
+
+---
+
+## Abnahme insgesamt
+
+1. `node --check` auf jede geänderte Datei.
+2. Die Gegenproben aus Punkt 1 (vier), 2 (eine), 4 (zwei), 5 (eine) — **jede
+   einzeln, jede wörtlich mit EXIT-Code und PASS/FAIL-Zahlen.**
+3. Jede Mutation über ein Skript, das den Zielpfad als ARGUMENT nimmt, bei
+   ungleich einer Fundstelle abbricht, den Marker `GEGENPROBE-`+`DEFEKT`
+   schreibt und gegen eine vorher per `cp` angelegte Kopie mit `diff` EXIT 0
+   zurückgenommen wird. **Rücknahme nie mit einem Testlauf verketten.**
+4. `bash test/run.sh > <logdatei> 2>&1; echo "SUITE_EXIT=$?"` — ohne Pipe, ohne
+   äusseres `flock`.
+5. Markerscan mit `--exclude-dir` auf dem PFAD, nicht per `grep -v`.
+6. `git status` über ALLE Arbeitsbäume.
+
+**Nicht committen.** Der Haupt-Agent liest den Diff, misst nach und committet.
