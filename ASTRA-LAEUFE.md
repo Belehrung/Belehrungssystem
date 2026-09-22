@@ -2825,10 +2825,13 @@ noch nicht gebaut.
 | Modell | `kimi-k3` | `deepseek-v4-pro` |
 | Schwerpunkt | Produktionsseite | Zusicherungsseite |
 | Bündel | Auftragspapier, `geraete.js` 1900-2300 (Helfer), `geraete.js` 2580-3170 (Route), `core/brandschutz-vorlage.js`, Schema `wartung_*` | Auftragspapier, `test_feature_ladebestand_streng.js` (vollständig), `geraete.js` 2580-3170 (Route), Schema `wartung_*` |
-| Umfang | 212.478 Bytes ≈ 57k Token | 220.453 Bytes ≈ 59k Token |
-| Befunde | — | — |
-| davon nach EIGENER Nachmessung getragen | — | — |
-| Kosten | — | — |
+| Umfang geschätzt (Faktor 3,71) | 212.478 Bytes ≈ 57k | 220.453 Bytes ≈ 59k |
+| Umfang GEZÄHLT (`usage`) | **69.675** | **69.198** |
+| Dauer / `finish_reason` | 1011,1 s / `stop` | 541,2 s / `stop` |
+| Ausgabe-Token (davon Denken) | 31.729 (27.234) | 26.424 (24.173) |
+| Befunde | 4 | 3 |
+| davon nach EIGENER Nachmessung getragen | **4** | **2,5** |
+| Kosten | nicht bezifferbar (Preistabelle führt Kimi/DeepSeek nicht) | dito |
 
 Überschneidung der Bündel: Papier, Routenausschnitt, Schema. Verschieden:
 A hat die Vorlage und die Helferdefinitionen, B hat die Testdatei.
@@ -2843,4 +2846,38 @@ alles ab und nimmt nicht einfach alles an.
 aus, `kimi-k3` nur mit `stream_options: {include_usage: true}` — ohne das Feld
 kam `usage: null` zurück. Nachgetragen, bevor die grossen Läufe starteten.
 
-Befunde, Trageanteil und Kosten werden nach der eigenen Nachmessung ergänzt.
+### Was die Läufe gebracht haben
+
+**Sieben Befunde, EINE Überschneidung — also sechs verschiedene.** Die
+Überschneidung (A1 = B1) ist der blockierende Befund, und dass ihn BEIDE
+Spuren hatten, ist bemerkenswert: bei verschiedenen Bündeln überlappt nach der
+Messung vom 20.09. normalerweise wenig.
+
+**Der teuerste Fund war A2, und er hat Schaden verhindert statt Aufwand zu
+sparen.** Meine geplante Behebung (eine CTE ohne `FOR UPDATE`) hätte bei einem
+nebenläufigen Schreiber dessen committete Änderung überschrieben —
+Datenverlust gegen einen falschen Satz auf einer Fehlerseite eingetauscht.
+Gemessen gegen PostgreSQL 16 mit einem echten Fremdschreiber; der
+Fremdschreiber ist über die Bearbeiten-Route real erreichbar. Einzelheiten in
+`plaene/auftrag-ladebestand-nacharbeit.md`, Abschnitt „Planprüfung Spur A".
+
+**Die halbe Zählung bei Spur B** betrifft B2: die „zu schmal"-Hälfte (Alias)
+trägt und stand schon im Auftrag, die „zu breit"-Hälfte fällt beim
+Nachmessen — `\bdb\b` trifft `dbHinweis` und `db_hinweis` nicht, weil `\b`
+eine Wortgrenze verlangt. Ihr Gegenvorschlag wurde abgelehnt, ebenfalls
+gemessen: das engere Muster übersieht die Alias-BILDUNG im Bereich.
+
+**Eine eigene Berichtigung, die aus diesen Läufen folgt:** die
+Bytes→Token-Umrechnung mit Faktor 3,71 lag bei beiden Bündeln rund 17 % zu
+niedrig (57k/59k geschätzt gegen 69,7k/69,2k gezählt). Für die Nähe zur
+Kontextgrenze ist das erheblich. Der Faktor stammt aus einer Messung an EINEM
+Bündel vom 19.09.2026; diese beiden hier sind zwei weitere Datenpunkte und
+zeigen in dieselbe Richtung.
+
+**Die Spuren haben nicht dasselbe gekonnt, und zwar nachvollziehbar:** Spur B
+hatte die Testdatei und beantwortete die Zusicherungsfragen; Spur A hatte die
+Vorlage und die Helferdefinitionen und fand die Nebenläufigkeit. Spur A hat
+ihre eigene Grenze dabei ausdrücklich benannt („von mir nur zu einem Fünftel
+nachgemessen"), statt eine Bestätigung zu raten — und genau diese Ehrlichkeit
+hat eine Messung angestossen, die ich nicht geplant hatte (`kategorie_id`
+kommt in null SET-Listen vor).
