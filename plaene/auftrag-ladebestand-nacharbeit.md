@@ -1585,3 +1585,58 @@ benennen, welcher Wert sich um wie viel ändert und warum das richtig ist.
 6. `git status` über ALLE Arbeitsbäume.
 
 **Nicht committen.** Der Haupt-Agent liest den Diff, misst nach und committet.
+
+---
+
+## EIGENE NACHMESSUNG 22.09.2026 (zweite) — Punkt 4 hat eine Prosa-Lücke
+
+Vor dem Bauauftrag habe ich die Tatsachenbehauptung aus Punkt 4 auf dem
+heutigen Kopf `9d3fc3b` nachgemessen, mit derselben Bereinigung, die der Test
+benutzt (`ohneAlleKommentare`, `test_feature_ladebestand_streng.js:462`):
+
+    Bereich roh 8.863 Zeichen, bereinigt 3.772
+    schreibePruefplan(   6
+    \bdb\b               0
+
+**Die Behauptung trägt.** Dabei ist aber eine Schwäche aufgefallen, die schon
+HEUTE besteht und die Punkt 4 deutlich verschärfen würde.
+
+`ohneAlleKommentare()` entfernt Blockkommentare vollständig, von den
+`//`-Kommentaren aber nur die GANZZEILIGEN (`/^\s*\/\//`). Ein
+Kommentar am ZEILENENDE bleibt stehen. Gemessen:
+
+    Eingabe:  await schreibePruefplan(x);   // hier nie db.run() benutzen
+    nach der Bereinigung: unverändert
+    trifft das heutige Muster \bdb\.(run|q|one)\(|\.query\( :  JA
+    trifft das vorgeschlagene \bdb\b                        :  JA
+
+Das ist die Klasse „Tests dürfen nicht an Prosa scheitern", und der Kommentar
+über `ohneAlleKommentare()` nennt genau diese Gefahr — er hat sie nur für
+Blockkommentare geschlossen, nicht für nachgestellte Zeilenkommentare. Mit
+`\bdb\b` genügt künftig JEDE nachgestellte Erwähnung des Wortes, um den Riegel
+auszulösen; heute braucht es noch ein vollständiges Aufrufmuster.
+
+**Punkt 4 bekommt deshalb einen Zusatz — Punkt 4b:**
+
+`ohneAlleKommentare()` entfernt zusätzlich nachgestellte `//`-Kommentare, und
+zwar mit einem Muster, das `://` NICHT trifft (sonst zerschneidet es URLs in
+Zeichenketten):
+
+    .split('\n').map((z) => z.replace(/(^|[^:])\/\/.*$/, '$1')).join('\n')
+
+Das kann nur Text ENTFERNEN, der hinter einem `//` steht; ein
+`db.q("SELECT 'a//b'")` bleibt erkennbar, weil `db.q(` VOR dem `//` steht.
+
+**Zwei Zusicherungen dazu, sonst ist es eine stille Verschärfung:**
+1. Der bereinigte Bereich enthält weiterhin `schreibePruefplan(` (die
+   bestehende Positivkontrolle — sie fängt eine zu gierige Bereinigung).
+2. Eine eigene Gegenprobe über die FUNKTION selbst, nicht über den Bestand:
+   `ohneAlleKommentare('await schreibePruefplan(x);   // nie db.run()')`
+   darf `db` NICHT mehr enthalten, und
+   `ohneAlleKommentare('const u = "https://x/y";')` MUSS `https://x/y`
+   weiterhin enthalten. Beide wörtlich melden.
+
+**Die Grenze bleibt und gehört in den Kommentar:** Das ist und bleibt ein
+KONVENTIONSwächter. `const eigen = db; await eigen.run(…)` kommt weiterhin
+durch, und das ist Absicht — ein textueller Wächter kann keinen Datenfluss
+verfolgen. Was er leistet, ist, dass die naheliegende Schreibweise auffällt.
