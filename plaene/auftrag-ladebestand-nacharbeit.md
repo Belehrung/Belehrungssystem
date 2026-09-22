@@ -1907,3 +1907,47 @@ Sie hatte `feuerloescherOhneProtokoll()` nicht im Bündel (nur den
 Routenausschnitt) und schreibt ausdrücklich, ihr Befund B1 hinge daran, wie
 der Helfer aussieht. **Das war richtig und ehrlich — und der Befund trägt
 trotzdem**, weil er an der Schleife hängt, die sie sehr wohl sah.
+
+---
+
+## EIGENE NACHMESSUNG 22.09.2026 (sechste) — Fixtur-Einzelheiten, am Quelltext geprüft
+
+Ankerstellen über den Kundschafter geholt, die strittige Angabe selbst
+nachgezählt. Was für Punkt 1 in FASSUNG 2 bindend ist:
+
+**Die Bereichsmarken.** Der Kundschafter meldete eine in sich widersprüchliche
+Häufigkeitsangabe. Selbst gezählt: `PRUEFPLAN_SCHREIBBEREICH_BEGINN` **1×**
+(Z. 2765), `..._ENDE` **1×** (Z. 2901), die Zeichenkette
+`PRUEFPLAN_SCHREIBBEREICH` insgesamt **3×** — das dritte Vorkommen ist Prosa
+in Z. 2192, also VOR dem Bereich und ohne Suffix. Der `indexOf` trifft damit
+richtig.
+
+**`provisionStudio()` legt die Brandschutz-Kategorie NICHT an.** Gemessen
+(`core/db.js:2495-2500`): geseedet werden genau vier — Cardio, Kraftgeräte,
+Leitern, Automaten. `"Sicherheit & Brandschutz"`
+(`core/brandschutz-vorlage.js:52`) entsteht erst im POST selbst
+(`routes/admin/geraete.js:2637-2641`).
+
+Folge für die Fixtur: die Kategorie des **fremden** Studios muss der Test
+ausdrücklich anlegen, sonst gibt es für `Feuerlöscher 7` keine passende
+`kategorie_id`. Sie ist dabei automatisch frisch (neues Studio → neue id), die
+Auflage aus der fünften Nachmessung ist damit von selbst erfüllt.
+
+**Das frische Studio** entsteht über `neuesStudio(praefix)`
+(`test_feature_ladebestand_streng.js:342-346`): `db.createStudio(...)` plus
+`db.provisionStudio(s)`.
+
+**Der auslösende POST** ist in Z. 813-823 vorgezeichnet — `alleVorhanden` mit
+`antwort_feuerloescher: 'vorhanden'`, `anzahl_feuerloescher: '2'`. Die Fixtur
+benutzt denselben Weg, nicht einen Direktaufruf des Helfers.
+
+**Zu Punkt 2, damit es niemand „vereinfacht":** `LEERER_POST_TITEL_ALT`
+(Z. 377) ist auch nach der Umbenennung noch ein TEILSTRING von
+`LEERER_POST_TITEL_NEU` — „Keine neue **Feststellung gespeichert — Prüfplan
+nicht abgeglichen**". Der exakte `<title>`-Vergleich über `titelAus()`
+(Z. 421-424) bleibt deshalb zwingend; ein `includes()` wäre hier grün aus dem
+falschen Grund.
+
+**Zu Punkt 3:** `pruefeKeinFehlerseiten()` (Z. 79-86) endet mit `return html;`.
+Die Umstellung auf `r.clone().text()` ändert daran nichts — der Rückgabewert
+bleibt derselbe Text.
