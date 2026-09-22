@@ -2426,3 +2426,423 @@ Gerätezeile mit fremder Kategorie.
 Nichts. Alle vier Befunde tragen — A4 als benannte Falle statt als Defekt,
 was die Spur selbst so eingeordnet hat („Erwartung heute vermutlich: kein
 Treffer — dann ist der Befund eine benannte Falle").
+
+---
+
+# DIFFPRÜFUNG DER VIERTEN RUNDE (Diff `9d3fc3b..3a7cad5`)
+
+Zwei Spuren nach der Spurenreduktion vom 20.09.2026: die ausführende
+Claude-Spur (freie Dateiwahl, darf messen) und EINE Lesespur (`kimi-k3`,
+anderes Bündel — Diff, Schema-Ausschnitt, Routenbereich, Geschwisterwächter
+`test_feature_brandschutz.js` vollständig, dazu alle Gegenproben-Zahlen).
+
+**Die Lesespur ist ABGESCHNITTEN gelaufen und zählt deshalb nur teilweise:**
+`finish_reason=length`, 29.611 von 32.000 Ausgabe-Token gingen ins Denken,
+55.325 Eingabe-Token, 781,3 s. Vier Befunde kamen vollständig durch, der
+vierte bricht mitten im Satz ab. Was danach gekommen wäre, ist UNBEKANNT —
+nicht „nichts". Lehre fürs nächste Mal: bei `effort: high` und einem Bündel
+dieser Grösse reichen 32.000 Ausgabe-Token nicht.
+
+## Was nach EIGENER Nachmessung trägt
+
+### C1 (BLOCKIEREND, ausführende Spur) — `\bdb\b` hat die `.query(`-Abdeckung VERLOREN
+
+Das alte Muster war `/\bdb\.(run|q|one)\(|\.query\(/`, das neue `/\bdb\b/`.
+Die Alternative `\.query\(` ist ersatzlos weggefallen. `core/db.js` exportiert
+`pool` (Zeile 2621). **Selbst gemessen:** ein Alias AUSSERHALB des Bereichs
+(`const { pool } = require("../../core/db");` direkt nach der
+deps-Destrukturierung) plus `await pool.query("UPDATE wartung_geraete SET
+aktiv=0 …")` INNERHALB des Bereichs ergibt
+
+    test_feature_ladebestand_streng.js   EXIT 0, 25 PASS / 0 FAIL
+
+Der Riegel sieht den Schreibvorgang nicht, `praefplanGeaendert` zählt ihn
+nicht, und die Abbruchseite meldet „Am Prüfplan wurden keine Einträge
+angelegt, geändert oder deaktiviert." Verschärfend: die Erfolgsmeldung
+behauptet wörtlich „deckt … /.query(/ … mit ab" — eine FALSCHE ZUSICHERUNG
+VON ABDECKUNG, unsere teuerste Klasse, erzeugt von genau dem Beitrag, der
+diese Klasse schliessen sollte.
+
+### C2 + Lesespur-1 (BLOCKIEREND, von BEIDEN Spuren unabhängig gefunden) — mein eigener Punkt 4b reisst ein neues Loch in Punkt 4
+
+`z.replace(/(^|[^:])\/\/.*$/, '$1')` kennt keine Zeichenkettengrenzen.
+**Selbst gemessen**, je Eingabe:
+
+    await schreibePruefplan("SET n='//a'", p); db.run("UPDATE x");
+      -> "await schreibePruefplan(\"SET n='"        db vorhanden? NEIN
+    const u = "https://a//b";
+      -> "const u = \"https://a"                     URL zerschnitten
+    const rx = /\/\//g; await db.run(x);
+      -> "const rx = /\\/\\"                         db vorhanden? NEIN
+
+Ein `//` in einer Zeichenkette oder einem Regex-Literal schneidet die Zeile
+ab, und ein `db` DAHINTER verschwindet mit. Die Bereinigung, die Punkt 4
+vor Prosa schützen sollte, ist damit selbst ein Umgehungsweg geworden.
+Zugleich ist mein eigener Kommentar („lässt `://` in URLs unangetastet")
+für den Fall mit ZWEITEM `//` schlicht falsch.
+
+### C8 (ausführende Spur) — die URL-Gegenprobe von 4b kann den Wegfall nicht sehen
+
+Die Fixtur `const u = "https://x/y";` enthält genau ein `//`, und das ist
+doppelpunkt-vorangestellt. Die Ersetzung findet dort also überhaupt keinen
+Treffer — die Zusicherung bliebe auch dann grün, wenn der `.map()`-Schritt
+ganz entfernt würde. Sie ist nur gegen ÜBERGIER empfindlich (das hat meine
+Gegenprobe gemessen), nicht gegen WEGFALL. Eine Fixtur mit einem zweiten
+`//` hinter der URL unterscheidet beides.
+
+### C7 (ausführende Spur) — die erste Zeile des Abschnitts ist unbereinigte Prosa
+
+`GERAETE_QUELLTEXT_ROH.slice(begin, ende)` beginnt MITTEN im Markenkommentar.
+**Selbst gemessen**, erste Zeile des „bereinigten" Abschnitts:
+
+    "PRUEFPLAN_SCHREIBBEREICH_BEGINN (dritte Prüfrunde \"ladebestand\","
+
+Sie beginnt nicht mit `//` (Zeilenfilter greift nicht) und enthält kein `//`
+(Nachlauf-Stripper greift nicht). Mit dem alten engen Muster folgenlos; mit
+`\bdb\b` genügt ab jetzt ein künftiges Wort „db" in dieser einen Zeile, damit
+der Riegel an reiner Prosa rot wird.
+
+### C3 (ausführende Spur) — beide Fundstellen in meinem FOR-UPDATE-Kommentar sind falsch
+
+**Selbst gemessen:** der POST beginnt bei `:6600`, nicht `:6524` (dort steht
+eine Kommentarzeile im GET-Rendering); geschrieben wird bei `:6709`
+(`UPDATE wartung_geraete SET name=$1, inventarnummer=$2, notizen=$3, …`),
+nicht `:6633` (dort steht ein Kommentar, bei `:6631` die
+CRLF-Normalisierung). Der Kommentar nennt diesen Weg als EINZIGEN Beleg
+dafür, dass `FOR UPDATE` trägt — wer ihn nachschlägt, landet im Rendering.
+
+### C4 (ausführende Spur) — `FOR UPDATE` ist datenverlust-tragend und unbewacht
+
+Meine eigene Gegenprobe (b) hat das gemessen (EXIT 0, 25 PASS / 0 FAIL ohne
+die Zeile) und ich habe es als Kommentar festgehalten. Die Spur widerspricht
+der Schlussfolgerung zu Recht: dass eine FIXTUR den nebenläufigen Schreiber
+nicht herstellen kann, schliesst eine STATISCHE Zusicherung nicht aus —
+dieselbe Datei prüft in Punkt 4 und Z3 bereits den Quelltext dieser Datei.
+
+### C5 (ausführende Spur, TRÄGT — und ist der lehrreichste Befund) — die CTE erzeugt die Gefahr erst selbst
+
+Behauptung: die einfache Form mit `IS DISTINCT FROM` in der WHERE-Klausel hat
+die Schnappschuss-Gefahr gar nicht, weil `SET` und `WHERE` eines einfachen
+UPDATE unter EvalPlanQual gegen die frisch committete Zeilenversion NEU
+ausgewertet werden. **Selbst gemessen gegen PostgreSQL 16**, Fremdschreiber
+hält die Zeile drei Sekunden und committet:
+
+    CTE OHNE FOR UPDATE   -> "Erfasster Bestand: 5 Stück"
+                             (Admin-Notiz WEG — Datenverlust)
+    CTE MIT FOR UPDATE    -> "Admin-Notiz des Betreibers\nErfasster Bestand: 5 Stück"
+    WHERE-Form            -> "Admin-Notiz des Betreibers\nErfasster Bestand: 5 Stück"
+
+Und die Fallmatrix ohne Nebenläufigkeit trifft die WHERE-Form EXAKT wie die
+CTE: `0, 1, 1, 1, 1, 0, 0` für wertgleich / echte Änderung / NULL / Text ohne
+Bestandszeile / ZWEI Bestandszeilen (nur die erste ersetzt) / fremdes Studio /
+nicht vorhanden.
+
+**Der Befund trägt. Die Behebung wird trotzdem NICHT übernommen, und der
+Grund ist gemessen, nicht ästhetisch:** die WHERE-Form schreibt den
+CASE-Ausdruck ZWEIMAL hin. Das ist „Dieselbe Aussage an zwei Orten" — laut
+unserer eigenen CLAUDE.md „die häufigste Fehlerquelle in diesem Projekt" —
+und zwar in der Variante, die sich nicht auflösen lässt: die zweite Kopie
+kann man hier nicht löschen, man müsste sie pflegen. Wer eine der beiden
+Kopien ändert, bekommt lautlos ein UPDATE, das X schreibt und gegen Y
+vergleicht.
+
+Damit stehen zwei Gefahren gegeneinander, und beide sind absicherbar:
+
+    CTE + FOR UPDATE   ein Wort entfernt -> Datenverlust, heute kein rotes Signal
+                       -> absicherbar durch eine STATISCHE Zusicherung (C4)
+    WHERE-Form         eine Kopie geändert -> falsche Zählung, kein rotes Signal
+                       -> absicherbar durch eine Zusicherung auf Textgleichheit
+
+Entschieden wird für die CTE plus die statische Zusicherung aus C4: die
+CTE ist gebaut, in allen sieben Fällen UND im Nebenläufigkeitsfall gemessen,
+und die Absicherung schliesst genau die eine gefährliche Eigenschaft. Ein
+dritter Weg ohne beide Nachteile gäbe es — eine `IMMUTABLE`-SQL-Funktion, die
+beide Stellen aufrufen — aber der braucht eine Migration und sprengt diesen
+Beitrag.
+
+**Was die Spur dabei zu Recht rügt und was hiermit nachgeholt ist:** der Diff
+begründete nur, warum KEIN `includes()`-Vergleich in JavaScript gebaut wurde,
+nicht, warum die WHERE-Variante verworfen wurde. Eine Abwägung, die nicht
+aufgeschrieben ist, hat nicht stattgefunden.
+
+### C6 + Lesespur-2 (von BEIDEN Spuren unabhängig gefunden) — das Aufräumen steht auf dem Erfolgspfad
+
+Zwischen den Fixtur-INSERTs und den drei DELETEs liegen zehn Zusicherungen.
+Schlägt eine an, greift `process.exit(1)` und die DELETEs laufen nie —
+„Feuerlöscher 8" bleibt in der gemeinsamen Wegwerf-DB liegen, also genau die
+Zeile, die der eigene Kommentar als „erste Zeile im Bestand, deren
+kategorie_id zu einem ANDEREN Studio gehört" benennt. **Selbst gemessen:** die
+Laufschleife in `test/run.sh:888-891` macht nach einem Fehlschlag weiter
+(`else`-Zweig, kein `exit`). Entschärfend, und ebenfalls gemessen:
+`test_feature_ladebestand_streng.js` ist heute der LETZTE Eintrag in `TESTS` —
+es läuft nichts danach. Das ist aber eine Reihenfolge, keine Eigenschaft.
+
+### C9 (ausführende Spur) — der Kopfkommentar widerspricht der eigenen Korrektur
+
+`routes/admin/geraete.js:2021-2022` sagt unverändert „Dieselbe Bedingung wie
+der erste Satz oben: 0 Antworten heisst, dass auch keine Feststellung
+zustande kam." Vier Zeilen darunter steht die BERICHTIGUNG, die genau das
+Gegenteil sagt und der Grund für „neue" im Titel ist. Zwei einander
+widersprechende Sätze über dieselbe Tatsache in Nachbarzeilen; nach unserer
+eigenen Regel wird die überholte Kopie GELÖSCHT, nicht ergänzt.
+
+### C10 (ausführende Spur) — `r.clone()` ist unnötig, die Funktion gibt den Text längst zurück
+
+`pruefeKeinFehlerseiten()` endet mit `return html;`. Punkt 1 ruft danach
+`rAusloesen.text()` ein zweites Mal — deshalb wurde der Klon nötig. Wer
+stattdessen den RÜCKGABEWERT nimmt, braucht weder Klon noch Tee, und der
+Kommentar („kein Verhaltenswechsel") wird wahr statt bloss ungenau.
+
+### Lesespur-3 (NEU, nur diese Spur) — der Priming-Kommentar nennt einen unmöglichen Grund
+
+Zwei Ungenauigkeiten, beide selbst nachgemessen:
+(a) „legt nur die Kategorie an" ist falsch — der POST läuft den vollständigen
+Handler und schreibt unter anderem `pruefbereich_bestand`
+(`routes/admin/geraete.js:1480`/`:1529`) sowie die monatliche Begehung. Das
+Aufräumen funktioniert nur deshalb, weil das Kategorie-DELETE per CASCADE
+nachzieht.
+(b) „antwort_feuerloescher fehlt hier bewusst, die Ablösungsschleife darf die
+Fixtur unten noch nicht berühren" ist zeitlich unmöglich: die Fixtur wird
+ERST NACH dem Priming-POST eingefügt. Der wirkliche Grund ist ein anderer —
+mit beantwortetem `feuerloescher` entstünde der Sammelposten schon hier, und
+der Auslöse-POST nähme den `schonDa`-Pfad statt des Anlegepfads.
+
+### Lesespur-4 (NEU, nur diese Spur) — `\bdb\b` kann an einer ZEICHENKETTE anschlagen
+
+Der Riegel prüft den kommentarbereinigten, aber nicht zeichenkettenbereinigten
+Bereich. Das Wort „db" in einem String-Literal im Bereich liesse ihn rot
+werden, ohne dass ein Zugriff stattfindet. **Heute 0 Treffer** (gemessen), und
+die Richtung ist die ungefährliche: ein FEHLALARM, kein Durchlass. Er wird
+deshalb BENANNT statt bekämpft — eine Zeichenketten-Ausblendung brächte eine
+neue Blindheit mit (`${…}` in Template-Literalen), und die wäre die
+gefährliche Richtung.
+
+## Der zeichenweise Stripper — vom Haupt-Agenten SELBST gebaut und gemessen
+
+Weil an dieser einen Funktion eine falsche Annahme still ein grünes Ergebnis
+erzeugt, ist sie nicht delegiert, sondern hier wörtlich vorgegeben. Gemessen
+über acht Anforderungen: **alte Fassung verletzt 3 von 8, neue verletzt 0 von
+8.** Gegen den echten Quelltext: der Bereich enthält weiterhin `db` NULL mal,
+`.query(` NULL mal, und `schreibePruefplan(` SECHS mal.
+
+```js
+function ohneAlleKommentare(text) {
+    let aus = '';
+    let i = 0;
+    const n = text.length;
+    let inZeichenkette = null;   // ' " oder `
+    let inZeile = false;
+    let inBlock = false;
+    while (i < n) {
+        const c = text[i];
+        const c2 = text[i + 1];
+        if (inZeile) {
+            if (c === '\n') { inZeile = false; aus += c; }
+            i++; continue;
+        }
+        if (inBlock) {
+            if (c === '*' && c2 === '/') { inBlock = false; i += 2; continue; }
+            if (c === '\n') aus += c;
+            i++; continue;
+        }
+        if (inZeichenkette) {
+            aus += c;
+            if (c === '\\' && i + 1 < n) { aus += c2; i += 2; continue; }
+            if (c === inZeichenkette) inZeichenkette = null;
+            i++; continue;
+        }
+        if (c === '\\' && i + 1 < n) { aus += c; aus += c2; i += 2; continue; }
+        if (c === '/' && c2 === '/') { inZeile = true; i += 2; continue; }
+        if (c === '/' && c2 === '*') { inBlock = true; i += 2; continue; }
+        if (c === '"' || c === "'" || c === '`') { inZeichenkette = c; aus += c; i++; continue; }
+        aus += c; i++;
+    }
+    return aus;
+}
+```
+
+**Bekannte Grenze, die dazugehört und benannt wird:** ein Regex-Literal, das
+ein UNESCAPTES `//` enthält, wird weiterhin als Kommentarbeginn gelesen. Mit
+Escape (`/\/\//`) trägt der Backslash-Zweig und es geht gut — gemessen. Eine
+vollständige Lösung bräuchte einen Tokenizer, der weiss, ob ein `/` eine
+Division oder ein Regex beginnt; das ist mehr Apparat, als der Riegel wert
+ist.
+
+## Was NICHT gebaut wird
+
+**C11 (ausführende Spur) — den Schleifenrumpf in eine eigene Funktion ziehen,
+die `db` gar nicht im Gültigkeitsbereich hat.** Der Vorschlag ist richtig: er
+würde die Invariante vom Modulsystem erzwingen lassen statt von einer Regex
+über Quelltext, und C1, C2, C7 und Lesespur-4 fielen ersatzlos weg. Er
+verlangt aber einen Umbau des Routenhandlers weit über diesen Beitrag hinaus.
+Als datierter offener Punkt festgehalten, nicht stillschweigend übergangen.
+
+---
+
+# DER BAUAUFTRAG DER FÜNFTEN RUNDE
+
+Arbeitsbaum `/home/user/gymdocu`, Zweig `beitrag-ladebestand`, Kopf `3a7cad5`.
+**Nicht committen** — der Haupt-Agent liest den Diff, misst nach, committet.
+
+## 1 — C1 (BLOCKIEREND): die `.query(`-Abdeckung zurückholen
+
+`test_feature_ladebestand_streng.js`, im Punkt-4-Block:
+
+    const verbotenesMuster = /\bdb\b/;
+      ->  const verbotenesMuster = /\bdb\b|\.query\(/;
+
+Der Kommentar darüber bekommt einen Absatz: dass die Alternative `\.query\(`
+aus dem ALTEN Muster stammt und NICHT wegfallen darf, weil `core/db.js` einen
+`pool` exportiert (dortige Zeile 2621) und ein Alias ausserhalb des Bereichs
+(`const { pool } = require(…)`) den Bezeichner `db` im Bereich vermeidet —
+gemessen EXIT 0, 25 PASS / 0 FAIL, bevor die Alternative wieder da war.
+
+**Gegenprobe (1a):** in `routes/admin/geraete.js` direkt nach `} = deps;`
+die Zeile `const { pool } = require("../../core/db");` einfügen UND im
+Bereich `await schreibePruefplan("UPDATE wartung_geraete SET aktiv=0 WHERE
+studio_id=$1 AND id=$2", [req.studioId, a.id]);` durch
+`await pool.query(…)` mit demselben Rumpf ersetzen. Muss ROT werden.
+(Ohne diesen Punkt gemessen: EXIT 0, 25 PASS / 0 FAIL.)
+
+## 2 — C2/C8/Lesespur-1 (BLOCKIEREND): zeichenkettenfester Stripper
+
+`ohneAlleKommentare()` wird durch die Fassung aus dem Abschnitt
+„Der zeichenweise Stripper" WÖRTLICH ersetzt. Nicht neu erfinden, nicht
+„verbessern" — sie ist gemessen.
+
+Der Kommentar darüber wird neu geschrieben und sagt:
+* warum zeichenweise statt zeilenweise (die alte Fassung schnitt an einem
+  `//` INNERHALB einer Zeichenkette ab und liess ein `db` dahinter
+  verschwinden — gemessen, Beispiele im Prüfabschnitt oben),
+* dass die frühere Zusage „lässt `://` in URLs unangetastet" für
+  `"https://a//b"` FALSCH war,
+* die bekannte Grenze (unescaptes `//` in einem Regex-Literal),
+* Lesespur-4: das Wort „db" in einer Zeichenkette im Bereich löst den Riegel
+  aus. Heute 0 Treffer, Richtung ist der FEHLALARM, nicht der Durchlass;
+  bewusst nicht bekämpft, weil eine Zeichenketten-Ausblendung `${…}` in
+  Template-Literalen blind machen würde.
+
+**Die beiden 4b-Fixturen werden ersetzt**, weil die alten den Wegfall nicht
+sehen (C8). Neu, drei Stück:
+
+    ohneAlleKommentare('await schreibePruefplan(x);   // hier nie db.run() benutzen')
+        darf 'db' NICHT enthalten
+    ohneAlleKommentare('const u = "https://a//b";')
+        MUSS 'https://a//b' VOLLSTÄNDIG enthalten   (fängt den Wegfall UND die Übergier)
+    ohneAlleKommentare(`await schreibePruefplan("SET n='//a'", p); db.run("UPDATE x");`)
+        MUSS 'db' enthalten   (der Umgehungsweg, den die alte Fassung öffnete)
+
+**Gegenproben (2a)(2b):** (2a) den Stripper auf die alte, zeilenweise Fassung
+zurückdrehen -> die dritte Fixtur muss ROT werden. (2b) den Stripper durch
+`(text) => text` ersetzen -> die erste Fixtur muss ROT werden.
+
+## 3 — C7: der Schnitt beginnt am Zeilenende der Markenzeile
+
+Im Punkt-4-Block:
+
+    const abschnitt = ohneAlleKommentare(GERAETE_QUELLTEXT_ROH.slice(begin, ende));
+      ->  der Schnitt beginnt bei GERAETE_QUELLTEXT_ROH.indexOf('\n', begin) + 1
+
+Die bestehenden `assert.notStrictEqual(begin, -1)` und `begin < ende` bleiben
+auf der MARKENPOSITION (sonst prüfen sie etwas anderes als sie sagen).
+Kommentar dazu: die Marke steht in einem Kommentar, der Schnitt begann bisher
+MITTEN darin, und diese eine Zeile erreichte weder Zeilenfilter noch Stripper.
+Zusätzlich eine Zusicherung, dass der bereinigte Abschnitt NICHT mehr mit
+`PRUEFPLAN_SCHREIBBEREICH_BEGINN` beginnt.
+
+**Gegenprobe (3a):** den Schnitt auf `begin` zurückdrehen -> die neue
+Zusicherung muss ROT werden.
+
+## 4 — C4: `FOR UPDATE` bekommt eine statische Zusicherung
+
+Neu im Punkt-4-Block (oder als eigener Block daneben), gegen
+`GERAETE_QUELLTEXT_ROH`:
+
+    /WITH gesperrt AS \([\s\S]{0,300}?FOR UPDATE\)/
+
+muss GENAU EINMAL zutreffen. Dazu eine Positivkontrolle, dass die Zeichenkette
+`WITH gesperrt AS (` überhaupt genau einmal vorkommt — sonst ist die
+Zusicherung bei einer Umbenennung vakuos statt rot.
+
+Der vorhandene Kommentarabsatz „DIESE ZEILE IST VON KEINER ZUSICHERUNG
+BEWACHT" wird entsprechend BERICHTIGT: sie ist ab jetzt statisch bewacht;
+was weiterhin KEINE Zusicherung herstellt, ist der nebenläufige Fremdschreiber
+selbst. Der Unterschied gehört hingeschrieben.
+
+**Gegenprobe (4a):** `FOR UPDATE` aus der CTE entfernen -> muss jetzt ROT
+werden. (Vor diesem Punkt gemessen: EXIT 0, 25 PASS / 0 FAIL.)
+
+## 5 — C3: die beiden falschen Fundstellen berichtigen
+
+Im FOR-UPDATE-Kommentar: `:6524` -> `:6600` (dort steht
+`router.post("/geraetewartung/geraet/bearbeiten/:id"`), `:6633` -> `:6709`
+(dort steht `UPDATE wartung_geraete SET name=$1, inventarnummer=$2,
+notizen=$3, …`). Beide Zahlen VOR dem Eintragen am Quelltext nachsehen, nicht
+von hier abschreiben — die Zeilen verschieben sich durch die übrigen Punkte
+dieses Auftrags.
+
+## 6 — C9: die überholte Kopie löschen
+
+`routes/admin/geraete.js`, im Kopfkommentar von `ladeBestandFehlerTitel()`:
+die zwei Zeilen
+
+    // Dieselbe Bedingung wie der erste Satz oben: 0 Antworten heisst, dass auch
+    // keine Feststellung zustande kam.
+
+werden ERSATZLOS GELÖSCHT. Sie sagen das Gegenteil des BERICHTIGT-Absatzes
+vier Zeilen darunter.
+
+## 7 — C6/Lesespur-2: Aufräumen in `finally`
+
+Der Punkt-1-Block bekommt `try { … } finally { … }`: Fixtur-Aufbau,
+Auslösung und alle Zusicherungen in den `try`, die drei DELETEs und
+`srvEigen.close()` in den `finally`. Die DELETEs sind idempotent
+(`WHERE id = ANY($1)`), treffen also auf nichts, wenn der Aufbau scheiterte.
+
+Der bestehende Kommentar am Aufräumblock bleibt (Kaskaden- und
+Studio-Begründung) und bekommt einen Satz dazu: WARUM `finally` — weil
+`test/run.sh:888-891` nach einem Fehlschlag mit der nächsten Datei
+WEITERMACHT und „Feuerlöscher 8" sonst in der gemeinsamen Wegwerf-DB
+liegenbliebe. Dass diese Datei heute die LETZTE in `TESTS` ist, ist eine
+Reihenfolge und keine Eigenschaft — auch das gehört in den Satz.
+
+## 8 — Lesespur-3: der Priming-Kommentar sagt die Wahrheit
+
+Die beiden falschen Aussagen ersetzen:
+* nicht „legt nur die Kategorie an" — der POST läuft den vollständigen
+  Handler und schreibt unter anderem `pruefbereich_bestand`
+  (`routes/admin/geraete.js:1480`/`:1529`) und die monatliche Begehung; das
+  Aufräumen trägt nur, weil das Kategorie-DELETE per CASCADE nachzieht.
+* nicht „die Ablösungsschleife darf die Fixtur unten noch nicht berühren" —
+  die Fixtur existiert zu diesem Zeitpunkt gar nicht. Richtig: mit
+  beantwortetem `feuerloescher` entstünde der Sammelposten schon hier, und
+  der Auslöse-POST nähme den `schonDa`-Pfad statt des Anlegepfads.
+
+Beide Ersatzaussagen VOR dem Eintragen am Quelltext nachprüfen.
+
+## 9 — C10: den Klon wieder herausnehmen
+
+`pruefeKeinFehlerseiten()` liest wieder `await r.text()` (ohne `clone()`).
+In Punkt 1 wird der RÜCKGABEWERT benutzt:
+
+    await pruefeKeinFehlerseiten(rAusloesen, ABBRUCH_MARKER, 'Punkt 1 Auslösung');
+    const htmlAusloesen = await rAusloesen.text();
+      ->  const htmlAusloesen = await pruefeKeinFehlerseiten(rAusloesen, ABBRUCH_MARKER, 'Punkt 1 Auslösung');
+
+Der R3-Kommentar wird umgeschrieben: die Falle („ein zweites `text()` wirft")
+bleibt beschrieben, der Ausweg ist aber der Rückgabewert, nicht der Klon.
+Die Behauptung „kein Verhaltenswechsel" fällt weg — sie war ungenau, der Klon
+puffert den ungelesenen Zweig.
+
+## Abnahme insgesamt
+
+* Volle Suite `bash test/run.sh > <log> 2>&1; echo "SUITE_EXIT=$?"` — kein
+  Pipe, kein äusseres `flock`.
+* `npm run lint`, Ergebnis WÖRTLICH melden, auch bei Grün.
+* Die fünf Gegenproben (1a, 2a, 2b, 3a, 4a) einzeln, jede wörtlich mit EXIT
+  und PASS/FAIL, Mutation UND Rücknahme.
+* Mutationsskript mit Zielpfad als ARGUMENT, Abbruch bei ≠ 1 Fundstelle,
+  Marker mit, `node --check` danach. Rücknahme gegen eine unabhängige
+  `cp`-Kopie, `diff` EXIT 0 — NIE `git checkout`/`git stash`, und NIE mit
+  einem Testlauf verkettet.
+* Am Ende `git status` sauber und der Marker-Scan nur mit Prosatreffern.
