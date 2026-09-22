@@ -1640,3 +1640,41 @@ Das kann nur Text ENTFERNEN, der hinter einem `//` steht; ein
 KONVENTIONSwächter. `const eigen = db; await eigen.run(…)` kommt weiterhin
 durch, und das ist Absicht — ein textueller Wächter kann keinen Datenfluss
 verfolgen. Was er leistet, ist, dass die naheliegende Schreibweise auffällt.
+
+---
+
+## EIGENE NACHMESSUNG 22.09.2026 (dritte) — Punkt 6 ist beantwortet, und Punkt 1 braucht eine Präzisierung
+
+**Punkt 6 („verschieben vier zusätzliche Zeilen die Schnappschuss-Sollwerte?")
+ist am Quelltext entschieden — NEIN, und zwar aus zwei unabhängigen Gründen:**
+
+1. Beide Sollwerte kommen gar nicht aus der Datenbank. `erwarteteAufgabenanzahl()`
+   (`test_feature_ladebestand_streng.js:120`) und `terminAnzahlGesamt()`
+   (`:147`) laufen ausschliesslich über `ausstattung.FRAGEN` — eine statische
+   Vorlage. Vier Gerätezeilen mehr ändern daran nichts.
+2. Die Zeilenmengen, gegen die geprüft wird, sind doppelt eingegrenzt:
+   `volleZeilenmenge()` (`:245-248`) und `aktiveNamen()` (`:185-189`) filtern
+   `wg.studio_id = $1 AND k.name = $2`. Ein frisches Studio mit der
+   BRANDSCHUTZ-Kategorie kann eine Ausstattungs-Prüfung nicht erreichen.
+
+**Punkt 1 bekommt dadurch aber eine Präzisierung, die sonst eine Bau-Runde
+gekostet hätte.** Beide Lesehelfer verbinden über
+
+    JOIN wartung_kategorien k ON k.id = wg.kategorie_id AND k.studio_id = wg.studio_id
+
+Die konstruierte **Fremdzeile B** (fremdes Studio, `kategorie_id` des EIGENEN
+Studios) erfüllt diese Verbindung per Konstruktion NICHT — `k.studio_id` ist
+das eigene, `wg.studio_id` das fremde. Wer ihren Zustand über
+`volleZeilenmenge()` oder `aktiveNamen()` prüfen will, bekommt eine leere
+Menge und liest daraus „ist nicht mehr da" statt „ist unangetastet".
+
+**Vorgabe für Punkt 1:** Der Zustand ALLER vier Fixturzeilen wird über eine
+DIREKTE Abfrage auf `wartung_geraete` nach `id` geprüft
+(`SELECT aktiv, studio_id FROM wartung_geraete WHERE id = ANY($1)`), nicht
+über die vorhandenen Lesehelfer. Die IDs stammen aus dem `RETURNING id` der
+Fixtur-INSERTs.
+
+Damit ist zugleich eine Falle der dritten Erscheinungsform gebannt („das
+geprüfte Element ist strukturell geschützt"): eine Zusicherung über eine
+Menge, die diese Zeile ohnehin nie enthalten kann, wäre unempfindlich — sie
+bliebe grün, egal was mit der Zeile passiert.
