@@ -1951,3 +1951,342 @@ falschen Grund.
 **Zu Punkt 3:** `pruefeKeinFehlerseiten()` (Z. 79-86) endet mit `return html;`.
 Die Umstellung auf `r.clone().text()` ändert daran nichts — der Rückgabewert
 bleibt derselbe Text.
+
+---
+
+# DER BAUAUFTRAG DER VIERTEN RUNDE — FASSUNG 2 (MASSGEBLICH)
+
+**FASSUNG 1 weiter oben ist ÜBERHOLT.** Sie hatte zwei Fehler, die beim
+Messen gefallen sind: der Probenentwurf zu R6 hätte nichts gemessen (eigene
+Nachmessung, erste), und die Gegenproben (c)/(d) wären an der
+studio-gesicherten Deaktivierungsschleife hängengeblieben (Planprüfung Spur B,
+selbst nachgemessen). Was hier steht, gilt.
+
+Arbeitsbaum `/home/user/gymdocu`, Zweig `beitrag-ladebestand`, Kopf `9d3fc3b`.
+**Nicht committen** — der Haupt-Agent liest den Diff, misst nach, committet.
+
+---
+
+## 1 — Verhaltensprobe für die Feuerlöscher-Ablösung (schliesst R1 UND R6)
+
+Neu in `test_feature_ladebestand_streng.js`, in einem EIGENEN Abschnitt mit
+ZWEI frischen Studios über `neuesStudio(praefix)` (Z. 342-346).
+
+### Was hier wirklich bewacht wird — bitte vor dem Bauen lesen
+
+Zwischen einer aufgehobenen Mandantenklausel im Helfer und einem Schaden
+stehen **DREI** Riegel, alle selbst nachgemessen:
+
+    1. g.studio_id=$1     in der SELECT von feuerloescherOhneProtokoll()  (Z. 2201)
+    2. g.kategorie_id=$2  in derselben SELECT — selbst studio-gesichert
+    3. studio_id=$1       im Deaktivierungs-UPDATE                        (Z. 2819)
+
+Riegel 3 bindet IMMER `req.studioId`. Eine fremde Zeile wird deshalb **nie
+geschrieben** — aber ihr Name landet unbedingt in `abgeloest`
+(`abgeloest.push(a.name)` fragt den `rowCount` nicht ab, nachgezählt: null
+Vorkommen von `rowCount` in Z. 2817-2821) und erscheint auf der Ergebnisseite
+(Z. 3135-3143) unter „… wurden **deaktiviert, nicht gelöscht**: …".
+
+**Die Wirkung ist also eine mandantenübergreifende PREISGABE von Gerätenamen,
+keine Schreibung.** Der Nachweis läuft deshalb über die SEITE, nicht über den
+Zeilenzustand.
+
+### Fixtur — vier Gerätezeilen, alle `aktiv=1`, alle `name ~ '^Feuerlöscher [0-9]+$'`
+
+| Zeile | Studio | `kategorie_id` | Prüfprotokoll |
+|---|---|---|---|
+| `Feuerlöscher 1` | eigenes | Brandschutz-Kategorie des EIGENEN Studios | nein |
+| `Feuerlöscher 2` | eigenes | Brandschutz-Kategorie des EIGENEN Studios | **ja** |
+| `Feuerlöscher 7` | **fremdes** | Brandschutz-Kategorie des FREMDEN Studios | nein |
+| `Feuerlöscher 8` | **fremdes** | Brandschutz-Kategorie des **EIGENEN** Studios | nein |
+
+Drei Dinge dazu, alle gemessen und alle nötig:
+
+* **Die Brandschutz-Kategorie muss der Test selbst anlegen.**
+  `provisionStudio()` seedet nur Cardio, Kraftgeräte, Leitern, Automaten
+  (`core/db.js:2495-2500`); `"Sicherheit & Brandschutz"`
+  (`core/brandschutz-vorlage.js:52`) entsteht sonst erst im POST. Für das
+  EIGENE Studio genügt es, sie vom POST anlegen zu lassen und ihre id danach
+  zu lesen; für das FREMDE Studio legt der Test sie ausdrücklich an.
+* **`Feuerlöscher 8` ist ein Zustand, den heute kein Produktivweg herstellt.**
+  Alle fünf `INSERT INTO wartung_geraete` leiten `kategorie_id`
+  studio-gesichert her; der Fremdschlüssel ist aber einspaltig
+  (`core/db.js:874`) und verbietet die Zeile nicht. **Das gehört als Kommentar
+  an die Fixtur** — sie ist die EINZIGE, die bei aufgehobener Mandantenklausel
+  allein anschlägt, und sonst räumt sie der nächste als unrealistisch weg.
+* Das Prüfprotokoll für `Feuerlöscher 2` ist eine Zeile in `wartung_pruefungen`
+  mit `studio_id` und `geraet_id` dieser Zeile — der Helfer prüft
+  `NOT EXISTS (… WHERE p.studio_id=g.studio_id AND p.geraet_id=g.id)`.
+
+### Ausgelöst wird über den ECHTEN Weg
+
+Ein POST auf `/admin/geraetewartung/brandschutz` mit
+`antwort_feuerloescher: 'vorhanden'`, `anzahl_feuerloescher: '2'` — Vorbild ist
+`alleVorhanden` in Z. 813-823. Kein Direktaufruf des Helfers.
+
+### Zusicherungen — sieben, jede einzeln benannt
+
+Der Zustand ALLER vier Fixturzeilen wird über eine **direkte Abfrage nach id**
+geprüft (`SELECT aktiv, studio_id FROM wartung_geraete WHERE id = ANY($1)`),
+NICHT über `volleZeilenmenge()` oder `aktiveNamen()`. Grund, gemessen: beide
+verbinden mit `JOIN wartung_kategorien k ON k.id = wg.kategorie_id AND
+k.studio_id = wg.studio_id` — `Feuerlöscher 8` erfüllt das per Konstruktion
+nie, eine Zusicherung über diese Menge wäre unempfindlich.
+
+1. `Feuerlöscher 1` → `aktiv=0`
+2. `Feuerlöscher 2` → `aktiv=1`
+3. `Feuerlöscher 7` → `aktiv=1`, `studio_id` unverändert
+4. `Feuerlöscher 8` → `aktiv=1`, `studio_id` unverändert
+5. Die Ergebnisseite NENNT `Feuerlöscher 1`
+6. Die Ergebnisseite nennt `Feuerlöscher 2` NICHT
+7. Die Ergebnisseite nennt `Feuerlöscher 7` NICHT **und** `Feuerlöscher 8`
+   NICHT ← **der R6-Melder**
+
+**Zusicherung 5 ist die Positivkontrolle für 7.** Ohne sie wäre 7 vakuos
+erfüllt, sobald der `abgeloest`-Block gar nicht gerendert wird.
+
+Beim Suchen im HTML mit einer Ziffern-Grenze arbeiten
+(`/Feuerlöscher 1(?![0-9])/`), sonst trifft „Feuerlöscher 1" auch ein
+künftiges „Feuerlöscher 10".
+
+### Gegenproben — VIER, jede einzeln, jede wörtlich mit EXIT und PASS/FAIL
+
+    (a) unmutiert                        muss GRÜN sein
+    (b) const alt = await feuerloescher…(…)  →  const alt = []
+                                         muss ROT werden, über 1 UND 5
+    (c) g.studio_id=$1  →  (g.studio_id=$1 OR TRUE)
+                                         muss ROT werden über 7, und zwar
+                                         ausschliesslich wegen "Feuerlöscher 8"
+    (d) beide WHERE-Klauseln entfernt (g.studio_id=$1 AND g.kategorie_id=$2)
+                                         muss ROT werden über 7, jetzt AUCH
+                                         wegen "Feuerlöscher 7"
+
+**Bei (c) und (d) ausdrücklich melden, WELCHER Name die Zusicherung reissen
+lässt.** Trifft (c) auch `Feuerlöscher 7`, stimmt die Fixtur nicht — dann trägt
+`Feuerlöscher 7` versehentlich die Kategorie des eigenen Studios.
+
+(d) ist die Positivkontrolle für `Feuerlöscher 7`: ohne sie ist nicht belegt,
+dass die realistische Fremdzeile überhaupt anschlagen KANN.
+
+**Die Zusicherungen 2, 3 und 4 können bei (c)/(d) NICHT rot werden** — Riegel 3
+verhindert jede Schreibung. Das gehört als Kommentar daneben, sonst hält der
+nächste sie für nutzlos. Sie sind der Rückhalt gegen eine künftige Änderung an
+der Deaktivierungsschleife.
+
+**Die Deaktivierungsschleife selbst wird NICHT angefasst.** Ein Vorschlag aus
+der Prüfung lautete, sie auf `[a.id, a.studio_id]` umzustellen — das nähme
+Riegel 3 heraus und machte aus der Preisgabe eine echte mandantenübergreifende
+Schreibung. Abgelehnt.
+
+---
+
+## 2 — R2: Titel-Wortlaut
+
+`routes/admin/geraete.js:2023-2027`, `ladeBestandFehlerTitel()`, NUR der
+`else`-Zweig:
+
+    "Keine Feststellung gespeichert — Prüfplan nicht abgeglichen"
+      →  "Keine neue Feststellung gespeichert — Prüfplan nicht abgeglichen"
+
+`LEERER_POST_TITEL_NEU` (`test_feature_ladebestand_streng.js:378`) zieht
+wörtlich mit.
+
+**Der exakte `<title>`-Vergleich über `titelAus()` (Z. 421-424) bleibt
+zwingend und wird NICHT zu einem `includes()` vereinfacht:**
+`LEERER_POST_TITEL_ALT` (Z. 377) ist auch nach der Umbenennung noch ein
+Teilstring der neuen Zeichenkette — „Keine neue *Feststellung gespeichert —
+Prüfplan nicht abgeglichen*".
+
+**Gegenprobe:** alte Zeichenkette im Produktivcode wiederherstellen → der
+Vergleich muss rot werden.
+
+---
+
+## 3 — R3: `pruefeKeinFehlerseiten()` verbraucht den Körper nicht mehr
+
+`test_feature_ladebestand_streng.js:80`: `await r.text()` → `await
+r.clone().text()`. Die Funktion endet weiterhin mit `return html;`, der
+Rückgabewert ändert sich nicht.
+
+Kein Verhaltenswechsel heute, reine Fallenbeseitigung. Keine eigene Gegenprobe
+nötig — die bestehenden Aufrufer sind der Nachweis, dass sie weiter trägt.
+
+---
+
+## 4 — R4: Der Bereichs-Riegel verbietet den Bezeichner `db`
+
+`test_feature_ladebestand_streng.js:499`:
+
+    /\bdb\.(run|q|one)\(|\.query\(/   →   /\bdb\b/
+
+Gemessen auf `9d3fc3b`: der kommentarbereinigte Bereich (3.772 Zeichen)
+enthält **6×** `schreibePruefplan(` und **0×** `db`.
+
+**Warum nicht das engere `/\bdb\s*[.[]/`, das eine Prüfspur vorschlug** —
+gemessen, fünf Fälle:
+
+    Zeile                      \bdb\b   \bdb\s*[.[]
+    await db.run(x);             JA        JA
+    await db["run"](x);          JA        JA
+    await db.pool.query(x);      JA        JA
+    const eigen = db;            JA        —
+    await eigen.run(x);          —         —
+
+Das engere Muster übersieht die Alias-BILDUNG im Bereich — also genau die
+Stelle, an der der Riegel den einzigen verbliebenen Umgehungsweg noch sehen
+könnte.
+
+Die Fehlermeldung nennt den Ausweg: *jeder Datenbankzugriff im Bereich läuft
+über `schreibePruefplan()`; reine Lesezugriffe werden wie
+`feuerloescherOhneProtokoll()` AUSSERHALB des Bereichs definiert.*
+
+Die Positivkontrolle `abschnitt.includes('schreibePruefplan(')` (Z. 497) bleibt
+unverändert.
+
+**Die Grenze gehört in den Kommentar:** Das ist und bleibt ein
+KONVENTIONSwächter. `const eigen = db;` AUSSERHALB des Bereichs, dann
+`eigen.run(…)` darin, kommt weiterhin durch — ein textueller Wächter kann
+keinen Datenfluss verfolgen.
+
+**Gegenproben, beide wörtlich melden:**
+
+    (a) ein schreibePruefplan(…)  →  db["run"](…)      muss ROT werden
+        (mit dem ALTEN Muster gemessen: EXIT 0, 20 PASS — er sah sie nicht)
+    (b) dieselbe Zeile           →  db.run(…)          muss ebenfalls ROT werden
+
+---
+
+## 4b — Die Bereinigung entfernt auch NACHGESTELLTE Kommentare
+
+`ohneAlleKommentare()` (Z. 462-465) entfernt Blockkommentare vollständig, von
+den `//`-Kommentaren aber nur die GANZZEILIGEN. **Gemessen:**
+
+    Eingabe:  await schreibePruefplan(x);   // hier nie db.run() benutzen
+    nach der heutigen Bereinigung: unverändert
+    trifft das heutige Muster:   JA        trifft \bdb\b:  JA
+
+Die Lücke besteht also schon heute; mit `\bdb\b` genügt künftig jede
+nachgestellte Erwähnung des Wortes. Das ist die Klasse „Tests dürfen nicht an
+Prosa scheitern", und sie führt zum Abschalten statt zum Lesen.
+
+Die Bereinigung bekommt deshalb zusätzlich:
+
+    .split('\n').map((z) => z.replace(/(^|[^:])\/\/.*$/, '$1')).join('\n')
+
+Das Muster trifft `://` bewusst NICHT, sonst zerschneidet es URLs. Es kann nur
+Text HINTER einem `//` entfernen; `db.q("SELECT 'a//b'")` bleibt erkennbar,
+weil `db.q(` davor steht.
+
+**Zwei Gegenproben an der FUNKTION selbst, beide wörtlich melden:**
+
+    ohneAlleKommentare('await schreibePruefplan(x);   // nie db.run()')
+        darf 'db' NICHT mehr enthalten
+    ohneAlleKommentare('const u = "https://x/y";')
+        MUSS 'https://x/y' weiterhin enthalten
+
+Die vorhandene Positivkontrolle (`includes('schreibePruefplan(')`) fängt
+zusätzlich eine zu gierige Bereinigung.
+
+---
+
+## 5 — R5: Der wertgleiche Notiz-UPDATE zählt nicht mehr mit
+
+`routes/admin/geraete.js:2879-2888`. **Die im R5-Abschnitt skizzierte
+`includes()`-Bedingung wird NICHT gebaut** — sie sagt in JavaScript voraus, was
+`regexp_replace` tun wird, und liegt bei zwei Bestandszeilen daneben (gemessen,
+s. unten). Stattdessen entscheidet die Datenbank selbst:
+
+    await schreibePruefplan(`
+        WITH neu AS (
+            SELECT id, notizen AS alt, CASE
+                     WHEN notizen IS NULL THEN $1
+                     WHEN notizen ~ 'Erfasster Bestand: [0-9]+ Stück'
+                       THEN regexp_replace(notizen, 'Erfasster Bestand: [0-9]+ Stück', $1)
+                     ELSE notizen || E'\\n' || $1 END AS text
+              FROM wartung_geraete WHERE id=$2 AND studio_id=$3)
+        UPDATE wartung_geraete g
+           SET notizen = neu.text
+          FROM neu
+         WHERE g.id = neu.id AND g.studio_id = $3
+           AND neu.text IS DISTINCT FROM neu.alt`,
+        [g.notizZusatz, schonDa.id, req.studioId]);
+
+Der `CASE` steht weiterhin an genau EINEM Ort. `g.studio_id = $3` bleibt im
+UPDATE, obwohl die CTE schon filtert — Prüfreihenfolge Punkt 1, und eine
+Abfrage ohne `studio_id` in der eigenen WHERE wäre für jeden Leser und jeden
+Wächter eine Lücke. `holeOderLegeAn()` bleibt UNVERÄNDERT.
+
+**Diese CTE ist bereits gegen PostgreSQL 16 gemessen** (Wegwerf-DB, danach
+gelöscht), zweimal — einmal mit plpgsql-Variable, einmal mit ECHTEN gebundenen
+Parametern über `PREPARE p(text,int,int)`, `$3` zweimal verwendet:
+
+    id1 wertgleich                      rowCount 0   unverändert
+    id2 echte Änderung 5 → 2            rowCount 1
+    id3 notizen IS NULL                 rowCount 1
+    id4 Text ohne Bestandszeile         rowCount 1   angehängt
+    id5 ZWEI Bestandszeilen (9 und 2)   rowCount 1   erste ersetzt
+    id6 fremdes Studio                  rowCount 0
+    id99 existiert nicht                rowCount 0
+
+`id5` ist der Grund gegen `includes()`: dort findet eine ECHTE Änderung statt,
+`includes()` hätte sie unterdrückt.
+
+**Ein Kommentar nennt den Grund**, sonst zieht der nächste die CTE als
+„umständlich" zurück: *ein wertgleiches UPDATE liefert in PostgreSQL
+`rowCount 1`; der Zähler des Prüfplan-Abgleichs meldete daraus eine
+Teiländerung, die nicht stattgefunden hat.*
+
+**Abnahme — drei Fälle, je frisches Studio, POST zweimal mit identischem
+Rumpf, beim zweiten das strenge Lesen gestört:**
+
+    A  antwort_rwa=vorhanden (kein notizZusatz)
+       unverändert: "keine Einträge"-Text, KEIN Teiländerungs-Text
+    B  antwort_feuerloescher, anzahl=2 beide Male
+       NEU: "keine Einträge"-Text, KEIN Teiländerungs-Text
+    C  antwort_feuerloescher, erst anzahl=2, dann anzahl=5
+       weiterhin Teiländerungs-Text, KEIN "keine Einträge"-Text
+
+C ist die Positivkontrolle: ohne sie belegt B nur, dass der Zähler nicht mehr
+erhöht — nicht, dass er es bei einer echten Änderung noch tut.
+
+**Gegenprobe:** `AND neu.text IS DISTINCT FROM neu.alt` entfernen → B muss ROT
+werden, C GRÜN bleiben. Beides wörtlich melden.
+
+**Und die Pflichtfrage beantworten, nicht überspringen:** welche BESTEHENDE
+Zusicherung kann der neue Leerzustand (`rowCount 0`, wo vorher immer 1 stand)
+ab jetzt erfüllen, ohne dass das Bewachte noch da ist? Die Zählstellen um
+`praefplanGeaendert` und alles, was am „keine Einträge"-Text hängt, einzeln
+durchgehen und das Ergebnis melden — auch wenn es „keine" lautet.
+
+---
+
+## 6 — Die Schnappschuss-Sollwerte
+
+**Bereits beantwortet, NICHT erneut untersuchen:** `ERWARTETE_AUFGABENANZAHL`
+(Z. 137) und `terminAnzahlGesamt()` (Z. 147) speisen sich aus
+`core/ausstattung.js#FRAGEN`, also aus einer statischen Vorlage; und
+`volleZeilenmenge()` (Z. 245-248) wie `aktiveNamen()` (Z. 185-189) filtern
+`wg.studio_id = $1 AND k.name = $2`. Vier Zeilen in frischen Studios unter der
+Brandschutz-Kategorie verschieben nichts.
+
+**Was trotzdem zu tun ist:** nach dem Bau die volle Suite fahren und melden,
+ob sich irgendein Sollwert bewegt hat. Wenn ja — NICHT nachziehen, sondern
+melden, welcher, um wie viel und warum.
+
+---
+
+## Abnahme insgesamt
+
+1. `node --check` auf jede geänderte Datei.
+2. Die Gegenproben aus Punkt 1 (vier), 2 (eine), 4 (zwei), 4b (zwei), 5 (eine)
+   — **jede einzeln, jede wörtlich mit EXIT-Code und PASS/FAIL-Zahlen.**
+3. Jede Mutation über ein Skript, das den Zielpfad als ARGUMENT nimmt, bei
+   ungleich einer Fundstelle abbricht, den Marker `GEGENPROBE-`+`DEFEKT`
+   schreibt, `node --check` fährt und gegen eine vorher per `cp` angelegte
+   Kopie mit `diff` EXIT 0 zurückgenommen wird. **Rücknahme NIE mit einem
+   Testlauf verketten** — der PreToolUse-Wächter lehnt den GANZEN Befehl ab,
+   und dann steht der Defekt noch, während die Meldung „zurückgenommen" lautet.
+4. `bash test/run.sh > <logdatei> 2>&1; echo "SUITE_EXIT=$?"` — ohne Pipe, ohne
+   äusseres `flock`.
+5. Markerscan mit `--exclude-dir` auf dem PFAD, nicht per `grep -v`.
+6. `git status` über ALLE Arbeitsbäume.
