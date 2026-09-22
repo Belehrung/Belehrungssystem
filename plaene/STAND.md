@@ -7047,3 +7047,70 @@ Sabotage-Reste ausserhalb von `.md`.
 2. Bauauftrag der vierten Runde erteilen (R1–R6 in EINER Runde).
 3. Danach das übliche Ritual; **Regel 6a gilt weiter — kein PR-Link an den
    Betreiber, bevor restlos alles durch ist.**
+
+---
+
+## 22.09.2026, ~07:15 UTC — Ladebestand: M13 an der Gesamtsuite, R6 berichtigt, Planprüfung Runde 4 läuft
+
+**Erledigt seit dem letzten Eintrag:**
+
+1. **M13 gegen die VOLLE Suite gemessen** (die offene Messung aus dem
+   Übergabepunkt). Mutation `(g.studio_id=$1 OR TRUE)` in
+   `feuerloescherOhneProtokoll()`, eigener Prüf-Arbeitsbaum auf `9d3fc3b`:
+   **`SUITE_EXIT=0` nach 270 s, kein einziges FAIL.** Auch die Gesamtsuite
+   fängt die aufgehobene Mandantentrennung nicht. Die Mutation lag
+   nachweislich an Ort und Stelle (`git diff` genau zwei Zeilen, Marker
+   gesetzt). Arbeitsbaum danach entfernt, Markerscan über alle Bäume sauber.
+
+2. **R6 ist BERICHTIGT und nicht mehr blockierend — und mein Probenentwurf
+   war wertlos.** Die WHERE hat ZWEI Riegel. `wartung_kategorien` ist
+   studio-eigen (`core/db.js:797`, UNIQUE auf `(studio_id, name)`), also
+   trägt eine realistisch angelegte Fremdzeile eine ANDERE `kategorie_id` und
+   fällt schon an `g.kategorie_id=$2` heraus — meine Probe wäre bei der
+   R6-Mutation grün geblieben. **Sechste eigene Vorgabe dieses Beitrags, die
+   beim Messen fällt.**
+   Zugleich ist `kategorie_id` selbst studio-gesichert: alle FÜNF
+   `INSERT INTO wartung_geraete` im Produktivcode leiten sie so her
+   (`geraete.js:2632`, `:5752` mit `!kat`-Abweisung, `:6184`,
+   `core/demo_daten.js:165`). Der Fremdschlüssel ist allerdings einspaltig
+   (`core/db.js:874`) und erzwingt es NICHT.
+
+3. **Bauauftrag der vierten Runde geschrieben** (Ende von
+   `plaene/auftrag-ladebestand-nacharbeit.md`, „FASSUNG 1"), sechs Punkte:
+   1 = Verhaltensprobe über VIER Fixturzeilen, schliesst R1 und R6, mit vier
+   Gegenproben; 2 = Titel-Wortlaut (R2); 3 = `r.clone().text()` (R3);
+   4 = Bereichs-Riegel verbietet `\bdb\b` (R4); 5 = R5 als **CTE mit
+   `IS DISTINCT FROM`** statt der skizzierten `includes()`-Bedingung;
+   6 = Fixturgrösse gegen die Schnappschuss-Sollwerte halten.
+
+   **Punkt 5 ist bewusst anders als in R5 skizziert.** Die `includes()`-Idee
+   sagt in JavaScript voraus, was `regexp_replace` tun wird, und liegt bei
+   zwei „Erfasster Bestand"-Zeilen (Handbearbeitung) daneben. Die CTE lässt
+   die Datenbank selbst entscheiden und hält den `CASE` an genau einem Ort.
+
+**Läuft gerade: die Planprüfung, ZWEI Lesespuren mit VERSCHIEDENEN Bündeln.**
+`kimi-k3` auf der Produktionsseite (Vorlage + Helfer + Route + Schema),
+`deepseek-v4-pro` auf der Zusicherungsseite (Testdatei + Route + Schema).
+Werkzeug: `<scratchpad>/pp4/frage.js` (Streaming, Schlüssel aus der Datei,
+drei Versuche). Bündel: `<scratchpad>/pp4/bundleA.json` / `bundleB.json`.
+Eintrag in `ASTRA-LAEUFE.md` steht mit Strichen, bis nachgemessen ist.
+
+**Positivkontrolle der Methode steht:** beide Modelle beantworten eine
+Sachfrage richtig, ein erfundenes Modell wird mit HTTP 404 abgewiesen.
+
+**Der Faden danach:**
+1. Befunde beider Spuren EINZELN selbst nachmessen, Auftrag zu FASSUNG 2
+   fortschreiben, Striche in `ASTRA-LAEUFE.md` durch Zahlen ersetzen.
+2. Bauauftrag an den Executer. **Achtung Kontingent:** die beiden
+   ausführenden Prüfspuren am 21.09. starben je an HTTP 429 (Sonnet-Wochen-
+   limit, danach Konto-Limit). Geht kein Agent, wird direkt gebaut.
+3. Danach das übliche Ritual: Diff lesen, Gegenproben, volle Suite,
+   Dateizahl-Ritual, Lint, Prüfspuren, CI, Merge.
+4. **Regel 6a gilt weiter — kein PR-Link an den Betreiber, bevor restlos
+   alles durch ist. Pushen ja, melden nein.**
+
+**Danach in der Warteschlange** (Betreiber: „mach das wenn der rest fertig
+ist"): Mehr-Anbieter-Lesewerkzeuge für `tools/gegenleser-repo.js`, damit
+Kimi und DeepSeek auch direkt im Repo nachsehen können. Das Werkzeug
+`<scratchpad>/pp4/frage.js` ist dafür die halbe Vorarbeit — es kann beide
+Anbieter, aber noch ohne Werkzeugschleife.

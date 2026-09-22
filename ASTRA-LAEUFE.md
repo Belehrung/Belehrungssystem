@@ -2808,3 +2808,39 @@ Kommentar, warum nicht.
 **Summe der bezifferbaren Kosten dieses Abschnitts: 4,67 $** (vier
 OpenAI-Läufe). Drei Läufe auf `kimi-k3` und zwei auf `deepseek-v4-pro` sind
 angefallen und nicht bezifferbar, solange die Preistabelle sie nicht führt.
+
+---
+
+## 22.09.2026 — Planprüfung der VIERTEN Runde am Ladebestand-Beitrag
+
+Zwei Lesespuren, **verschiedene Bündel** (Betreiber-Entscheidung 20.09.2026),
+je ein Aufruf, `reasoning.effort: high`, `stream: true` (Pflicht — der
+Egress-Proxy schneidet gegen beide Gegenstellen bei ~300 s ab).
+
+Geprüft wird ein AUFTRAGSPAPIER, nicht ein Diff: der Code der vierten Runde ist
+noch nicht gebaut.
+
+| | Spur A | Spur B |
+|---|---|---|
+| Modell | `kimi-k3` | `deepseek-v4-pro` |
+| Schwerpunkt | Produktionsseite | Zusicherungsseite |
+| Bündel | Auftragspapier, `geraete.js` 1900-2300 (Helfer), `geraete.js` 2580-3170 (Route), `core/brandschutz-vorlage.js`, Schema `wartung_*` | Auftragspapier, `test_feature_ladebestand_streng.js` (vollständig), `geraete.js` 2580-3170 (Route), Schema `wartung_*` |
+| Umfang | 212.478 Bytes ≈ 57k Token | 220.453 Bytes ≈ 59k Token |
+| Befunde | — | — |
+| davon nach EIGENER Nachmessung getragen | — | — |
+| Kosten | — | — |
+
+Überschneidung der Bündel: Papier, Routenausschnitt, Schema. Verschieden:
+A hat die Vorlage und die Helferdefinitionen, B hat die Testdatei.
+
+**Positivkontrolle der Methode, vor den Läufen gemessen:** beide Endpunkte
+beantworten eine Sachfrage richtig (`kimi-k3` 4,2 s, `deepseek-v4-pro` 1,9 s,
+beide „Wien"), ein erfundenes Modell (`kimi-quatschmodell-9`) wird mit HTTP 404
+`resource_not_found_error` abgewiesen. Die Methode lehnt also nicht einfach
+alles ab und nimmt nicht einfach alles an.
+
+**Verbrauchszahlen:** `deepseek-v4-pro` liefert `usage` im SSE-Strom von sich
+aus, `kimi-k3` nur mit `stream_options: {include_usage: true}` — ohne das Feld
+kam `usage: null` zurück. Nachgetragen, bevor die grossen Läufe starteten.
+
+Befunde, Trageanteil und Kosten werden nach der eigenen Nachmessung ergänzt.
