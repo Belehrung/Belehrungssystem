@@ -2017,6 +2017,17 @@ Drei Dinge dazu, alle gemessen und alle nötig:
 * Das Prüfprotokoll für `Feuerlöscher 2` ist eine Zeile in `wartung_pruefungen`
   mit `studio_id` und `geraet_id` dieser Zeile — der Helfer prüft
   `NOT EXISTS (… WHERE p.studio_id=g.studio_id AND p.geraet_id=g.id)`.
+* **Der Abschnitt räumt seine Fixtur am Ende wieder ab**, und zwar in dieser
+  Reihenfolge: erst die `wartung_pruefungen`-Zeile (der Fremdschlüssel ist
+  `ON DELETE RESTRICT`, Migration 0056), dann die vier Gerätezeilen, dann die
+  Kategorien und Studios. Grund: `Feuerlöscher 8` ist die erste Zeile im
+  Bestand, deren `kategorie_id` zu einem ANDEREN Studio gehört als ihre
+  `studio_id`, und die Suite fährt alle Dateien gegen DIESELBE Wegwerf-DB.
+  **Heute stört das nichts** — gemessen: von den acht Testdateien mit
+  `JOIN wartung_kategorien` benutzt KEINE `k.studio_id <> wg.studio_id` als
+  Unreinheits-Kriterium, alle filtern auf Gleichheit und schliessen die Zeile
+  damit aus. Es ist eine benannte Falle für den nächsten, kein heutiger
+  Defekt; das Abräumen kostet fünf Zeilen und nimmt sie weg.
 
 ### Ausgelöst wird über den ECHTEN Weg
 
@@ -2197,13 +2208,16 @@ zusätzlich eine zu gierige Bereinigung.
 s. unten). Stattdessen entscheidet die Datenbank selbst:
 
     await schreibePruefplan(`
-        WITH neu AS (
+        WITH gesperrt AS (
+            SELECT id, notizen FROM wartung_geraete
+             WHERE id=$2 AND studio_id=$3 FOR UPDATE),
+        neu AS (
             SELECT id, notizen AS alt, CASE
                      WHEN notizen IS NULL THEN $1
                      WHEN notizen ~ 'Erfasster Bestand: [0-9]+ Stück'
                        THEN regexp_replace(notizen, 'Erfasster Bestand: [0-9]+ Stück', $1)
                      ELSE notizen || E'\\n' || $1 END AS text
-              FROM wartung_geraete WHERE id=$2 AND studio_id=$3)
+              FROM gesperrt)
         UPDATE wartung_geraete g
            SET notizen = neu.text
           FROM neu
@@ -2211,14 +2225,23 @@ s. unten). Stattdessen entscheidet die Datenbank selbst:
            AND neu.text IS DISTINCT FROM neu.alt`,
         [g.notizZusatz, schonDa.id, req.studioId]);
 
+**`FOR UPDATE` in der ersten CTE ist NICHT schmückendes Beiwerk — ohne sie
+löscht diese Behebung Daten.** Gemessen, s. den Abschnitt „Planprüfung Spur A"
+weiter unten: eine CTE ohne Sperre rechnet auf dem Statement-Schnappschuss und
+überschreibt einen nebenläufig committeten Fremdschreiber. Der Fremdschreiber
+ist real erreichbar — `/geraetewartung/geraet/bearbeiten/:id`
+(`routes/admin/geraete.js:6524`) schreibt `notizen` in Z. 6633. Diese
+Begründung gehört als Kommentar an die Zeile, sonst räumt sie der nächste als
+überflüssig weg.
+
 Der `CASE` steht weiterhin an genau EINEM Ort. `g.studio_id = $3` bleibt im
 UPDATE, obwohl die CTE schon filtert — Prüfreihenfolge Punkt 1, und eine
 Abfrage ohne `studio_id` in der eigenen WHERE wäre für jeden Leser und jeden
 Wächter eine Lücke. `holeOderLegeAn()` bleibt UNVERÄNDERT.
 
-**Diese CTE ist bereits gegen PostgreSQL 16 gemessen** (Wegwerf-DB, danach
-gelöscht), zweimal — einmal mit plpgsql-Variable, einmal mit ECHTEN gebundenen
-Parametern über `PREPARE p(text,int,int)`, `$3` zweimal verwendet:
+**Diese CTE ist gegen PostgreSQL 16 gemessen** (Wegwerf-DB, danach gelöscht),
+in der Fassung MIT `FOR UPDATE`, über `PREPARE p3(text,int,int)` mit echten
+gebundenen Parametern:
 
     id1 wertgleich                      rowCount 0   unverändert
     id2 echte Änderung 5 → 2            rowCount 1
@@ -2236,8 +2259,11 @@ Parametern über `PREPARE p(text,int,int)`, `$3` zweimal verwendet:
 `rowCount 1`; der Zähler des Prüfplan-Abgleichs meldete daraus eine
 Teiländerung, die nicht stattgefunden hat.*
 
-**Abnahme — drei Fälle, je frisches Studio, POST zweimal mit identischem
-Rumpf, beim zweiten das strenge Lesen gestört:**
+**Abnahme — drei Fälle, je frisches Studio. A und B mit IDENTISCHEM Rumpf,
+C mit GEÄNDERTER Stückzahl; in allen drei Fällen wird beim ZWEITEN POST das
+strenge Lesen gestört** (ohne Störung gäbe es keine Fehlerseite und nichts zu
+prüfen — die frühere Fassung dieses Satzes widersprach ihrem eigenen dritten
+Fall):
 
     A  antwort_rwa=vorhanden (kein notizZusatz)
        unverändert: "keine Einträge"-Text, KEIN Teiländerungs-Text
@@ -2249,8 +2275,16 @@ Rumpf, beim zweiten das strenge Lesen gestört:**
 C ist die Positivkontrolle: ohne sie belegt B nur, dass der Zähler nicht mehr
 erhöht — nicht, dass er es bei einer echten Änderung noch tut.
 
-**Gegenprobe:** `AND neu.text IS DISTINCT FROM neu.alt` entfernen → B muss ROT
-werden, C GRÜN bleiben. Beides wörtlich melden.
+**Gegenproben, ZWEI, beide wörtlich melden:**
+
+    (a) `AND neu.text IS DISTINCT FROM neu.alt` entfernen
+        → B muss ROT werden, C GRÜN bleiben.
+    (b) `FOR UPDATE` aus der ersten CTE entfernen
+        → die Suite bleibt GRÜN. Das ist KEIN Befund gegen den Test, sondern
+          die gemessene Tatsache, dass diese Zeile eine NEBENLÄUFIGKEITS-
+          eigenschaft schützt, die keine Zusicherung der Suite herstellt.
+          **Melden, nicht überspringen** — und im Kommentar an der Zeile
+          festhalten, dass sie unbewacht ist.
 
 **Und die Pflichtfrage beantworten, nicht überspringen:** welche BESTEHENDE
 Zusicherung kann der neue Leerzustand (`rowCount 0`, wo vorher immer 1 stand)
@@ -2290,3 +2324,105 @@ melden, welcher, um wie viel und warum.
    äusseres `flock`.
 5. Markerscan mit `--exclude-dir` auf dem PFAD, nicht per `grep -v`.
 6. `git status` über ALLE Arbeitsbäume.
+
+---
+
+# PLANPRÜFUNG DER VIERTEN RUNDE — Spur A (`kimi-k3`, Produktionsseite)
+
+1011 s, `finish_reason: stop`, 69.675 Eingabe- / 31.729 Ausgabe-Token (davon
+27.234 Denken). Vier Befunde. **Jeder selbst nachgemessen.**
+
+## A1 — dieselbe Klasse wie B1, unabhängig gefunden
+
+Spur A zählt ebenfalls den DRITTEN Riegel (`studio_id=$1` im
+Deaktivierungs-UPDATE, Z. 2819) und kommt unabhängig auf dieselbe Folge: die
+Gegenproben der FASSUNG 1 wären grün geblieben, der Nachweis muss über die
+Seite laufen. **Zwei verschiedene Modelle, zwei verschiedene Bündel, derselbe
+Befund** — bei der Betreiber-Entscheidung vom 20.09. („verschiedene Bündel")
+ist das der Fall, der laut Messung selten ist; hier lag er vor.
+
+FASSUNG 2 setzt das bereits um. Spur A ergänzt eine Warnung, die
+hineingehört und jetzt drinsteht: **`abgeloest.push` darf NICHT an
+`rowCount > 0` gehängt werden**, ohne die Zusicherung 7 umzubauen — das machte
+die Seite wahrheitsgemässer und den Wächter blind. Genau die Klasse „eine
+Behebung kann Wächter BLIND machen".
+
+## A2 (NEU, BLOCKIEREND, gemessen) — meine CTE hätte DATEN GELÖSCHT
+
+**Der Befund:** Eine CTE liest auf dem Statement-Schnappschuss. Kommt ein
+nebenläufiger Schreiber derselben Zeile dazwischen, wertet PostgreSQL per
+EvalPlanQual zwar die Verbindungsbedingung auf der NEUESTEN Zeilenversion neu
+aus — die in der CTE BERECHNETEN Werte (`neu.text`, `neu.alt`) bleiben aber
+die des alten Schnappschusses. Das heutige schlichte UPDATE rechnet den `CASE`
+dagegen in der SET-Klausel, und die wird unter EPQ auf der neuen Zeilenversion
+neu ausgewertet.
+
+**Selbst gemessen**, PostgreSQL 16, Wegwerf-DB, drei Varianten, jeweils mit
+einem Fremdschreiber, der die Zeile drei Sekunden gesperrt hält und dann
+committet (`BEGIN; UPDATE … SET notizen='Admin-Notiz des Betreibers'; pg_sleep(3);
+COMMIT;`):
+
+| Variante | Endzustand der Zeile |
+|---|---|
+| **v1 — heutiges schlichtes UPDATE** | `Admin-Notiz des Betreibers / Erfasster Bestand: 2 Stück` |
+| **v2 — meine CTE aus FASSUNG 2** | `Grundlage X / Erfasster Bestand: 2 Stück` — **die Admin-Notiz ist WEG** |
+| **v3 — CTE mit `FOR UPDATE`** | `Admin-Notiz des Betreibers / Erfasster Bestand: 2 Stück` |
+
+**Und der Fremdschreiber ist real erreichbar, nicht theoretisch:**
+`routes/admin/geraete.js:6524` (`POST /geraetewartung/geraet/bearbeiten/:id`)
+schreibt `notizen` in Z. 6633. Ein Admin, der die Notiz eines Geräts
+bearbeitet, während der Brandschutz-Assistent läuft, hätte seine Eingabe
+verloren.
+
+**Das ist wörtlich die Klasse aus der CLAUDE.md: „Bei dieser Klasse ist die
+BEHEBUNG gefährlicher als der Fehler."** Mein Punkt 5 hätte einen falschen
+Satz auf einer Fehlerseite gegen echten Datenverlust getauscht. **Achte eigene
+Vorgabe dieses Beitrags, die beim Messen fällt** — und die erste, bei der das
+Messen nicht Aufwand gespart, sondern Schaden verhindert hat.
+
+**FASSUNG 2 Punkt 5 ist auf v3 umgestellt.** Die vollständige Fallmatrix ist
+mit `FOR UPDATE` nachgemessen und identisch mit v2: wertgleich `UPDATE 0`,
+echte Änderung `1`, NULL-Zweig `1`, Anhang-Zweig `1`, zwei Bestandszeilen `1`,
+fremdes Studio `0`, nicht vorhandene Zeile `0`.
+
+**Keine neue Sperr-Reihenfolge:** die Zeilensperre, die `FOR UPDATE` nimmt,
+hätte das UPDATE ohnehin genommen; `schreibePruefplan` läuft über `db.run`,
+also im Autocommit, die Sperre ist statementgebunden. Kein Kreis.
+
+## A3 (trägt) — meine Abnahmevorschrift widersprach sich selbst
+
+„POST zweimal mit identischem Rumpf" gegen „C: erst anzahl=2, dann anzahl=5".
+Wörtlich ausgeführt wäre C nicht durchführbar. In FASSUNG 2 berichtigt.
+
+## A4 (trägt als benannte Falle, kein heutiger Defekt) — die Anomalie bleibt in der Test-DB
+
+`Feuerlöscher 8` ist die erste Zeile im Bestand mit studiofremder
+`kategorie_id`, und die Suite fährt alle Dateien gegen dieselbe Wegwerf-DB.
+**Selbst nachgemessen:** von den acht Testdateien mit `JOIN
+wartung_kategorien` benutzt KEINE `k.studio_id <> wg.studio_id` als
+Unreinheits-Kriterium — alle filtern auf Gleichheit und schliessen die Zeile
+aus. Heute also folgenlos. FASSUNG 2 verlangt trotzdem das Abräumen der
+Fixtur, in der von Spur A genannten Reihenfolge (Prüfprotokoll zuerst, der
+Fremdschlüssel ist `ON DELETE RESTRICT`).
+
+## Was Spur A zu R6 beisteuert — und wo sie ehrlich abbricht
+
+Sie bestätigt den EINEN INSERT-Weg, den ihr Bündel enthielt (Z. 2632-2641 plus
+`holeOderLegeAn` Z. 2155-2162, beide studio-gesichert), und schreibt
+ausdrücklich, die übrigen vier Wege habe sie NICHT sehen können: „von mir nur
+zu einem Fünftel nachgemessen." Das ist genau die Rechenschaft, die der
+Vorspann verlangt, statt einer geratenen Bestätigung.
+
+Sie stellt dabei eine Frage, die ich nicht beantwortet hatte: **kann ein
+UPDATE die `kategorie_id` nachträglich auf eine fremde setzen?** Nachgemessen
+über alle `UPDATE wartung_geraete` im Produktivcode (30 Stück):
+`kategorie_id` kommt in **NULL** SET-Listen vor, ausschliesslich in
+WHERE-Klauseln und Verbindungsbedingungen. Damit ist die R6-Kernaussage von
+der anderen Seite geschlossen: weder ein INSERT noch ein UPDATE erzeugt eine
+Gerätezeile mit fremder Kategorie.
+
+## Was NACHGEMESSEN NICHT trägt
+
+Nichts. Alle vier Befunde tragen — A4 als benannte Falle statt als Defekt,
+was die Spur selbst so eingeordnet hat („Erwartung heute vermutlich: kein
+Treffer — dann ist der Befund eine benannte Falle").
