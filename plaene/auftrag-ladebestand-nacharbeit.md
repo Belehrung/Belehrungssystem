@@ -1193,3 +1193,81 @@ Bereichs-Riegels beweise nur „mindestens ein `schreibePruefplan(`". Das ist
 richtig und ausdrücklich so gewollt — sie ist die Bremse gegen einen LEEREN
 Bereich („leeres Ergebnis ist nicht sauberes Ergebnis"), nicht der Nachweis
 der einzelnen Wege. Den leisten die Verhaltensproben 4a–4c.
+
+---
+
+## AUSFÜHRENDE PRÜFSPUR — zweimal am Kontingent gescheitert, Messungen selbst zu Ende geführt
+
+Beide Anläufe (21.09.2026) endeten mit HTTP 429 — der erste am Wochenlimit,
+der zweite am Konto-Limit. **Beide starben MITTEN in einer Mutation**, und
+beide Male lag der Rest im eigenen Prüf-Arbeitsbaum, nie im Hauptbaum. Genau
+dafür ist die Trennung da; sie hat zweimal gehalten.
+
+Was liegen blieb, war brauchbar und ist von mir zu Ende gemessen worden.
+
+### R4 — die Klammer-Schreibweise umgeht den Bereichs-Riegel
+
+Liegengeblieben aus Anlauf 1: `await db["run"](…)` statt
+`await schreibePruefplan(…)` beim Notiz-UPDATE.
+
+**Gemessen:** `test_feature_ladebestand_streng.js` **EXIT 0, 20 PASS / 0 FAIL**
+— der Riegel sieht sie nicht, und der Schreibvorgang zählt nicht mehr mit.
+
+Das ist kein plausibler Versehensfehler, und der Riegel ist ausdrücklich als
+KONVENTIONSwächter benannt. Es lässt sich aber **ohne Wettrüsten** schliessen:
+im kommentarbereinigten Bereich kommt der Bezeichner `db` heute **null mal**
+vor, bei sechs `schreibePruefplan(`-Aufrufen. **Behebung:** der Riegel
+verbietet im Bereich `\bdb\b` statt einer Liste einzelner Methodennamen — das
+deckt Klammer- und Template-Schreibweise und `db.pool.query` mit ab.
+
+### R5 (NEU, gemessen statt benannt) — der wertgleiche Wiederholungs-POST lügt
+
+Bis hierher stand die Sache als „benannte Ungenauigkeit" im Kommentar.
+**Jetzt gemessen**, zwei Fälle, je frisches Studio, POST zweimal mit
+IDENTISCHEM Rumpf, beim zweiten das strenge Lesen gestört:
+
+    A  antwort_rwa=vorhanden (kein notizZusatz)
+       Teilaenderungs-Text: false | "keine Eintraege": true   -> RICHTIG
+    B  antwort_feuerloescher=vorhanden, anzahl=2 (beide Male 2)
+       Teilaenderungs-Text: true  | "keine Eintraege": false  -> FALSCH
+
+In Fall B hat sich am Prüfplan nichts geändert — die Stückzahl ist dieselbe —,
+und die Seite behauptet trotzdem eine Teiländerung. Ursache ist das
+`notizen`-UPDATE: PostgreSQL meldet `rowCount 1` auch dann, wenn
+`regexp_replace` denselben Text wieder erzeugt.
+
+**Behebung, eine Bedingung statt eines SQL-Umbaus:** `holeOderLegeAn()` gibt
+`notizen` mit zurück (eine Spalte mehr im vorhandenen SELECT), und der
+Aufrufer feuert das UPDATE nur noch, wenn der Bestandstext den neuen
+`notizZusatz` NICHT schon wörtlich enthält:
+
+    if (g.notizZusatz && !(schonDa.notizen || '').includes(g.notizZusatz)) { … }
+
+Das ist genau die Bedingung, unter der die `CASE`-Ersetzung denselben String
+erzeugt — kein Nachbau der SQL-Logik in JavaScript, keine doppelte Aussage.
+**Abnahme:** Fall B muss danach „keine Einträge" zeigen, Fall A unverändert
+bleiben, und eine ECHTE Stückzahländerung (2 → 5) weiterhin den
+Teiländerungs-Text.
+
+### R6 (BLOCKIEREND, Prüfreihenfolge Punkt 1) — die Mandantentrennung im ausgelagerten Helfer ist unbewacht
+
+Liegengeblieben aus Anlauf 2, und es ist der schwerste Fund dieser Runde.
+Mutation in `feuerloescherOhneProtokoll()`:
+
+    WHERE (g.studio_id=$1 OR TRUE) AND g.kategorie_id=$2 AND g.aktiv=1
+
+**Gemessen:** `test_feature_brandschutz.js` **EXIT 0, 55 PASS / 0 FAIL**,
+`test_feature_ladebestand_streng.js` **EXIT 0, 20 PASS / 0 FAIL**.
+
+Und es gibt auch keinen Geschwisterwächter, der einspringt: von den fünf
+Dateien mit `mandantengrenze`/`studio` im Namen liest **keine einzige**
+`routes/admin/geraete.js` (gezählt mit `grep -l`).
+
+**Das hängt unmittelbar an R1.** Vor der Auslagerung stand die Abfrage in der
+Route und war über das statische Muster in `test_feature_brandschutz.js` an
+ihre Aufrufstelle gebunden; heute steht sie im Helfer und ist es nicht mehr.
+Dieselbe Behebung deckt beides ab — **die Verhaltensprobe aus R1 bekommt ein
+ZWEITES Studio**: eine gleichnamige `Feuerlöscher N`-Zeile ohne Prüfprotokoll
+im FREMDEN Studio muss nach dem POST unangetastet und aktiv bleiben.
+Dann fällt dieselbe Probe sowohl bei `const alt = []` (R1) als auch bei der
+aufgehobenen Mandantentrennung (R6).
