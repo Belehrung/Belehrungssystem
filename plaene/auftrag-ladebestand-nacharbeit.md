@@ -1765,3 +1765,145 @@ anzunehmen:** ob `test_feature_zustaendigkeit.js` in der Suite VOR oder NACH
 eine fremde Zeile in ihrer Kategorie, wäre der Fehlalarm in der ANDEREN Datei
 — dort, wo niemand ihn sucht. Mit frischen Kategorien kann das nicht
 passieren; die Reihenfolge ist trotzdem zu nennen, nicht zu unterstellen.
+
+---
+
+# PLANPRÜFUNG DER VIERTEN RUNDE — Spur B (`deepseek-v4-pro`, Zusicherungsseite)
+
+541 s, `finish_reason: stop`, 69.198 Eingabe- / 26.424 Ausgabe-Token (davon
+24.173 Denken). Drei Befunde. **Jeder selbst nachgemessen.**
+
+*Nebenbei eine Berichtigung an unserer eigenen Umrechnung:* ich hatte das
+Bündel mit dem Faktor 3,71 auf 59k Token geschätzt, gezählt wurden 69.198 —
+rund 17 % daneben. Für die Nähe zur Kontextgrenze ist das relevant.
+
+## B1 (BLOCKIEREND, trägt) — meine Gegenproben (c) und (d) messen nichts
+
+**Der Befund:** Die Deaktivierungsschleife lautet
+
+    routes/admin/geraete.js:2819
+      await schreibePruefplan("UPDATE wartung_geraete SET aktiv=0
+                                WHERE studio_id=$1 AND id=$2", [req.studioId, a.id]);
+
+`$1` ist IMMER `req.studioId`. Gibt der mutierte Helfer eine fremde Zeile
+zurück, trifft dieses UPDATE sie nicht — `rowCount 0`, die Zeile bleibt aktiv,
+und meine Zusicherungen 3 und 4 („Fremdzeile bleibt `aktiv=1`") bleiben GRÜN.
+**Die Gegenproben (c) und (d) aus Punkt 1 wären wirkungslos gewesen.**
+
+**Selbst nachgemessen** (Quelltext gelesen, Zeile 2817-2821): `[req.studioId,
+a.id]` steht dort wörtlich, und `abgeloest.push(a.name)` prüft den `rowCount`
+NICHT — in diesen vier Zeilen kommt `rowCount` **null mal** vor.
+
+Das ist die **siebte** eigene Vorgabe dieses Beitrags, die beim Messen fällt.
+
+### Und damit wird R6 SCHÄRFER, nicht schwächer — die Wirkung ist eine andere
+
+Zwischen der Eingabe und dem Schaden stehen hier **DREI** Riegel, nicht zwei:
+
+    1. g.studio_id=$1      in der SELECT des Helfers      ← die Klausel aus R6
+    2. g.kategorie_id=$2   in derselben SELECT            ← selbst studio-gesichert
+    3. studio_id=$1        im Deaktivierungs-UPDATE       ← NEU gefunden
+
+Fällt Riegel 1 allein, wird die fremde Zeile GELESEN, ihr Name landet
+unbedingt in `abgeloest` und erscheint auf der Ergebnisseite unter
+„… wurden **deaktiviert, nicht gelöscht**: Feuerlöscher 8". Geschrieben wird
+dank Riegel 3 nichts.
+
+**Die Wirkung ist also keine mandantenübergreifende SCHREIBUNG, sondern eine
+mandantenübergreifende PREISGABE** — Gerätenamen eines fremden Studios auf
+unserer Ergebnisseite, samt einer Behauptung („deaktiviert"), die für diese
+Zeile nicht stimmt. Das ist beobachtbar und damit bewachbar; mein
+Probenentwurf hat nur an der falschen Stelle hingesehen.
+
+### Der Behebungsvorschlag der Spur wird ABGELEHNT
+
+Vorgeschlagen war, die Schleife auf `[a.id, a.studio_id]` umzustellen. **Das
+wäre die Behebung, die schlimmer ist als der Fehler:** sie nimmt Riegel 3
+heraus und macht aus der Preisgabe eine echte mandantenübergreifende
+SCHREIBUNG, sobald Riegel 1 je fällt. Die Schleife bleibt wie sie ist.
+
+### Punkt 1 in FASSUNG 2 — der Nachweis läuft über die SEITE, nicht über die Zeile
+
+Fixtur unverändert (vier Zeilen, Tabelle oben). **Zusicherungen neu:**
+
+1. `Feuerlöscher 1` → `aktiv=0` (direkte Abfrage über die id)
+2. `Feuerlöscher 2` → `aktiv=1`
+3. `Feuerlöscher 7` (fremdes Studio, fremde Kategorie) → `aktiv=1`
+4. `Feuerlöscher 8` (fremdes Studio, EIGENE Kategorie) → `aktiv=1`
+5. Die Ergebnisseite NENNT `Feuerlöscher 1`
+6. Die Ergebnisseite nennt `Feuerlöscher 2` NICHT
+7. **Die Ergebnisseite nennt `Feuerlöscher 7` NICHT und `Feuerlöscher 8`
+   NICHT** ← das ist der R6-Melder
+
+**Gegenproben, was JEWEILS fallen muss:**
+
+    (a) unmutiert                        GRÜN
+    (b) const alt = []                   ROT über 1 und 5
+    (c) (g.studio_id=$1 OR TRUE)         ROT über 7, und zwar ÜBER
+                                         "Feuerlöscher 8" — NICHT über 3/4
+    (d) beide WHERE-Klauseln entfernt    ROT über 7, jetzt AUCH über
+                                         "Feuerlöscher 7"
+
+Dass (c) nur `Feuerlöscher 8` trifft und (d) beide, ist der Beweis, dass die
+Fixtur die beiden Riegel wirklich trennt: `Feuerlöscher 7` trägt die Kategorie
+des fremden Studios und fällt bei (c) noch an Riegel 2 heraus.
+
+**Ausdrücklich in den Kommentar, sonst räumt sie der nächste weg:** die
+Zusicherungen 3 und 4 können bei (c)/(d) NICHT rot werden — Riegel 3
+verhindert jede Schreibung. Sie sind der Rückhalt gegen eine künftige
+Änderung an der Deaktivierungsschleife, nicht der R6-Melder.
+
+## B2 (trägt zur HÄLFTE) — `\bdb\b` ist zu breit und zu schmal
+
+**Die „zu schmal"-Hälfte trägt** (Alias: `const eigen = db;` ausserhalb des
+Bereichs, dann `eigen.run(…)` darin) — sie steht allerdings bereits als
+ausdrückliche Grenze in Punkt 4. Gemessen: `await eigen.run(x)` trifft
+`\bdb\b` nicht.
+
+**Die „zu breit"-Hälfte trägt in der gemeldeten Form NICHT.** Die
+vorgeschlagene Nachmessung war `const dbHinweis = 'kein Zugriff';`.
+Nachgemessen, sieben Fälle:
+
+    const dbHinweis = 1;          \bdb\b trifft NICHT
+    const db_hinweis = 1;         \bdb\b trifft NICHT
+    const x='kein db Zugriff';    \bdb\b trifft
+    await db.run(x);              \bdb\b trifft
+    await db["run"](x);           \bdb\b trifft
+    const eigen=db;               \bdb\b trifft
+    await eigen.run(x);           \bdb\b trifft NICHT
+
+`\b` verlangt eine Wortgrenze; `dbHinweis` und `db_hinweis` haben keine. Zu
+breit ist das Muster nur gegenüber dem ALLEINSTEHENDEN Wort in Prosa oder
+Zeichenketten — und genau das ist mein eigener Punkt 4b, der es schliesst.
+
+**Der Gegenvorschlag `\bdb\s*(\.|\[)` wird ABGELEHNT, gemessen:**
+
+    Zeile                      \bdb\b   \bdb\s*[.[]
+    await db.run(x);             JA        JA
+    await db["run"](x);          JA        JA
+    await db.pool.query(x);      JA        JA
+    const eigen = db;            JA        —     ← der Unterschied
+    await eigen.run(x);          —         —
+
+Das engere Muster übersieht die Alias-BILDUNG im Bereich. Da die
+Alias-Schwäche der einzige verbliebene Umgehungsweg ist, wäre es ein Tausch
+der einzigen Stelle, an der der Riegel ihn noch sehen könnte. **`\bdb\b`
+bleibt, zusammen mit Punkt 4b.**
+
+## B3 (Beobachtung, bestätigt meine eigene Messung)
+
+Die Spur beantwortet die beiden Arbeitsfragen aus Punkt 5 und 6 unabhängig
+so, wie ich sie am 22.09. selbst gemessen habe: keine bestehende Zusicherung
+wird durch den neuen Leerzustand fälschlich erfüllt, und keine verschiebt
+sich durch vier zusätzliche Zeilen in einem frischen Studio. **Sie hat dabei
+die eine nicht studio-gesicherte Zählung in `test_feature_zustaendigkeit.js`
+NICHT gesehen** — sie hatte diese Datei nicht im Bündel. Das ist kein
+Versäumnis der Spur, sondern eine Eigenschaft des Bündels, und der Grund,
+warum verschiedene Bündel gefahren werden.
+
+## Prüfgrenze, die die Spur selbst nennt
+
+Sie hatte `feuerloescherOhneProtokoll()` nicht im Bündel (nur den
+Routenausschnitt) und schreibt ausdrücklich, ihr Befund B1 hinge daran, wie
+der Helfer aussieht. **Das war richtig und ehrlich — und der Befund trägt
+trotzdem**, weil er an der Schleife hängt, die sie sehr wohl sah.
