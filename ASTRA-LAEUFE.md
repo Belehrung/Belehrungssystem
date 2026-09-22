@@ -2881,3 +2881,61 @@ ihre eigene Grenze dabei ausdrücklich benannt („von mir nur zu einem Fünftel
 nachgemessen"), statt eine Bestätigung zu raten — und genau diese Ehrlichkeit
 hat eine Messung angestossen, die ich nicht geplant hatte (`kategorie_id`
 kommt in null SET-Listen vor).
+
+---
+
+## 22.09.2026 — Diffprüfung der vierten Runde `ladebestand` (Diff `9d3fc3b..3a7cad5`)
+
+Erster Lauf nach der Spurenreduktion vom 20.09.2026 in der vorgesehenen
+Besetzung: **ausführende Claude-Spur + EINE Lesespur mit anderem Bündel.**
+
+| | ausführende Spur (Claude, `/code-review`) | Lesespur (`kimi-k3`) |
+|---|---|---|
+| Material | Diff, freie Dateiwahl, darf messen | Diff, Schema-Ausschnitt `core/db.js:780-900`, Routenbereich `:2660-3000`, Geschwisterwächter `test_feature_brandschutz.js` vollständig, ALLE Gegenproben-Zahlen |
+| Befunde | 11 | 4 (abgeschnitten) |
+| nach eigener Nachmessung getragen | 10 von 11 | 4 von 4 |
+| nur von dieser Spur | 7 | 2 |
+
+**Der Lauf der Lesespur ist ABGESCHNITTEN und wird als solcher geführt.**
+`finish_reason=length`; 29.611 von 32.000 Ausgabe-Token gingen ins Denken,
+55.325 Eingabe-Token, 781,3 s, Antwort 7.220 Zeichen und mitten im vierten
+Befund abbrechend. Was danach gekommen wäre, ist UNBEKANNT — nicht „nichts"
+und nicht „null Befunde". **Lehre, und sie ist neu:** bei `effort: high` und
+einem Bündel dieser Grösse (55k Eingabe) reichen 32.000 Ausgabe-Token nicht.
+Das ist dieselbe Klasse wie der OpenAI-Fall vom 11.09.2026, nur bei einem
+anderen Anbieter — und die eingebaute Statusprüfung hat sie diesmal sofort
+gemeldet, statt sie als „keine Befunde" durchzureichen.
+
+**Die Überschneidung ist gemessen und klein: 2 von 13 verschiedenen
+Befunden.** Beide Spuren fanden unabhängig (a) dass die neue
+Kommentarbereinigung an einem `//` INNERHALB einer Zeichenkette abschneidet
+und damit ein neues Loch in genau den Riegel reisst, den sie schützen sollte,
+und (b) dass das Aufräumen der Fixtur auf dem Erfolgspfad statt in einem
+`finally` steht. Alles Übrige war disjunkt.
+
+**Der teuerste Befund kam von der ausführenden Spur und war eine FALSCHE
+ZUSICHERUNG VON ABDECKUNG** — unsere Klasse Nummer zwei: die
+Musterverschärfung `/\bdb\.(run|q|one)\(|\.query\(/` → `/\bdb\b/` hat die
+Alternative `\.query\(` ersatzlos verloren, während die Erfolgsmeldung
+wörtlich weiter behauptete, `.query(` sei abgedeckt. Selbst nachgemessen über
+einen `pool`-Alias ausserhalb des Bereichs: **EXIT 0, 25 PASS / 0 FAIL** bei
+umgangenem Riegel.
+
+**Der lehrreichste Befund war einer, den ich NICHT übernommen habe** (C5): die
+einfache WHERE-Form statt der CTE. Er trägt vollständig — gegen PostgreSQL 16
+gemessen, gleiche Fallmatrix (`0,1,1,1,1,0,0`) und im Nebenläufigkeitsfall
+dasselbe Ergebnis wie die CTE MIT `FOR UPDATE`, nur ohne Sperre. Abgelehnt
+wurde er trotzdem, weil er den CASE-Ausdruck zweimal hinschreibt, also die
+laut eigener CLAUDE.md „häufigste Fehlerquelle in diesem Projekt" in der
+Variante einführt, die sich nicht auflösen lässt. **Berechtigt war die Rüge
+trotzdem:** der Diff begründete nur, warum kein `includes()`-Vergleich gebaut
+wurde, nicht, warum die WHERE-Form verworfen wurde — eine Abwägung, die nicht
+aufgeschrieben ist, hat nicht stattgefunden.
+
+**Der einzige gefallene Befund** war C8 in seiner starken Form („die
+URL-Gegenprobe kann nicht fallen"): sie kann sehr wohl fallen, meine Mutation
+hat sie rot gemessen. Was trägt, ist die schwächere Hälfte — sie ist gegen
+ÜBERGIER empfindlich, nicht gegen WEGFALL. Die Behebung ist dieselbe.
+
+**Kosten:** Lesespur 87.325 Token (55.325 ein, 32.000 aus). Die ausführende
+Spur läuft im eigenen Kontingent und wird hier nicht beziffert.
