@@ -7114,3 +7114,61 @@ ist"): Mehr-Anbieter-Lesewerkzeuge für `tools/gegenleser-repo.js`, damit
 Kimi und DeepSeek auch direkt im Repo nachsehen können. Das Werkzeug
 `<scratchpad>/pp4/frage.js` ist dafür die halbe Vorarbeit — es kann beide
 Anbieter, aber noch ohne Werkzeugschleife.
+
+---
+
+## 22.09.2026, ~07:25 UTC — Ladebestand: Planprüfung durch, FASSUNG 2 steht, Bau läuft
+
+**Die Planprüfung der vierten Runde ist ausgewertet.** Zwei Lesespuren mit
+verschiedenen Bündeln, sieben Befunde, EINE Überschneidung — sechs
+verschiedene. Zahlen in `ASTRA-LAEUFE.md`, Einzelheiten und jede eigene
+Nachmessung in `plaene/auftrag-ladebestand-nacharbeit.md`.
+
+**Zwei Befunde haben den Auftrag gekippt, beide selbst nachgemessen:**
+
+1. **A1/B1 (beide Spuren unabhängig):** Zwischen einer aufgehobenen
+   Mandantenklausel und dem Schaden stehen DREI Riegel, nicht zwei — das
+   Deaktivierungs-UPDATE (`geraete.js:2819`) bindet immer `req.studioId`. Eine
+   fremde Zeile wird also nie geschrieben, ihr NAME landet aber unbedingt auf
+   der Ergebnisseite. Die Wirkung ist eine mandantenübergreifende PREISGABE,
+   keine Schreibung; der Nachweis läuft ab FASSUNG 2 über die SEITE.
+2. **A2 (neu, blockierend):** Meine geplante CTE hätte **Daten gelöscht.**
+   Gemessen gegen PostgreSQL 16 mit einem Fremdschreiber, der drei Sekunden
+   sperrt und committet: heutiges UPDATE behält die fremde Notiz, meine CTE
+   überschreibt sie, die CTE **mit `FOR UPDATE`** behält sie wieder. Der
+   Fremdschreiber ist real erreichbar (`/geraetewartung/geraet/bearbeiten/:id`,
+   `geraete.js:6524`, schreibt `notizen` in Z. 6633). Punkt 5 ist umgestellt
+   und die volle Fallmatrix mit `FOR UPDATE` neu gemessen.
+
+**Acht eigene Vorgaben sind in diesem Beitrag inzwischen beim Messen
+gefallen.** Die achte ist die erste, bei der das Messen nicht Aufwand gespart,
+sondern Schaden verhindert hat.
+
+**Eigene Messungen, die keine Prüfspur hatte:** `kategorie_id` kommt in NULL
+SET-Listen aller 30 `UPDATE wartung_geraete` vor; eine Suite-Zählung ist nur
+nach `kategorie_id` eingegrenzt (`test_feature_zustaendigkeit.js:257/263`),
+weshalb die Fixtur frische Kategorien braucht; `provisionStudio()` legt die
+Brandschutz-Kategorie nicht an; die Lesehelfer verbinden mit
+`k.studio_id = wg.studio_id` und sehen die konstruierte Fremdzeile deshalb nie
+— ihr Zustand muss direkt über die id geprüft werden.
+
+**Berichtigung an unserer eigenen Umrechnung:** Faktor 3,71 lag bei beiden
+Bündeln rund 17 % zu niedrig (57k/59k geschätzt gegen 69,7k/69,2k gezählt).
+
+**Läuft gerade:** der Executer baut FASSUNG 2 in `/home/user/gymdocu`.
+Einordnung nach der Modellwahl-Regel: Standard-Executer, weil jede Schwelle,
+jede Gegenprobe und jedes erwartete Ergebnis vorgemessen und wörtlich
+vorgegeben ist — es muss nichts hergeleitet werden. **Der Baum ist bis zu
+seiner Meldung tabu.**
+
+**Der Faden danach:** Diff lesen, Gegenproben sichten, volle Suite,
+Dateizahl-Ritual, Lint, Diffprüfung (ausführende Claude-Spur plus EINE
+Lesespur mit anderem Bündel), CI, Merge. **Regel 6a gilt weiter — kein
+PR-Link an den Betreiber, bevor restlos alles durch ist. Pushen ja, melden
+nein.**
+
+**Danach in der Warteschlange:** Mehr-Anbieter-Lesewerkzeuge für
+`tools/gegenleser-repo.js`. Das Werkzeug `<scratchpad>/pp4/frage.js` ist die
+halbe Vorarbeit — es spricht Kimi und DeepSeek über Streaming, mit
+Schlüssel aus der Datei, Wiederholschleife und `finish_reason`-Prüfung; was
+fehlt, ist die Werkzeugschleife.
