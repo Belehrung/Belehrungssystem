@@ -7002,3 +7002,48 @@ Bemerkenswert ist der Titel des zweiten Commits: er klingt danach, dass ein
 Abnahmekriterium AUS MEINEM EIGENEN Auftrag beim Messen gefallen ist — das
 wäre das vierte in diesem Beitrag und genau das Verhalten, das ich verlangt
 habe. Nachzumessen, nicht zu glauben.
+
+---
+
+## 22.09.2026 — Ladebestand: wo genau der Faden liegt
+
+**Zweigkopf `9d3fc3b`, CI grün, volle Suite grün, Dateizahl 350 = 350, Lint
+leer. TROTZDEM NICHT FERTIG** — die Prüfungen haben sechs Befunde geliefert,
+alle selbst nachgemessen, alle noch OFFEN. Nichts davon ist gebaut.
+
+### Der Bauauftrag der VIERTEN Runde steht vollständig in
+`plaene/auftrag-ladebestand-nacharbeit.md` (Abschnitte „DIFFPRÜFUNG DER
+DRITTEN RUNDE" und „AUSFÜHRENDE PRÜFSPUR"). Kurzform:
+
+| | Befund | Behebung |
+|---|---|---|
+| **R1** | die Auslagerung nach `feuerloescherOhneProtokoll()` hat die Zusicherung von der Aufrufstelle getrennt (`const alt = []` ⇒ beide Dateien grün) | Verhaltensprobe statt zweiter statischer Zusicherung |
+| **R2** | mein Titel „Keine Feststellung gespeichert" ist zu absolut | „Keine **neue** Feststellung gespeichert" |
+| **R3** | `pruefeKeinFehlerseiten()` verbraucht den Antwortkörper | `r.clone().text()` |
+| **R4** | `db["run"](…)` umgeht den Bereichs-Riegel (20 PASS grün) | Riegel verbietet `\bdb\b` statt einzelner Methodennamen (im Bereich heute 0 Vorkommen) |
+| **R5** | wertgleicher Wiederholungs-POST behauptet eine Teiländerung (gemessen: Fall B) | eine Bedingung am Aufrufer, `notizen` in den SELECT |
+| **R6** | **BLOCKIEREND**, Mandantentrennung im Helfer unbewacht (55 PASS / 20 PASS grün) | dieselbe Probe wie R1, **mit zweitem Studio** |
+
+**R1 und R6 werden von EINER Verhaltensprobe erschlagen:** zwei nummerierte
+`Feuerlöscher N`-Altbestände im eigenen Studio (einer mit, einer ohne
+Prüfprotokoll) plus eine gleichnamige Zeile im FREMDEN Studio, die
+unangetastet bleiben muss.
+
+### Lage bei den Prüfspuren
+
+Die ausführende Spur ist am 21.09. **zweimal am Kontingent gescheitert**
+(Wochenlimit Sonnet, dann Konto-Limit). Beide Male mitten in einer Mutation,
+beide Male blieb der Rest im eigenen Arbeitsbaum `/workspace/gymdocu-pruef-r3b`
+— der Hauptbaum war jedes Mal sauber. **Die Isolation ist damit zweimal
+gemessen und trägt.** Wer hier fortsetzt, prüft trotzdem ZUERST auf
+Sabotage-Reste ausserhalb von `.md`.
+
+### Als Nächstes
+
+1. Laufende Messung abwarten: volle Suite mit der R6-Mutation im Baum
+   `/workspace/gymdocu-pruef-r3b` (Log `m13-suite.log` im Scratchpad) — sie
+   soll belegen, dass AUCH die Gesamtsuite die aufgehobene Mandantentrennung
+   nicht fängt. Danach Mutation zurücknehmen und den Baum entfernen.
+2. Bauauftrag der vierten Runde erteilen (R1–R6 in EINER Runde).
+3. Danach das übliche Ritual; **Regel 6a gilt weiter — kein PR-Link an den
+   Betreiber, bevor restlos alles durch ist.**
