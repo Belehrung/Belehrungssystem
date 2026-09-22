@@ -2289,6 +2289,26 @@ Pipe verschluckten Exit-Code und gegen Schreibzugriffe unter `/var/www`.
   echtem `sleep` darin. Und wer eine Wartezeit BEHAUPTET, misst sie mit
   `date +%s` vorher und nachher — sonst steht am Ende eine erfundene Zahl in
   der eigenen Meldung.
+- **`pgrep -f <muster>` TRIFFT SICH SELBST — und der übliche Klammertrick hilft
+  NICHT, wenn man wiederholt pollt.** Gemessen am 22.09.2026, während zwei
+  Prüfläufe liefen: `pgrep -c -f "node frage.js"` meldete **5**, tatsächlich
+  liefen **2**. Die drei übrigen Treffer waren Shell-Hüllen FRÜHERER
+  Werkzeugaufrufe, deren Kommandozeile das Suchmuster als Text enthält — jede
+  Abfrage hinterlässt also einen weiteren Scheintreffer für die nächste.
+  **Deshalb versagt hier auch `node fra[g]e.js`:** gemessen ebenfalls **5**.
+  Der Klammertrick schützt nur gegen die EIGENE, gerade laufende Zeile; die
+  Hüllen der vorherigen Abfragen enthalten den Namen ja wörtlich.
+  Der Schaden ist derselbe wie beim `read -t` darüber: keine Fehlermeldung,
+  sondern eine Warteschleife, die nie endet. Eine Wache
+  `while pgrep -f "node frage.js"; do …; done` läuft bis in ihr eigenes
+  Zeitlimit und meldet „noch aktiv", obwohl längst nichts mehr läuft.
+  **Richtig ist, auf ein ARTEFAKT zu warten statt auf einen Prozess** — die
+  Ergebnisdatei, die der Lauf schreibt (`until [ -f antwort.json ]`). Wo es
+  wirklich um den Prozess geht, `pgrep -x <programmname>` nehmen: gemessen
+  `pgrep -c -x node` → **2**, also die richtige Zahl.
+  Dieselbe Klasse wie der Markerscan weiter oben, der mitzählt, wie oft wir
+  über ihn reden: **ein Muster über Text misst auch die Texte mit, in denen
+  das Muster selbst vorkommt.**
 - **Umlaute in `grep`:** `.` matcht ein Byte, ein Umlaut belegt in UTF-8 zwei.
   `gef.hrdungsbeurteilung` findet nichts. Ohne Umlaut suchen oder `-P`.
 - **GitHub geht NUR über die MCP-Werkzeuge.** Ein direkter API-Aufruf per
