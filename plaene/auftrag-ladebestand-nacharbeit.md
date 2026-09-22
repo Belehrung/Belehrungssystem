@@ -1731,3 +1731,37 @@ Frage — sie steht der Planprüfung als ausdrücklicher Prüfpunkt im Auftrag.
 `/tmp/claude-0/…` lag — `drwx------`, für den Nutzer `postgres` nicht
 durchquerbar. Unter `/workspace/…` mit `chmod 755` lief sie. Genau die Regel
 aus der CLAUDE.md, und sie hat hier zum zweiten Mal zugeschlagen.
+
+---
+
+## EIGENE NACHMESSUNG 22.09.2026 (fünfte) — eine Zählung in der Suite ist NICHT nach Studio eingegrenzt
+
+Die Fixtur aus Punkt 1 legt vier Gerätezeilen an, und die ganze Suite läuft
+gegen DIESELBE Wegwerf-Datenbank. Also gefragt: zählt irgendein Test
+`wartung_geraete`, ohne nach `studio_id` einzugrenzen?
+
+Über alle Testdateien gesucht. Die meisten Treffer sind `WHERE id=$1` (über
+den Primärschlüssel eingegrenzt, harmlos) oder mehrzeilige Abfragen, bei
+denen `studio_id` in der nächsten Zeile steht. **Einer ist es nicht:**
+
+    test_feature_zustaendigkeit.js:257  SELECT COUNT(*)::int AS c
+                                          FROM wartung_geraete WHERE kategorie_id=$1
+    test_feature_zustaendigkeit.js:263  dieselbe Zählung noch einmal
+
+Sie zählt über eine KATEGORIE, nicht über ein Studio. Für sich genommen ist
+das in Ordnung (Kategorien sind studio-eigen), aber sie ist genau die Form,
+die von der konstruierten **Fremdzeile B** getroffen würde — eine Zeile in
+einem fremden Studio, die auf eine fremde Kategorie zeigt.
+
+**Vorgabe für Punkt 1, damit daraus kein Fehlalarm in einer ganz anderen
+Datei wird:** Die Fixtur legt für BEIDE Studios FRISCHE Kategorien an und
+verwendet keine bestehende `kategorie_id` wieder. Die `kategorie_id` der
+Fremdzeile B ist die des eigenen, in diesem Test frisch angelegten Studios —
+nie eine, die eine andere Testdatei schon benutzt.
+
+**Und eine Sache, die der Ausführende dabei prüfen muss statt sie
+anzunehmen:** ob `test_feature_zustaendigkeit.js` in der Suite VOR oder NACH
+`test_feature_ladebestand_streng.js` läuft. Kommt sie danach und fände sie
+eine fremde Zeile in ihrer Kategorie, wäre der Fehlalarm in der ANDEREN Datei
+— dort, wo niemand ihn sucht. Mit frischen Kategorien kann das nicht
+passieren; die Reihenfolge ist trotzdem zu nennen, nicht zu unterstellen.
