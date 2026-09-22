@@ -1678,3 +1678,56 @@ Damit ist zugleich eine Falle der dritten Erscheinungsform gebannt („das
 geprüfte Element ist strukturell geschützt"): eine Zusicherung über eine
 Menge, die diese Zeile ohnehin nie enthalten kann, wäre unempfindlich — sie
 bliebe grün, egal was mit der Zeile passiert.
+
+---
+
+## EIGENE NACHMESSUNG 22.09.2026 (vierte) — die CTE aus Punkt 5 ist gegen PostgreSQL gemessen
+
+Ein Vorschlag im Auftragspapier ist eine BEHAUPTUNG, bis jemand ihn laufen
+lässt. Gemessen gegen PostgreSQL 16 in einer Wegwerf-Datenbank
+(`cte_probe_test`, danach gelöscht), zuerst mit einer plpgsql-Variablen, dann
+noch einmal mit ECHTEN gebundenen Parametern über `PREPARE p(text,int,int)` —
+`$3` kommt darin zweimal vor, genau wie im vorgeschlagenen Code.
+
+**Erster Lauf, sieben Fälle, alle gegen `studio_id=1` angefragt:**
+
+| Fall | Vorzustand | `rowCount` | danach |
+|---|---|---|---|
+| id1 | `… Erfasster Bestand: 2 Stück` | **0** | unverändert |
+| id2 | `… Erfasster Bestand: 5 Stück` | 1 | auf 2 gesetzt |
+| id3 | `NULL` | 1 | `Erfasster Bestand: 2 Stück` |
+| id4 | Text ohne Bestandszeile | 1 | angehängt |
+| id5 | **ZWEI** Bestandszeilen (9 und 2) | **1** | erste ersetzt, zweite bleibt |
+| id6 | fremdes Studio (2) | **0** | unberührt |
+| id99 | existiert nicht | 0 | — |
+
+**Zweiter Lauf, gebundene Parameter:** A id1 wertgleich → `UPDATE 0`;
+B id2 echte Änderung → `UPDATE 1`; C id6 mit fremdem Studio angefragt →
+`UPDATE 0`; D id6 mit dem richtigen Studio, wertgleich → `UPDATE 0`;
+E id6 mit dem richtigen Studio, echte Änderung → `UPDATE 1`. Fünf von fünf
+wie vorhergesagt.
+
+**Gegenproben, beide gemessen:**
+
+    ohne "AND neu.text IS DISTINCT FROM neu.alt", wertgleich   rowCount=1
+    heutiges schlichtes UPDATE, wertgleich                      rowCount=1   ← das IST R5
+
+Die erste belegt, dass die Bedingung die Wirkung hat und nicht etwas anderes;
+die zweite reproduziert den Befund R5 im Kleinen.
+
+**Und id5 entscheidet die Designfrage aus Punkt 5 — gemessen statt
+argumentiert.** Bei zwei Bestandszeilen ersetzt `regexp_replace` ohne
+`g`-Flag nur die erste: es findet eine ECHTE Änderung statt, `rowCount=1` ist
+richtig. Die im R5-Abschnitt skizzierte `includes()`-Bedingung hätte hier
+unterdrückt, weil der Zieltext schon vorkam — sie hätte also eine
+stattgefundene Änderung als „keine Änderung" gemeldet. Die CTE nicht.
+
+**Was diese Messung NICHT hergibt:** sie sagt nichts über Sperren. Ob die CTE
+eine andere Sperrreihenfolge nimmt als das heutige UPDATE, ist eine eigene
+Frage — sie steht der Planprüfung als ausdrücklicher Prüfpunkt im Auftrag.
+
+**Nebenbei, für die Prüfstand-Regeln:** die Probe scheiterte zuerst mit
+`psql: Permission denied`, weil die SQL-Datei im Scratchpad unter
+`/tmp/claude-0/…` lag — `drwx------`, für den Nutzer `postgres` nicht
+durchquerbar. Unter `/workspace/…` mit `chmod 755` lief sie. Genau die Regel
+aus der CLAUDE.md, und sie hat hier zum zweiten Mal zugeschlagen.
