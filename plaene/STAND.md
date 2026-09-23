@@ -4,13 +4,20 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-Stand 23.09.2026, 16:45 UTC.
+Stand 23.09.2026, 18:45 UTC.
 
-* **Container-Neustart 16:41 UTC; beide Executer abgebrochen. Betreiber: „neu starten“ → zwei neue
-  Executer laufen (P1-Abschluss in `/workspace/gymdocu-p1`, unlink Nacharbeit 7 in
-  `/workspace/gymdocu-unlink`).** P1-Diffprüfung FERTIG: 22 Befunde aus zwei Spuren, alle getragen,
-  kein blockierender (`plaene/diffpruefung-pentest-p1.md`); Nacharbeit 1 steht in
-  `plaene/auftrag-pentest-p1-nacharbeit1.md` und geht an den P1-Executer, sobald er gemeldet hat.
+* **Pentest P1** (`fix-pentest-p1-idwache`): Abschluss fertig (`a9f06dc`, Suite 362 = 362, Lint 0).
+  Diffprüfung fertig (22 Befunde, alle getragen, `plaene/diffpruefung-pentest-p1.md`).
+  **Läuft:** Nacharbeit 1 (N1–N9, `plaene/auftrag-pentest-p1-nacharbeit1.md`) beim P1-Executer.
+  Sammelliste `plaene/offene-befunde-pentest-p1.md` (B1, A3, F1, V1).
+* **Nachweis-unlink** (`fix-nachweis-unlink`): Nacharbeit 7 gebaut (`1fc97ee`, Suite 361 = 361).
+  Runde 4: Lesespur fertig (7/7 getragen); **läuft:** ausführende Spur (Gegenproben A1–A3).
+  **Entscheidung (Haupt-Agent):** Löschaufträge bekommen eine EIGENE Tabelle statt des Status
+  `loeschen_offen` — R4-B1/B2/B3 und U-LOE1 haben dieselbe Wurzel. Plan
+  `plaene/auftrag-unlink-loeschauftrag.md` nach der ausführenden Spur, dann Planprüfung.
+* Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
+
+### Vorgeschichte des Tages (gekürzt)
 
   * **Pentest P1** (`/workspace/gymdocu-p1`, `fix-pentest-p1-idwache`, `ad5d609`, gepusht, Baum
     sauber). Laut Protokoll: Suite 362 = 362, Lint gelaufen, Abschlussbericht fehlt. Offen: Diff
