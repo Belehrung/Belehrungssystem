@@ -161,3 +161,95 @@ vergleicht, liegt je nach Jahreszeit ein bis zwei Stunden daneben. Heute tut
 das niemand; der geplante Riegel vergleicht `erstellt_am` gegen
 `pin_gesetzt_am`, und beide sind örtlich. **Als Falle für den nächsten
 Beitrag gehört es notiert, als Befund gegen den Bestand nicht.**
+
+---
+
+# BAUAUFTRAG S6 (Fassung 1, 23.09.2026) — Generationszähler statt Zeitvergleich
+
+**Zielrepo:** GymDocu, neuer Zweig `fix-s6-pin-generation` ab master `f4c0f07`.
+**Modellwahl, VOR dem Auftrag entschieden:** Standard-Executer — der Entwurf ist hier
+festgelegt (zwei Spalten, zwei PIN-Schreiber, ein Erzeuger, ein Einlöse-Punkt); die
+Schwierigkeit lag in der Entscheidung, nicht im Bau.
+**Nach SUCHMUSTER arbeiten** (Zeilen = Stand `f4c0f07`, gemessen 23.09.2026).
+
+## Gemessene Fundstellen (grep über alle getrackten Produktivdateien)
+
+| Rolle | Fundstelle | Suchmuster |
+|---|---|---|
+| PIN-Schreiber 1 (Admin) | `routes/admin/mitarbeiter.js:790` | `UPDATE mitarbeiter SET pin_hash=$1` in `/mitarbeiter/pin-direkt/:id` |
+| PIN-Schreiber 2 (Link) | `routes/mitarbeiter-auth.js:299` | `UPDATE mitarbeiter SET pin_hash=$1` in `POST /mitarbeiter/pin-setzen/:token` |
+| Token-Erzeuger (einziger) | `routes/mitarbeiter-auth.js:185` | `INSERT INTO mitarbeiter_token` in `sendeMitarbeiterEinladung` |
+| Token-Leser (einziger) | `routes/mitarbeiter-auth.js:240` | `ladeGueltigesToken` (GET und POST `pin-setzen`) |
+| Token-Entwerter (bleiben, werden Hausputz) | `mitarbeiter.js:801`, `mitarbeiter-auth.js:184/296/301`, `webhooks.js:343` | `UPDATE mitarbeiter_token SET verwendet=1` |
+| Token-Löscher (U-TOK1) | `routes/admin/mitarbeiter.js:940` | `DELETE FROM mitarbeiter_token` im stillen `catch {}` |
+
+Es gibt keinen weiteren Schreiber von `pin_hash` im Produktivcode (`e2e/helpers/db.js` ist
+Testcode). Der Executer misst das beim Bau erneut und nennt die Zahl.
+
+## Entwurf
+
+1. **Migration `0059`:** `mitarbeiter.pin_generation INTEGER NOT NULL DEFAULT 0` und
+   `mitarbeiter_token.pin_generation INTEGER NOT NULL DEFAULT 0`; Schema in `core/db.js`
+   nachziehen, wie im Repo üblich.
+   **Altbestand, konservativ:** in derselben Migration jedes offene Token
+   (`verwendet = 0`), dessen `erstellt_am` NICHT JÜNGER ist als `pin_gesetzt_am` seines
+   Mitarbeiters, auf `pin_generation = -1` setzen (gleiche Sekunde zählt als ungültig). Das
+   entwertet genau die Tokens, die der S6-Fehler in der Vergangenheit hätte stehen lassen
+   können. Zur Prüfung gestellt: die Sommerzeit-Umstellung kann den Textvergleich in einer
+   Stunde im Jahr umdrehen (Nachtrag oben); in der Migration ist das die Richtung „ein
+   gültiges Token wird entwertet" oder „ein altes bleibt" — der Bericht nennt, welche.
+2. **Jeder PIN-Schreiber zählt hoch**, in DERSELBEN Anweisung: `pin_generation =
+   pin_generation + 1`.
+3. **Erzeuger:** das INSERT liest die Generation atomar aus der Mitarbeiterzeile
+   (`INSERT … SELECT …, m.pin_generation FROM mitarbeiter m WHERE m.studio_id=$1 AND m.id=$2
+   AND m.aktiv=1`); trifft es keine Zeile, wird keine Mail verschickt und der Aufrufer bekommt
+   denselben Fehlergrund wie heute bei fehlender E-Mail — der Bericht nennt den Weg.
+4. **Leser:** `ladeGueltigesToken` verlangt zusätzlich einen aktiven Mitarbeiter mit GLEICHER
+   Generation (`JOIN mitarbeiter m ON m.id = t.mitarbeiter_id AND m.studio_id = t.studio_id
+   AND m.aktiv = 1 AND m.pin_generation = t.pin_generation`).
+5. **Einlösen:** das PIN-UPDATE in `POST pin-setzen` wird zum Vergleich-und-Setzen
+   (`… WHERE studio_id=$ AND id=$ AND aktiv=1 AND pin_generation=$tokenGeneration`);
+   `rowCount = 0` → derselbe Weg wie `token_bereits_verbraucht` (Wurf in der Transaktion,
+   Token-Verbrauch rollt zurück, Seite „Link ungültig"). Die Sperrreihenfolge der
+   Transaktion bleibt `mitarbeiter_token` → `mitarbeiter` wie heute — der Kreis aus Entwurf 1
+   der Fallakte entsteht nicht, weil der Admin-Weg keine Transaktion bekommt.
+6. **Admin-Weg `pin-direkt`:** bleibt ohne Transaktion. Das Token-Entwerten dahinter ist ab
+   jetzt Hausputz: in `try/catch` mit `melde()` (Muster derselben Datei); ein Fehler dort
+   macht aus einer gesetzten PIN KEINE Fehlerseite mehr.
+7. **U-TOK1:** der stille `catch {}` um `DELETE FROM mitarbeiter_token` bekommt `melde()`.
+   Die Sicherheit hängt nicht mehr daran: nach dem Löschen findet der JOIN aus Punkt 4 keinen
+   Mitarbeiter. Dasselbe gilt für die Deaktivierung über den Webhook (`aktiv = 0`).
+8. **Statischer Wächter:** jede Anweisung im Produktivcode, die `pin_hash` schreibt
+   (UPDATE/INSERT), erhöht in DERSELBEN Anweisung `pin_generation`; jeder Leser von
+   `mitarbeiter_token` mit `verwendet=0` geht über `ladeGueltigesToken`. Menge der Fundstellen
+   gegen eine literal hingeschriebene Erwartung, Positivkontrolle mit Fixtur je Regel.
+
+## Nachweis (echte Routen, Wegwerf-DB)
+
+* **S6 selbst:** Token erzeugen, PIN über `pin-direkt` setzen, dabei das Token-Entwerten
+  per Störhelfer (`test/helfer/db-stoerung.js`) scheitern lassen → Einlösen des alten Tokens
+  wird abgewiesen, PIN bleibt die neue, Admin sieht KEINE Fehlerseite, `melde()` wurde
+  gerufen. **Gegenprobe:** Generationsbedingung aus dem Leser UND aus dem
+  Vergleich-und-Setzen entfernen (beide Riegel, Hausregel „alle Riegel abzählen") → Einlösen
+  gelingt, PIN wird überschrieben — rot.
+* Zwei offene Tokens (Einladung vor Reset): Einlösen des einen macht das andere ungültig, auch
+  wenn dessen Entwertung gestört ist.
+* Reihenfolge: Token → PIN-Änderung → Einlösen abgewiesen; PIN-Änderung → Token → Einlösen
+  gelingt (Positivkontrolle, sonst ist „abgewiesen" eine leere Aussage).
+* Deaktivierter und gelöschter Mitarbeiter → abgewiesen (U-TOK1), mit gestörtem
+  Token-Entwerten bzw. -Löschen.
+* Migration: wörtlich eingetragene Altzeilen (Format `YYYY-MM-DD HH24:MI:SS`) — Token älter,
+  gleich alt, jünger als `pin_gesetzt_am`, Mitarbeiter ohne PIN → erwartete Generationen je
+  Zeile literal.
+* Wettlauf Vergleich-und-Setzen: zwei Einlösungen zweier gültiger Tokens desselben
+  Mitarbeiters nacheinander über echte Routen — die zweite scheitert, weil die erste die
+  Generation erhöht hat.
+* Volle Suite, Dateizahl-Ritual, Lint, Marker-Scan.
+
+## Offene Fragen an die Planprüfung
+
+1. Welchen ZUSTAND erzeugt der Generationszähler, den es heute nicht gibt?
+2. Was wird SCHLECHTER (z. B. ein Mitarbeiter mit zwei gleichzeitig verschickten Links)?
+3. Gibt es einen Weg, auf dem ein Token OHNE `ladeGueltigesToken` wirksam wird, oder eine PIN
+   OHNE einen der beiden Schreiber gesetzt wird?
+4. Ist die Altbestands-Migration in beiden Richtungen richtig?
