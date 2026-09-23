@@ -622,6 +622,11 @@ Sachfrage):
 
     gpt-6-astra                  unser Gegenleser. Denkt IMMER (kein `none`), kann als
                                  einziges `max`. Langsamste, gründlichste Stufe.
+    gpt-6-sol, gpt-6-luna        seit 23.09.2026 erreichbar (gemessen): effort `none`
+                                 bis `max`, Werkzeugweg mit zweiter Runde und
+                                 `store:false` trägt. Preise s. PREISTABELLE in
+                                 tools/gegenleser-repo.js (sol ~1/5 von astra).
+                                 Prüfgüte: EIN A/B (ASTRA-LAEUFE.md, 23.09.).
     gpt-5.6-terra/-sol/-luna     neuer als 5.4, können `none` bis `max`. Alle drei
                                  denken; siehe die Berichtigung unten.
     gpt-5.5                      denkt von sich aus, auch ohne effort-Angabe.
