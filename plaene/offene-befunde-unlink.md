@@ -14,3 +14,4 @@ Verweist auf `plaene/diffpruefung-unlink.md` und `plaene/durchgang-befunde.md`.
 | U-LOE2 | DB-Fehler in `loescheReplikaFuerDatei()` → Aufrufer kommen nicht wieder (`core/pdf-loeschung.js` setzt `datei_geloescht` vorher) | Bestand; Planprüfung Runde 1 (B3-iii) |
 | U-LOE3 | Worker stirbt genau zwischen `writeFile` und 1c, während das Studio gelöscht wird → Datei ohne Anker | Umbau Fassung 3, Punkt 5; doppelt unwahrscheinlich, aber benannt |
 | R5-12 | stündlicher Reaper sequenziell (bis 200 × 10 s), Seq-Scan ohne passenden Index | Leistungsanmerkung, heute kleine Tabelle |
+| R6-13 | Fundorte im Bestand, UNGEMESSEN (Diffprüfung Runde 6, Spur C): ein Upsert setzt eine laufende Lease auf `pending` (parallel zweiter Upload, eventuell veralteter Inhalt als `succeeded`); die Hash-Prüfung in `processReplica` nutzt `replica.sha256` statt `running.sha256` | erst messen, dann entscheiden — `plaene/diffpruefung-unlink.md` Runde 6 |

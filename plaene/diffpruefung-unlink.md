@@ -143,3 +143,29 @@ Entwicklungs-DB `gymdocu_dev` (gemessen, `pg_database` leer) — Umgebung, nicht
 Produktivdiff selbst gelesen (`core/storage-replica.js`, `core/provisioning.js`). Runde 6 mit DREI Spuren —
 Anlass nach Regel: unwiderrufliche Dateilöschung. Claude ausführend (eigener Cluster), DeepSeek mit Repo,
 Kimi mit Bündel (Diff + beide Module + beide Testdateien vollständig, Schwerpunkt Zusicherungen).
+
+## Runde 6 — drei Spuren über Nacharbeit 8 (`2a9e62a..dceda2c`)
+
+Spuren: C = Claude ausführend (eigener Cluster, Proben unter `scratchpad/dpu6/mess/`), D = DeepSeek mit Repo,
+K = Kimi mit Bündel (Diff + beide Module + beide Testdateien). Jeder Befund selbst nachgesehen; die Messungen der
+Spur C liegen als Proben vor. Keiner gefallen.
+
+| Nr. | Befund | Spuren | Nachgemessen | Einstufung |
+|---|---|---|---|---|
+| R6-1 | Der neue `catch` in `deprovisionStudio` prüft über ein gewöhnliches `SELECT`, ob das Studio lebt — ein noch laufender COMMIT ist dabei unsichtbar: Eintrag entfernt, COMMIT landet, Dateien des gelöschten Studios bleiben für immer | C, K | C: Probe mit verzögertem COMMIT → `queueDa:false`, danach Studio weg, PDF und Spiegel liegen, Reaper `erledigt:0`. Code gelesen (`core/provisioning.js:510-513`). **Rückschritt durch N8** | hoch |
+| R6-2 | Zwei gleichzeitige Deprovisionierungen desselben Studios teilen sich die Datei `<id>.json` — der `catch` von A kann den Eintrag von B entfernen | D | Dateiname gelesen (`:50`, `:61`); kein Serialisieren im Weg `/intern/deprovision` | mittel |
+| R6-3 | Karenz zählt ab dem Schreiben VOR dem COMMIT; eine Transaktion länger als 15 min verliert ihren Eintrag an den Reaper, scheitert danach die Dateilöschung, ist er weg (und die Meldung ist ein Fehlalarm) | C, D, K | C: `erstellt` zurückdatiert → `verworfen:1`, danach `cleanup_pending` auf eine nicht mehr vorhandene Datei, Spiegel bleibt. Vorbedingung (Transaktion > 15 min) unbelegt | niedrig |
+| R6-4 | Status-UPDATEs im Fehlerweg ohne eigenes `try/catch`: wirft eines, ersetzt es den ursprünglichen Fehler und überspringt Anker-/Dateiaufräumen | D | gelesen (`core/storage-replica.js:531-535`, `:554-558`); kein Datenverlust (Reaper), aber falsche Ursache | mittel |
+| R6-5 | Weg 2 wiederholt auch mit übergebenem `client`; dort garantiert erfolglos, bei Autocommit-Client `ok:true` bei gebrochener Invariante; `melde()` trägt nur den zweiten Fehler | C, K | C: Probe C1/C2. Kein Produktivaufrufer übergibt `client` (gesucht) | niedrig |
+| R6-6 | Die scheiternde Studio-Prüfung ist ungeprüft: zwei fail-open-Mutationen bleiben grün (124/0, 27/0), eine davon löscht das PDF eines LEBENDEN Studios | C | Mutationen `off_check_failopen`, `dep_lebt_nicht_false` + Probe H | mittel |
+| R6-7 | Lease-Riegel `attempts = $5` im normalen Fehlerweg unbewacht (S23 misst nur Entzogen) | C | Mutation `riegel_ohne_attempts` 124/0; Probe A: C beansprucht parallel | niedrig |
+| R6-8 | S17 misst nur ENOSPC | C | Mutation `teil_nur_enospc` 124/0 | niedrig |
+| R6-9 | Beschädigte Queue-Einträge: `studio_id:"abc"` bleibt dauerhaft offen ohne `melde()`; ohne `erstellt` sofort verworfen | C | Probe G | niedrig |
+| R6-10 | Auch ein SICHERER Rollback im Abschluss (Callback wirft, COMMIT nie gesendet) lässt die eigene Datei jetzt bis zum stündlichen Reaper liegen | C, D, K | gelesen; `db.tx` sendet COMMIT erst nach dem Callback (`core/db.js:480-482`) — die Unterscheidung ist also verfügbar, wird aber nicht weitergereicht | niedrig |
+| R6-11 | Kommentar „(Boot/Cron)“: der Offboarding-Reaper läuft nur per Cron 03:20 | C | `server.js:1555` | Text |
+| R6-12 | `nach_abschluss`-Zweig im `catch` ist heute unerreichbar | K | gelesen; bewusste Verteidigung, bleibt | keine Aktion |
+| R6-13 | Fundorte im Bestand, UNGEMESSEN: Upsert setzt eine laufende Lease auf `pending`; Hash-Prüfung nutzt `replica.sha256` statt `running.sha256` | C | nicht gemessen → Sammelliste | Fundort |
+| R6-14 | Positivitätsschwelle fehlt im Teillauf | D | bewusst (R5-9) | keine Aktion |
+
+**Folgerung:** R6-1, R6-2, R6-3 und R6-10 haben eine gemeinsame Wurzel — der Fehlerweg RÄT, ob committet wurde,
+obwohl `db.tx` es weiss (vorgeschlagen von K). Nacharbeit 9 gibt diese Information weiter, statt sie nachzumessen.
