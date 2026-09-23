@@ -177,6 +177,8 @@ allgemein in CLAUDE.md, „Eine benannte Grenze ist kein Endzustand".
 
 ## Offen, nach dem Beitrag
 
+0. `ops/SECURITY-HEADER.md` (GymDocu) um `server_tokens off` und `http2` ergänzen —
+   am Server umgesetzt 23.09.2026, `plaene/nginx-haertung-23-09-2026.md`. Kleiner Doku-Beitrag.
 1. **S6** — Aktenlage in `plaene/auftrag-s6-token-einloesen.md`, Empfehlung
    Generationszähler. Noch KEIN Bauauftrag.
 2. **Mehr-Anbieter-Lesewerkzeuge für `tools/gegenleser-repo.js`** — vom
