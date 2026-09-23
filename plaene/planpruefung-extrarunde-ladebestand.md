@@ -50,3 +50,29 @@ K-3 (Lücke vor `ladeBestandStreng`), K-4 (Masker-Fixturen), Z2-Kollision, Rück
 
 **Mein Papier hatte eine falsche Tatsachenbehauptung** (`holeOderLegeAn` als
 Lese-Helfer) — beide Spuren fanden sie unabhängig. Folge: Fassung 2 des Papiers.
+
+## A/B-Lauf `gpt-6-sol` (Betreiber-Hinweis 23.09.2026: neue Modelle online)
+
+Wortgleich zu Spur A (Papier Fassung 1, Auftrag, Wurzel, Stand e2a9e9e), nur
+`--modell=gpt-6-sol`. Referenz: `gpt-5.6-sol` 9 Befunde / 14,54 $.
+
+| | `gpt-5.6-sol` | `gpt-6-sol` |
+|---|---|---|
+| Befunde (ohne Zustimmungen) | 9 | 8 |
+| getragen nach eigener Nachmessung | 9 | 8 (1 teilweise) |
+| Token rein / raus | 2.721.811 / 31.082 | 1.702.560 / 22.528 |
+| Kosten | 14,54 $ | **7,15 $** |
+
+**Nur `gpt-6-sol`:** (1) A1a-Gegenproben fallen zuerst am alten Bereichswächter
+(`nichtLeerraum(abschnitt) === 2291`), der Anker wird nie erreicht → Anker in
+eigene Datei; (2) `g.eingewiesen`-Arm tot, alle `eingewiesen: true`-Geräte sind
+auch `sammelblatt: true` (`core/brandschutz-vorlage.js:263/273, 393/394`,
+nachgemessen); (3) B-13/21-Gegenprobe braucht einen gezielt liegengelassenen
+Fremdrest; (4) `zustandRows` liefert `studio_id` schon heute.
+**Nur `gpt-5.6-sol`:** die Strukturtests in `test_feature_brandschutz.js`
+(A-5), die ausdrücklichen Fehlerproben (A-7).
+Die tragenden neuen Punkte gingen als Nachtrag an den laufenden Bau.
+
+**Was das hergibt:** EIN Papier, EIN Lauf je Modell. Vergleichbare Ausbeute zum
+halben Preis, und jede Spur hatte Eigenes — dasselbe Bild wie bei jedem
+bisherigen A/B. Kein Beleg, dass eine der beiden besser prüft.
