@@ -4,7 +4,9 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-Stand 23.09.2026, 15:45 UTC.
+Stand 23.09.2026, 16:15 UTC.
+
+* **Sperrordnung ausgeliefert** (#469, Deploy 436 `success` für `4312eaf`, live-check grün mit 2× ℹ). Der bekannte Verklemmungskreis ist geschlossen; Sammelliste `plaene/offene-befunde-sperrordnung.md` bleibt für die Extrarunde.
 
 * **Laufend:** Sperrordnung Nacharbeit 2 + master-Merge (R2-1…R2-8, klein); unlink Nacharbeit 6 (R2-1 Wiederholungsweg storage-replica u. a.); Pentest P1 Bau nach Fassung 3 (`/workspace/gymdocu-p1`, Zweig `fix-pentest-p1-idwache`).
 
@@ -15,10 +17,6 @@ Stand 23.09.2026, 15:45 UTC.
   Nacharbeit B1–B11 läuft (Executer, `/workspace/belehrung-ds`, Zweig `ds-lesewerkzeug2`).
   Gemessen: Pro wird NICHT auf Flash umgeleitet; Denkstufe je Endpunkt verschieden; `store:false`
   bei DeepSeek über die API nicht messbar.
-* **Sperrordnung** (`fix-studiolock-ordnung`, `1830924`): Nacharbeit gelesen, Suite 355 = 355.
-  DeepSeek Runde 2 (Bündel) — erster Lauf abgeschnitten (64k Ausgabe), Wiederholung mit 200k
-  läuft (`scratchpad/dpsperre2/`). Nachgesehen bisher: Destrukturierungs-Zuweisung unerkannt
-  (trägt), N-nach-L-Zusicherung ohne Reihenfolge (strukturell erzwungen, gering).
 * **Nachweis-unlink** (`fix-nachweis-unlink`, `e262f47`, master gemergt): N4/N5 gelesen, Suite
   354 = 354. DeepSeek Runde 2 läuft.
 * **Pentest P1**: Fassung 2 (`plaene/auftrag-pentest-p1-p2.md`), Planprüfung Runde 2 läuft
