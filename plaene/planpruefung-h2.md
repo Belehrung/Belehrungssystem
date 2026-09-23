@@ -33,3 +33,21 @@ Papier: `plaene/auftrag-h2-cookie-schleife.md`.
 
 **Folge:** Fassung 2 des Papiers (Ziel als Query-Parameter, kurze Lebensdauer unbestätigter
 Sitzungen, Freischalt-Fehler ohne Sitzung, `requireAdmin` schreibt nur mit Sitzungs-Cookie).
+
+---
+
+# Runde 2 (Fassung 2)
+
+## Spur A (`gpt-6-sol`, Repo-Lesezugriff) — nachgemessen
+
+| # | Schwere | Befund | Nachmessung | trägt |
+|---|---|---|---|---|
+| R2-A1 | blockierend | Bestehender Gate-Test verlangt `returnToMerkenFallsGet` an GENAU zwei Stellen und nach `GET /login/tablet` sofort `/`; Session-Attrappe ohne `cookie` | `test_feature_qr_trainer_defekt.js:677-737` gelesen | ja — fachlich umstellen, Kernaussage (POST merkt nichts) erhalten |
+| R2-A2 | mittel | Browserfall „landet dort" grün aus falschem Grund, wenn der Helfer vorher schon angemeldet hat; Sollzahl literal | `e2e/helpers/ui.js:56-65` | ja |
+| R2-A3 | mittel | „Sitzung ohne `benutzer`" als leeres Objekt ist tautologisch; realer Vorzustand: gespeicherte `pending2fa`-Sitzung | `routes/auth.js:1031-1035` | ja |
+| R2-A4 | blockierend | Direkt gerenderte Sperrseite (ungültiger Freischalt-Link) bietet ein PIN-Formular, das ohne Tablet-Sitzung an `requireLogin` scheitert | Kontrollfluss | ja |
+| R2-A5 | mittel | Gültiger Link wird VOR dem Sitzungs-Speichern verbraucht; ein 500 bei Speicherfehler macht ihn nicht wieder benutzbar | `core/tablet-geraet.js:136-157` | ja — das Geräte-Cookie ist schon gesetzt, der Weg über `/login/tablet` führt weiter |
+| R2-A6 | mittel | Hinweis auch bei erlaubten Cookies (direkter Aufruf, abgelaufene Zwischensitzung) — Text als MÖGLICHE Ursache | — | ja |
+| R2-A7 | mittel | Cookie-KOPF beweist keine geladene Sitzung (erfundenes/abgelaufenes `connect.sid`) → `requireAdmin` schriebe weiter anonyme Zeilen | express-session erzeugt bei unbekannter sid eine neue | ja — Fassung 3: Ziel für Admin ebenfalls als Parameter, keine Sitzung |
+| R2-A8 | mittel | Ziel in der Sitzung zwischen zwei Sprüngen: zwei Tabs, PIN-Sperre schreibt ihr eigenes `returnTo` (`server.js:806-809`) | gelesen | ja — Fassung 3: Ziel auch über den Marker-Sprung als Parameter |
+| R2-A9 | gering | Befund-Formulierung: `pending2fa` vor 2FA, Archiv-Anmeldung; QR-Einstiege zeigen direkt auf `/login/tablet` | gelesen | ja |
