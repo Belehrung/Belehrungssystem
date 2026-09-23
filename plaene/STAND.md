@@ -181,6 +181,7 @@ Acronis-Wiederherstellung VERSCHOBEN. Erst alle anderen offenen Punkte fertig, d
 PDF-Unterlagen für eine IT-Abteilung (Anforderungen: `plaene/it-dokumentation-auftrag.md`).
 Reihenfolge: Extrarunde ladebestand → Verklemmungskreis → S6 → Pentest-Liste (U-…) →
 CSP scharf (H1) → Cookie-Schleife (H2) → Doku SECURITY-HEADER → PDFs.
+Ohne Priorität: Landingpage-Analyse (`plaene/landingpage-analyse-23-09-2026.md`).
 Beim Betreiber offen: SSH nur Schlüssel (`sshd -T`), 48 Updates, HSTS-Preload (H3).
 
 ## Offen, nach dem Beitrag
