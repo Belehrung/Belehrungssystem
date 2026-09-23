@@ -23,6 +23,11 @@ dritte Diffprüfung die Lesespur** (Kimi statt DeepSeek, gleiche Rechte und glei
 dritte Planprüfung gibt DeepSeek das Bündel und Kimi den Repo-Zugriff. Frage, Vorspann und Material bleiben
 sonst wörtlich gleich.
 
+**Grenze, gemessen 23.09.2026:** `tools/gegenleser-repo.js` hat keinen Kimi-Weg (kein Treffer für `kimi`/`moonshot`).
+„Gleiche Rechte“ ist für Kimi bei der Diffprüfung also heute nicht herstellbar — Kimi liest nur Bündel. Bis ein
+Kimi-Weg gebaut ist, bekommt eine Tauschrunde BEIDEN Lesespuren dasselbe Bündel (dann sind Rechte und Material
+gleich und nur das Modell verschieden); die Zeile wird so gekennzeichnet.
+
 ## Schwelle für eine Empfehlung
 
 Mindestens **12 Runden**, davon je Aufgabe (Plan/Diff) mindestens 4 und je getauschter Paarung mindestens
