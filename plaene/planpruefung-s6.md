@@ -28,3 +28,23 @@ Kosten laut Werkzeug in `ASTRA-LAEUFE.md`.
 * Einlöse-Transaktion ohne die Entwertung der übrigen Tokens (sie wird Hausputz nach dem
   Commit) — das schliesst den bestehenden Kreis A10.
 * `SELECT t.*`, qualifizierte Spalten, `rowCount` am INSERT, zählender `db.run`-Störhelfer.
+
+## Spur B (`kimi-k3`, Bündel: Einlöse- und Erzeugerweg vollständig, Admin-Weg, Webhook, Schema) — nachgemessen
+
+1062 s, 26.156 ein / 40.165 aus (31.978 Denken).
+
+| # | Schwere | Befund | Nachmessung | trägt |
+|---|---|---|---|---|
+| S6-B1 | mittel | Das dritte UPDATE (übrige Tokens entwerten) bleibt in der Einlöse-Transaktion → „gestörtes Entwerten" rollt die ganze Einlösung zurück, der Nachweis ist unbaubar | `routes/mitarbeiter-auth.js:301` in derselben `db.tx` | ja (deckt sich im Mittel mit S6-A10) |
+| S6-B2 | mittel | Gegenprobe „beide Riegel" belegt Riegel 2 (Vergleich-und-Setzen) nie; alle Tests enden am Leser | Kontrollfluss gelesen | ja — Fenstertest + Einzelgegenproben |
+| S6-B3 | mittel | Sommerzeit: unsichere Richtung existiert; `erstellt_am NULL` fällt durch | = S6-A4/A5 | ja |
+| S6-B4 | gering–mittel | INSERT mit 0 Zeilen committet das Entwerten und meldet „keine E-Mail" | Tx-Reihenfolge gelesen | ja |
+| S6-B5 | mittel | Kreisfreiheit hängt auch daran, dass der Erzeuger die Mitarbeiterzeile NIE sperrt (kein `FOR UPDATE`, kein FK) | kein FK in Schema und Migrationen (gemessen) | ja |
+| S6-B6 | gering | Tot geborenes Token (Generation ändert sich zwischen INSERT und Mail) | READ COMMITTED | ja |
+| S6-B7 | gering | Reaktivierung nach gescheitertem Webhook-Hausputz; Webhook-Entwerten wirft | = S6-A6 (Spur A stärker: API-Sync entwertet gar nicht) | ja |
+| S6-B8 | gering | Wächterregel „jeder Leser mit `verwendet=0`" trifft auch Entwerter/Verbrauch | Regeltext | ja |
+| S6-B-A5 | — | Deploy-Fenster alte App / neue Migration | pm2 `exec_mode: 'fork'`, `instances: 1` (`ecosystem.config.js`), Migration beim Start | nein (praktisch kein Fenster) |
+
+Überschneidung: B1≈A10, B3≈A4/A5, B7≈A6, B4≈A8. Nur bei B: B2, B5, B6, B8.
+
+**Folge:** Fassung 2 im Papier; zweite Planprüfung, weil die Umgestaltung Verhalten ändert.

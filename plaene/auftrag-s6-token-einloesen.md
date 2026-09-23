@@ -164,92 +164,126 @@ Beitrag gehört es notiert, als Befund gegen den Bestand nicht.**
 
 ---
 
-# BAUAUFTRAG S6 (Fassung 1, 23.09.2026) — Generationszähler statt Zeitvergleich
+# BAUAUFTRAG S6 (Fassung 2, 23.09.2026) — Generationszähler statt Zeitvergleich
 
-**Zielrepo:** GymDocu, neuer Zweig `fix-s6-pin-generation` ab master `f4c0f07`.
+**Zielrepo:** GymDocu, neuer Zweig `fix-s6-pin-generation` ab dem dann aktuellen master.
 **Modellwahl, VOR dem Auftrag entschieden:** Standard-Executer — der Entwurf ist hier
-festgelegt (zwei Spalten, zwei PIN-Schreiber, ein Erzeuger, ein Einlöse-Punkt); die
-Schwierigkeit lag in der Entscheidung, nicht im Bau.
-**Nach SUCHMUSTER arbeiten** (Zeilen = Stand `f4c0f07`, gemessen 23.09.2026).
+festgelegt; die Schwierigkeit lag in der Entscheidung, nicht im Bau.
+**Nach SUCHMUSTER arbeiten** (Zeilen = Stand `f4c0f07`).
+Fassung 1 ist durch die Planprüfung (`plaene/planpruefung-s6.md`, zwei Spuren, alle
+getragenen Befunde) überholt; hier stehen sie als Anforderungen.
 
-## Gemessene Fundstellen (grep über alle getrackten Produktivdateien)
+## Gemessene Fundstellen
 
 | Rolle | Fundstelle | Suchmuster |
 |---|---|---|
-| PIN-Schreiber 1 (Admin) | `routes/admin/mitarbeiter.js:790` | `UPDATE mitarbeiter SET pin_hash=$1` in `/mitarbeiter/pin-direkt/:id` |
-| PIN-Schreiber 2 (Link) | `routes/mitarbeiter-auth.js:299` | `UPDATE mitarbeiter SET pin_hash=$1` in `POST /mitarbeiter/pin-setzen/:token` |
-| Token-Erzeuger (einziger) | `routes/mitarbeiter-auth.js:185` | `INSERT INTO mitarbeiter_token` in `sendeMitarbeiterEinladung` |
-| Token-Leser (einziger) | `routes/mitarbeiter-auth.js:240` | `ladeGueltigesToken` (GET und POST `pin-setzen`) |
-| Token-Entwerter (bleiben, werden Hausputz) | `mitarbeiter.js:801`, `mitarbeiter-auth.js:184/296/301`, `webhooks.js:343` | `UPDATE mitarbeiter_token SET verwendet=1` |
-| Token-Löscher (U-TOK1) | `routes/admin/mitarbeiter.js:940` | `DELETE FROM mitarbeiter_token` im stillen `catch {}` |
+| PIN-Schreiber (Admin) | `routes/admin/mitarbeiter.js` | `UPDATE mitarbeiter SET pin_hash=$1` in `/mitarbeiter/pin-direkt/:id` |
+| PIN-Schreiber (Link) | `routes/mitarbeiter-auth.js` | `UPDATE mitarbeiter SET pin_hash=$1` in `POST /mitarbeiter/pin-setzen/:token` |
+| Deaktivierer | `routes/api.js` (Sync, `SET aktiv = 0, inaktiv_seit`), `routes/webhooks.js` (zwei `SET aktiv = 0, inaktiv_seit`) | |
+| Reaktivierer | `routes/api.js` (`aktiv = 1`), `routes/webhooks.js` (Upsert mit `aktiv`) | |
+| Token-Erzeuger (einziger) | `routes/mitarbeiter-auth.js` `sendeMitarbeiterEinladung` | `INSERT INTO mitarbeiter_token` |
+| Token-Leser (einziger) | `routes/mitarbeiter-auth.js` `ladeGueltigesToken` | GET und POST `pin-setzen` |
+| Dynamischer Kopierer | `S20-migrate.js` (Tabellenliste enthält `mitarbeiter_token`, kopiert `mitarbeiter` spaltenweise) | |
+| Token-Löscher (U-TOK1) | `routes/admin/mitarbeiter.js` Löschweg | `DELETE FROM mitarbeiter_token` im stillen `catch {}` |
 
-Es gibt keinen weiteren Schreiber von `pin_hash` im Produktivcode (`e2e/helpers/db.js` ist
-Testcode). Der Executer misst das beim Bau erneut und nennt die Zahl.
+Kein FK auf `mitarbeiter_token.mitarbeiter_id` (Schema und alle Migrationen gemessen).
+Der Executer misst jede Zeile beim Bau erneut und nennt die Zahlen.
 
 ## Entwurf
 
-1. **Migration `0059`:** `mitarbeiter.pin_generation INTEGER NOT NULL DEFAULT 0` und
+1. **Migration `0059`:** `mitarbeiter.pin_generation INTEGER NOT NULL DEFAULT 0`,
    `mitarbeiter_token.pin_generation INTEGER NOT NULL DEFAULT 0`; Schema in `core/db.js`
-   nachziehen, wie im Repo üblich.
-   **Altbestand, konservativ:** in derselben Migration jedes offene Token
-   (`verwendet = 0`), dessen `erstellt_am` NICHT JÜNGER ist als `pin_gesetzt_am` seines
-   Mitarbeiters, auf `pin_generation = -1` setzen (gleiche Sekunde zählt als ungültig). Das
-   entwertet genau die Tokens, die der S6-Fehler in der Vergangenheit hätte stehen lassen
-   können. Zur Prüfung gestellt: die Sommerzeit-Umstellung kann den Textvergleich in einer
-   Stunde im Jahr umdrehen (Nachtrag oben); in der Migration ist das die Richtung „ein
-   gültiges Token wird entwertet" oder „ein altes bleibt" — der Bericht nennt, welche.
-2. **Jeder PIN-Schreiber zählt hoch**, in DERSELBEN Anweisung: `pin_generation =
-   pin_generation + 1`.
-3. **Erzeuger:** das INSERT liest die Generation atomar aus der Mitarbeiterzeile
-   (`INSERT … SELECT …, m.pin_generation FROM mitarbeiter m WHERE m.studio_id=$1 AND m.id=$2
-   AND m.aktiv=1`); trifft es keine Zeile, wird keine Mail verschickt und der Aufrufer bekommt
-   denselben Fehlergrund wie heute bei fehlender E-Mail — der Bericht nennt den Weg.
-4. **Leser:** `ladeGueltigesToken` verlangt zusätzlich einen aktiven Mitarbeiter mit GLEICHER
-   Generation (`JOIN mitarbeiter m ON m.id = t.mitarbeiter_id AND m.studio_id = t.studio_id
-   AND m.aktiv = 1 AND m.pin_generation = t.pin_generation`).
-5. **Einlösen:** das PIN-UPDATE in `POST pin-setzen` wird zum Vergleich-und-Setzen
-   (`… WHERE studio_id=$ AND id=$ AND aktiv=1 AND pin_generation=$tokenGeneration`);
-   `rowCount = 0` → derselbe Weg wie `token_bereits_verbraucht` (Wurf in der Transaktion,
-   Token-Verbrauch rollt zurück, Seite „Link ungültig"). Die Sperrreihenfolge der
-   Transaktion bleibt `mitarbeiter_token` → `mitarbeiter` wie heute — der Kreis aus Entwurf 1
-   der Fallakte entsteht nicht, weil der Admin-Weg keine Transaktion bekommt.
-6. **Admin-Weg `pin-direkt`:** bleibt ohne Transaktion. Das Token-Entwerten dahinter ist ab
-   jetzt Hausputz: in `try/catch` mit `melde()` (Muster derselben Datei); ein Fehler dort
-   macht aus einer gesetzten PIN KEINE Fehlerseite mehr.
-7. **U-TOK1:** der stille `catch {}` um `DELETE FROM mitarbeiter_token` bekommt `melde()`.
-   Die Sicherheit hängt nicht mehr daran: nach dem Löschen findet der JOIN aus Punkt 4 keinen
-   Mitarbeiter. Dasselbe gilt für die Deaktivierung über den Webhook (`aktiv = 0`).
-8. **Statischer Wächter:** jede Anweisung im Produktivcode, die `pin_hash` schreibt
-   (UPDATE/INSERT), erhöht in DERSELBEN Anweisung `pin_generation`; jeder Leser von
-   `mitarbeiter_token` mit `verwendet=0` geht über `ladeGueltigesToken`. Menge der Fundstellen
-   gegen eine literal hingeschriebene Erwartung, Positivkontrolle mit Fixtur je Regel.
+   nachziehen. **Altbestand OHNE jeden Zeitvergleich** (Berliner TEXT-Zeit ist bei der
+   Sommerzeit-Rückstellung nicht ordnbar, `NULL` fällt durch — beide Spuren): jedes offene Token
+   (`verwendet = 0`) bekommt `pin_generation = -1`, wenn sein Mitarbeiter eine PIN hat
+   (`pin_hash IS NOT NULL`), nicht aktiv ist oder nicht existiert — Bindung
+   `m.id = t.mitarbeiter_id AND m.studio_id = t.studio_id`. Offene Einladungen für Mitarbeiter
+   OHNE PIN bleiben gültig. Preis: offene Reset-Links (Laufzeit 1 h) und Einladungen an
+   Mitarbeiter, die schon eine PIN haben, sterben mit dem Deploy — der Bericht zählt sie auf
+   der Wegwerf-DB nicht, sondern nennt die Abfrage, mit der der Betreiber sie VOR dem Deploy
+   zählen kann.
+2. **Jeder PIN-Schreiber UND jeder Deaktivierer zählt hoch**, in DERSELBEN Anweisung:
+   `pin_generation = pin_generation + 1`. Reaktivieren zählt nicht (die Tokens von vor der
+   Deaktivierung sind dann schon ungültig).
+3. **Erzeuger** (`sendeMitarbeiterEinladung`): in der Transaktion bleiben Entwerten und
+   `INSERT … SELECT …, m.pin_generation FROM mitarbeiter m WHERE m.studio_id=$1 AND m.id=$2
+   AND m.aktiv=1`. Trifft das INSERT 0 Zeilen: **WERFEN** (Rollback — auch das Entwerten), im
+   `catch` auf den bisherigen Fehlergrund abbilden; keine Mail, kein Audit.
+   **Verbotsliste, tragend für die Kreisfreiheit (Spur B):** kein `FOR UPDATE/SHARE` im
+   `INSERT … SELECT`, kein neuer Fremdschlüssel auf `mitarbeiter_token.mitarbeiter_id`, kein
+   `LOCK` im Erzeuger. Der Kommentar am Erzeuger nennt den Grund.
+   Vor `sendMail` die Generation erneut lesen; weicht sie ab, das eben angelegte Token entwerten
+   und ohne Mail mit dem bisherigen Fehlergrund aussteigen (tot geborener Link, Spur B).
+4. **Leser:** `SELECT t.* FROM mitarbeiter_token t JOIN mitarbeiter m ON m.id = t.mitarbeiter_id
+   AND m.studio_id = t.studio_id WHERE t.studio_id = $1 AND t.token = $2 AND t.verwendet = 0
+   AND t.gueltig_bis > $3 AND m.aktiv = 1 AND m.pin_generation = t.pin_generation` — alle
+   Spalten qualifiziert, Projektion nur `t.*`.
+5. **Einlösen** (`POST pin-setzen`): in der Transaktion NUR noch Verbrauch des Tokens und das
+   PIN-UPDATE als Vergleich-und-Setzen (`… AND aktiv = 1 AND pin_generation = $tokenGen`,
+   dazu `pin_generation = pin_generation + 1`); `rowCount = 0` → derselbe Weg wie
+   `token_bereits_verbraucht`. **Das Entwerten der übrigen Tokens verlässt die Transaktion**
+   und wird Hausputz NACH dem Commit (`try/catch` + `melde()`). Das schliesst den heute
+   bestehenden Kreis zweier paralleler Einlösungen (Token A → Mitarbeiter → Token B gegen
+   Token B → Mitarbeiter) und macht den Nachweis „gestörtes Entwerten" überhaupt erst baubar.
+6. **Admin-Weg `pin-direkt`:** bleibt ohne Transaktion; Token-Entwerten dahinter ist Hausputz
+   mit `melde()`, ein Fehler dort macht aus einer gesetzten PIN KEINE Fehlerseite mehr.
+   **Webhook-Deaktivierung:** ihr Token-Entwerten ebenso (heute werfend → Wiederholungssturm).
+   **API-Sync-Deaktivierung:** entwertet heute gar nicht — die Generation erledigt es.
+7. **U-TOK1:** der stille `catch {}` um `DELETE FROM mitarbeiter_token` bekommt `melde()`; die
+   Sicherheit hängt am JOIN.
+8. **`S20-migrate.js`:** importierte offene Tokens werden in der Import-Transaktion auf `-1`
+   gesetzt (Einladungen nach einem Import neu verschicken). Der Kopf der Datei nennt es.
+9. **Statischer Wächter:** (a) jede Anweisung im Produktivcode, die `mitarbeiter.pin_hash`
+   schreibt oder `mitarbeiter.aktiv` auf 0 setzt, erhöht in DERSELBEN Anweisung
+   `pin_generation` — Sollmenge der Fundstellen LITERAL hingeschrieben (heute: 2 PIN-Schreiber,
+   3 Deaktivierer); (b) jeder SELECT-Leser von `mitarbeiter_token`, der aus `verwendet = 0`
+   Wirksamkeit ableitet, ist `ladeGueltigesToken` — die UPDATE-Entwerter und der Verbrauch
+   stehen als literale Ausnahmeliste mit eigener Positivkontrolle; (c) `S20-migrate.js` steht
+   als dynamischer Schreiber ausdrücklich in der Liste. Fixturen je Regel rot, Durchlassfälle
+   grün, Produktionsform.
 
 ## Nachweis (echte Routen, Wegwerf-DB)
 
-* **S6 selbst:** Token erzeugen, PIN über `pin-direkt` setzen, dabei das Token-Entwerten
-  per Störhelfer (`test/helfer/db-stoerung.js`) scheitern lassen → Einlösen des alten Tokens
-  wird abgewiesen, PIN bleibt die neue, Admin sieht KEINE Fehlerseite, `melde()` wurde
-  gerufen. **Gegenprobe:** Generationsbedingung aus dem Leser UND aus dem
-  Vergleich-und-Setzen entfernen (beide Riegel, Hausregel „alle Riegel abzählen") → Einlösen
-  gelingt, PIN wird überschrieben — rot.
-* Zwei offene Tokens (Einladung vor Reset): Einlösen des einen macht das andere ungültig, auch
-  wenn dessen Entwertung gestört ist.
-* Reihenfolge: Token → PIN-Änderung → Einlösen abgewiesen; PIN-Änderung → Token → Einlösen
-  gelingt (Positivkontrolle, sonst ist „abgewiesen" eine leere Aussage).
-* Deaktivierter und gelöschter Mitarbeiter → abgewiesen (U-TOK1), mit gestörtem
-  Token-Entwerten bzw. -Löschen.
-* Migration: wörtlich eingetragene Altzeilen (Format `YYYY-MM-DD HH24:MI:SS`) — Token älter,
-  gleich alt, jünger als `pin_gesetzt_am`, Mitarbeiter ohne PIN → erwartete Generationen je
-  Zeile literal.
-* Wettlauf Vergleich-und-Setzen: zwei Einlösungen zweier gültiger Tokens desselben
-  Mitarbeiters nacheinander über echte Routen — die zweite scheitert, weil die erste die
-  Generation erhöht hat.
+* **Störhelfer für `db.run`:** zählend, begrenzt auf SQL-Teilstring UND Parameter,
+  Originalfunktion im `finally` zurück. Jede Probe sichert zu, dass der Stub GENAU EINMAL
+  traf, und belegt am konkreten Token `verwendet = 0` vorher und nachher.
+* **S6 selbst:** Token erzeugen, PIN über `pin-direkt`, Hausputz gestört → altes Token wird
+  abgewiesen (GET und POST), PIN bleibt die neue, Admin sieht KEINE Fehlerseite, `melde()`
+  (Attrappe, vor dem Laden der Router gebunden) GENAU einmal.
+* **Riegel einzeln belegt** (Spur B, drei Gegenproben): nur die Leser-Bedingung gestrichen →
+  der Fenstertest (unten) wird rot, der Haupttest bleibt grün; nur die Bedingung im
+  Vergleich-und-Setzen gestrichen → der Fenstertest wird rot; beide gestrichen → Haupttest rot.
+  **Fenstertest:** Störpunkt NACH `ladeGueltigesToken` im POST (vor dem PIN-UPDATE), dort die
+  Generation über eine zweite Verbindung erhöhen → Abweisung kommt aus `rowCount = 0` des
+  Vergleich-und-Setzens, PIN unverändert, Token-Verbrauch zurückgerollt.
+* **Zwei offene Tokens:** Vorbedingung herstellen und ZUSICHERN (zwei verschiedene IDs,
+  `verwendet = 0`, gleiche Generation, nicht abgelaufen) — über den echten Erzeuger mit
+  gestörtem Entwerten, nicht über einen seriellen zweiten Aufruf. Einlösen des einen → das
+  andere abgewiesen, auch bei gestörtem Hausputz.
+* **Parallele Einlösung zweier Tokens** über zwei Verbindungen mit Tor: kein 40P01, genau eine
+  gewinnt, die andere „Link ungültig". Gegenprobe: das Entwerten zurück IN die Transaktion →
+  40P01 (`err.code`).
+* **Deaktivieren/Reaktivieren** über API-Sync UND Webhook: Token vor Deaktivierung, danach
+  reaktivieren → alter Link bleibt ungültig (GET und POST). Gegenprobe: Generationserhöhung
+  am Deaktivierer entfernen → Link gilt wieder.
+* **Erzeuger-Rennen:** Mitarbeiter zwischen Vorab-SELECT und INSERT deaktivieren → 0 neue
+  Tokens, Entwerten zurückgerollt, keine Mail, bisheriger Fehlergrund. Totgeburt: Generation
+  zwischen INSERT und Mail erhöhen → keine Mail, Token entwertet.
+* **Projektion:** Mitarbeiter-ID und Token-ID absichtlich verschieden; verbraucht wird die
+  konkrete Token-Zeile.
+* **Migration:** wörtlich eingetragene Altzeilen — Mitarbeiter mit PIN + offenes Token, ohne PIN
+  + Einladung, deaktiviert + Token, gelöscht + Token, `erstellt_am NULL`, `pin_gesetzt_am NULL`
+  mit PIN — erwartete Generation je Zeile literal. Zweimal laufen lassen (einmalige Ausführung
+  der Migrationsmechanik belegen).
+* **S20-Import:** Import auf eine DB mit angewandter 0059 → importierte offene Tokens `-1`.
+* **Positivkontrolle:** PIN-Änderung → neues Token → Einlösen gelingt.
 * Volle Suite, Dateizahl-Ritual, Lint, Marker-Scan.
 
-## Offene Fragen an die Planprüfung
+## Offene Fragen an die Planprüfung (Runde 2)
 
-1. Welchen ZUSTAND erzeugt der Generationszähler, den es heute nicht gibt?
-2. Was wird SCHLECHTER (z. B. ein Mitarbeiter mit zwei gleichzeitig verschickten Links)?
-3. Gibt es einen Weg, auf dem ein Token OHNE `ladeGueltigesToken` wirksam wird, oder eine PIN
-   OHNE einen der beiden Schreiber gesetzt wird?
-4. Ist die Altbestands-Migration in beiden Richtungen richtig?
+1. Welchen ZUSTAND erzeugt Fassung 2, den es heute nicht gibt — besonders durch den Hausputz
+   nach dem Commit und die Generationserhöhung beim Deaktivieren?
+2. Was wird SCHLECHTER?
+3. Gibt es weitere Schreiber von `pin_hash` oder `aktiv`, weitere Leser von
+   `mitarbeiter_token`, oder einen Weg, auf dem die Generation sinkt?
+4. Kann einer der Nachweise aus dem falschen Grund grün sein?
