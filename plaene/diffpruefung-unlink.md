@@ -101,3 +101,27 @@ Eigene Lesung `processReplica()`: **F-A** — `eigeneDateiGeschrieben` wird nur 
 gelöscht wird → Datei ohne Zeile und ohne Auftrag. Messung an die ausführende Spur gegeben.
 Runde 5: DeepSeek-Lesespur (`/workspace/gymdocu-unlink-lese`) + ausführende Claude-Spur
 (`/workspace/gymdocu-unlink-pruef`, eigener Cluster).
+
+## Runde 5 — Umbau (`2a9e62a`), zwei Spuren
+
+**Ausführende Spur** (eigener Cluster, Proben mit derselben Invariante wie der Test; Protokoll Scratchpad
+`unlink-pruef5/`): Stichprobe M1/M4/M10/M12 stimmt; neue Mutationen a, d, e, h, i, j, k ROT; b (FOR UPDATE)
+und n (Entzogen-Riegel) GRÜN; t5/t5b (Offboarding) GRÜN.
+**Lesespur** `deepseek-v4-pro` (Lesebaum, Kosten s. ASTRA-LAEUFE).
+
+| # | Spur | Schwere | Befund | Messung | getragen |
+|---|---|---|---|---|---|
+| R5-1 | Claude | hoch, NEU | Nach dem COMMIT von 1c scheitert 1d (oder die COMMIT-Quittung geht verloren) → der catch löscht „unbedingt“ die EBEN committete Datei; Reaper löscht danach die alte → keine Kopie mehr, Zeile `failed`/`dead` | `probe_1d_fehler.js`, `probe_commit_quittung.js`: „Zeile trägt Referenz ohne Datei“ | ja |
+| R5-2 | beide | hoch/blockierend | = F-A: Schreibabbruch ≠ EEXIST → Teil-Datei ohne Zeile und ohne Auftrag (lesbarer Anfang des Chiffrats) | `probe_teilschreiben.js`: `dateiDa:true, dateiGroesse:16`, Invariante ROT, nach Reaper ROT | ja |
+| R5-3 | Claude | hoch (Prüfung fehlt) | `FOR UPDATE` in 1c tragend, aber unbewacht (Mutation b 81/0) | `probe_b_zwei_worker.js`: mit b Waise | ja |
+| R5-4 | beide | hoch, Bestand + neu | Offboarding-Reaper löscht Dateien eines LEBENDEN Studios, wenn die Transaktion nach dem Queue-Schreiben scheitert (Primär-PDF: Bestand; `vorbelegt`-Referenz: neu) | `probe_offboard_rollback.js`: `studioLebt:true, quellPdfDa:false` | ja |
+| R5-5 | Claude | mittel | Offboarding-Wächter prüft nur Textreihenfolge; t5 (Referenzen erst nach dem Queue-Schreiben sammeln) und t5b (`db.q` statt `t.q`) GRÜN | `probe_t5_queue.js`: Queue leer, Dateien überleben | ja |
+| R5-6 | Claude | mittel | Weg 2 ohne Transaktion wird nur aus Strukturgrund ROT; Abbruch zwischen DELETE und INSERT ungeprüft | `probe_f_weg2_abbruch.js` | ja |
+| R5-7 | DeepSeek | sollte | DB-Fehler in der Weg-2-Transaktion → Rollback, kein Auftrag; Aufrufer zählen nur, Primärdatensatz schon weg → Löschpflicht still verloren (= U-LOE2) | Aufrufer `core/retention.js:1116-1118`, `core/pdf-loeschung.js:251-254` gelesen | ja |
+| R5-8 | Claude | niedrig, NEU | Entzogen-Zweig setzt eine FREMDE Lease auf `pending` zurück (Riegel nur `status='running'`), Mutation n GRÜN | `probe_n_fremde_lease.js` | ja |
+| R5-9 | Claude | niedrig | Teilläufe des Szenariotests immer ROT (`schreibZaehler >= 12`) | Log | ja |
+| R5-10 | DeepSeek | Anmerkung | DBs mit registrierter alter 0060 starten nicht („Angewandte Migration ohne Datei“) | trägt als Mechanismus; **gemessen vom Executer: keine der 70 lokalen DBs hat sie, Zweig nie deployt** → nur Kommentar | ja |
+| R5-11 | beide | Anmerkung | U-LOE3 bleibt (Worker schreibt nach dem Löschlauf); Kommentar `core/provisioning.js:423` („beide Tabellen danach leer“) zu stark | trägt | ja |
+| R5-12 | DeepSeek | Anmerkung | stündlicher Reaper sequenziell bis 200 × 10 s; Seq-Scan ohne passenden Index | trägt | ja |
+
+→ Nacharbeit 8 (`plaene/auftrag-unlink-loeschauftrag.md`, Abschnitt „NACHARBEIT 8“).

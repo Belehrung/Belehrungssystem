@@ -224,3 +224,41 @@ Befunde: `plaene/planpruefung-unlink-loeschauftrag.md`, Runde 2.
 11. **Weitere Fundstellen:** `workers/pdf-job-worker.js`, `core/pdf-jobs.js` (Job gilt als erledigt, auch
     wenn 1c abbrach — prüfen, ob der Job danach neu kommt), `core/datei-entfernen.js` (ENOENT = Erfolg),
     `docs/STORAGE_REPLICA.md`, `test_deprovision.js`.
+
+---
+
+# NACHARBEIT 8 (aus Diffprüfung Runde 5; Befunde `plaene/diffpruefung-unlink.md`, „Runde 5“)
+
+Proben der Spur (gleiche Invariante wie der Test): Scratchpad `unlink-pruef5/` (`harness.js`,
+`probe_*.js`). Jede Probe wird ein Szenario im Test, und die jeweilige Mutation muss danach ROT sein.
+
+1. **Nach Eintritt in 1c fasst der Fehlerweg die eigene Datei NICHT mehr an (R5-1).** 1d bekommt ein eigenes
+   try/catch, das nur protokolliert (der `ersetzt`-Auftrag bleibt für den Reaper). Wirft `db.tx` selbst
+   (Rollback ODER verlorene COMMIT-Quittung — ungewiss, CLAUDE.md „Ein Wurf aus db.tx() beweist KEINEN
+   Rollback“), stellt 1f nur den Anker auf `verwaist` (`… AND grund='vorbelegt' AND beansprucht_bis IS
+   NULL`): hat die Transaktion committet, trifft das 0 Zeilen und die Datei gehört der Zeile; sonst holt der
+   Reaper sie. Das Status-UPDATE im normalen catch bekommt `AND status = 'running'`, damit ein committetes
+   `succeeded` nicht überschrieben wird. Szenarien: Fehler in 1d; COMMIT-Quittung verloren.
+2. **Schreibabbruch (R5-2):** jeder `writeFile`-Fehler ausser `EEXIST` gilt als „eigene Datei
+   (möglicherweise) geschrieben“ → Anker `verwaist` + Löschversuch. Szenario S17 (Attrappe legt an, schreibt
+   16 Byte, wirft ENOSPC).
+3. **Szenario zwei Worker nach abgelaufener Lease (R5-3)** — macht Mutation b ROT.
+4. **Offboarding-Reaper prüft das Studio (R5-4):** existiert `studios.id` noch, wird der Queue-Eintrag
+   NICHT abgearbeitet, sondern verworfen, mit `melde()` (eigene Kennung). Zusätzlich in
+   `deprovisionStudio()` ein catch um die Transaktion, der den eben geschriebenen Queue-Eintrag entfernt.
+   Test: Transaktion scheitert nach dem Queue-Schreiben → Studio lebt, Primär-PDF und Spiegeldateien bleiben.
+5. **Offboarding verhaltensseitig (R5-5):** `test_deprovision.js` sichert zu: Queue-JSON trägt alle
+   Referenzen (Zeile, `verwaist`, `vorbelegt`) bei scheiterndem `rmSync`, der Reaper löscht sie danach;
+   scheitert die Transaktion, steht die `storage_replica`-Zeile noch. Mutationen t5 und t5b → ROT.
+6. **Weg-2-Abbruch zwischen DELETE und INSERT (R5-6)** als Szenario (Rollback lässt die Zeile stehen).
+7. **Weg-2-DB-Fehler (R5-7):** Transaktion einmal wiederholen; scheitert auch das, `melde()` mit Kennung
+   `storage-replica:loeschauftrag_anlegen_fehlgeschlagen` (die Zeile steht dann noch, die Datei auch — sichtbar
+   statt still). Szenario mit Attrappe.
+8. **Entzogen-Riegel (R5-8):** `AND attempts = <eigener Claim-Wert>` zusätzlich zu `status='running'`;
+   Szenario macht Mutation n ROT.
+9. **Teilläufe (R5-9):** Positivitätsschwelle nur im Volllauf.
+10. **Kommentare (R5-10, R5-11):** Kopf der Migration: alte 0060 lief nie ausserhalb von Test-DBs (gemessen);
+    `core/provisioning.js:423` berichtigen.
+
+Einordnung unverändert (sehr komplex). Abschluss wie immer: Gegenproben ROT/GRÜN wörtlich, volle Suite mit
+Dateizahl-Ritual, Lint wörtlich, Commit + Push vor jedem langen Lauf.
