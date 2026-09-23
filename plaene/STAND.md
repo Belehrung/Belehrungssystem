@@ -4,7 +4,9 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-Stand 23.09.2026, 15:35 UTC.
+Stand 23.09.2026, 15:45 UTC.
+
+* **Laufend:** Sperrordnung Nacharbeit 2 + master-Merge (R2-1…R2-8, klein); unlink Nacharbeit 6 (R2-1 Wiederholungsweg storage-replica u. a.); Pentest P1 Bau nach Fassung 3 (`/workspace/gymdocu-p1`, Zweig `fix-pentest-p1-idwache`).
 
 * **S6 ausgeliefert** (#468, Deploy 435 `success` für `753b833`, live-check grün mit 2× ℹ wie immer; Health-Gate im Deploy = Migration 0059 durch).
 
