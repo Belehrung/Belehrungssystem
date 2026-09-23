@@ -68,3 +68,13 @@ Kosten laut Werkzeug in `ASTRA-LAEUFE.md`.
 | R2-A9 | blockierend | Waisen-Token + wiedervergebene Mitarbeiter-ID (Löschweg läuft nach gescheitertem Token-DELETE weiter; S20 fügt IDs mit `OVERRIDING SYSTEM VALUE` ein) | Fundstellen gelesen | ja |
 | R2-A10 | mittel | `mitarbeiter.aktiv` ist nullable → „nicht aktiv" NULL-sicher (`IS DISTINCT FROM 1`) | `core/db.js:645` | ja |
 | R2-A11 | mittel | „Zweimal laufen lassen" belegt nur das Überspringen; das Backfill ist nicht wiederholbar | `core/migrate.js:128-147` | ja (Dokumentation) |
+
+## Runde 2, Spur B (`deepseek-v4-pro`, Bündel: Anmelde-, Admin-, API-, Webhook-Wege, S20, Störhelfer, Migrationsmechanik) — nachgemessen
+
+1020 s, 24.107 ein / 52.775 aus (49.777 Denken). Sechs Befunde, alle getragen; vier decken sich
+mit Spur A (B1≈R2-A1, B2≈R2-A8, B3≈R2-A4, B4≈R2-A2 — beide Spuren unabhängig: die
+Riegel-Gegenprobe war verkehrt herum). Nur bei B: B5 (Vorbedingung am konkreten Token in JEDER
+Probe zusichern), B6 (REPLACE-Import setzt die Generation auf 0 zurück — unschädlich, weil alle
+Tokens des Studios danach ungültig; dokumentiert).
+
+**Folge:** Fassung 3 im Papier; Bau mit Fable.
