@@ -324,3 +324,50 @@ Senden von `COMMIT` ist ein Wurf ein sicherer Rollback, danach ist er ungewiss.
 Queue-Entfernen wieder über die Studio-ID; Neuschreiben nach dem COMMIT weggelassen; Karenz zurück auf 15 min
 (welche Zusicherung fällt?).
 **Abschluss:** volle Suite, Dateizahl-Ritual, Lint, Marker-Scan, Commit, Push, Bericht mit Widersprüchen.
+
+## NACHARBEIT 9 — Fassung 2 (nach Planprüfung; gilt, Fassung 1 nur noch Herleitung)
+
+Befunde der Planprüfung: `plaene/planpruefung-unlink-loeschauftrag.md`, Abschnitt „Nacharbeit 9, Fassung 1“ (PN9-…).
+**Vorweg:** `origin/master` in `fix-nachweis-unlink` hereinmergen (seit #470 steht dort die ID-Wache; Konflikte melden,
+nicht raten).
+
+Änderungen gegenüber Fassung 1:
+
+- **Punkt 1:** Die Kennzeichnung per `Object.defineProperty(e, 'commitUngewiss', { value, enumerable: false,
+  configurable: true, writable: true })` in eigenem `try/catch` — unsichtbar für `JSON.stringify`/Vergleiche, kein
+  Wurf bei eingefrorenem Fehler (PN9-8). Bestehende `true` nie überschreiben. Wurf aus `pool.connect()` (vor dem
+  `try`) bleibt ungekennzeichnet = ungewiss, das ist so gewollt. Test „Nicht-Objekt-Wurf“: nicht als Wächter über
+  den Guard ausgeben (in `core/db.js` ist ohne `'use strict'` eine Zuweisung an ein Primitiv ohnehin still, PN9-10);
+  stattdessen zusichern: der Wurf kommt identisch an UND ein eingefrorener Fehler kommt identisch an (der zeigt den
+  Guard wirklich).
+- **Punkt 4/5:** Laufkennung VOR `db.tx` erzeugen, in einer äusseren Variable halten; `catch`, Neuschreiben und
+  Erfolgs-Entfernen benutzen dieselbe (PN9-9). Eigener Dateiname `<studioId>-<kennung>.json`.
+- **Punkt 7:** (a) ungültige Einträge UND nicht lesbares JSON (PN9-11): einmal `melde()` mit Kennung
+  `provisioning:offboarding_rest_ungueltig`, danach die Datei in `<name>.ungueltig` umbenennen (bleibt für den
+  Betreiber liegen, wird nicht jeden Lauf neu gemeldet, PN9-12); eigener Zähler `ungueltig` im Rückgabewert.
+  (c) Begründung der 24 h: „der Reaper läuft nur per Cron 03:20 (einziger Aufruf `server.js:1556`), eine
+  Deprovisionierung liegt weit unter 24 h“ — ohne „Sekunden“ (PN9-14); der Preis (Meldung „Studio lebt“ bis zu 24 h
+  später) steht im Kommentar (PN9-13).
+- **Punkt 9, zusätzlich:**
+  - `test_deprovision.js` R5-5 auf Laufdateien umstellen (eigene Datei per `readdirSync` mit Präfix `<id>-` finden;
+    `queueImFenster` ebenso) (PN9-1).
+  - `test_feature_audit2_batchB_static.js:73` fachlich auf den neuen Mechanismus umstellen (Entfernen über die
+    eigene Datei erst bei `dateien_geloescht`), nicht streichen (PN9-2).
+  - `test_feature_audit2_offboarding.js:35`: nach Erfolg darf KEINE `.json` des Studios im Queue-Verzeichnis liegen
+    (PN9-3); `:56-59`: Guard-Eintrag bekommt `erstellt`, und der Test sichert zu, dass der Reaper den Löschpfad
+    wirklich erreicht hat (Rückgabewert/Zähler), nicht nur, dass die fremde Datei noch liegt (PN9-4).
+  - Karenz: ein Eintrag eines LEBENDEN Studios, 2 h alt → `uebersprungen === 1`, nichts gelöscht — der fällt bei
+    15 min (PN9-5). Den 16-min-Eintrag in S24 auf > 24 h setzen.
+  - R6-2: DASSELBE Studio zweimal; Lauf A scheitert im Callback über eine `db.tx`-Attrappe, die nur den ERSTEN
+    Aufruf präpariert (Muster S24, `db.tx = async (cb) => { db.tx = echtTx; … }`); B läuft echt, seine Dateilöschung
+    per `fs.rmSync`-Attrappe gestört → B's Datei überlebt, der Reaper räumt (PN9-6).
+  - „COMMIT in der Luft“ (R6-1) OHNE Verweis auf eine Probe-Datei: `db.tx`-Attrappe, die den Callback auf einer
+    eigenen Verbindung in einer echten Transaktion ausführt, den Fehler MIT `commitUngewiss: true` sofort wirft und
+    das COMMIT erst danach (verzögert) absetzt → Eintrag bleibt, nach dem COMMIT räumt der Reaper (PN9-7).
+    Zusätzlich die echte Kennzeichnung über den DEFERRABLE-Weg aus Punkt 1 einmal durch `deprovisionStudio` schicken.
+  - R6-3: `db.tx`-Attrappe mit Gate in der Discovery; während die Transaktion hängt, `erstellt` der eigenen Datei auf
+    > 24 h zurückdatieren und den Reaper laufen lassen (verwirft); Gate frei, COMMIT → die eigene Datei steht wieder
+    (PN9-15).
+
+Einordnung unverändert: sehr komplex. Gegenproben wie in Fassung 1, dazu: Guard-Eintrag ohne `erstellt` (alter
+Zustand) → PN9-4-Zusicherung rot; Umbenennen zu `.ungueltig` weggelassen → zweiter Reaper-Lauf meldet erneut → rot.
