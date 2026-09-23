@@ -108,11 +108,41 @@ ausschliesslich wegen gleicher Längen (459.772 = 459.772). Die
 Längengleichheit BLEIBT deshalb — als Vertragsprüfung über den Helfer, mit
 ehrlicher Meldung — und `nichtLeerraum` kommt daneben.
 
-**Stand 23.09.2026 03:03 UTC: Runde 7 ist beim Executer.** Er hat einen
-Zwischenstand `dc799f32` gepusht und selbst als UNGEPRÜFT gekennzeichnet:
-alle zehn Punkte umgesetzt, Einzeldatei-Lauf EXIT 0 / 32 PASS / 0 FAIL, volle
-Suite, Lint und die zwölf Gegenproben stehen aus. **Solange er läuft, fasst
-niemand `/home/user/gymdocu` an.**
+**Stand 23.09.2026 03:50 UTC: Runde 7 ist GEBAUT und GEPRÜFT — und NICHT
+mergefähig.**
+
+Gebaut (`dc799f3`) plus meine Nachbesserung (`4fc9bed`). Eigene Messungen:
+volle Suite `SUITE_EXIT=0`, alle FAIL-Zahlen 0, Dateizahl **350 = 350**
+`diff` EXIT 0, `npm run lint` EXIT 0 ohne Ausgabe. CI auf `4fc9bed` grün.
+
+**Trotzdem kein Merge: die Diffprüfung hat ZWÖLF Befunde geliefert, alle
+zwölf tragen, DREI davon sind Regressionen des Beitrags selbst.** Der
+Beitrag, der Zusicherungen schärfen sollte, hat drei davon stumpf gemacht.
+Einzelheiten samt Messwerten in `plaene/diffpruefung-ladebestand-runde7.md`.
+
+* **R1** — Punkt 7 („ganze Datei maskieren, dann schneiden") hat den
+  C7-Wächter BLIND gemacht. Die Bereichsmarke steht in einem Kommentar; auf
+  dem alten Weg überlebte sie einen falschen Schnitt und der Wächter wurde
+  rot, jetzt ist sie überall ausgeleert. Gemessen: alter Weg `true`, neuer
+  Weg `false`.
+* **R2** — dieselbe Umstellung hat die Längenzusicherung zur
+  **slice-Tautologie** gemacht. Gemessen mit einem Masker, der 50 Zeichen
+  verliert: die Zusicherung merkt es NICHT, die von mir VERWORFENE Form hätte
+  es gemerkt. **Das widerlegt meine eigene Begründung im Auftragspapier** —
+  auf der ganzen Datei vergleicht sie zwei unabhängig erzeugte Zeichenketten
+  und KANN fallen, auf dem Slice kann sie es NIE. Die Lesespur hatte recht.
+* **R3** — die neue Forderung nach einer aufrufenden Klammer kostet die
+  Referenz-Form: `const f = pool["query"]` war alt gefangen, ist neu durch.
+
+Dazu ein eigener Befund beim Diff-Lesen, den keine Prüfspur hatte: die
+A2-Positivkontrolle bewachte ihr eigenes Prädikat nicht (von Hand kopierte
+zweite Fassung). Behoben in `4fc9bed` — und die ERSTE Behebung trug nicht,
+weil eine gemeinsame Fixtur bei einer Alternation `A|B` schon mit A grün
+bleibt; erst je eine Fixtur pro Form fällt gemessen.
+
+**Nächster Schritt:** Lesespur der Diffprüfung abwarten, ihre Befunde
+nachmessen, dann Runde 8 an den Executer. **Solange eine Prüfspur läuft,
+fasst niemand `/home/user/gymdocu` schreibend an.**
 
 **Fünf Korrekturen habe ich vor der Planprüfung an meinem EIGENEN Auftrag
 gemacht, alle gemessen:**
