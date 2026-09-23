@@ -1,19 +1,28 @@
 # STAND — Übergabepunkt
 
-Stand: 22.09.2026, 23:4x UTC.
+Stand: 23.09.2026, 07:45 UTC.
 
 ## Was gerade LÄUFT
 
-**Ein Executer baut die SECHSTE Runde des Ladebestand-Beitrags**
-(Arbeitsbaum `/home/user/gymdocu`, Zweig `beitrag-ladebestand`, auf dem
-UNCOMMITTETEN Stand der fünften Runde). **Nicht in diesen Arbeitsbaum
-hineinarbeiten, solange seine Benachrichtigung nicht da ist** — und eine
-Benachrichtigung gilt nur, bis er per SendMessage fortgesetzt wird.
+**Ein Executer baut die EXTRARUNDE „ladebestand"** im eigenen Arbeitsbaum
+`/workspace/gymdocu-extra` (Zweig `extrarunde-ladebestand`, Basis `e2a9e9e`).
+`/home/user/gymdocu` steht detached auf `e2a9e9e` und ist frei. **Nicht in
+`/workspace/gymdocu-extra` hineinarbeiten, bevor seine Benachrichtigung da
+ist** (und nach einem SendMessage erst die NÄCHSTE).
 
-Auftrag: `plaene/auftrag-ladebestand-nacharbeit.md`, Abschnitt
-„# DER BAUAUFTRAG DER SECHSTEN RUNDE" (Dateiende). Die Begründung je Punkt
-steht in den beiden Abschnitten davor — es gibt ZWEI „DIFFPRÜFUNG DER
-FÜNFTEN RUNDE", einen je Prüfspur.
+Auftrag: `plaene/auftrag-extrarunde-ladebestand.md` (Fassung 2) plus ein
+Nachtrag per SendMessage mit sechs Punkten aus dem A/B-Lauf (stehen in
+`plaene/planpruefung-extrarunde-ladebestand.md`, Abschnitt A/B).
+Planprüfung: drei Spuren (sol 5.6, kimi, A/B sol 6), alle Befunde nachgemessen.
+
+**#465 ausgeliefert:** Deploy 433 `success` für `e2a9e9e`, live-check grün
+(2× ℹ wie immer).
+
+**Betreiber-Entscheidung 23.09.2026:** Gegenleser-Vorgabe ist ab jetzt
+`gpt-6-sol` (umgesetzt, `a49c03e`).
+
+**Danach in der Extrarunde:** der Verklemmungskreis in `routes/module.js`
+(eigener Beitrag), dann die übrigen Punkte unter „Offen, nach dem Beitrag".
 
 ## Wo der Beitrag steht
 
