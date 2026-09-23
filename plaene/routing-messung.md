@@ -35,22 +35,23 @@ Kosten: siehe `ASTRA-LAEUFE.md`; Claude-Spur ohne Kosten, Kimi ohne Preisgrundla
 
 | Datum | Aufgabe | Spur | B | nur | nur-hoch | gef. |
 |---|---|---|---|---|---|---|
-| 23.09. | Diff P1 R1 | Claude ausführend | 11 | 8 | 5 | 0 |
+| 23.09. | Diff P1 R1 | Claude ausführend | 11 | 8 | 4 | 0 |
 | 23.09. | Diff P1 R1 | DeepSeek, Repo | 11 | 8 | 1 | 0 |
-| 23.09. | Diff P1 R2 | Claude ausführend | 11 | 9 | 5 | 0 |
-| 23.09. | Diff P1 R2 | DeepSeek, Repo | 6 | 4 | 2 | 0 |
+| 23.09. | Diff P1 R2 | Claude ausführend | 9 | 7 | 4 | 0 |
+| 23.09. | Diff P1 R2 | DeepSeek, Repo | 6 | 5 | 2 | 0 |
 | 23.09. | Diff unlink R4 | Claude ausführend | 6 | 3 | 1 | 0 |
-| 23.09. | Diff unlink R4 | DeepSeek, Repo | 7 | 4 | 1 | 0 |
-| 23.09. | Diff unlink R5 | Claude ausführend | 8 | 6 | 4 | 0 |
-| 23.09. | Diff unlink R5 | DeepSeek, Repo | 7 | 4 | 1 | 0 |
-| 23.09. | Plan unlink F1 | DeepSeek, Repo | 17 | 14 | 6 | 0 |
-| 23.09. | Plan unlink F1 | Kimi, Bündel | 9 | 5 | 1 | 1 |
-| 23.09. | Plan unlink F2 | DeepSeek, Repo | 12 | 10 | 5 | 0 |
-| 23.09. | Plan unlink F2 | Kimi, Bündel | 6 | 4 | 2 | 0 |
+| 23.09. | Diff unlink R4 | DeepSeek, Repo | 7 | 4 | 0 | 0 |
+| 23.09. | Diff unlink R5 | Claude ausführend | 9 | 6 | 4 | 0 |
+| 23.09. | Diff unlink R5 | DeepSeek, Repo | 6 | 3 | 1 | 0 |
+| 23.09. | Plan unlink F1 | DeepSeek, Repo | 11 | 7 | 5 | 0 |
+| 23.09. | Plan unlink F1 | Kimi, Bündel | 10 | 6 | 1 | 1 |
+| 23.09. | Plan unlink F2 | DeepSeek, Repo | 9 | 7 | 5 | 0 |
+| 23.09. | Plan unlink F2 | Kimi, Bündel | 6 | 4 | 3 | 0 |
 
-Zählweise heute rückwirkend aus den Befunddateien (`plaene/diffpruefung-pentest-p1.md`,
-`plaene/diffpruefung-unlink.md`, `plaene/planpruefung-unlink-loeschauftrag.md`). Gruppierte Zeilen dort
-(z. B. „R2-B2/B3/B4“) sind als ein Befund gezählt. „nur-hoch“ nach der Einstufung des Haupt-Agenten.
+Zählweise: **eine Zeile der Befunddatei = ein Befund** (`plaene/diffpruefung-pentest-p1.md`,
+`plaene/diffpruefung-unlink.md`, `plaene/planpruefung-unlink-loeschauftrag.md`); gruppierte Zeilen wie
+„R2-B2/B3/B4“ zählen einmal, eine Zeile mit zwei Spuren („A1/B1“) zählt bei beiden und bei keiner als „nur“.
+„nur-hoch“ = blockierend, hoch, mittel oder „sollte“ nach der NACHGEMESSENEN Einstufung.
 
 **Zwischenstand 23.09.2026 (6 Runden, KEINE Empfehlung):** Bei den Diffprüfungen liefert die ausführende
 Claude-Spur die meisten Befunde, die nur sie hat, und davon die meisten schweren. Das passt zur Messung vom
