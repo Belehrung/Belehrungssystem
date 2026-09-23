@@ -46,15 +46,27 @@ MENGEN zuletzt:**
 
 ```
 1 includes('schreibePruefplan(')        (Vorbedingung, bleibt vorn)
-2 PRUEFPLAN_VERBOTENES_MUSTER           (der Riegel)
-3 kein BEGINN-Marker
-4 cteNamenTreffer === 1
-5 Existenz "neu AS (" === 1             (neu, Punkt 8)
-6 FOR-UPDATE-Fenster
-7 Code-Anker + Kommentar-Anker          (neu, Punkt 9b)
-8 nichtLeerraum(abschnitt) === 2291     (neu, Punkt 1)
-9 Anzahl schreibePruefplan( === 6
+2 Längengleichheit ROH <-> MASKIERT     (VERTRAG des Helfers, s. Punkt 1 —
+                                         muss VOR allem stehen, was Versatz-
+                                         werte benutzt, also vor dem Schnitt)
+3 PRUEFPLAN_VERBOTENES_MUSTER           (der Riegel)
+4 kein BEGINN-Marker
+5 cteNamenTreffer === 1
+6 Existenz "neu AS (" === 1             (neu, Punkt 8)
+7 FOR-UPDATE-Fenster
+8 Code-Anker + Kommentar-Anker          (neu, Punkt 9b)
+9 Richtungskontrolle (Ungleichung)      (neu, Punkt 9b)
+10 nichtLeerraum(abschnitt) === 2291    (neu, Punkt 1)
+11 Anzahl schreibePruefplan( === 6
 ```
+
+**Position 2 ist kein Widerspruch zur Regel „Mengen zuletzt".** Die
+Längengleichheit ist keine Mengenaussage über den Abschnitt, sondern eine
+VERTRAGSPRÜFUNG über den geteilten Helfer, von der der Schnitt selbst abhängt
+(Begründung und Messung in Punkt 1). Sie muss deshalb stehen, BEVOR ein
+Versatzwert benutzt wird — und sie kann von keiner Gegenprobe ausgelöst
+werden, die nur den INHALT des Abschnitts ändert, weil sie über die GANZE
+Datei geht.
 
 Unter der 1a-Mutation (Masker frisst `req.studioId`) bleibt der Riegel grün —
 es steht ja kein verbotenes Muster darin — und 2291 fällt trotzdem. Keine
@@ -75,7 +87,40 @@ zeilenbeginnNachMarke, …)` in Zeile 660 kann nicht fallen.
 Mutation, die jedes `req.studioId` aus dem Abschnitt frisst, lief die Datei mit
 **TEST_EXIT=0, 29 PASS / 0 FAIL** durch.
 
-**Umsetzung:** Die Zusicherung wird durch eine über den INHALT ersetzt.
+**BERICHTIGT durch die Planprüfung (Spur B, Befund B2) — sie wird NICHT
+ersetzt, sondern ERGÄNZT.** Meine erste Fassung wollte die Längengleichheit
+löschen. Nachgemessen ist das falsch:
+
+```
+Versatzwerte aus dem ROHEN Text: zb = 183659   ende = 198402
+Nach Punkt 7 wird damit in den MASKIERTEN Text geschnitten:
+  trifft es den Abschnitt? erstes schreibePruefplan( bei 1949
+  Endmarke im maskierten Text noch lesbar? NEIN (Kommentar, ausgeleert)
+  ROH.length = 459772   MASK.length = 459772
+```
+
+**Punkt 7 erzeugt eine Versatz-Arithmetik über zwei Texte:** `begin`, `ende`
+und `zeilenbeginnNachMarke` werden am ROHEN Quelltext ermittelt und danach in
+den MASKIERTEN geschnitten. Die Bereichsmarken stehen selbst in Kommentaren
+und sind dort ausgeleert — der Schnitt trifft **ausschliesslich**, weil die
+Längen gleich sind. Das Vorbild
+`test_feature_audit_kapselung_geraete_static.js:647` sagt genau das in seinem
+eigenen Kommentar: „die Fenster-/Klammer-Arithmetik unten setzt das voraus".
+
+**Beide Aussagen sind zugleich wahr:** als Zusicherung über den ABSCHNITT ist
+die Längengleichheit eine Tautologie (Befund A1, gemessen). Als
+VERTRAGSPRÜFUNG über den geteilten Helfer, von der die Versatz-Arithmetik
+abhängt, ist sie tragend.
+
+**Also beides, mit ehrlichen Meldungen:**
+
+* die Längengleichheit BLEIBT — aber ihre Meldung sagt ab jetzt, was sie
+  wirklich bewacht („`maskiereKommentare()` ist nicht mehr längenerhaltend —
+  die Versatzwerte aus dem rohen Quelltext treffen im maskierten dann die
+  falsche Stelle"), nicht mehr „es ging Code verloren";
+* `nichtLeerraum` kommt DANEBEN als die Zusicherung über den Abschnitt.
+
+**Umsetzung:** Die Zusicherung über den INHALT wird ergänzt.
 `nichtLeerraum` ist im Hausstandard bereits exportiert
 (`test/rohwert-scan.js:360`, Kopfkommentar: „wo ein reiner .length-Vergleich
 blind ist") und wird zusammen mit `maskiereKommentare` importiert.
@@ -686,6 +731,25 @@ Template herausziehen, nicht den Riegel abschwächen).
   einzeln, jede wörtlich mit EXIT und PASS/FAIL, **Mutation UND Rücknahme**.
   Vor jeder Gegenprobe das ERWARTETE Ergebnis hinschreiben, danach das
   gemessene — weicht es ab, ist das ein Befund und kein Betriebsunfall.
+
+* **Zu JEDER roten Gegenprobe die ERSTE FAIL-Zeile wörtlich melden**, nicht
+  nur „EXIT 1". `assert` wirft beim ersten Verstoss; rot allein sagt nicht, ob
+  die GEMEINTE Zusicherung gefallen ist. Aus der Planprüfung (Spur B,
+  Befund B3): 9b-b und 9b-c mutieren den GETEILTEN Masker und wirken damit auf
+  die ganze Datei. Nachgemessen laufen die 9b-Anker zwar VOR Fixtur 4b
+  (Zeile 739 gegen 762), der Befund fällt also — aber die Vorsicht bleibt
+  richtig.
+
+* **2a und 2b belegen die STATISCHE Erkennung, nicht das Laufzeitverhalten**
+  (Spur B, Befund B4, nachgemessen): der C9-Block steht auf 545–578, die
+  Datenbankblöcke ab 1465 bzw. 1697. Eine Mutation im DB-Block wird vom Scan
+  gefangen, bevor der Block läuft. Das ist der Zweck des Scans — es wird nur
+  nicht mehr behauptet, die Probe zeige den `TypeError`.
+
+* **2b nennt die NEUEN Bezeichner** (Spur B, Befund B5): nach der Umbenennung
+  aus Punkt 2 heisst es `await r1Ausstattung.text();` im Ausstattungsblock,
+  nicht `r1`. Mit dem alten Namen suchte der Scan einen Bezeichner, den es
+  nicht mehr gibt — die Gegenprobe bliebe fälschlich grün.
 * Mutationsskript mit Zielpfad als ARGUMENT, Abbruch bei ≠ 1 Fundstelle,
   Marker `GEGENPROBE-`+`DEFEKT` im Ersatztext, `node --check` danach,
   Rücknahme gegen eine unabhängige `cp`-Kopie mit `diff` EXIT 0.

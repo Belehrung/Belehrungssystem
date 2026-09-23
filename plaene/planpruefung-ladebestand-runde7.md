@@ -210,3 +210,91 @@ also `bearbeite[n]` und `name=[$]1` im Kommentar.
 **Das ist zum fünften Mal in Folge dieselbe Lehre:** der Befund einer Prüfspur
 ist eine Behauptung, und ihr Behebungsvorschlag ist eine ZWEITE, die
 unabhängig gemessen gehört. Hier war die erste richtig und die zweite falsch.
+
+---
+
+## Spur B — `deepseek-v4-pro`, Bündel „Auftrag + Testdatei + DREI GESCHWISTERWÄCHTER", kein Produktivcode
+
+Lauf: 497,4 s, `beendet=stop`, 89.927 ein / 32.036 aus (27.661 Denken).
+Fünf Befunde. **Vier tragen, einer fällt.**
+
+| # | Kern | Ergebnis |
+|---|---|---|
+| B1 | Das Flag `durchgelaufen` versagt bei `return`/`break`/`continue` | **TRÄGT als Klasse, greift heute nicht — und ist gegenstandslos** |
+| B2 | Dem Neuling fehlt die Längen-/Leerraum-Zusicherung der Geschwister | **TRÄGT — und zwar aus einem Grund, den KEINE Spur genannt hat** |
+| B3 | Gegenproben 9b-b/9b-c erreichen die neuen Anker nicht, Fixtur 4b fällt zuerst | **FÄLLT — die Reihenfolge ist umgekehrt** |
+| B4 | Gegenproben 2a/2b belegen nur die statische Erkennung | **TRÄGT als Klarstellung** |
+| B5 | 2b muss die NEUEN Bezeichner nennen | **TRÄGT** |
+
+### B2 — der Befund, für den sich die zweite Spur gelohnt hat
+
+Spur B hatte als einzige die Geschwisterwächter im Bündel und fand dort eine
+Zusicherung, die dem Neuling fehlt. Der entscheidende Hinweis stand im
+Kommentar des Vorbilds (`test_feature_audit_kapselung_geraete_static.js:647`):
+
+> „`maskiereKommentare()` ist NICHT mehr längenerhaltend … — **die Fenster-/
+> Klammer-Arithmetik unten setzt das voraus**"
+
+**Damit kippt die Bewertung von A1 zur Hälfte — nachgemessen:**
+
+```
+Versatzwerte aus dem ROHEN Text: zb = 183659   ende = 198402
+Nach Punkt 7 wird damit in den MASKIERTEN Text geschnitten:
+  trifft es den Abschnitt? erstes schreibePruefplan( bei 1949
+  Endmarke im maskierten Text noch lesbar? NEIN (Kommentar, ausgeleert)
+  ROH.length = 459772   MASK.length = 459772
+```
+
+**Punkt 7 ERZEUGT genau diese Arithmetik in unserer Datei.** `begin`, `ende`
+und `zeilenbeginnNachMarke` werden am ROHEN Quelltext ermittelt und nach dem
+Umbau in den MASKIERTEN geschnitten — und die Bereichsmarken stehen selbst in
+Kommentaren, sind dort also ausgeleert. Der Schnitt trifft **ausschliesslich**,
+weil die Längen gleich sind.
+
+**Die Synthese, die keine der drei Prüfspuren allein hatte:**
+
+* **A1 hat recht:** die Längengleichheit sagt NICHTS über den Abschnitt. Als
+  Abschnitts-Zusicherung ist sie eine Tautologie.
+* **B2 hat recht:** sie darf trotzdem nicht weg — sie ist eine
+  VERTRAGSPRÜFUNG über den geteilten Helfer, von der die Versatz-Arithmetik
+  abhängt.
+* **Beides zugleich ist wahr.** Die Zusicherung bleibt, bekommt aber eine
+  ehrliche Meldung, die sagt, was sie wirklich bewacht — und `nichtLeerraum`
+  kommt DANEBEN als die Zusicherung über den Abschnitt.
+
+Das ist der bisher stärkste Beleg für die Betreiber-Entscheidung, den Spuren
+VERSCHIEDENE Bündel zu geben: Spur B hatte die Geschwister, Spur A nicht, und
+der tragende Hinweis stand in einem Kommentar des Vorbilds.
+
+### B3 — fällt, gemessen
+
+Spur B behauptet, Fixtur 4b werde rot, bevor die neuen 9b-Anker geprüft
+werden. Nachgemessen ist die Reihenfolge **umgekehrt**: `geraeteOhneKommentare`
+steht auf Zeile 739 (Block 590–746), Fixtur 4b beginnt erst auf Zeile 762. Die
+Anker laufen also VOR Fixtur 4b — nach Punkt 7 sogar noch früher, weil die
+Maskierung auf IIFE-Ebene wandert.
+
+Die Sorge dahinter bleibt trotzdem nützlich und wird in den Auftrag
+übernommen: **9b-b und 9b-c mutieren den GETEILTEN Helfer und wirken damit auf
+alles.** Der Auftrag verlangt deshalb, die ERSTE FAIL-Zeile zu benennen — ist
+sie nicht der erwartete Anker, ist das ein Befund und kein Betriebsunfall.
+
+### B1 — trägt als Klasse, greift heute nicht, ist gegenstandslos
+
+Nachgemessen: im Punkt-1-`try`-Rumpf (1486–1615) steht **kein** `return`,
+`break` oder `continue`. Das Flag hätte heute funktioniert.
+
+Bemerkenswert ist etwas anderes: **beide Planprüfungs-Spuren haben unabhängig
+voneinander meinen Flag-Vorschlag angegriffen** — Spur A über den saubereren
+Weg („nimm die POSITION"), Spur B über den konkreten Versagensfall
+(„`return` umgeht das Flag"). Sie sahen verschiedene Bündel und kamen aus
+verschiedenen Richtungen auf dieselbe Schwäche. Die Positionslösung erledigt
+beide.
+
+### B4 — Klarstellung, keine Behebung
+
+Der C9-Block steht auf 545–578, die Datenbankblöcke ab 1465 bzw. 1697. Eine
+Mutation in einem DB-Block wird also vom statischen Scan gefangen, bevor der
+Block überhaupt läuft. Die Gegenproben 2a/2b belegen damit die STATISCHE
+Erkennung — was ihr Zweck ist. Der Auftrag sagt das ab jetzt ausdrücklich,
+damit niemand mehr hineinliest.

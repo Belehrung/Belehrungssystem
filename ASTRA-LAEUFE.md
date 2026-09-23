@@ -3069,3 +3069,75 @@ verliert nicht Redundanz, sondern eine Klasse.
 
 Und zum dritten Mal in Folge gilt: **der BEFUND trug, die BEHEBUNG war die
 Gefahr.** Kein Vorschlag einer Prüfspur geht ungemessen in einen Bauauftrag.
+
+---
+
+## 23.09.2026 — Planprüfung Bauauftrag Runde 7 „ladebestand", ZWEI Lesespuren
+
+Nach der Betreiber-Entscheidung vom 20.09.2026 (abends): Planprüfung = zwei
+Lesespuren, **verschiedene Bündel**. Frage und Vorspann gleich, Material
+verschieden.
+
+| Datum | Zweck | Material | Befunde | getragen | gefallen | Kosten |
+|---|---|---|---|---|---|---|
+| 23.09.2026 | Planprüfung Runde 7, Spur A (`kimi-k3`), Bündel „Auftrag + Testdatei + Hausstandard + bewachte Produktivregion" | 5 Dateien, 236 KB; 77.903 ein / 50.417 aus (43.208 Denken), 1342,5 s | 10 | **10** | 0 | unbekannt |
+| 23.09.2026 | Planprüfung Runde 7, Spur B (`deepseek-v4-pro`), Bündel „Auftrag + Testdatei + DREI GESCHWISTERWÄCHTER", kein Produktivcode | 6 Dateien, 281 KB; 89.927 ein / 32.036 aus (27.661 Denken), 497,4 s | 5 | **4** | 1 | unbekannt |
+
+Kosten für beide Modelle stehen nicht in unserer Preistabelle; eine Zahl wird
+nicht erfunden.
+
+**Überschneidung: 1 von 15** (beide griffen meinen Flag-Vorschlag für den
+`finally`-Block an — Spur A über den saubereren Weg, Spur B über den konkreten
+Versagensfall `return`). Die restlichen vierzehn Befunde hatte jeweils nur
+eine der beiden.
+
+### Was die Planprüfung wirklich gebracht hat
+
+**Sechs der zehn Befunde von Spur A treffen Fehler in MEINEM Auftragspapier,
+nicht im Bestand.** Der teuerste wäre gewesen, dass zwei Gegenproben ihren
+eigenen Beweis verloren hätten: der neue Mengen-Wächter stand im Kontrollfluss
+VOR dem Riegel, `assert` wirft beim ersten Verstoss, also wären 3a und 8a am
+falschen Ort rot geworden. Das ist wörtlich dieselbe Isolationsfalle, die mein
+eigener Auftrag drei Punkte weiter oben selbst benennt.
+
+Dazu ein `ReferenceError` zur LAUFZEIT (Blockgrenzen), den `node --check`
+nicht gesehen hätte, und ein Ausdruck, der einen heute gefangenen
+Umgehungsweg GEÖFFNET hätte.
+
+### Der Beleg für VERSCHIEDENE Bündel — der bisher stärkste
+
+**Spur B hatte als einzige die Geschwisterwächter und fand damit den Befund,
+der die Bewertung der ganzen Runde 6 zur Hälfte kippt.** Der tragende Hinweis
+stand nicht im Diff, sondern in einem KOMMENTAR des Vorbilds
+(`test_feature_audit_kapselung_geraete_static.js:647`): „die Fenster-/
+Klammer-Arithmetik unten setzt das voraus".
+
+Nachgemessen erzeugt Punkt 7 unseres Auftrags genau diese Arithmetik: Versatz-
+werte aus dem ROHEN Quelltext werden in den MASKIERTEN geschnitten, und die
+Bereichsmarken stehen selbst in Kommentaren. Der Schnitt trifft
+ausschliesslich, weil die Längen gleich sind (459.772 = 459.772).
+
+**Damit sind A1 und B2 BEIDE wahr:** die Längengleichheit sagt nichts über den
+Abschnitt (A1), ist aber als Vertragsprüfung über den geteilten Helfer tragend
+(B2). Sie bleibt — mit einer ehrlichen Meldung — und `nichtLeerraum` kommt
+daneben. **Keine der drei Prüfspuren hatte diese Synthese; sie entstand erst
+beim eigenen Nachmessen zweier Befunde gegeneinander.**
+
+### Zum siebten Mal: der Behebungsvorschlag ist eine EIGENE Behauptung
+
+Spur A, Befund 10: das grep-Kommando im Kommentar findet sich selbst
+(gemessen 2 Treffer). **Der Befund trägt, der vorgeschlagene Behebungsweg
+nicht** — sein Vorschlag ergibt ebenfalls 2 Treffer. Der Klammertrick behebt
+es, gemessen 1 Treffer auf der richtigen Zeile.
+
+Spur B, Befund B3: nachgemessen ist die behauptete Reihenfolge umgekehrt
+(Zeile 739 gegen 762), der Befund FÄLLT. Die Vorsicht dahinter ist trotzdem
+übernommen: zu jeder roten Gegenprobe wird ab jetzt die ERSTE FAIL-Zeile
+gemeldet, nicht nur der Exit-Code.
+
+### Betriebsbeobachtung: `kimi-k3` mit `effort: high`
+
+**1342,5 s — 22 Minuten** für ein 78k-Bündel, davon 43.208 Denk-Token. Das
+Zeitlimit von `frage.js` liegt bei 1800 s; der Lauf hat also zwei Drittel
+davon verbraucht. Wer `kimi-k3` mit `high` auf ein grosses Bündel setzt,
+plant das ein — und fährt die zweite Spur parallel, statt zu warten.
