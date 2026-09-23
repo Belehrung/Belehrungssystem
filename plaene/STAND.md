@@ -4,23 +4,26 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-Stand 23.09.2026, 14:00 UTC.
+Stand 23.09.2026, 14:45 UTC.
 
-* **#467 ausgeliefert** (Deploy 434, live-check grün).
-* **Nachweis-unlink** (`/workspace/gymdocu-unlink`, `fix-nachweis-unlink`): Nacharbeit 3 geprüft
-  (`a0dbcf6`, `f095ec3`, Suite 351 = 351, Lint 0). Läuft: Nacharbeit 4 (Verhaltenstest für beide
-  Löschhelfer) + master-Merge (Zweig steht auf `e2a9e9e`). Lesespur-Diffprüfung (`sol`) läuft
-  auf dem Lesebaum `/workspace/gymdocu-unlink-lese` (`f095ec3`).
-* **Sperrordnung** (`/workspace/gymdocu-sperre`, `fix-studiolock-ordnung`, Fable): Suite auf
-  `d90c8d5` grün (355 = 355). Diffprüfung beider Spuren nachgemessen
-  (`plaene/diffpruefung-sperrordnung.md`); Nacharbeit läuft (L1 blockierend + B1–B8).
-* **S6** (`/workspace/gymdocu-s6`, `fix-s6-pin-generation`, Fable): Diffprüfung beider Spuren
-  nachgemessen (`plaene/diffpruefung-s6.md`, 2 blockierend); Nacharbeit läuft (15 Punkte).
-* **Pentest P1/P2**: Auftragspapier Fassung 1 (`plaene/auftrag-pentest-p1-p2.md`), Planprüfung
-  Spur A nachgemessen (`plaene/planpruefung-pentest.md`), Spur B (kimi) läuft. Fassung 2 danach.
-* **H2**: Auftrag Fassung 3 fertig; Bau startet nach dem unlink-Merge.
-* **H1** (CSP): erst die heutige Richtlinie durchsetzen, Nonces als eigener Beitrag.
-* MiMo-V2.6-Pro: Doku gelesen, nicht belegt (`plaene/mimo-v2-6-pro-eignung-23-09-2026.md`).
+* **Betreiber-Entscheidung:** Code-Prüfungen und Logikfehlersuche über `deepseek-v4-pro`
+  (CLAUDE.md). DeepSeek-Weg in `tools/gegenleser-repo.js` gemergt (`9209499`, Selbsttest 129/0);
+  Nacharbeit B1–B11 läuft (Executer, `/workspace/belehrung-ds`, Zweig `ds-lesewerkzeug2`).
+  Gemessen: Pro wird NICHT auf Flash umgeleitet; Denkstufe je Endpunkt verschieden; `store:false`
+  bei DeepSeek über die API nicht messbar.
+* **Sperrordnung** (`fix-studiolock-ordnung`, `1830924`): Nacharbeit gelesen, Suite 355 = 355.
+  DeepSeek Runde 2 (Bündel) — erster Lauf abgeschnitten (64k Ausgabe), Wiederholung mit 200k
+  läuft (`scratchpad/dpsperre2/`). Nachgesehen bisher: Destrukturierungs-Zuweisung unerkannt
+  (trägt), N-nach-L-Zusicherung ohne Reihenfolge (strukturell erzwungen, gering).
+* **S6** (`fix-s6-pin-generation`, `1181d5b`): Nacharbeit gelesen, Suite 355 = 355. DeepSeek
+  Runde 2 mit Repo-Lesezugriff läuft.
+* **Nachweis-unlink** (`fix-nachweis-unlink`, `e262f47`, master gemergt): N4/N5 gelesen, Suite
+  354 = 354. DeepSeek Runde 2 läuft.
+* **Pentest P1**: Fassung 2 (`plaene/auftrag-pentest-p1-p2.md`), Planprüfung Runde 2 läuft
+  (DeepSeek mit Repo, Kimi mit Bündel). P2 wird eigener Beitrag.
+* **DeepSeek-Vollprüfung** (Betreiber-Wunsch): Plan `plaene/deepseek-vollpruefung.md`, 25 Bereiche
+  geschnitten; Start nach den laufenden Prüfungen.
+* **H2**: Bau nach dem unlink-Merge. **H1** (CSP) danach.
 
 **#465 ausgeliefert:** Deploy 433 `success` für `e2a9e9e`, live-check grün
 (2× ℹ wie immer).
