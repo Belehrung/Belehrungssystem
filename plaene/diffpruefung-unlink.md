@@ -88,3 +88,16 @@ M8b (studio_id-Klausel: Tautologie, `id` ist PK). M1 (Claim) wird rot nur durch 
 
 **Summe Runde 4:** 13 Befunde aus zwei Spuren (Überschneidung R4-B1/S2, R4-B2/S5, R4-C1/S6), alle getragen.
 Entscheidung: Umbau „Löschauftrag als eigene Zeile“, Plan `plaene/auftrag-unlink-loeschauftrag.md`.
+
+## Umbau „Löschauftrag als eigene Zeile“ (`1fc97ee..2a9e62a`) — gebaut, Runde 5 läuft
+
+Executer (Einordnung sehr komplex): Suite `SUITE_EXIT=0`, 362 = 362, Lint 0; 16 Szenarien + 4
+Positivkontrollen (81 PASS), Migrationstest 18 PASS, 12 Gegenproben M1–M12 alle ROT über Zusicherungen.
+Widersprüche des Executers, beide nachvollzogen: (1) „eigene Datei UNBEDINGT löschen“ war falsch bei EEXIST —
+die Datei gehört dann jemand anderem; (3) bestehender Wächter `test_feature_audit2_batchB_static.js`
+fachlich umgestellt (Queue jetzt IN der Transaktion vor `DELETE FROM studios`).
+Eigene Lesung `processReplica()`: **F-A** — `eigeneDateiGeschrieben` wird nur bei Erfolg gesetzt; scheitert
+`writeFile` NICHT an EEXIST, sondern mitten im Schreiben (ENOSPC/EIO), bleibt eine Teil-Datei, deren Anker
+gelöscht wird → Datei ohne Zeile und ohne Auftrag. Messung an die ausführende Spur gegeben.
+Runde 5: DeepSeek-Lesespur (`/workspace/gymdocu-unlink-lese`) + ausführende Claude-Spur
+(`/workspace/gymdocu-unlink-pruef`, eigener Cluster).
