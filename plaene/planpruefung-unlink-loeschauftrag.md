@@ -47,3 +47,29 @@ replica-verify, Worker, datei-entfernen). „getragen“ = Messung des Haupt-Age
 | — | A | kein Befund | Schlüsselrotation fasst weder Tabelle noch Spiegel an; kein weiterer Schreiber; keine Verklemmung 1c ↔ Weg 2 | — |
 
 → Fassung 3 im Auftragspapier.
+
+## Nacharbeit 9, Fassung 1 — Planprüfung (DeepSeek mit Repo, Kimi mit Bündel)
+
+Zwei Versuche verloren (Container-Neustarts 22:1x und 22:40, `ASTRA-LAEUFE.md`); dritter Versuch mit im Vordergrund
+gehaltener Sitzung. Alle Punkte selbst nachgesehen.
+
+| Nr. | Befund | Spur | Nachgemessen | Einstufung |
+|---|---|---|---|---|
+| PN9-1 | `test_deprovision.js` R5-5 baut `${a}.json` fest ein — mit Laufdateien rot bzw. vakuös; das Papier nennt die Datei nicht | D | gelesen (`:128`, `:131`, `:141`, `:163`) | blockierend |
+| PN9-2 | `test_feature_audit2_batchB_static.js:73` pinnt wörtlich `entferneOffboardingRest(s.id)` | D | gelesen | hoch |
+| PN9-3 | `test_feature_audit2_offboarding.js:35` prüft nur `${r.id}.json` — nach dem Umbau vakuös | D, K | gelesen | hoch |
+| PN9-4 | ebd. `:56-59`: Guard-Eintrag ohne `erstellt` — mit Punkt 7a erreicht der Reaper den Pfad-Guard nie mehr, die Zusicherung wird vakuös | K | gelesen | hoch |
+| PN9-5 | Gegenprobe „Karenz 15 min“ ohne mittelalten Eintrag nicht rot-fähig | D, K | Logik | mittel |
+| PN9-6 | Szenario R6-2 muss DASSELBE Studio zweimal deprovisionieren, sonst bleibt die Mutation „Entfernen über Studio-ID“ grün; Injektionspunkt benennen | K | Logik | mittel |
+| PN9-7 | „COMMIT in der Luft“: Konstruktion beschreiben statt auf eine Probe-Datei zu verweisen; echter Weg `commitUngewiss === true` braucht eine benannte Konstruktion | D | berechtigt | mittel |
+| PN9-8 | `commitUngewiss` als gewöhnliche Eigenschaft erscheint in `JSON.stringify`/`deepStrictEqual`; ein eingefrorener Fehler würfe bei der Zuweisung | K | `core/db.js` ohne `'use strict'` (gelesen: 0 Treffer) — dort still, in strict-Aufrufern nicht | niedrig |
+| PN9-9 | Dateiname im `catch`: Kennung VOR `db.tx` erzeugen, sonst greift der Bau wieder zur Studio-ID | K | gelesen | niedrig |
+| PN9-10 | Test „Nicht-Objekt-Wurf“ ist in `core/db.js` (sloppy mode) gegen fehlenden Guard blind | D | 0× `use strict` | niedrig |
+| PN9-11 | `JSON.parse`-Fehler im Reaper bleibt stumm | D | gelesen (`:633`) | niedrig |
+| PN9-12 | ungültiger Eintrag meldet jeden Lauf neu (Dauerfeuer); Zähler fehlt | D, K | Logik | niedrig |
+| PN9-13 | Meldung „Studio lebt“ verzögert sich auf bis zu 24 h | K | Preis der Karenz, benennen | Anmerkung |
+| PN9-14 | „Deprovisionierung dauert Sekunden“ unbelegt | K | richtig — Begründung auf „weit unter 24 h“ umstellen | Anmerkung |
+| PN9-15 | R6-3-Szenario braucht einen Haken, um `erstellt` während der offenen Transaktion zurückzudatieren | K | vorhanden: `db.tx`-Attrappe mit Gate (Muster S24) | Anmerkung |
+| — | `client`-Parameter in Tests benutzt | K | **gefallen**: kein Test übergibt ein drittes Argument (`grep`) | — |
+| — | Boot-Aufruf des Reapers | K | **gefallen**: einziger Aufruf `server.js:1556` (Cron) | — |
+| — | `plaene/`/`scratchpad/` nicht im Repo | D | **gefallen**: der Executer liest beide Orte | — |
