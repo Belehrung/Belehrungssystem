@@ -177,6 +177,9 @@ allgemein in CLAUDE.md, „Eine benannte Grenze ist kein Endzustand".
 
 ## Offen, nach dem Beitrag
 
+0. **nginx-Härtung** (`server_tokens off`, HTTP/2) — lokal an derselben Version gemessen,
+   Umstellung am Server durch den Betreiber: `plaene/nginx-haertung-23-09-2026.md`.
+   Danach `live-check.sh` um die Versionsprüfung ergänzen.
 1. **S6** — Aktenlage in `plaene/auftrag-s6-token-einloesen.md`, Empfehlung
    Generationszähler. Noch KEIN Bauauftrag.
 2. **Mehr-Anbieter-Lesewerkzeuge für `tools/gegenleser-repo.js`** — vom
