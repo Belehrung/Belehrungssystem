@@ -48,3 +48,23 @@ Kosten laut Werkzeug in `ASTRA-LAEUFE.md`.
 Überschneidung: B1≈A10, B3≈A4/A5, B7≈A6, B4≈A8. Nur bei B: B2, B5, B6, B8.
 
 **Folge:** Fassung 2 im Papier; zweite Planprüfung, weil die Umgestaltung Verhalten ändert.
+
+---
+
+# Runde 2 (Fassung 2) — 23.09.2026
+
+## Spur A (`gpt-6-sol`, Repo-Lesezugriff) — nachgemessen
+
+| # | Schwere | Befund | Nachmessung | trägt |
+|---|---|---|---|---|
+| R2-A1 | blockierend | Zwei weitere Deaktivierer: die Webhook-Upserts schreiben `aktiv = $3`/`$2` aus `status === 'INACTIVE' ? 0 : 1` — Sollmenge „3" falsch, heute 5 | `routes/webhooks.js:261`, `:289-299` gelesen | ja |
+| R2-A2 | blockierend | Gegenprobe „nur Leser-Bedingung gestrichen → Fenstertest rot" ist umgekehrt; der Leser-Riegel zeigt sich am GET eines VOR dem Lesen veralteten Tokens | Kontrollfluss | ja |
+| R2-A3 | blockierend | Webhook-Deaktivierer: Gegenprobe „Generationserhöhung weg" bleibt grün, weil der Hausputz (`verwendet=1`) als zweiter Riegel fängt | `routes/webhooks.js:339-345` | ja |
+| R2-A4 | mittel | Erzeuger entwertet über `t.run` — ein `db.run`-Stub trifft dort nie; ein echter Fehler rollt alles zurück | `core/db.js:441-447` (`t.run` = `client.query`) | ja |
+| R2-A5 | mittel | Nachlesen vor der Mail muss gegen die EINGEFÜGTE Generation vergleichen (`RETURNING`), und die Lücke bis `sendMail` bleibt | — | ja |
+| R2-A6 | mittel | S20-Nachweis verträgt sich nicht mit der Testgrenze (liest SQLite-Datei, eigener PG-Client, `process.exit`) | `S20-migrate.js` Kopf | ja |
+| R2-A7 | mittel | Admin-Einladen protokolliert bei `mailfehler` — neue Abbruchgründe brauchen ein eigenes Merkmal | `routes/admin/mitarbeiter.js:741-762` | ja |
+| R2-A8 | blockierend | Hausputz NACH dem Commit kann ein inzwischen neu ausgestelltes, gültiges Token verbrauchen | Reihenfolge | ja — Hausputz auf ältere Generationen beschränken |
+| R2-A9 | blockierend | Waisen-Token + wiedervergebene Mitarbeiter-ID (Löschweg läuft nach gescheitertem Token-DELETE weiter; S20 fügt IDs mit `OVERRIDING SYSTEM VALUE` ein) | Fundstellen gelesen | ja |
+| R2-A10 | mittel | `mitarbeiter.aktiv` ist nullable → „nicht aktiv" NULL-sicher (`IS DISTINCT FROM 1`) | `core/db.js:645` | ja |
+| R2-A11 | mittel | „Zweimal laufen lassen" belegt nur das Überspringen; das Backfill ist nicht wiederholbar | `core/migrate.js:128-147` | ja (Dokumentation) |
