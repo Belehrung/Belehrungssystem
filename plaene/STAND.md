@@ -4,7 +4,7 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-Stand 23.09.2026, 20:00 UTC.
+Stand 23.09.2026, 19:40 UTC.
 
 * **Pentest P1**: Nacharbeit 1 gebaut (`713ba58`, Suite 362 = 362, Lint 0). Verhalten geändert (JSON
   bei Accept ohne `text/html`, Drossel begrenzt) → **Diffprüfung Runde 2 läuft** (DeepSeek, Lesebaum
