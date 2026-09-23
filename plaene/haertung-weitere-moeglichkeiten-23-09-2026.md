@@ -24,8 +24,11 @@ Ergebnis steht aus.
 * **ufw aktiv**, Standard `deny incoming`, offen nur 22/80/443 (Regeln doppelt, harmlos).
 * **UNBEKANNTER DIENST `updater` (pid 4181895)** lauscht auf `212.227.206.28:6888`
   (Rückstau 3000) und `0.0.0.0:18018`. Von aussen durch ufw gesperrt, ausgehend ist
-  alles erlaubt. Nicht zuzuordnen — **zuerst identifizieren** (Befehle an den Betreiber
-  gegeben), bevor irgendetwas anderes gemacht wird.
+  alles erlaubt. **Identifiziert:** `/opt/acronis/bin/updater -e`, Arbeitsverzeichnis
+  `/opt/acronis/var/atp-downloader`, gehört zu `aakore.service` („Acronis Agent Core
+  Service", seit 22.09. 06:33), einzige Verbindung lokal (127.0.0.1). Der
+  Acronis-Backup-Agent, kein Fremdkörper. Die beiden Ports sind von aussen durch ufw
+  gesperrt — kein Handlungsbedarf.
 * **SSH:** `PermitRootLogin yes`, `PasswordAuthentication` einmal `yes`, einmal `no` —
   welcher Wert gilt, entscheidet die Lesereihenfolge; maßgeblich ist `sshd -T`.
 * `unattended-upgrades` aktiv, aber **48 Pakete** warten auf ein Update.
