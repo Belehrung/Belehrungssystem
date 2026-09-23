@@ -59,6 +59,10 @@ nachmessen (Hausregel).
 | 18 | Etiketten „4b"/„4c" doppelt vergeben |
 | 19 | M10-Prämisse im Kommentar falsch (Array war schon eine Wertkopie) |
 | 20 | Meldungen von Fixtur 1/3 und R3-Prosa beschreiben die alte Klammerregel |
+| 21 | Testabfrage `zustandRows` (Punkt 1) liest `wartung_geraete` nur über `id`, ohne `studio_id` — schon vor Runde 9 so (Lesespur R9) |
+
+Lesespur R9 (`deepseek-v4-pro`): **keine Regression** gegenüber `ee7179f`;
+ihr zweiter Befund (Leerraum in `.query(`) deckt sich mit Punkt 10.
 
 Quelle: Claude-Review `ee7179f..43449e4` im Sitzungsverlauf; Einzelheiten
 werden beim Nachmessen in `plaene/diffpruefung-ladebestand-runde9.md`

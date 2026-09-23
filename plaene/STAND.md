@@ -140,58 +140,11 @@ zweite Fassung). Behoben in `4fc9bed` — und die ERSTE Behebung trug nicht,
 weil eine gemeinsame Fixtur bei einer Alternation `A|B` schon mit A grün
 bleibt; erst je eine Fixtur pro Form fällt gemessen.
 
-**Stand 23.09.2026 05:50 UTC: Runde 8 ist gebaut und geprüft — NICHT
-mergefähig. Runde 9 ist geschrieben und in der Planprüfung.**
-
-Runde 8 (`ee7179f`): eigene Messungen `SUITE_EXIT=0`, alle FAIL-Zahlen 0,
-Dateizahl 350 = 350 `diff` EXIT 0, `npm run lint` EXIT 0.
-
-**Die Diffprüfung lieferte elf Befunde; ZWEI Behebungen der Runde 8 verfehlen
-gemessen ihr Ziel.** Einzelheiten in
-`plaene/diffpruefung-ladebestand-runde8.md`.
-
-* **M1** — die C7-Behebung hat die Blindheit VERSCHOBEN. Der Wächter prüft
-  einen zweiten, unabhängigen Schnitt; mutiert man den benutzten, bleibt alles
-  grün (`TEST_EXIT=0, 32 PASS / 0 FAIL`). Die einzige Zusicherung, die die
-  Bindung herstellte, war die in Runde 8 als „Tautologie" gelöschte — sie war
-  tautologisch gegenüber der LÄNGENERHALTUNG, nicht gegenüber den
-  SCHNITTGRENZEN. Meine Löschbegründung war halb richtig.
-* **M2** — beide Klammerformen des Riegels sind von NICHTS bewacht
-  (`TEST_EXIT=0, 32 PASS / 0 FAIL` mit beiden entfernt). Meine „15 Proben, 0
-  Abweichungen" stehen als PROSA im Kommentar und sind nie Fixturen geworden.
-* **M3** — eine Tatsachenbehauptung im Kommentar ist falsch: „roh wie
-  maskiert dieselben 15", gemessen 18 gegen 15.
-
-**Der gemeinsame Nenner von M1 und M2 ist strukturell und steht deshalb vorn
-im Auftrag der Runde 9: eine Behebung, die eine ZWEITE, PARALLELE Fassung
-erzeugt, statt die vorhandene zu BINDEN.**
-
-**Verlauf, ehrlich:** Runde 6 → 14 Befunde, Runde 7 → 12 (3 Regressionen),
-Runde 8 → 11 (2 verfehlte Behebungen). Die Zahl sinkt kaum, die SCHWERE
-schon.
-
-**Ein Beleg für die Planprüfung:** Runde 7 hatte eine (zwei Spuren, 15
-Befunde, sechs davon Fehler in meinem Papier), Runde 8 hatte KEINE — und
-lieferte zwei Behebungen, die ihr Ziel verfehlen. Runde 9 bekommt wieder
-eine, mit EINER Spur statt zweien, weil die beiden Kernbehebungen vorab
-gemessen sind.
-
-**Vorab gemessen für Runde 9:**
-
-| Behebung | Messung |
-|---|---|
-| `abschnitt.length === rohAusschnitt.length` | richtig `15782/15782`, falsch `15847/15782` → feuert |
-| Riegel-Fixturen | 8 Fang-, 7 Durchlassfälle, 0 Abweichungen |
-
-**Ein Widerspruch des Ausführenden, der trug** (Runde 8, Gegenprobe 5a): mein
-Papier gab `f8Id = undefined` als Mutation vor. Gemessen erzeugt das KEINEN
-Rest — `wartung_geraete.kategorie_id` trägt `ON DELETE CASCADE`
-(`core/db.js:874`), der spätere Kategorie-DELETE räumt das Gerät über die
-Kaskade doch weg. Ein zweiter, unabhängiger Riegel fängt genau den Defekt auf,
-den die Mutation erzeugen sollte. Er hat eine Ersatzmutation hergeleitet
-(`katFremdId`), die diesen Rettungsweg nicht hat. **Dritter Bauauftrag in
-Folge, in dem ein Widerspruch des Ausführenden einen Fehler von mir
-aufdeckt.**
+**Stand 23.09.2026 06:50 UTC: Beitrag „ladebestand" ist GEMERGT**
+(#465, Squash `e2a9e9e`). Letzter Stand `43449e4`: Suite `SUITE_EXIT=0`,
+350 = 350, Lint EXIT 0, CI grün; Diffprüfung R9 mit zwei Spuren, keine
+Regression. Deploy-Kontrolle läuft. Alle offenen Punkte (21) stehen in
+`plaene/offene-befunde-ladebestand.md` und kommen in eine Extrarunde.
 
 **Betreiber-Entscheidung 23.09.2026, morgens:** Runde 9 wird gemergt, wenn
 die Prüfung nur noch Kleinigkeiten findet — ABER alle dann noch offenen Punkte
