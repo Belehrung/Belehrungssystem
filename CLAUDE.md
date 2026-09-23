@@ -16,6 +16,22 @@ Vorgabe des Betreibers (10.08.2026): Der Haupt-Agent baut selbst nichts.
 - Lesen, Diagnose, Recherche und Git-Verwaltung darf der Haupt-Agent weiterhin
   selbst erledigen; nur das Bauen ist delegiert.
 
+## Eine benannte Grenze ist kein Endzustand
+
+Betreiber-Vorgabe 23.09.2026, wörtlich: „Ich möchte ein fehlerfreies System
+haben."
+
+- Ein Beitrag DARF mit offenen Punkten gemergt werden, wenn nur noch
+  Kleinigkeiten übrig sind — endlose Nacharbeitsrunden am selben Beitrag sind
+  kein Ziel.
+- Aber jeder Punkt, der dabei als „benannte Grenze", „heute latent" oder
+  „bewusst nicht behoben" stehen bleibt, kommt auf eine Sammelliste und wird
+  in einer eigenen EXTRARUNDE bearbeitet. Er bleibt nicht still liegen.
+- Die Sammelliste liegt je Beitrag unter `plaene/offene-befunde-<beitrag>.md`
+  und verweist auf die Befunddateien, statt sie zu kopieren.
+- „Fehlerfrei" lässt sich nicht beweisen. Einlösbar ist: **kein bekannter
+  Befund ohne Behebung oder ohne ausdrückliche Entscheidung des Betreibers.**
+
 ## Modellwahl beim Delegieren
 
 **Vorgabe des Betreibers (08.09.2026 — sie ersetzt alles Frühere): Fable 5.1

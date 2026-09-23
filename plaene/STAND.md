@@ -193,6 +193,13 @@ den die Mutation erzeugen sollte. Er hat eine Ersatzmutation hergeleitet
 Folge, in dem ein Widerspruch des Ausführenden einen Fehler von mir
 aufdeckt.**
 
+**Betreiber-Entscheidung 23.09.2026, morgens:** Runde 9 wird gemergt, wenn
+die Prüfung nur noch Kleinigkeiten findet — ABER alle dann noch offenen Punkte
+kommen in eine eigene Extrarunde. Wörtlich: „Ich möchte ein fehlerfreies
+System haben." Sammelliste: `plaene/offene-befunde-ladebestand.md` (sechs
+Punkte bisher, der wichtigste ist die strukturelle Lösung C11). Regel
+allgemein in CLAUDE.md, „Eine benannte Grenze ist kein Endzustand".
+
 ## Was ausdrücklich NICHT gebaut wird
 
 * **Die WHERE-Form statt der CTE** (C5 der vierten Runde). Er TRÄGT — gegen
