@@ -4,12 +4,26 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-* **#467 gemergt** (Extrarunde ladebestand, `f4c0f07`) — Deploy-Kontrolle steht aus.
-* **Executer: Nachweis-Datei abwarten** (`plaene/auftrag-nachweis-unlink.md`), Arbeitsbaum
-  `/workspace/gymdocu-unlink`, Zweig `fix-nachweis-unlink`. Anlass: CI-Rot an #467
-  (Wettlauf `fs.unlink` ohne Abwarten, Löschfehler verschluckt).
-* **Planprüfung Verklemmung Studio-Lock:** Spur A durch (`plaene/planpruefung-verklemmung-studiolock.md`,
-  Drei-Wege-Sicht trägt nicht, systemweite Regel nötig), Spur B (kimi) läuft. Danach Fassung 2.
+Stand 23.09.2026, 11:45 UTC.
+
+* **#467 ausgeliefert:** Deploy 434 `success` für `f4c0f07`, live-check grün (2× ℹ wie immer).
+* **Executer (Sonnet): Nachweis-unlink, Nacharbeit 1** — Arbeitsbaum `/workspace/gymdocu-unlink`,
+  Zweig `fix-nachweis-unlink`. Erste Runde `93c1478` geprüft (Diff gelesen, drei Gegenproben,
+  Suite grün, 350 = 350, Lint 0). Nacharbeit: ein Helfer für ALLE ~22 `unlink(…, () => {})`
+  samt `core/pruefbericht.js`, AST-Wächter (`plaene/auftrag-nachweis-unlink.md`).
+  Planprüfung dafür ausgelassen, Begründung im Papier.
+* **Executer (Fable): Sperrordnung `auditTx`** — Arbeitsbaum `/workspace/gymdocu-sperre`, Zweig
+  `fix-studiolock-ordnung`, Auftrag Fassung 3 (`plaene/auftrag-verklemmung-studiolock.md`),
+  Planprüfung zweimal zwei Spuren (`plaene/planpruefung-verklemmung-studiolock.md`).
+  Abbruchregel: L-Haltedauer > 1000 ms → anhalten und melden.
+* **S6:** Bauauftrag Fassung 1 geprüft von `gpt-6-sol` (10 Befunde, alle getragen, sieben
+  blockierend: `plaene/planpruefung-s6.md`); `kimi-k3` läuft noch. Danach Fassung 2.
+* **H2** (Cookie-Schleife): Bauauftrag Fassung 1 (`plaene/auftrag-h2-cookie-schleife.md`),
+  Planprüfung steht aus.
+* **H1** (CSP): gemessen 212 Inline-Handler in 26 Dateien, 74 Inline-Skripte. Vorschlag: erst die
+  heutige Richtlinie auf den Subdomains durchsetzen (Report-Only → Enforce, nach Messung im
+  Browser), Nonces als eigener grosser Beitrag — braucht App-seitigen CSP-Header.
+* Lesebaum `/workspace/gymdocu-lock` (master `f4c0f07`, losgelöst) nur für Prüfläufe.
 
 **#465 ausgeliefert:** Deploy 433 `success` für `e2a9e9e`, live-check grün
 (2× ℹ wie immer).
