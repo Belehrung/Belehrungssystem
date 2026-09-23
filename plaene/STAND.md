@@ -6,8 +6,9 @@ Stand: 23.09.2026, 09:45 UTC.
 
 Stand 23.09.2026, 16:45 UTC.
 
-* **Container-Neustart 16:41 UTC; beide Executer sind dabei abgebrochen und auf Betreiber-Seite
-  angehalten.** Ohne ausdrückliche Freigabe werden sie NICHT neu gestartet.
+* **Container-Neustart 16:41 UTC; beide Executer abgebrochen. Betreiber: „neu starten“ → zwei neue
+  Executer laufen (P1-Abschluss in `/workspace/gymdocu-p1`, unlink Nacharbeit 7 in
+  `/workspace/gymdocu-unlink`).**
   * **Pentest P1** (`/workspace/gymdocu-p1`, `fix-pentest-p1-idwache`, `ad5d609`, gepusht, Baum
     sauber). Laut Protokoll: Suite 362 = 362, Lint gelaufen, Abschlussbericht fehlt. Offen: Diff
     lesen, Diffprüfung; dazu mein Befund: `test_feature_pentest_p1_struktur.js:256/:281` tragen
