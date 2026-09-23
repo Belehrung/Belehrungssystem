@@ -26,3 +26,27 @@ Jeder Befund unten ist SELBST nachgemessen; die Spalte „trägt" nennt die Mess
 | A-9 | ausserhalb | Verklemmungskreis (`routes/module.js`) bleibt offen — „fehlerfrei" ist mit diesem Papier nicht erreicht | steht auf der Sammelliste „ausserhalb dieses Beitrags"; eigener Auftrag | ja (Abgrenzung, kein Auftrag hier) |
 
 Kosten laut Werkzeug: **14,54 $** (2.721.811 Token rein über 20 Runden, 31.082 raus).
+
+## Spur B (kimi-k3) — 7 Befunde, 7 getragen (davon 1 umgedeutet)
+
+| # | Schwere | Befund | Nachmessung | trägt |
+|---|---|---|---|---|
+| K-1 | blockierend | wie A-2, dazu: `volleZeilenmenge()` zu erweitern bräche den committeten Ausstattung-Z2-Literalhash `ed8ceb41…` — der Anker braucht eine EIGENE Zustandsfunktion | Z2 hängt an derselben Funktion (`test…streng.js:284`), bestätigt | ja (Zusatz eigen) |
+| K-2 | blockierend | wie A-1 | — | ja (Überschneidung) |
+| K-3 | mittel | nach A2 wacht nichts mehr über den Aufrufer-Schleifenrumpf | Der Rumpf VOR der Bereichsmarke (`db.run` auf `pruefbereich_bestand`, 2740ff.) war auch heute unbewacht — **kein Wegfall durch den Umbau, sondern eine bestehende Lücke**: ein neuer Prüfplan-Schreibzugriff im Fenster vor `ladeBestandStreng()` ausserhalb des Bereichs bliebe heute wie künftig grün | ja, umgedeutet: Lücke, kein Regress |
+| K-4 | mittel | „Riegel samt Fixturen" löscht auch Fixtur 2 (URL mit zweitem `//`) und 4 (Anführungszeichen im Regex-Literal) — beide prüfen `maskiereKommentare()` selbst | `test…streng.js:1141-1143` gelesen; Fixtur 4 hat ausserhalb keine Entsprechung | ja |
+| K-5 | mittel | wie A-4 (`plusMonate`, `brandschutz`, äusseres `continue`, `anzahl` unbenutzt) | `plusMonate` aus `core/datum.js` (`geraete.js:1301`), `brandschutz` aus `core/brandschutz-vorlage.js` (`:1283`) | ja (Überschneidung) |
+| K-6 | mittel | wie A-3, dazu: Rückgabewerte je Zweig nicht zugesichert; ein künftiges `{ …, db }` im Eingabeobjekt umginge die Import-Erlaubnisliste | gelesen, bestätigt | ja (Zusatz eigen) |
+| K-7 | gering | neue `ursache()` macht aus `{message:'x'}` `"[object Object]"` (heute `"x"`) | JS-Semantik von `String({})` | ja |
+
+Verbrauch: 80.196 ein / 37.747 aus (31.513 Denken), 1247,6 s; Kosten unbekannt (Kimi fehlt in der Preistabelle).
+
+## Überschneidung und Ergänzung
+
+Überschneidend: A-1/K-2, A-2/K-1, A-3/K-6, A-4/K-5. Nur sol: A-5 (Produktivbindung +
+`test_feature_brandschutz.js`), A-6 (Aufräum-DELETEs), A-7 (Fehlerwege), A-8. Nur kimi:
+K-3 (Lücke vor `ladeBestandStreng`), K-4 (Masker-Fixturen), Z2-Kollision, Rückgabewerte,
+`{…, db}`-Umgehung, K-7.
+
+**Mein Papier hatte eine falsche Tatsachenbehauptung** (`holeOderLegeAn` als
+Lese-Helfer) — beide Spuren fanden sie unabhängig. Folge: Fassung 2 des Papiers.
