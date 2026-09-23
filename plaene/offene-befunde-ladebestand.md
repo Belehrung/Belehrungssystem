@@ -1,5 +1,10 @@
 # Offene Befunde „ladebestand" — für die Extrarunde
 
+**ERLEDIGT 23.09.2026 mit #467 (Squash `f4c0f07`).** Alle 21 Punkte gebaut oder durch den
+Umbau gegenstandslos; Nachweise in `plaene/diffpruefung-extrarunde-ladebestand.md` und im
+PR-Rumpf. Offen aus dieser Liste bleibt nur, was „ausserhalb dieses Beitrags" steht
+(Verklemmungskreis: `plaene/auftrag-verklemmung-studiolock.md`).
+
 **Betreiber-Entscheidung 23.09.2026**, wörtlich: „Dem stimme ich zu, aber
 dennoch müssen die offenen Befunde in einer Extrarunde irgendwann bearbeitet
 werden. Ich möchte ein fehlerfreies System haben."
