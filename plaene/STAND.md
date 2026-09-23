@@ -79,8 +79,31 @@ Die vier schwersten, jeder mit eigener Gegenprobe belegt:
 falsch (`:6605`/`:6714` statt `6614`/`6723`). Runde 7 ersetzt sie durch ein
 SUCHMUSTER statt sie ein viertes Mal fortzuschreiben.
 
+**CI auf `5735eac` ist GRÜN** (Lauf 35805916805, 23.09.2026 01:29 UTC): alle
+vier Checks `success` — Lint & Syntax, Browser E2E, Dependency audit,
+Isolation tests. Am PR hängen nur meine EIGENEN Kommentare vom 20.09.
+(Kollations-Untersuchung), keine offenen Bot-Befunde.
+
 **Bauauftrag Runde 7:** `plaene/auftrag-ladebestand-runde7.md`, zehn Punkte,
-acht Gegenproben. Er fasst am Produktivcode NUR einen Kommentar an.
+zwölf Gegenproben. Er fasst am Produktivcode NUR einen Kommentar an.
+Läuft zur Zeit durch eine Planprüfung (`kimi-k3`).
+
+**Fünf Korrekturen habe ich vor der Planprüfung an meinem EIGENEN Auftrag
+gemacht, alle gemessen:**
+
+1. Punkt 9b hätte einen literalen Nicht-Leerraum-Sollwert für die GANZE
+   `geraete.js` bekommen — nachgemessen `202415`. Die Datei ändert sich bei
+   fast jedem Beitrag; so ein Wert macht jede legitime Produktivänderung rot.
+   Ersetzt durch zwei INHALTLICHE Anker plus eine dritte Gegenprobe.
+2. Punkt 5 sagte „eine Zusicherung nach dem Block", ohne zu sagen wie. Ein
+   `assert` IM `finally` ERSETZT eine fliegende Ausnahme — die Behebung hätte
+   den Originalfehler verschluckt. Jetzt mit konkretem Muster (Flag als letzte
+   Anweisung des `try`-Rumpfs), am Quelltext nachgesehen.
+3. Zeilennummern gelten nur am Ausgangsstand; gearbeitet wird nach SUCHMUSTER.
+4. Umbenennungskarte für `r1`/`r3` (je drei blocklokale Verwendungen).
+5. Vorabmessungen, die zwei Risiken entschärfen: der Sollwert `2291` ist auf
+   BEIDEN Maskierwegen gleich, und die Positivkontrolle `15` bleibt nach dem
+   Umstellen auf `maskiereKommentare` gültig.
 
 ### Eine Lehre über das Verfahren, nicht über den Code
 
