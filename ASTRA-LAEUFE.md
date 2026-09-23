@@ -2939,3 +2939,56 @@ hat sie rot gemessen. Was trägt, ist die schwächere Hälfte — sie ist gegen
 
 **Kosten:** Lesespur 87.325 Token (55.325 ein, 32.000 aus). Die ausführende
 Spur läuft im eigenen Kontingent und wird hier nicht beziffert.
+
+---
+
+## 23.09.2026 — Diffprüfung der fünften Runde `ladebestand`
+
+| | ausführende Spur (Claude, darf messen) | Lesespur (`kimi-k3`, Zusicherungsseite) |
+|---|---|---|
+| Befunde | 14 | 7 |
+| nach eigener Nachmessung getragen | 13 (1 fällt zur Hälfte) | 5 (1 fällt zur Hälfte, 1 entfällt) |
+| nur von dieser Spur | 9 | 2 |
+
+**Der Lauf, der etwas Grundsätzliches gemessen hat.** Die ausführende Spur
+hat den Kommentar-Reiniger widerlegt, den ICH in Runde 5 selbst gebaut,
+selbst gegen acht Anforderungen gemessen und dem Executer ausdrücklich als
+„das einzige heikle Stück, nicht neu erfinden" vorgegeben hatte. Gemessen:
+ein Regex mit einem Anführungszeichen kippt den Zeichenketten-Zustand, ein
+späteres `/*` in einer echten Zeichenkette verschluckt dann echten Code —
+187 auf 56 Zeichen, der Riegel schlägt nicht mehr an. **Grün und blind,
+unsere teuerste Klasse, erzeugt von der Behebung, die sie schliessen sollte.**
+
+**Zwei Lehren, beide über mich:**
+1. **Meine acht Prüffälle enthielten keinen mit einem Anführungszeichen im
+   Regex-Literal.** Ich habe die Klasse gemessen, die ich mir vorgestellt
+   hatte, nicht die, die es gibt. Das ist dieselbe Krankheit wie „Testdaten,
+   die den gesuchten Unterschied gar nicht auslösen können" — nur an meiner
+   eigenen Messung statt an einer fremden.
+2. **Ich habe nicht gefragt, ob es das schon gibt.** `maskiereKommentare`
+   liegt in `test/rohwert-scan.js` und wird von **45 Dateien** benutzt
+   (selbst nachgezählt); mein Kommentar behauptete, ein solcher Tokenizer sei
+   „mehr Apparat, als der Riegel wert ist". Eine falsche Tatsachenbehauptung,
+   die einen Vorschlag ausschliesst. **Eine selbstgebaute Lösung gehört ZUERST
+   gegen den Bestand gehalten.**
+
+**Das bestätigt die Rangfolge vom 20.09. am teuersten Einzelfall bisher:**
+verschiedene FÄHIGKEIT schlägt alles. Die Lesespur hat die Grenzen meines
+Automaten korrekt AUFGEZÄHLT (K4) — gefunden, dass er im ECHTEN Bereich
+blind wird, hat nur die Spur, die ihn laufen lassen durfte.
+
+**Und die Spuren haben sich gegenseitig berichtigt, in beide Richtungen:**
+beim Prüf-Fenster der neuen Sperr-Zusicherung hielt die Lesespur 300 Zeichen
+für „plausibel" und schätzte ~90 bis zum Sperrhinweis — gemessen sind es 164,
+und bei 300 endet das Fenster in der folgenden Anweisung; dort hatte die
+ausführende Spur recht. Umgekehrt fand die Lesespur zwei Dinge, die die
+ausführende übersah: dass der Riegel nur eine von vier Schreibweisen abdeckt
+(gemessen: `pool.query (x)` mit Leerzeichen und `pool["query"](x)` gehen
+durch), und dass eine CASCADE-Behauptung in meinem eigenen Kommentar von
+heute falsch ist (`pruefbereich_bestand` hat keine Referenz auf die
+Kategorien, `core/db.js:1567-1570`).
+
+**Die Abschneidung der vierten Runde ist behoben:** mit 64.000 statt 32.000
+Ausgabe-Token lief die Lesespur vollständig durch (`beendet=stop`, 52.674 ein,
+37.567 aus, davon 33.771 Denken, 982,1 s). Die Lehre aus dem vorigen Eintrag
+hat gewirkt und ist damit gemessen, nicht nur notiert.
