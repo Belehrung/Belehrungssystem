@@ -2,7 +2,7 @@
 
 Papier: `plaene/auftrag-h2-cookie-schleife.md`.
 
-## Spur A (`gpt-6-sol`, Repo-Lesezugriff) — Nachmessung ausstehend bis Spur B
+## Spur A (`gpt-6-sol`, Repo-Lesezugriff) — nachgemessen (A1, A3, A5, A7 am Code; Rest am Kontrollfluss), alle getragen
 
 | # | Schwere | Befund |
 |---|---|---|
@@ -15,3 +15,21 @@ Papier: `plaene/auftrag-h2-cookie-schleife.md`.
 | H2-A7 | mittel | Anonyme Sitzungszeilen entstehen auf mehr Wegen (jeder geschützte GET über `returnTo`, `GET /tablet/freischalten` auch bei ungültigem Token) |
 | H2-A8 | mittel | Offline-Seite des Service Workers lädt die Marker-URL neu; zwei Tabs teilen `returnTo` |
 | H2-A9 | mittel | Echte PG-Zählung passt nicht zum Gate; nginx-Limit zählt künftig zwei Sprünge je Einstieg |
+
+## Spur B (`kimi-k3`, Bündel: Login-Weg, `core/auth.js`, Sitzungs-Setup, Freischaltweg, Service Worker) — nachgemessen
+
+1010 s, 19.344 ein / 33.928 aus (27.317 Denken). Acht Befunde, alle getragen.
+
+| # | Schwere | Befund | Überschneidung |
+|---|---|---|---|
+| H2-B1 | blockierend | „+1" falsch, ab `/` +2; Vorschlag: Ziel als geprüfter Query-Parameter statt in der Sitzung | = A1, Vorschlag neu |
+| H2-B2 | mittel | Zeilen ohne Anmeldung auch ohne Schleife (jeder anonyme geschützte GET, `requireAdmin`, `/tablet/freischalten` bei ungültigem Token); H2 dämpft nur | ≈ A7 |
+| H2-B3 | mittel | Freischaltweg: Fehlerfall braucht keine Sitzung (Meldung steht in `req.query`) → direkt rendern | neu |
+| H2-B4 | mittel | Falltabelle für `?c=1` unvollständig (Sitzung ohne `benutzer`, Admin-Sitzung, Zweigreihenfolge) | ≈ A5 |
+| H2-B5 | gering | Hinweis erscheint auch mit Cookies (Neuladen der 400-Seite, Lesezeichen, geprunte Zeile) | ≈ A6 |
+| H2-B6 | gering | globale Zählung ohne `studio_id`, Pruner — sid-basiert nachweisen | ≈ A4 |
+| H2-B7 | gering | `returnTo`-Überschreiben durch Icon-Anfragen: Tablet-Filter lässt `/favicon.ico` durch, Fenster verdoppelt sich | neu (`sicheresReturnTo` filtert nur für Admin, `routes/auth.js:971-979`) |
+| H2-B8 | gering | Überwachung ohne Cookies sieht künftig 400 | neu |
+
+**Folge:** Fassung 2 des Papiers (Ziel als Query-Parameter, kurze Lebensdauer unbestätigter
+Sitzungen, Freischalt-Fehler ohne Sitzung, `requireAdmin` schreibt nur mit Sitzungs-Cookie).
