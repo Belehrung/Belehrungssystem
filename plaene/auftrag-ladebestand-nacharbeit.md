@@ -2972,3 +2972,235 @@ ausführende Spur findet, was eine Lesespur nicht findet.
 
 Und: **eine selbstgebaute Lösung ist zuerst gegen den BESTAND zu halten.**
 Ich habe nicht gefragt, ob es das schon gibt. Es gab es, in 45 Dateien.
+
+---
+
+# DIFFPRÜFUNG DER FÜNFTEN RUNDE — Lesespur (`kimi-k3`, vollständig)
+
+`beendet=stop`, 52.674 Eingabe-, 37.567 Ausgabe-Token (33.771 davon Denken),
+982,1 s. **Das höhere Ausgabebudget (64.000 statt 32.000) hat die Abschneidung
+der vierten Runde behoben** — das ist die Lehre aus `ASTRA-LAEUFE.md`
+nachgezogen und hat gewirkt.
+
+Sieben Befunde, zwei mit eigenem Gehalt:
+
+**K1 (trägt) — die `.query(`-Behebung deckt nur EINE Schreibweise.** Selbst
+gemessen, vier Formen gegen drei Muster:
+
+    heute                        pool.query(x) gefangen | pool.query (x) DURCH | pool["query"](x) DURCH | run(x) DURCH
+    mein C3-Vorschlag            pool.query(x) gefangen | pool.query (x) DURCH | pool["query"](x) DURCH | run(x) gefangen
+    kombiniert (s. Auftrag)      alle vier gefangen
+
+**K2 (trägt zur HÄLFTE) — die C4-Zusicherungen laufen gegen den ROHEN
+Quelltext**, also gegen Kommentare mit. Ein künftiger Kommentar, der den
+CTE-Kopf samt Sperrhinweis zitiert, hielte sie grün, auch wenn die echte CTE
+entsperrt wird — die Umkehrung von „Tests dürfen nicht an Prosa scheitern":
+Prosa hält den Wächter wach. Der Vorschlag (gegen den BEREINIGTEN Quelltext
+prüfen) ist richtig und selbst gemessen: Anker trifft, CTE-Name 1× in beiden
+Fassungen.
+**Die andere Hälfte FÄLLT:** die Spur hielt das 300-Zeichen-Fenster für
+„plausibel" und schätzte ~90 Zeichen bis `FOR UPDATE)`. Selbst gemessen sind
+es **164**, und bei 300 endet das Fenster mitten in der FOLGENDEN CTE. Die
+ausführende Spur (C7) hatte recht, die Lesespur hier nicht.
+
+**K3 (trägt) — die CASCADE-Behauptung im Kommentar ist falsch.** Selbst
+gemessen an `core/db.js:1567-1570`: `pruefbereich_bestand` trägt `studio_id`
+und `bereich`, **keine** Referenz auf `wartung_kategorien`. Das
+Kategorie-DELETE nimmt diese Zeilen also NICHT mit. Der Satz stammt aus
+meiner eigenen Kommentarverbesserung von heute.
+
+**K5 (trägt, schärfer als C6) — wirft das ERSTE Aufräum-DELETE, werden die
+übrigen übersprungen**, und liegen bleibt ausgerechnet die Verunreinigung,
+derentwegen der Block eingeführt wurde. Zusätzlich: `close()` läuft jetzt
+NACH den DELETEs statt vorher — ein stiller Verhaltenswechsel.
+
+**K6 (trägt, klein) — „Die BEIDEN alten Fixturen sind ERSETZT" stimmt nicht:**
+Fixtur 1 ist wortgleich die alte.
+
+**K4** zählt weitere Grenzen meines Automaten auf (Anführungszeichen im
+Regex, `${…}`, verschachtelte Templates) — **entfällt mit dem Ersatz durch
+den Hausstandard**. **K7** ist eine Zustandsantwort ohne eigenen Vorschlag.
+
+**Überschneidung der beiden Spuren:** drei von zwanzig Befunden berühren
+dieselbe Stelle (Automatengrenzen, C4-Fenster, `finally`-Block), und zwar
+aus verschiedenen Richtungen — die ausführende Spur MASS, die Lesespur
+zählte Formen auf. Beim C4-Fenster war die ausführende Spur richtig und die
+Lesespur falsch; bei K1 und K3 war es umgekehrt.
+
+---
+
+# DER BAUAUFTRAG DER SECHSTEN RUNDE
+
+Arbeitsbaum `/home/user/gymdocu`, Zweig `beitrag-ladebestand`, auf dem
+UNCOMMITTETEN Stand der fünften Runde. **Nicht committen.**
+
+## 1 — BLOCKIEREND (C1/C2/K4): mein Automat fliegt RAUS, der Hausstandard kommt REIN
+
+`ohneAlleKommentare()` wird **ERSATZLOS GELÖSCHT** und überall durch
+`maskiereKommentare` aus `test/rohwert-scan.js` ersetzt:
+
+    const { maskiereKommentare } = require('./test/rohwert-scan.js');
+
+**Nicht danebenstellen, nicht „anpassen" — löschen.** Es ist eine zweite,
+schwächere Fassung derselben Aussage, und die zweite Kopie wird nach
+Hausregel gelöscht, nicht gepflegt.
+
+Selbst gemessen und als Vorgabe verbindlich:
+* der Hausstandard besteht **alle drei** bestehenden 4b-Fixturen,
+* er wird im Blindheitsfall NICHT blind (187 → 187 Zeichen, Riegel schlägt
+  an; mein Automat: 187 → 56, Riegel blind),
+* gegen den echten Bereich: Riegel schlägt nicht an, **6** `schreibePruefplan(`,
+  Markenzeile draussen,
+* er ist LÄNGENERHALTEND (ersetzt Kommentarinhalt durch Leerzeichen) — Offsets
+  und Längenvergleiche bleiben damit gültig.
+
+**Der Kommentar wird neu geschrieben** und sagt: dass hier bis zur fünften
+Runde ein selbstgebauter Automat stand; woran er gemessen blind wurde; dass
+die frühere Behauptung, ein Tokenizer sei „mehr Apparat, als der Riegel wert
+ist", FALSCH war, weil dieser Apparat im selben Repo liegt und von **45**
+Dateien benutzt wird (selbst nachgezählt).
+
+**VIERTE Fixtur, neu**, genau der Fall, an dem mein Automat gescheitert ist:
+
+    const ein = [
+      "const rx = /['\"]/;",
+      "const s = 'a';",
+      "const t = 'pfad /* ';",
+      `await pool.query("UPDATE wartung_geraete SET aktiv=0");`,
+      "const u = ' */ ';",
+    ].join('\n');
+    -> maskiereKommentare(ein) MUSS "pool.query(" noch enthalten
+
+**Gegenprobe (1a):** `maskiereKommentare` versuchsweise durch den gelöschten
+Automaten ersetzen (Kopie im Auftragspapier, Abschnitt „Der zeichenweise
+Stripper") → die vierte Fixtur muss ROT werden.
+
+## 2 — BLOCKIEREND (C3/K1): der Riegel fängt alle vier Schreibweisen
+
+    const verbotenesMuster = /\bdb\b|\.query\s*\(|\[\s*.?query.?\s*\]|\b(?:run|one|tx|q|pool)\s*\(/;
+
+**Selbst gemessen**, gegen den mit dem Hausstandard bereinigten echten
+Bereich: **kein Fehlalarm**, sechs `schreibePruefplan(`. Und in der
+Fangrichtung: `pool.query(x)`, `pool.query (x)`, `pool["query"](x)`, `run(x)`
+— alle vier gefangen; mit dem heutigen Muster gehen drei davon durch.
+
+Die Erfolgsmeldung wird nachgezogen und zählt auf, was WIRKLICH abgedeckt ist.
+Kommentar: `core/db.js` exportiert `pool, q, one, run, tx` — jeder davon ist
+über einen Alias AUSSERHALB des Bereichs erreichbar, deshalb steht die
+Bezeichnerliste da und nicht nur `db`.
+
+**Gegenproben (2a)(2b):** je einmal `await run("UPDATE wartung_geraete SET
+aktiv=0 WHERE studio_id=$1", [req.studioId]);` und einmal
+`await pool["query"]("UPDATE wartung_geraete SET aktiv=0 …");` im Bereich
+statt eines `schreibePruefplan(`-Aufrufs — beide müssen ROT werden.
+
+## 3 — C7/K2: die C4-Zusicherung wird eng UND läuft gegen den bereinigten Quelltext
+
+Beide C4-Prüfungen laufen ab jetzt gegen `maskiereKommentare(GERAETE_QUELLTEXT_ROH)`,
+nicht gegen den rohen Text — sonst kann Prosa sie still erfüllen. Und das
+300-Zeichen-Fenster wird durch einen ANKER ersetzt:
+
+    /WITH gesperrt AS \((?:(?!\bneu AS \()[\s\S])*?FOR UPDATE\s*\)/
+
+**Selbst gemessen:** von `WITH gesperrt AS (` bis `FOR UPDATE)` sind es 164
+Zeichen; das alte 300er-Fenster endet mitten in der folgenden `neu`-CTE, ein
+`FOR UPDATE)` dort erfüllte die Zusicherung. Mit dem Anker trifft die Prüfung,
+und der CTE-Name kommt in beiden Fassungen genau 1× vor. `\s*` vor der
+Klammer nimmt die Leerzeichen-Schreibweise mit.
+
+**Gegenprobe (3a):** `FOR UPDATE` aus der `gesperrt`-CTE entfernen und
+gleichzeitig ein `FOR UPDATE)` in die `neu`-CTE setzen → muss ROT werden
+(mit dem alten 300er-Fenster wäre es grün geblieben).
+
+## 4 — C8: Eindeutigkeit der Bereichsmarken zusichern
+
+Analog zur C4-Positivkontrolle, gegen den ROHEN Quelltext (die Marken stehen
+bewusst in Kommentaren, s. bestehender Kommentar dort):
+
+    PRUEFPLAN_SCHREIBBEREICH_BEGINN  muss GENAU 1x vorkommen
+    PRUEFPLAN_SCHREIBBEREICH_ENDE    muss GENAU 1x vorkommen
+
+Heute je 1× (selbst gemessen). Ohne diese Zusicherung schrumpft eine
+Prosa-Erwähnung den bewachten Bereich lautlos.
+
+**Gegenprobe (4a):** die Zeichenkette `PRUEFPLAN_SCHREIBBEREICH_ENDE` ein
+zweites Mal in einen Kommentar OBERHALB des Bereichs schreiben → muss ROT
+werden.
+
+## 5 — C4 (Umfang): eine Untergrenze gegen eine UNABHÄNGIGE Referenz
+
+Die Positivkontrolle „enthält `schreibePruefplan(`" sagt DASS, nicht WIE VIEL.
+Weil `maskiereKommentare` LÄNGENERHALTEND ist, gibt es jetzt eine saubere
+unabhängige Referenz: die Rohlänge des Ausschnitts. Zusichern, dass der
+bereinigte Abschnitt **dieselbe Länge** hat wie der rohe Ausschnitt
+(`ende - zeilenbeginnNachMarke`) — schrumpft er, hat die Bereinigung Code
+gefressen.
+
+Zusätzlich die Zahl der `schreibePruefplan(`-Aufrufe gegen eine **literal
+hingeschriebene** Erwartung halten (heute gemessen: 6), mit einem Kommentar,
+dass diese Zahl beim Ergänzen eines Aufrufs BEWUSST nachzuziehen ist.
+
+**Gegenprobe (5a):** im Bereich einen `schreibePruefplan(`-Aufruf entfernen
+→ muss ROT werden.
+
+## 6 — C6/K5: jeder Aufräumschritt einzeln abgesichert
+
+Im `finally` bekommt JEDER Schritt sein eigenes `try/catch` mit
+`console.error` — sonst überspringt ein geworfenes erstes DELETE die übrigen
+(dann bleibt ausgerechnet „Feuerlöscher 8" liegen) UND ersetzt die
+Originalmeldung des Tests. `srvEigen.close()` ebenso, und es läuft wieder
+ZUERST (vor den DELETEs), wie vor dem Umbau — der stille
+Reihenfolgenwechsel wird zurückgenommen.
+
+## 7 — K3: die CASCADE-Behauptung berichtigen
+
+Der Satz „das Kategorie-DELETE nimmt per CASCADE auch diese Zeilen mit" ist
+FALSCH, soweit er `pruefbereich_bestand` einschliesst. **Selbst gemessen**
+(`core/db.js:1567-1570`): diese Tabelle trägt `studio_id` und `bereich`,
+keine Referenz auf `wartung_kategorien`. Der Satz wird auf das eingeschränkt,
+was wirklich kaskadiert (Begehung und Sammelposten über
+`wartung_geraete`/`-aufgaben`), und benennt, dass die
+`pruefbereich_bestand`-Zeilen im Wegwerf-Studio liegen bleiben — genau wie
+die Studios selbst, mit derselben Begründung.
+
+## 8 — C13: die Fundstelle berichtigen
+
+`test/run.sh:888-891` belegt die Aussage nicht — nachgezählt: 888
+Schleifenkopf, 889 `echo`, 890 `if`, 891 `else`. Der Rumpf ohne `exit`
+beginnt bei **892**. Richtig ist `test/run.sh:888-899` oder die Angabe des
+`else`-Rumpfs ab `:892`. **Am Quelltext nachsehen, nicht von hier
+abschreiben.**
+
+## 9 — C9: das zweite `text()` wird verboten
+
+`r.text()` ohne Klon bleibt. Damit die in Runde 4 geschlossene Falle nicht
+zurückkommt, eine STATISCHE Zusicherung über den Quelltext DIESER Datei:
+nach einem `pruefeKeinFehlerseiten(<r>` darf für dasselbe `<r>` kein
+späteres `<r>.text()` stehen. Heute erfüllt (Punkt 1 nutzt den Rückgabewert,
+alle übrigen 14 Aufrufer verwerfen ihn und lesen nicht nach).
+
+**Gegenprobe (9a):** in Punkt 1 wieder `const htmlAusloesen = await
+rAusloesen.text();` hinter den Helferaufruf setzen → muss ROT werden.
+
+## 10 — Die kleinen, alle gemessen
+
+* **C10:** `${ende - begin}` in der Erfolgsmeldung → `ende - zeilenbeginnNachMarke`.
+* **C11:** Fixtur 3 prüft `includes('db')`, der Riegel `\bdb\b` → auf
+  `verbotenesMuster.test(...)` umstellen, damit beide dasselbe Prädikat prüfen.
+* **C12:** `indexOf('\n', begin)` kann -1 liefern → `assert.notStrictEqual`
+  darauf, sonst beginnt der Abschnitt stillschweigend bei 0.
+* **K6:** „Die BEIDEN alten Fixturen sind ERSETZT" stimmt nicht — Fixtur 1 ist
+  unverändert. Satz berichtigen.
+* **C14:** den `try`-Rumpf im Punkt-1-Block einrücken (rund 130 Zeilen),
+  ebenso den `finally`-Rumpf. Reines Nachrücken, kein Verhaltenswechsel.
+
+## Abnahme insgesamt
+
+* Volle Suite `bash test/run.sh > <log> 2>&1; echo "SUITE_EXIT=$?"`.
+* `npm run lint`, Ergebnis WÖRTLICH melden, auch bei Grün.
+* Die sieben Gegenproben (1a, 2a, 2b, 3a, 4a, 5a, 9a) einzeln, jede wörtlich
+  mit EXIT und PASS/FAIL, Mutation UND Rücknahme.
+* Mutationsskript mit Zielpfad als ARGUMENT, Abbruch bei ≠ 1 Fundstelle,
+  Marker mit, `node --check` danach, Rücknahme gegen eine unabhängige
+  `cp`-Kopie mit `diff` EXIT 0.
+* Am Ende `git status` sauber und der Marker-Scan nur mit Prosatreffern.
