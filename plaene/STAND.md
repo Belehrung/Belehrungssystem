@@ -41,7 +41,8 @@ Anführungszeichen kippt den Zeichenketten-Zustand, danach verschluckt ein
 1. Meine acht Prüffälle enthielten keinen mit Anführungszeichen im Regex —
    ich habe die Klasse gemessen, die ich mir vorgestellt hatte.
 2. **Ich habe nicht gefragt, ob es das schon gibt.** `maskiereKommentare`
-   liegt in `test/rohwert-scan.js` und wird von 45 Dateien benutzt. Mein
+   liegt in `test/rohwert-scan.js` und wird von 43 Dateien benutzt
+   (45 war meine Zahl aus `grep -rln`, die Prosa-Erwähnungen mitzählt). Mein
    Kommentar behauptete, so ein Apparat sei „mehr, als der Riegel wert ist" —
    eine falsche Tatsachenbehauptung, die einen Vorschlag ausschloss.
 
@@ -49,6 +50,45 @@ Runde 6 löscht den Automaten ersatzlos, setzt den Hausstandard ein und zieht
 neun weitere getragene Befunde nach (u. a.: der Riegel fängt bisher nur eine
 von vier Schreibweisen; das Prüf-Fenster der Sperr-Zusicherung greift 136
 Zeichen zu weit; eine CASCADE-Behauptung in einem Kommentar ist falsch).
+
+## Stand 23.09.2026 — Runde 6 gebaut, Diffprüfung ausgewertet
+
+`5735eac` ist committet und gepusht, volle Suite `SUITE_EXIT=0`, 29 PASS /
+0 FAIL, Dateizahl 350 = 350, `npm run lint` EXIT 0.
+
+**Diffprüfung Runde 6, ausführende Spur: 14 Befunde — alle 14 tragen nach
+eigener Nachmessung**, davon drei LATENT und einer geringfügig. Die Befunde
+samt Messwerten stehen in `plaene/diffpruefung-ladebestand-runde6.md`.
+
+Die vier schwersten, jeder mit eigener Gegenprobe belegt:
+
+* **A1** — die in Runde 6 NEU eingeführte Längenzusicherung ist eine
+  TAUTOLOGIE. Unter einer längenerhaltenden Mutation, die jedes `req.studioId`
+  aus dem bewachten Abschnitt frisst, lief die Datei mit **TEST_EXIT=0,
+  29 PASS / 0 FAIL** durch. `nichtLeerraum()` fiel 2291 → 2195 und hätte
+  gefangen.
+* **A9** — der finally-Block verschluckt Aufräumfehler. Gemessen: ein
+  gescheiterter DELETE reisst über die FK-Kette alle drei mit, „Feuerlöscher 8"
+  bleibt in der Wegwerf-DB liegen, Lauf meldet **29 PASS / 0 FAIL, EXIT 0**.
+* **A5** — `pool["run"](…)` und `pool["one"](…)` laufen durch den Riegel.
+* **A11** — meine eigene Begründung dafür, den zweiten Reiniger stehen zu
+  lassen, ist nachgemessen FALSCH: alle vier Z3-Zählungen sind über beide
+  Reiniger identisch (9:9, 4:4, 8:8, 2:2).
+
+**A6 zum dritten Mal:** die Zeilennummern des Fremdschreibers sind wieder
+falsch (`:6605`/`:6714` statt `6614`/`6723`). Runde 7 ersetzt sie durch ein
+SUCHMUSTER statt sie ein viertes Mal fortzuschreiben.
+
+**Bauauftrag Runde 7:** `plaene/auftrag-ladebestand-runde7.md`, zehn Punkte,
+acht Gegenproben. Er fasst am Produktivcode NUR einen Kommentar an.
+
+### Eine Lehre über das Verfahren, nicht über den Code
+
+Die 14 Befunde standen ausschliesslich in der Rückgabe des Prüf-Subagenten und
+wären bei der Kontextverdichtung beinahe verloren gewesen — ich musste sie aus
+dem Sitzungstranskript zurückholen. **Prüfbefunde gehören in eine DATEI**, im
+selben Zug, in dem sie ankommen. `ASTRA-LAEUFE.md` zählt die Läufe; die
+Befunde selbst brauchen ebenfalls einen Ort.
 
 ## Was ausdrücklich NICHT gebaut wird
 
