@@ -2846,3 +2846,129 @@ puffert den ungelesenen Zweig.
   `cp`-Kopie, `diff` EXIT 0 — NIE `git checkout`/`git stash`, und NIE mit
   einem Testlauf verkettet.
 * Am Ende `git status` sauber und der Marker-Scan nur mit Prosatreffern.
+
+---
+
+# DIFFPRÜFUNG DER FÜNFTEN RUNDE — die ausführende Spur hat meinen eigenen Entwurf widerlegt
+
+14 Befunde. Der erste trifft das eine Stück, das ich in Runde 5 ausdrücklich
+NICHT delegiert habe, weil „an dieser Funktion eine falsche Annahme still ein
+grünes Ergebnis erzeugt" — und genau das ist passiert.
+
+## C1 (BLOCKIEREND, trägt) — mein zeichenweiser Automat wird BLIND
+
+Er kennt weder Regex-Literale noch die Regel „ein Zeilenumbruch beendet eine
+`'`/`"`-Zeichenkette". Ein Regex mit einem Anführungszeichen darin
+(`/['"]/`) kippt den Zeichenketten-Zustand; ein späteres `/*` in einer
+ECHTEN Zeichenkette wird dann als Blockkommentar gelesen und verschluckt
+alles bis zum nächsten `*/`.
+
+**Selbst gemessen**, sechs Zeilen mit echtem Code dazwischen:
+
+| | Länge | `pool.query(` | `rowCount`-Zeile | Riegel |
+|---|---|---|---|---|
+| mein Automat | 187 → **56** | weg | weg | **schlägt NICHT an** |
+| `maskiereKommentare` | 187 → 187 | da | da | schlägt an |
+
+Der Riegel ist damit grün UND blind — unsere teuerste Klasse, erzeugt von
+der Behebung, die sie schliessen sollte. **Meine acht Prüffälle enthielten
+keinen einzigen mit einem Anführungszeichen im Regex-Literal:** ich habe die
+Klasse gemessen, die ich mir vorgestellt hatte, nicht die, die es gibt.
+
+## C2 (BLOCKIEREND, trägt — und schwerer als gemeldet) — der Apparat existiert längst
+
+`test/rohwert-scan.js:172` exportiert `maskiereKommentare` (Export bei
+`:656`). Die Spur nannte drei Verbraucher; **selbst nachgezählt sind es 45
+Dateien** — es ist der Hausstandard. Er behandelt Regex-vs-Division über den
+letzten Token, Anführungszeichen IM Regex (dortiger Kommentar: „gemessene
+Ursache, Auftrag #84"), unbeendete Zeichenketten am Zeilenumbruch und
+`${…}`-Substitutionen über einen Stapel.
+
+**Selbst gemessen:** er besteht ALLE DREI neuen 4b-Fixturen, löst zusätzlich
+den von mir als unlösbar deklarierten Fall `const rx = /\/\//g; await
+db.run(x);`, und wird im Blindheitsfall oben NICHT blind. Gegen den echten
+Bereich: Riegel schlägt nicht an, sechs `schreibePruefplan(`, Markenzeile
+draussen — ein direkter Ersatz, der in jeder Hinsicht besser ist.
+
+**Mein Kommentar behauptet, ein solcher Tokenizer sei „mehr Apparat, als der
+Riegel wert ist".** Das ist eine falsche TATSACHENBEHAUPTUNG, die einen
+Vorschlag ausschliesst — der Apparat liegt im selben Repo und wird von 45
+Dateien benutzt. Dieselbe Klasse wie am 14.09.2026 („X geht nicht, weil Y").
+
+## C3 (BLOCKIEREND, trägt) — die `.query(`-Behebung schliesst nur EINEN Alias
+
+`core/db.js` exportiert `pool, q, one, run, tx`. Ein Alias AUSSERHALB des
+Bereichs (`const { run, one } = require('../../core/db');`) plus `await
+run("UPDATE wartung_geraete SET aktiv=0 …")` INNERHALB — **gemessen: der
+Riegel schlägt NICHT an.** Exakt dieselbe Klasse, die die `.query(`-Behebung
+gerade geschlossen hat, und die Erfolgsmeldung zählt wieder Abdeckung auf.
+
+**Muster gemessen, beide Richtungen**, gegen den echten heutigen Bereich:
+
+    /\bdb\b|\.query\(/                             kein Fehlalarm | run(/one( DURCH
+    /\bdb\b|\.query\(|\b(?:run|one|tx|q|pool)\s*\(/  kein Fehlalarm | run(/one( GEFANGEN
+
+Die bare-Aufrufe im heutigen Bereich sind `feuerloescherOhneProtokoll(`,
+`holeOderLegeAn(`, `plusMonate(`, `position(`, `push(`, `map(`,
+`regexp_replace(`, `schreibePruefplan(` — keine Kollision.
+
+## Weitere getragene Befunde, alle selbst nachgemessen
+
+**C7 — das 300-Zeichen-Fenster der C4-Zusicherung greift zu weit.** Von
+`WITH gesperrt AS (` bis `FOR UPDATE)` sind es **164 Zeichen**; bei 300 endet
+das Fenster mitten in der FOLGENDEN CTE (`…zen AS alt, CASE`). Ein
+`FOR UPDATE)` an der falschen Stelle erfüllt die Zusicherung.
+
+**C4 (Umfang) — die Punkt-3-Positivkontrolle prüft DASS, nicht WIE VIEL.**
+Im Blindheitsfall oben schrumpft der Abschnitt auf ein Sechstel, und
+`abschnitt.includes('schreibePruefplan(')` bleibt wahr.
+
+**C8 — den Bereichsmarken fehlt die Eindeutigkeits-Kontrolle**, die C4 für
+den CTE-Namen gerade eingeführt hat. Heute je 1× (gemessen), aber unbewacht:
+`indexOf` nimmt das erste Vorkommen, und in dieser Datei werden Marken
+regelmässig in Prosa zitiert.
+
+**C6 — der neue `finally`-Block kann die Originalmeldung ersetzen.** Wirft
+eines der drei Aufräum-Statements, meldet die Datei dessen Fehler statt der
+gerissenen Zusicherung. (Der `undefined`-Fall ist dabei unkritisch: selbst
+gemessen liefern beide DELETE-Formen rowCount 0, ohne zu werfen.)
+
+**C13 — die Fundstelle `test/run.sh:888-891` belegt nichts.** Nachgezählt:
+888 Schleifenkopf, 889 `echo`, 890 `if`, 891 `else`. Der Rumpf ohne `exit`
+beginnt bei 892. Diesen Satz habe ICH diktiert.
+
+**C9 — die Rücknahme des Klons öffnet die R3-Falle wieder.** 14 der 15
+Aufrufer verwerfen den Rückgabewert; der Klon schützte ALLE, der Rückgabewert
+nur den, der ihn kennt. Beide Befunde (Runde 4 „Klon unnötig", jetzt „Klon
+schützte") treffen zu — die Auflösung ist eine Zusicherung, die ein zweites
+`rX.text()` nach `pruefeKeinFehlerseiten(rX` verbietet.
+
+**C10 — `${ende - begin}` in der Erfolgsmeldung** beschreibt seit dem Schnitt
+bei `zeilenbeginnNachMarke` einen Bereich, der so nie geprüft wurde.
+
+**C11 — Fixtur 3 prüft `includes('db')`**, der Riegel `\bdb\b` — zwei
+verschiedene Prädikate.
+
+**C12 — `indexOf('\n', begin)` kann -1 liefern**, dann beginnt der Abschnitt
+bei 0.
+
+**C5 — kein `/*` in den Fixturen und null `/*` im Bereich:** der
+Blockkommentar-Zweig ist durch nichts belegt. (Entfällt mit C2 — der
+Hausstandard bringt seine eigenen Prüfungen mit.)
+
+**C14 — der `try`-Rumpf ist nicht eingerückt** (rund 130 Zeilen auf der alten
+Ebene).
+
+## Was das über das Verfahren sagt
+
+Ich hatte den Stripper selbst gebaut, gegen acht Anforderungen gemessen und
+als „das einzige heikle Stück, vom Haupt-Agenten gemessen" wörtlich
+vorgegeben — mit der ausdrücklichen Anweisung an den Ausführenden, ihn
+NICHT neu zu erfinden. Er hat sich daran gehalten, zeichengenau. **Der
+Fehler war vollständig meiner**, und gefunden hat ihn die Spur, die
+AUSFÜHREN darf: sie hat den Automaten gegen den echten Bereich laufen lassen
+statt ihn zu lesen. Das ist dieselbe Messung wie am 13.09.2026 — die
+ausführende Spur findet, was eine Lesespur nicht findet.
+
+Und: **eine selbstgebaute Lösung ist zuerst gegen den BESTAND zu halten.**
+Ich habe nicht gefragt, ob es das schon gibt. Es gab es, in 45 Dateien.
