@@ -174,3 +174,53 @@ nach weiteren Lesern von Spiegelpfaden suchen (`readdir`/Glob auf `pdf_zusatz_pf
 * **Gegenproben** je Riegel (ROT/GRÜN wörtlich): write-ahead-INSERT in 1a entfernt; `wx` entfernt;
   1c ohne Prüfung „eigener Auftrag gelöscht = 1“; 2 als SELECT→löschen→DELETE statt RETURNING;
   Reaper ohne Lease-Schutz für `vorbelegt`; Invariante mit leerer Menge.
+
+---
+
+# FASSUNG 3 — Änderungen gegenüber Fassung 2 (sonst gilt Fassung 2)
+
+Befunde: `plaene/planpruefung-unlink-loeschauftrag.md`, Runde 2.
+
+1. **Beanspruchen vor Löschen (R2-K1, R2-D1).** Spalte `beansprucht_bis TIMESTAMPTZ NULL`. Der Reaper
+   beansprucht je Auftrag atomar: `UPDATE … SET beansprucht_bis = now() + interval '10 minutes', attempts =
+   attempts + 1 WHERE id = $1 AND studio_id = $2 AND (beansprucht_bis IS NULL OR beansprucht_bis < now())
+   AND (grund <> 'vorbelegt' OR created_at < now() - make_interval(mins => $lease)) RETURNING remote_ref`.
+   Nur bei 1 Zeile: Datei löschen; Erfolg → `DELETE … WHERE id AND studio_id`; Fehlschlag → `beansprucht_bis
+   = NULL, last_error`. Ein Absturz nach dem Beanspruchen hinterlässt den Auftrag (Frist läuft ab).
+   **1c** löscht den eigenen Auftrag mit `… AND grund = 'vorbelegt' AND beansprucht_bis IS NULL`; 0 Zeilen →
+   Transaktion abbrechen. Damit gilt in beiden Reihenfolgen: wer den Auftrag zuerst hat, entscheidet.
+2. **Eigene Datei immer löschen (R2-D1, R2-K5).** In 1e und 1f wird das Ergebnis des Umstellens NICHT
+   ausgewertet; der Löschversuch der eigenen Datei ist unbedingt; nur sein Ergebnis steuert das DELETE des
+   Auftrags (0 Zeilen dort ist kein Fehler). Ein 1c-Abbruch aus beliebigem Grund führt in 1f.
+3. **Abbruch wegen entzogenem Auftrag ist kein Fehlversuch (R2-D3):** Status zurück auf `pending`,
+   `attempts` um den Claim zurücksetzen; kein `dead` aus diesem Grund. Eigene Fehlerklasse, gemeldet NUR
+   als Log-Zeile, nicht über `melde()`.
+4. **Keine Root-Filterung beim Anlegen (R2-K2):** Weg 2 legt für JEDE zurückgegebene Referenz mit Endung
+   `.enc` einen Auftrag an. Der Reaper löscht nur Referenzen, die (a) auf `.enc` enden, (b) nach
+   `path.resolve` kein `..`-Segment enthalten, (c) absolut sind. Liegt eine Referenz nicht unter dem
+   AKTUELLEN Spiegel-Root des Studios: trotzdem löschen, aber mit `melde()` Kennung
+   `storage-replica:loeschauftrag_ausserhalb_root`; zählt in `healthMetrics` eigens.
+5. **Studio-Löschung (R2-D2, R2-DC):** `deprovisionStudio()` löscht VOR der Discovery, in ihrer
+   Transaktion und in fester Reihenfolge `DELETE FROM storage_replica … RETURNING remote_ref`, dann
+   `DELETE FROM storage_replica_loeschauftrag … RETURNING remote_ref`, nimmt beide Mengen in
+   `ziele.replicaRefs` und schreibt die Offboarding-Queue VOR dem COMMIT (Muster `:410-416`). Bleibende
+   Grenze: stirbt ein Worker genau zwischen `writeFile` und 1c, während ein Studio gelöscht wird → Sammelliste
+   U-LOE3.
+6. **`ON CONFLICT (studio_id, remote_ref) DO NOTHING`** auch in 1c (R2-K6).
+7. **Reaper stündlich** (eigener Cron, R2-K4) statt nur 03:15; `requeueStale()` bleibt 03:15.
+8. **Invariante (R2-D4):** hart nur Richtung Datei → Referenz (jede Datei gehört genau einer Zeile oder
+   genau einem Auftrag). Richtung Referenz → Datei als Endzustand je Szenario NACH dem Reaper, plus je
+   Szenario eine positive Zusicherung „die `succeeded`-Referenz existiert als Datei“.
+9. **Nachweis ergänzt:** Reaper beansprucht, BEVOR der Worker schreibt (R2-D1); Reaper zwischen Löschen
+   und DELETE, Worker committet dazwischen (R2-K1); Weg 2 zwischen SELECT und DELETE mit Worker-COMMIT
+   dazwischen als auslösendes Szenario der RETURNING-Gegenprobe (R2-K3); Root-Wechsel (R2-K2); Studio-
+   Löschung mit laufendem Worker. Die Schreib-Attrappe schreibt echt (`fs.existsSync` je Szenario), zweite
+   Positivkontrolle „Zeile mit Referenz ohne Datei“ macht die Endzustandsprüfung ROT. Jede Gegenprobe nennt
+   ihr auslösendes Szenario.
+10. **Migration (R2-E1, R2-D-Fund):** Test zusätzlich gegen eine DB, in der die Tabelle NACH `db.init()`
+    wieder entfernt wurde (Master-Stand), dann Datei zweimal ausführen, dann Schema-Rundgang. Vor dem Bau
+    messen: `core/migrate.js:47-54` wirft bei „Angewandte Migration ohne Datei“ — jede lokale Test-DB mit
+    der alten 0060 wird neu angelegt; ob `test/run.sh` das ohnehin tut, im Bericht nennen.
+11. **Weitere Fundstellen:** `workers/pdf-job-worker.js`, `core/pdf-jobs.js` (Job gilt als erledigt, auch
+    wenn 1c abbrach — prüfen, ob der Job danach neu kommt), `core/datei-entfernen.js` (ENOENT = Erfolg),
+    `docs/STORAGE_REPLICA.md`, `test_deprovision.js`.

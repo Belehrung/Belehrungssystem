@@ -25,3 +25,25 @@ replica-verify, Worker, datei-entfernen). „getragen“ = Messung des Haupt-Age
 | B3-iii | B | Anmerkung | DB-Fehler in `loescheReplikaFuerDatei` → Aufrufer kommen nie wieder (`pdf-loeschung` setzt `datei_geloescht` vorher) | ja, Bestand → Sammelliste U-LOE2 |
 
 → Fassung 2 in `plaene/auftrag-unlink-loeschauftrag.md`.
+
+## Runde 2 — Fassung 2 (Spur A `deepseek-v4-pro` mit Repo, Spur B `kimi-k3` mit Bündel)
+
+| # | Spur | Schwere | Befund | getragen |
+|---|---|---|---|---|
+| R2-K1 | B | blockierend | Reaper löscht die DATEI vor dem Auftrag (Schnappschuss der Kandidatenliste): committet der Worker 1c dazwischen, steht `succeeded` auf einer gelöschten Datei. Der Nachweis „Reaper löscht zuerst“ legt genau die günstige Reihenfolge fest. Vorschlag: Auftrag zuerst atomar beanspruchen, dann löschen | ja (Herleitung trägt) |
+| R2-D1 | A | blockierend | Reaper räumt `vorbelegt` per ENOENT ab, BEVOR die Datei existiert; Worker schreibt danach; 1c trifft 0 → Plan sagt nicht, dass die eigene Datei trotzdem gelöscht wird | ja (`core/datei-entfernen.js:146`) |
+| R2-K5 | B | niedrig | = R2-D1 für 1e (0 Zeilen beim Umstellen) | ja |
+| R2-K2/D-B5 | beide | hoch/Anmerkung | Weg 2 legt Aufträge nur für Referenzen unter dem AKTUELLEN Spiegel-Root an → nach Root-Wechsel fällt die Löschpflicht still weg (heute wird ohne Root-Bedingung versucht, `:556-560`) | ja |
+| R2-D2 | A | sollte | Studio-Löschung: Aufträge, die nach dem Einsammeln entstehen, löscht die Discovery ungesammelt | ja; mit unbedingtem Selbstlöschen in 1e/1f bleibt nur „Worker stirbt genau dann“ |
+| R2-DC | A | sollte | Discovery in `deprovisionStudio()` löscht die Tabellen in unbestimmter Reihenfolge, fängt nur 23503, nicht 40P01 → Kreis mit 1c möglich | ja (`core/provisioning.js:322-325/455-470`) |
+| R2-D3 | A | Anmerkung | Abbruch wegen entzogenem Auftrag zählt als Fehlversuch → nach 5 `dead` | ja |
+| R2-D4 | A | sollte | Invariante beidseitig im Test hält in legitimen Zwischenzuständen nicht; Richtung Datei→Referenz hart, Referenz→Datei nur als Endzustand nach dem Reaper | ja |
+| R2-K3 | B | mittel | Gegenprobe „RETURNING“ wird im genannten Szenario nicht rot; braucht die Verzahnung SELECT → Worker-COMMIT → DELETE | ja |
+| R2-K4 | B | mittel | Leichen je Absturz + Reaper nur täglich → Spiegel wächst bis zu 24 h | ja |
+| R2-K6 | B | niedrig | INSERT `ersetzt` ohne ON CONFLICT (anders als Weg 2) | ja |
+| R2-E1 | A | sollte | Migrationstest nach `db.init()` übt die Migrations-DDL nie mit Wirkung aus | ja |
+| R2-E3/E4/E5 | A | Anmerkung | Schreib-Attrappe muss wirklich schreiben; zweite Positivkontrolle Referenz→Datei; jede Gegenprobe an ihr auslösendes Szenario binden | ja |
+| R2-D-Fund | A | sollte | Fundstellen: `core/migrate.js:47-54` („Angewandte Migration ohne Datei“ → Startabbruch auf DBs mit alter 0060), `workers/pdf-job-worker.js`, `core/pdf-jobs.js`, `docs/STORAGE_REPLICA.md`, `test_deprovision.js` | ja |
+| — | A | kein Befund | Schlüsselrotation fasst weder Tabelle noch Spiegel an; kein weiterer Schreiber; keine Verklemmung 1c ↔ Weg 2 | — |
+
+→ Fassung 3 im Auftragspapier.

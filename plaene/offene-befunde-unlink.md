@@ -11,3 +11,5 @@ Verweist auf `plaene/diffpruefung-unlink.md` und `plaene/durchgang-befunde.md`.
 | # | Punkt | Zustand |
 |---|---|---|
 | U-LOE1 | `loescheReplikaFuerDatei()` setzt/löscht die ganze `(studio_id, local_path)`-Gruppe ohne Statusklausel; das Erfolgs-UPDATE in `processReplica()` setzt `succeeded` ebenfalls ohne Statusklausel — ein laufender Upload kann einen frisch gesetzten Löschauftrag überschreiben | vom Executer benannt, heute latent (Reaper 03:15, Löschläufe 04:30/04:45, `instances: 1`); Messung in Runde 4 beauftragt |
+| U-LOE2 | DB-Fehler in `loescheReplikaFuerDatei()` → Aufrufer kommen nicht wieder (`core/pdf-loeschung.js` setzt `datei_geloescht` vorher) | Bestand; Planprüfung Runde 1 (B3-iii) |
+| U-LOE3 | Worker stirbt genau zwischen `writeFile` und 1c, während das Studio gelöscht wird → Datei ohne Anker | Umbau Fassung 3, Punkt 5; doppelt unwahrscheinlich, aber benannt |
