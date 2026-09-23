@@ -62,3 +62,22 @@ dort Anforderungen. Inventur-Skript: `scratchpad/lockinv/inv.js`, `inv2.js` (111
 | F2-A7 | mittel | Rotation: Studio-Liste vorab lesen + Vergleich schützt nicht gegen eine danach committende Provisionierung | `core/provisioning.js` legt Studios in eigener `db.tx` ohne L an | ja — Papier ändert den Weg: L je Studio aufsteigend beim Durchlauf, kein Listenvergleich |
 | F2-A8 | mittel | Gegenprobe „eine Seite zurückbauen" legt nicht fest, WELCHE Seite den Kreis wiederherstellt (z. B. nur Tagescheck zurück → kein Kreis mit dem umgestellten Nachtrag) | Sperrfolgen gelesen | ja |
 | F2-A9 | Anmerkung | Unter der vollständig ausgeführten Regel kein notwendiger L-Ersterwerb nach anderer Sperre gefunden; Wächter prüfen Syntax, nicht ausgeführte Sperren | — | ja |
+
+## Spur B (`deepseek-v4-pro`, Bündel: Kernmodule, Inventurskripte, Lock-Inventar-Test) — nachgemessen
+
+712 s, 35.051 ein / 34.745 aus (31.218 Denken).
+
+| # | Schwere | Befund | Nachmessung | trägt |
+|---|---|---|---|---|
+| F2-B1 | blockierend (eingestuft) | Vermerkprüfung darf nur den Weg MIT Verbindung treffen, sonst werfen die 76 | Papier sagte „`auditAppend(…, conn)`" — als Präzisierung getragen, Schwere mittel | ja (Präzisierung) |
+| F2-B2 | blockierend | Wächter (a) als ZEILENmenge verliert Mehrfachheit | trägt | ja |
+| F2-B3 | blockierend | Wächter (b) muss das Verbindungsargument an den durchgereichten Parameter binden | trägt | ja |
+| F2-B4 | mittel | Inventur blind für `tx`-Aliase, benannte Callbacks, berechneten Zugriff | Bestand gemessen: keiner vorhanden; als Grenze getragen | ja (Grenze) |
+| F2-B5 | mittel | Rotation mit allen L in einer Transaktion = globaler Audit-Stopp | trägt; Entscheidung: bleibt eine Transaktion (Kopf der Datei begründet es), L aufsteigend je Studio, als Kosten dokumentiert | ja |
+
+Überschneidung mit Spur A: F2-B4 ≈ F2-A1, F2-B5 ≈ F2-A7 (verschiedene Folgerung), der
+Selbst-Hänger steht bei B nur unter (A), nicht als Befund. Neu nur bei B: F2-B2, F2-B3.
+
+**Folge:** Fassung 3 des Papiers — Laufzeitschutz auch ohne Verbindung (`AsyncLocalStorage`),
+Wächter mit Multimenge und Bindungsanalyse, Gegenproben je Sperrgraph, Haltedauer-Schwelle
+hergeleitet (1000 ms aus dem Pool-Zeitlimit).

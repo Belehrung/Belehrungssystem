@@ -1,168 +1,181 @@
-# Bauauftrag: Sperrordnung um den Studio-Audit-Lock (Fassung 2)
+# Bauauftrag: Sperrordnung um den Studio-Audit-Lock (Fassung 3)
 
-**Zielrepo:** GymDocu, neuer Zweig `fix-studiolock-ordnung` ab master `f4c0f07`.
-**Betreiber-Vorgabe:** fehlerfreies System; Sammelliste `plaene/offene-befunde-ladebestand.md`
-(„ausserhalb dieses Beitrags") und CLAUDE.md „Transaktionen und Sperren".
+**Zielrepo:** GymDocu, neuer Zweig `fix-studiolock-ordnung` ab dem dann aktuellen master
+(mindestens `f4c0f07`; ist der Beitrag „nachweis-unlink" schon gemergt, ab diesem Stand).
+**Betreiber-Vorgabe:** fehlerfreies System; Sammelliste `plaene/offene-befunde-ladebestand.md`,
+CLAUDE.md „Transaktionen und Sperren"; schliesst zugleich U-AUDT1 und verallgemeinert U-LOCK1
+(`plaene/durchgang-befunde.md`).
 **Modellwahl, VOR dem Auftrag entschieden:** Fable 5.1 — sehr komplex nach den Merkmalen der
-CLAUDE.md: systemweite Sperrordnung über rund 30 Transaktionen in 15 Dateien, zwei Prüfspuren
-widersprachen sich in der Kreisfrage, und jede Nebenläufigkeitsprobe kann falsch grün sein.
+CLAUDE.md: systemweite Sperrordnung über rund 35 Transaktionen in 15 Dateien, zwei Prüfspuren
+widersprachen sich in der Kreisfrage, Schwellen müssen hergeleitet werden, und jede
+Nebenläufigkeitsprobe kann falsch grün sein.
 **Nach SUCHMUSTER arbeiten, nicht nach Zeilennummer** (Zeilen = Stand `f4c0f07`).
 
-Fassung 1 (nur Weg B umstellen) ist durch die Planprüfung widerlegt
-(`plaene/planpruefung-verklemmung-studiolock.md`): sie erzeugt einen NEUEN Kreis mit der
-Seil-Umbenennung und lässt weitere offen. Es braucht eine Regel für das ganze System.
+Vorgeschichte: Fassung 1 (nur einen Weg umstellen) ist widerlegt, Fassung 2 (Regel + Wächter)
+hatte vier blockierende Lücken. Beide Planprüfungen samt Nachmessung:
+`plaene/planpruefung-verklemmung-studiolock.md`. Alle dort getragenen Befunde sind hier
+Anforderungen.
 
 ## Die Regel
 
-> **Jede Transaktion, die `auditAppend(…, t)` mit ihrer Verbindung aufruft — direkt oder über
-> einen Helfer —, nimmt den Studio-Lock L als ERSTE Sperre.** Vor L sind nur Lesezugriffe ohne
-> Sperre erlaubt (einfaches `SELECT`, kein `FOR UPDATE/SHARE`), keine Schreibanweisung, kein
-> anderer Advisory-Lock.
+> **Jede Transaktion, die `auditAppend` mit ihrer Verbindung aufruft — direkt oder über einen
+> Helfer —, nimmt den Studio-Lock L als ERSTE Sperre.** Vor L sind nur Lesezugriffe ohne Sperre
+> erlaubt (einfaches `SELECT`), keine Schreibanweisung, kein `FOR UPDATE/SHARE`, kein anderer
+> Advisory-Lock. Braucht eine Transaktion L mehrerer Studios, nimmt sie diese numerisch
+> aufsteigend, jedes VOR der ersten Sperre auf Daten dieses Studios.
+>
+> **`auditAppend` OHNE Verbindung darf nie aus einer offenen Transaktion heraus laufen.**
 
-Begründung: Alle L-Nehmer eines Studios sind dann untereinander vollständig serialisiert. Ein
-Kreis über L setzt voraus, dass ein Weg etwas VOR L hält, das ein anderer NACH L will — das
-schliesst die Regel für alle L-Nehmer aus. Kreise zwischen Wegen, die L gar nicht nehmen, sind
-eine andere Klasse (reine Zeilenordnung) und nicht Gegenstand dieses Auftrags.
+Begründung: Alle L-Nehmer eines Studios sind dann untereinander serialisiert; ein Kreis über L
+setzt voraus, dass ein Weg etwas VOR L hält, das ein anderer NACH L will. Ein
+verbindungsloser Anhang aus einer Transaktion heraus öffnet eine zweite Verbindung, die auf das
+L der ersten warten kann — ein Hänger, den PostgreSQL nicht erkennt (kein 40P01).
 
-## Gemessene Inventur (Haupt-Agent, 23.09.2026, `f4c0f07`)
+## Gemessene Inventur (Haupt-Agent, 23.09.2026, `f4c0f07`) — und ihre Grenze
 
-AST-Skript über alle getrackten Produktivdateien (ohne `test*`, `public/`, `tools/`), gehalten
-gegen eine Textsuche als Referenz von aussen: **111 Aufrufstellen, AST = grep, `diff` leer.**
-
-| Klasse | Anzahl | Folge |
-|---|---|---|
-| `auditAppend` ohne Verbindung (eigene Transaktion, L ist dort ohnehin die erste Anweisung) | 76 | unberührt |
-| lexikalisch in einem `db.tx`-Callback, mit `t` | 31 | umstellen |
-| mit durchgereichter Verbindung in einem Helfer | 4 | Aufrufer umstellen |
-| ohne Verbindung INNERHALB einer offenen Transaktion (auch eine Ebene über Helfer) | **0** | Wächter, damit es 0 bleibt |
-
-Die vierte Zeile ist mit Positivkontrolle gemessen (künstliche Datei mit einem solchen Aufruf:
-1 Treffer). Die Helfer mit durchgereichter Verbindung: `nachtragUebernehmen` (zweimal, in
-`routes/module.js` und `routes/sichtpruefung.js`), `schliesseSeilSperren`
-(`routes/module.js`), `schliesseDefektReparatur` (`routes/sichtpruefung.js`); ihre Aufrufer:
-`module.js` Tagescheck und eigenständiger Nachtrag, `sichtpruefung.js` Cardio/Kraft-Tagescheck
-und Mangel-Nachtrag, beide `db.tx((t) => schliesse…(t, …))`.
-
-Die Transaktionen mit Sperren VOR L heute (Auszug, vollständig im Skriptergebnis — der
-Executer erzeugt die Liste selbst neu, s. Schritt 1): Seil-Tagescheck (S1 → INSERT → L → N),
-eigenständiger Nachtrag (N → Zeile → L), Umbenennung (S1 → UPDATE `geraete`/`geraete_sperren`
-→ L), Korrektur-Durchschreiben (Korrektur-Locks → UPDATE Zielzeile → L), Korrekturblatt,
-Wartungs-Unterschrift, Cardio/Kraft-Tagescheck, Mangel-Nachtrag, Retention, Schlüsselrotation,
-QR-Bestellung, Benutzer sperren/löschen/Passwort/2FA, Getränkeanlage, Spülplan, Pausenzeiten,
-Lageplan, Wartungs-Kategorie/-Gerät löschen, Ausmusterung (L nur beim Seil-Typ).
-
-Bekannte Kreise, die die Regel schliesst: Tagescheck–Nachtrag (A–B, gemessen 15.09.),
-Nachtrag–Freigabe (B–C), Umbenennung–Freigabe und Umbenennung–Nachtrag nach Fassung 1,
-Korrektur–Freigabe, Ausmusterung–Umbenennung.
+AST-Skript über die Produktivdateien, gehalten gegen eine Textsuche: **111 Aufrufstellen,
+AST = grep.** 76 ohne Verbindung (eigene Transaktion), 31 lexikalisch in `db.tx` mit `t`,
+4 mit durchgereichter Verbindung in Helfern (`nachtragUebernehmen` zweimal,
+`schliesseSeilSperren`, `schliesseDefektReparatur`), **0** verbindungslose Anhänge in einer
+offenen Transaktion (eine Helferebene, Positivkontrolle 1 Treffer). Im Bestand gemessen:
+keine Aliase von `auditAppend` oder `db.tx`, kein berechneter Zugriff, kein als Bezeichner
+übergebener Callback; `dbTransaction` (`core/db-queue.js`) ist eine Hülle um `db.tx`, wird
+importiert, aber 0-mal aufgerufen. **Grenze:** die Inventur erkennt Syntax nach Namen; sie ist
+kein Beweis aller ausführbaren Wege. Deshalb Laufzeitschutz UND Wächter, beide verbindlich.
 
 ## Mechanik
 
 1. **`auditTx(studioIdOderIds, callback)` in `core/integritaet.js`.** Öffnet `db.tx`, nimmt als
-   erste Anweisung `SELECT pg_advisory_xact_lock($1)` je Studio-ID — bei mehreren Studios
-   numerisch aufsteigend, ohne Doppelte —, vermerkt die gesperrten IDs an der Verbindung
-   (nicht aufzählbare Eigenschaft über ein `Symbol`) und ruft dann den Callback.
-2. **`auditAppend(…, conn)` prüft den Vermerk**, BEVOR es irgendeine Anweisung schickt: fehlt die
-   Studio-ID im Vermerk der Verbindung, wirft es einen Fehler mit `code =
-   'AUDIT_STUDIOLOCK_FEHLT'`. Die Transaktion rollt zurück. Der bisherige Lock-Griff in
-   `append()` bleibt stehen (wiedereintrittsfähig, schadet nicht, schützt den Fall ohne `conn`).
-   *Entscheidung, zur Prüfung gestellt:* werfen statt nur melden. Begründung: ein fehlender
-   Vermerk ist ein Programmierfehler, und der schlimmste Fall heute (ein 40P01) bricht die
-   Anfrage ebenfalls ab — nur selten statt sofort. Der statische Wächter (Punkt 4) soll dafür
-   sorgen, dass der Wurf nie in Produktion erreicht wird.
-3. **Alle Transaktionen aus der Inventur auf `auditTx` umstellen.** Die bisherigen
-   ausdrücklichen Studio-Locks in diesen Transaktionen (Freigabe, Belehrungen, Mangel-Nachtrag,
-   Ausmusterung) werden dadurch überflüssig; sie bleiben NICHT als Doppel stehen, sondern
-   entfallen, und der Kommentar wandert an `auditTx`. Ausnahme: die Ausmusterung nimmt L heute
-   nur beim Seil-Typ — nach der Umstellung bei jedem Typ, weil sie immer `auditAppend(…, t)`
-   ruft.
-   * **Schlüsselrotation** (`ops/schluessel-rotieren.js`) läuft über ALLE Studios in einer
-     Transaktion: Studio-IDs vorher lesen, `auditTx(ids, …)`, im Callback die Studio-Liste
-     erneut lesen und abbrechen, wenn sie von der gesperrten abweicht.
-   * **Retention** hält L künftig für die ganze Lösch-Transaktion einer Tabelle. Das ist der
-     längste L-Halter (s. Kosten).
-   * In den Helfern mit durchgereichter Verbindung ändert sich nichts; ihre Aufrufer werden
-     `auditTx`.
-   * Der Kommentar am Nachtrag-Lock N (Weg B) sagt ausdrücklich: N steht NACH L; N allein
-     verhindert den Kreis mit der Freigabe NICHT, das leistet allein `auditTx`.
-4. **Statischer Wächter** (neue Testdatei, AST mit `acorn` wie in
-   `test_feature_brandschutz_schreibplan_verhalten.js`):
-   * **(a)** Die Menge der `auditAppend`-Aufrufstellen im AST ist GLEICH der Menge aus einer
-     unabhängigen Textsuche (Pfad:Zeile, als Menge, nicht als Zahl). Dateiliste aus
-     `git ls-files`, Produktivwurzeln LITERAL hingeschrieben und gegen `git ls-files` gehalten.
-   * **(b)** Jeder Aufruf mit Verbindungsargument liegt lexikalisch in einem
-     `auditTx`-Callback ODER in einer Funktion, die die Verbindung als Parameter bekommt — und
-     JEDER Aufruf einer solchen Funktion liegt wiederum in einem `auditTx`-Callback (Fixpunkt
-     über Funktionsnamen je Datei; ein Aufruf, der sich nicht zuordnen lässt, ist ein FEHLER,
-     kein Durchlass).
-   * **(c)** Kein `db.tx`-Callback enthält `auditAppend` oder einen Helfer aus (b).
-   * **(d)** Kein `auditAppend` OHNE Verbindung in einem `db.tx`/`auditTx`-Callback oder in
-     einer Funktion, die aus einem solchen gerufen wird.
-   * **(e)** In jedem `auditTx`-Callback kommt vor dem ersten `await` auf die Verbindung kein
-     Advisory-Lock-Aufruf eines anderen Studios vor — entfällt, wenn (1) das strukturell
-     ausschliesst; dann steht die Begründung im Test.
-   * Jede Regel hat eine eigene FIXTUR mit Verstoss (rot) und Durchlassfall (grün), in
-     PRODUKTIONSFORM aufgerufen (dieselbe Funktion, dieselben Argumente wie gegen den Bestand).
-5. **Bestehendes Lock-Inventar nachziehen:** `test_feature_geistersperre_nachtrag_rennen.js`,
-   Abschnitt 7 (literale Liste der Advisory-Lock-Anweisungen, heute 26 Einträge plus die
-   „erste Anweisung"-Prüfungen für den Tagesschlüssel und die zwei Belehrungen-Locks). Jede
-   Änderung an der Liste wird EINZELN im Bericht begründet. Die „erste Anweisung"-Prüfung für
-   den Tagesschlüssel heisst künftig: erste Anweisung im `auditTx`-Callback. Die beiden
-   Belehrungen-Prüfungen werden durch Wächter (b)/(c) ersetzt — der Bericht zeigt, dass jede
-   Mutation, die sie bisher rot machte, jetzt (b) oder (c) rot macht.
+   erste Anweisung `SELECT pg_advisory_xact_lock($1)` je Studio-ID (mehrere: numerisch
+   aufsteigend, ohne Doppelte), vermerkt die gesperrten IDs an der Verbindung (nicht
+   aufzählbare Eigenschaft über ein `Symbol`) und führt den Callback in einem
+   `AsyncLocalStorage`-Kontext aus. Dazu `sperreStudio(t, studioId)` für Wege, die weitere
+   Studios erst im Lauf erfahren: prüft, dass die ID GRÖSSER ist als jede bisher gesperrte
+   (sonst Wurf), sperrt, vermerkt. Die Kosten von `AsyncLocalStorage` stehen in
+   `core/request-context.js` (gemessen 29.08.2026) — der Kontext ist dort schon im ganzen
+   Prozess aktiv, es entsteht kein neuer Grundaufwand.
+2. **`db.tx` bekommt denselben Kontext** (nur „eine Transaktion ist offen", ohne Vermerk), damit
+   Punkt 3 auch blanke Transaktionen erkennt.
+3. **`auditAppend` prüft, BEVOR es eine Verbindung holt oder eine Anweisung schickt:**
+   * mit Verbindung: fehlt die Studio-ID im Vermerk DIESER Verbindung → Wurf
+     `code = 'AUDIT_STUDIOLOCK_FEHLT'`;
+   * ohne Verbindung und ein Transaktionskontext ist aktiv → Wurf
+     `code = 'AUDIT_OHNE_VERBINDUNG_IN_TX'`;
+   * ohne Verbindung ausserhalb jeder Transaktion → unverändert eigene Transaktion (die 76
+     Stellen bleiben, wie sie sind).
+   Der Lock-Griff in `append()` bleibt (wiedereintrittsfähig). **Werfen statt melden** ist
+   entschieden (beide Spuren tragen es mit): ein übersehener Weg bricht sofort und rollt
+   zurück; „nur melden" liesse eine unprotokollierte oder hängende Änderung zu. Der Wurf trägt
+   Code und Aufrufstelle, damit er im Fehlerkanal sofort zuzuordnen ist.
+4. **Alle Transaktionen mit Audit über die Verbindung auf `auditTx` umstellen** (die Liste
+   erzeugt der Executer in Schritt 1 des Nachweises neu). Die bisherigen ausdrücklichen
+   Studio-Locks darin (Freigabe, Belehrungen, Mangel-Nachtrag, Ausmusterung) entfallen, ihr
+   Begründungskommentar wandert an `auditTx`. Die Ausmusterung nimmt L künftig bei JEDEM Typ.
+   * **Frühausstiege:** wo ein Weg VOR dem Schreiben entscheiden kann, dass er nichts tut
+     (vorhandenes Korrekturblatt, Umbenennung auf denselben Namen, 0 Platzierungen), wird diese
+     Prüfung vor `auditTx` gezogen, sofern sie ohne Sperre gleich sicher ist; sonst bleibt sie
+     drin und steht als Kosten im Bericht.
+   * **Schlüsselrotation** (`ops/schluessel-rotieren.js`): bleibt EINE Transaktion (ihr Kopf
+     begründet das). Studios aufsteigend lesen, je Studio `sperreStudio` vor dessen
+     `FOR UPDATE`. Kein Listenvergleich. Folge, im Kopf der Datei zu vermerken: während des
+     Laufs pausieren Audit-Schreibvorgänge der bereits durchlaufenen Studios bis zum Commit —
+     ein seltener, von Hand gestarteter Lauf über wenige Zeilen, bewusst hingenommen.
+   * **Geräte-Löschweg** (`routes/admin/geraete.js`, `db.tx` mit Tagesschlüssel, Audit ohne
+     Verbindung NACH dem Commit): bleibt `db.tx` — richtig so, er ist kein Audit-Weg im Sinn der
+     Regel.
+   * Kommentar am Nachtrag-Lock N (eigenständiger Nachtrag): N steht NACH L; N allein
+     verhindert den Kreis mit der Freigabe nicht, das leistet allein `auditTx`.
+5. **Statischer Wächter** (neue Testdatei, AST mit `acorn`, Vorbild
+   `test_feature_brandschutz_schreibplan_verhalten.js`). Jede Regel mit eigener FIXTUR (rot)
+   und Durchlassfall (grün), in PRODUKTIONSFORM aufgerufen. Was der Wächter nicht zuordnen
+   kann, ist ein FEHLER, kein Durchlass.
+   * **(a) Vollständigkeit:** jedes Textvorkommen von `auditAppend`, `auditTx`, `.tx(` und
+     `dbTransaction` in den Produktivdateien ist einem AST-Knoten zugeordnet — verglichen als
+     MULTIMENGE über `Pfad:Zeile:Spalte`, nicht als Zeilenmenge. Berechneter Zugriff,
+     Alias-Zuweisung, `.bind/.call/.apply` und als Bezeichner übergebene Callbacks an
+     `tx`/`auditTx` sind Fehler. Dateiliste aus `git ls-files`, Produktivwurzeln LITERAL und
+     gegen `git ls-files` gehalten.
+   * **(b) Bindung:** das Verbindungsargument jedes `auditAppend`-Aufrufs ist GENAU der
+     Bezeichner, den der umschliessende `auditTx`-Callback als Parameter bekommt — oder der
+     Parameter eines Helfers, dem JEDER Aufrufer genau diesen Bezeichner an genau dieser
+     Stelle übergibt (Fixpunkt je Datei). Ein anderes Verbindungsobjekt ist rot.
+   * **(c)** kein `db.tx`/`dbTransaction`-Callback erreicht `auditAppend` mit Verbindung.
+   * **(d)** kein verbindungsloses `auditAppend` in einem `tx`/`auditTx`-Callback oder in einer
+     Funktion, die (transitiv, je Datei) aus einem solchen gerufen wird.
+   * **(e) Sollmenge von aussen:** die Menge der Audit-Stellen MIT Verbindung als literal
+     hingeschriebene Liste (Datei + Ereignisname). Wer eine neue hinzufügt, trägt sie bewusst
+     ein.
+6. **Bestehende Tests nachziehen:**
+   * `test_feature_geistersperre_nachtrag_rennen.js` Abschnitt 7 (literales Inventar, heute 28
+     Einträge): jede Änderung einzeln im Bericht begründen. Die „erste Anweisung"-Prüfung des
+     Tagesschlüssels wird ZWEI Zusicherungen: erste Anweisung im `auditTx`-Callback für die
+     Audit-Wege, erste Anweisung im `db.tx` für den Geräte-Löschweg. Die beiden
+     Belehrungen-Prüfungen gehen in Wächter (b)/(c) auf — der Bericht zeigt, dass jede Mutation,
+     die sie bisher rot machte, jetzt rot macht.
+   * `test_feature_reparatur_freigabe_race.js`, `test_feature_seil_freigabe_race.js`,
+     `test_feature_seil_freigabe_lock_reihenfolge.js` rufen die echten Helfer in blankem
+     `db.tx` → auf `auditTx` umstellen, Positiv-, Null- und Rennfälle erhalten.
+   * `test_feature_nutzung_nachtrag_sperrreihenfolge.js` und alle übrigen Tests, die Sperren
+     oder `db.tx` um Audit-Helfer bauen: der Executer sucht sie selbst und nennt die Liste.
 
 ## Nachweis
 
-1. **Inventur neu erzeugen** (Skript im Zweig unter `test/helfer/`, nicht in `test/run.sh`),
-   Ergebnis in den Bericht: je Transaktion die Sperrfolge VORHER und NACHHER.
-2. **Laufzeit-Einheitstest** für `auditTx`/`auditAppend`: mit Vermerk läuft der Append; in
-   einem blanken `db.tx` wirft er `AUDIT_STUDIOLOCK_FEHLT` und schreibt NICHTS (Zeilenzahl
-   `audit_log` vorher = nachher); mehrere IDs werden aufsteigend gesperrt (Reihenfolge der
-   gesendeten Anweisungen über eine Hülle protokolliert, Eingabe absichtlich absteigend).
+1. **Inventur neu erzeugen** (Skript unter `test/helfer/`, NICHT in `test/run.sh`, da es
+   `git ls-files` als Kindprozess startet): je Transaktion Sperrfolge VORHER und NACHHER,
+   Erst- und Wiedereintritt von L getrennt, Transaktionsgrenzen sichtbar.
+2. **Laufzeit-Einheitstest:** mit Vermerk läuft der Anhang; blankes `db.tx` mit Verbindung →
+   `AUDIT_STUDIOLOCK_FEHLT`; `auditTx` mit verbindungslosem Anhang →
+   `AUDIT_OHNE_VERBINDUNG_IN_TX`; ausserhalb jeder Transaktion ohne Verbindung → Zeile und
+   Hash wie heute. **Der Wurf kommt vor jeder Anweisung**: belegt über eine Hülle, die die an
+   die Verbindung bzw. den Pool gesendeten Anweisungen zählt (0 nach dem Wurf) — eine
+   unveränderte `audit_log`-Zeilenzahl allein belegt das nicht, ein Rollback liefert dieselbe.
+   Mehrere IDs absteigend und mit Doppeltem übergeben → aufsteigend, einmal. `sperreStudio`
+   mit kleinerer ID → Wurf.
 3. **Deterministische Nebenläufigkeitsproben über die ECHTEN Routen** (Wegwerf-DB, zwei echte
-   Verbindungen) für drei Paare: Tagescheck–Nachtrag, Nachtrag–Freigabe, Umbenennung–Nachtrag.
-   Anforderungen aus beiden Prüfspuren, alle verbindlich:
-   * **Tor je Anfrage**, nicht prozessglobal (AsyncLocalStorage oder eine Kennung an der
-     Verbindung). Das Tor parkt NACH der Gewährung der ersten Sperre der angehaltenen
-     Transaktion — „erste Sperre, welche auch immer", damit es auch in der Gegenprobe greift.
-   * **Überschneidungsbeleg eingegrenzt:** PIDs beider Verbindungen vorab über
-     `pg_backend_pid()`; Beleg ist `pg_blocking_pids(pidWartend) @> ARRAY[pidHaltend]` UND der
-     wartende Lock ist der erwartete (`locktype`, `objid` für L bzw. den Gegen-Lock).
-   * **Gültigkeitsriegel:** jede Probe belegt positiv, dass sie ihren Weg bis zur kritischen
-     Stelle gegangen ist (UPDATE traf genau eine Zeile, L-Griff erreicht). Fehlt der Beleg, ist
-     das ein FAIL „Messung ungültig", nie ein „kein Kreis".
-   * **Begrenzter Fehlerpfad:** jede Wartebedingung hat eine Obergrenze NUR als Abbruch — sie
-     endet als FAIL mit Diagnose, beide Anfragen werden sauber beendet, der Rest der Suite
-     läuft weiter. Nie als Erfolgskriterium.
-   * **Nachher:** beide Anfragen erfolgreich, DB-Zustand beider Wege belegt, kein 40P01, und
-     die wartende Seite wartete auf L (nicht auf eine Zeile).
-   * **Gegenprobe je Paar:** `auditTx` auf EINER Seite durch `db.tx` ersetzen UND den Wurf in
-     `auditAppend` ausschalten (sonst misst die Gegenprobe den Wurf statt des Kreises) →
-     SQLSTATE `40P01` (`err.code`, kein Textvergleich) auf genau einer Seite, die andere
-     committet; der Bericht nennt den Lock-Schlüssel, an dem der Kreis entstand.
-   * Die Proben ersetzen NICHT den statischen Wächter; sie belegen die Wirkung an drei Paaren,
-     der Wächter die Regel für alle.
-4. **Gegenproben für den Wächter** (je Regel (a)–(d)): eine Umstellung zurückdrehen (`auditTx`
-   → `db.tx`), einen Helfer-Aufruf in ein blankes `db.tx` verschieben, ein `auditAppend` ohne
-   Verbindung in einen Callback setzen, eine Datei aus der Scanliste nehmen — jede rot, und
-   zurückgenommen grün. Mutationsskripte nach Hausregel (Zielpfad als Argument, Abbruch bei ≠1
-   Fundstelle, Marker, Rücknahme per Kopie mit `diff` EXIT 0).
-5. Volle Suite (`bash test/run.sh > <log> 2>&1; echo "SUITE_EXIT=$?"`), Dateizahl-Ritual, Lint,
-   Marker-Scan 6.
+   Verbindungen) für drei Paare. Für JEDES Paar ist die Seite, die in der Gegenprobe
+   zurückgebaut wird, festgelegt — samt dem Kreis, der dann entsteht:
 
-## Kosten der Behebung (gehört in den Bericht)
+   | Paar | Gegenprobe baut zurück | Kreis ohne Behebung |
+   |---|---|---|
+   | Tagescheck A – eigenständiger Nachtrag B | B (`db.tx`) | A hält L, will N; B hält N, will L |
+   | Nachtrag B – Freigabe C | B | C hält L, will Zeile; B hält Zeile, will L |
+   | Umbenennung R – Nachtrag B | R | B hält L, will Zeile; R hält Zeile, will L |
 
-Alle Audit-Transaktionen eines Studios laufen künftig über ihre GANZE Dauer nacheinander statt
-nur über den Audit-Anhang. Die längsten L-Halter sind der Nachtrag (bis 200 Einträge), die
-Retention je Tabelle und die Ausmusterung. Das ist der Preis der Kreisfreiheit; die
-Alternative (Audit in eine eigene Transaktion) ist verworfen, weil sie die Atomarität von
-Geschäftsdaten und Protokoll aufgibt. Der Bericht misst die Haltedauer der Retention an der
-grössten Testfixtur und nennt sie.
+   In der Gegenprobe wird zusätzlich der Wurf aus Punkt 3 der Mechanik ausgeschaltet (sonst
+   misst sie den Wurf statt des Kreises). Verbindlich für alle Proben:
+   * **Tor je Anfrage**, nicht prozessglobal; parkt NACH der Gewährung der ersten Sperre der
+     angehaltenen Transaktion, „erste Sperre, welche auch immer".
+   * **Überschneidungsbeleg:** PIDs über `pg_backend_pid()` auf der Transaktionsverbindung;
+     `pg_blocking_pids(pidWartend) @> ARRAY[pidHaltend]` UND der wartende Lock ist der
+     erwartete (`locktype`, `classid/objid`).
+   * **Gültigkeitsriegel:** positiver Beleg, dass jede Seite ihre kritische Stelle erreicht
+     (UPDATE traf genau eine Zeile, der `auditAppend`-Pfad wurde betreten). Fehlt er: FAIL
+     „Messung ungültig", nie „kein Kreis".
+   * **Begrenzter Fehlerpfad:** jede Wartebedingung hat eine Obergrenze NUR als Abbruch — FAIL
+     mit Diagnose, beide Anfragen sauber beendet, Suite läuft weiter.
+   * **Nachher:** beide Anfragen erfolgreich, DB-Zustand beider Wege belegt, kein 40P01, die
+     wartende Seite wartete auf L.
+   * **Gegenprobe:** SQLSTATE `40P01` (`err.code`) auf genau einer Seite, die andere committet;
+     Lock-Schlüssel des blockierten Statements im Bericht.
+4. **Gegenproben für die Wächter** (a)–(e) und den Laufzeitschutz: je Regel eine Mutation im
+   Bestand (Umstellung zurück auf `db.tx`; Helfer-Aufruf in blankes `db.tx`; verbindungsloser
+   Anhang in einen Callback; Alias `const aa = auditAppend`; anderes Verbindungsobjekt an
+   `auditAppend`; eine Datei aus der Scanliste) — jede rot, zurückgenommen grün.
+   Mutationsskripte nach Hausregel.
+5. **Haltedauer messen, Schwelle hergeleitet:** L-Haltedauer je umgestellter Transaktion an der
+   jeweils grössten Testfixtur, dazu Retention (grösste Fixtur) und Korrekturblatt (PDF-Rendern
+   unter L). **Schwelle 1000 ms** — ein Drittel des Pool-Checkout-Zeitlimits von 3000 ms
+   (`core/db.js`, `connectionTimeoutMillis`), damit zwei aufeinanderfolgende Halter plus
+   Warteschlange darunter bleiben (Pool `max: 10`). Überschreitet ein Weg die Schwelle:
+   **anhalten und melden**, nicht selbst umbauen — die Entscheidung (Zerlegen, Vorziehen,
+   `lock_timeout`) trifft der Haupt-Agent.
+6. Volle Suite (`bash test/run.sh > <log> 2>&1; echo "SUITE_EXIT=$?"`), Dateizahl-Ritual (neue
+   Testdateien in `test/run.sh`), Lint, Marker-Scan 6.
 
-## Offene Fragen an die Planprüfung
+## Kosten (gehören in den Bericht, mit Zahlen)
 
-1. Welchen ZUSTAND erzeugt diese Regel, den es heute nicht gibt?
-2. Was wird durch sie SCHLECHTER — Durchsatz, Wartezeiten, neue Reihenfolgen, Ausfallverhalten
-   durch den Wurf?
-3. Gibt es einen Weg, auf dem eine Transaktion nach der Umstellung L NACH einer anderen Sperre
-   nimmt, oder zwei L verschiedener Studios in unterschiedlicher Reihenfolge?
-4. Kann einer der Wächter (a)–(d) falsch grün sein?
+Alle Audit-Transaktionen eines Studios laufen über ihre GANZE Dauer nacheinander. Neu: Wege,
+die L halten, ohne am Ende zu protokollieren (Frühausstiege). Wartende halten
+Poolverbindungen. Die Schlüsselrotation pausiert Audit-Schreibvorgänge durchlaufener Studios
+bis zu ihrem Commit. Die Alternative (Audit in eine eigene Transaktion) bleibt verworfen: sie
+gibt die Atomarität von Geschäftsdaten und Protokoll auf.
