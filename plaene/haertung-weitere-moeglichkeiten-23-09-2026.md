@@ -34,3 +34,17 @@ Ergebnis steht aus.
 * `unattended-upgrades` aktiv, aber **48 Pakete** warten auf ein Update.
 * `fail2ban` aktiv. `limit_req` für Login vorhanden (`conf.d/00-login-ratelimit.conf`,
   60/min, burst 20, Status 429). PostgreSQL lauscht nicht nach aussen.
+
+## Wiederherstellung (Betreiber 23.09.2026: „noch nicht getestet")
+
+Zwei getrennte Ebenen:
+1. **Anwendungsdaten** — `pg_dump`, PITR (Basebackup + WAL), PDF-Tages-TAR. Dafür gibt es
+   im GymDocu-Repo AUTOMATISCHE Drills (`ops/gymdocu-restore-drill.sh`,
+   `ops/gymdocu-pitr-restore-test.sh`, `ops/gymdocu-file-restore-sample.sh`,
+   `ops/replica-verify.sh`, Cron-Vorlage und Statusdateien in `docs/RESTORE_DRILLS.md`).
+   Ob sie auf dem Server eingerichtet sind und grün laufen, ist von hier nicht sichtbar —
+   Prüfbefehle an den Betreiber gegeben.
+2. **Acronis (ganze Maschine)** — noch nie zurückgespielt. Vorschlag: Datei-Wiederherstellung
+   an einen ANDEREN Ort (nie überschreiben), z. B. `/etc/nginx` und ein PDF-Verzeichnis nach
+   `/root/acronis-restore-test/`, dann `sha256sum` gegen den Live-Stand. Ein vollständiger
+   Maschinen-Restore auf einen Testserver ist der zweite Schritt.
