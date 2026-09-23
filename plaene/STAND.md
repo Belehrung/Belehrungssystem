@@ -4,52 +4,63 @@ Stand: 22.09.2026, 23:4x UTC.
 
 ## Was gerade LÄUFT
 
-**Ein Executer baut die FÜNFTE Runde des Ladebestand-Beitrags**
-(Arbeitsbaum `/home/user/gymdocu`, Zweig `beitrag-ladebestand`, Kopf `3a7cad5`).
-**Nicht in diesen Arbeitsbaum hineinarbeiten, solange seine Benachrichtigung
-nicht da ist** — und eine Benachrichtigung gilt nur, bis er per SendMessage
-fortgesetzt wird.
+**Ein Executer baut die SECHSTE Runde des Ladebestand-Beitrags**
+(Arbeitsbaum `/home/user/gymdocu`, Zweig `beitrag-ladebestand`, auf dem
+UNCOMMITTETEN Stand der fünften Runde). **Nicht in diesen Arbeitsbaum
+hineinarbeiten, solange seine Benachrichtigung nicht da ist** — und eine
+Benachrichtigung gilt nur, bis er per SendMessage fortgesetzt wird.
 
-Der Auftrag steht vollständig in
-`plaene/auftrag-ladebestand-nacharbeit.md`, Abschnitt
-„# DER BAUAUFTRAG DER FÜNFTEN RUNDE" (Dateiende), die Begründung je Punkt im
-Abschnitt davor („# DIFFPRÜFUNG DER VIERTEN RUNDE").
+Auftrag: `plaene/auftrag-ladebestand-nacharbeit.md`, Abschnitt
+„# DER BAUAUFTRAG DER SECHSTEN RUNDE" (Dateiende). Die Begründung je Punkt
+steht in den beiden Abschnitten davor — es gibt ZWEI „DIFFPRÜFUNG DER
+FÜNFTEN RUNDE", einen je Prüfspur.
 
 ## Wo der Beitrag steht
 
-**Die vierte Runde ist gebaut, geprüft, committet und gepusht** (`3a7cad5`).
-Sie schliesst R1–R6: Verhaltensprobe für die Feuerlöscher-Ablösung,
-Titel-Wortlaut, `r.clone()`, Bereichs-Riegel auf den Bezeichner `db`,
-Kommentarbereinigung, und das wertgleiche Notiz-UPDATE zählt nicht mehr mit.
+**Vierte Runde: committet, gepusht, CI grün** (`3a7cad5`, alle vier Checks).
 
-Eigene Messungen dazu, alle wörtlich im Auftragspapier:
-* volle Suite **SUITE_EXIT=0**, zweimal gefahren
-* Dateizahl-Ritual **350 = 350, `diff` EXIT 0** — beim zweiten Mal mit einem
-  Sieb, das die TESTS-Liste direkt aus `test/run.sh` schneidet und damit die
-  NAMENSKONVENTION gar nicht mitmisst
-* `npm run lint` **EXIT 0**, keine Ausgabe ausser dem npm-Banner
-* neun Gegenproben, jede mit Mutation und Rücknahme (`diff` EXIT 0)
+**Fünfte Runde: gebaut, geprüft, NICHT committet** — und die Diffprüfung hat
+ihren Kern gekippt.
 
-**Dann fand die Diffprüfung elf plus vier Befunde** — deshalb die fünfte
-Runde. Die zwei blockierenden:
-1. Die Musterverschärfung hat die `.query(`-Abdeckung VERLOREN, während die
-   Erfolgsmeldung sie weiter behauptete. Gemessen: Umgehung über einen
-   `pool`-Alias ausserhalb des Bereichs, **EXIT 0, 25 PASS / 0 FAIL**.
-2. Die neue Kommentarbereinigung schneidet an einem `//` INNERHALB einer
-   Zeichenkette ab und lässt ein `db` dahinter verschwinden — sie hat also
-   ein neues Loch in genau den Riegel gerissen, den sie schützen sollte.
+Gemessen an Runde 5: volle Suite `SUITE_EXIT=0`, 26 PASS / 0 FAIL, Lint
+EXIT 0. Der Executer hat dabei ZWEI Fehler in meinem Auftragspapier gefunden
+und widersprochen statt sie zu übernehmen — beide nachgemessen, beide seine.
+
+**Dann kippte die Diffprüfung den Kern.** Ich hatte den zeichenweisen
+Kommentar-Reiniger selbst gebaut, gegen acht Anforderungen gemessen und
+wörtlich vorgegeben. Gemessen ist er BLIND: ein Regex mit einem
+Anführungszeichen kippt den Zeichenketten-Zustand, danach verschluckt ein
+`/*` in einer echten Zeichenkette echten Code.
+
+| | Länge | `pool.query(` | Riegel |
+|---|---|---|---|
+| mein Automat | 187 → **56** | weg | **schlägt nicht an** |
+| `maskiereKommentare` | 187 → 187 | da | schlägt an |
+
+**Zwei Lehren, beide über die eigene Arbeitsweise:**
+1. Meine acht Prüffälle enthielten keinen mit Anführungszeichen im Regex —
+   ich habe die Klasse gemessen, die ich mir vorgestellt hatte.
+2. **Ich habe nicht gefragt, ob es das schon gibt.** `maskiereKommentare`
+   liegt in `test/rohwert-scan.js` und wird von 45 Dateien benutzt. Mein
+   Kommentar behauptete, so ein Apparat sei „mehr, als der Riegel wert ist" —
+   eine falsche Tatsachenbehauptung, die einen Vorschlag ausschloss.
+
+Runde 6 löscht den Automaten ersatzlos, setzt den Hausstandard ein und zieht
+neun weitere getragene Befunde nach (u. a.: der Riegel fängt bisher nur eine
+von vier Schreibweisen; das Prüf-Fenster der Sperr-Zusicherung greift 136
+Zeichen zu weit; eine CASCADE-Behauptung in einem Kommentar ist falsch).
 
 ## Was ausdrücklich NICHT gebaut wird
 
-* **Die WHERE-Form statt der CTE** (Befund C5). Er TRÄGT — gegen PostgreSQL 16
-  gemessen, gleiche Fallmatrix und gleiches Ergebnis im Nebenläufigkeitsfall,
-  ohne `FOR UPDATE`. Abgelehnt, weil er den CASE-Ausdruck zweimal hinschreibt
-  und damit „Dieselbe Aussage an zwei Orten" einführt, in der Variante, die
-  sich nicht auflösen lässt. Stattdessen bekommt `FOR UPDATE` eine statische
-  Zusicherung. Die volle Abwägung steht im Auftragspapier.
+* **Die WHERE-Form statt der CTE** (C5 der vierten Runde). Er TRÄGT — gegen
+  PostgreSQL 16 gemessen, gleiche Fallmatrix, gleiches Ergebnis im
+  Nebenläufigkeitsfall, ohne Sperre. Abgelehnt, weil er den CASE-Ausdruck
+  zweimal hinschreibt. Stattdessen bekam `FOR UPDATE` eine statische
+  Zusicherung. Volle Abwägung im Auftragspapier.
 * **Den Schleifenrumpf in eine Funktion ohne `db` im Gültigkeitsbereich
-  ziehen** (Befund C11). Richtig und ein Umbau weit über diesen Beitrag
-  hinaus. Datierter offener Punkt.
+  ziehen** (C11 der vierten Runde). Richtig und ein Umbau weit über diesen
+  Beitrag hinaus. Datierter offener Punkt — und er hätte C1, C2, C3 und K1
+  ersatzlos erledigt.
 
 ## Offen, nach dem Beitrag
 
