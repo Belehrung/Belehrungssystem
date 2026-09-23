@@ -6,9 +6,8 @@ Stand: 23.09.2026, 09:45 UTC.
 
 Stand 23.09.2026, 19:40 UTC.
 
-* **Pentest P1**: Nacharbeit 1 gebaut (`713ba58`, Suite 362 = 362, Lint 0). Verhalten geändert (JSON
-  bei Accept ohne `text/html`, Drossel begrenzt) → **Diffprüfung Runde 2 läuft** (DeepSeek, Lesebaum
-  `/workspace/gymdocu-p1-lese`; ausführende Spur `/workspace/gymdocu-p1-pruef`, eigener PG-Cluster).
+* **Pentest P1**: Runde 2 fertig (17 Befunde aus zwei Spuren, alle getragen; wichtigster:
+  `istGueltigeId(['5'])` ist `true`). **Nacharbeit 2 läuft** (`plaene/auftrag-pentest-p1-nacharbeit2.md`).
 * **Nachweis-unlink**: Runde 4 → Umbau „Löschauftrag als eigene Zeile“, zwei Planprüfungsrunden
   (29 Befunde, einer gefallen), Fassung 3 in `plaene/auftrag-unlink-loeschauftrag.md`. **Bau läuft**
   (Executer, Einordnung sehr komplex, `/workspace/gymdocu-unlink`).
