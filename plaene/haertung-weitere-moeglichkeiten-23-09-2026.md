@@ -58,3 +58,23 @@ Cron eingerichtet (`/etc/cron.d/gymdocu-restore-drills`, 01.08.2026). Status **G
 `/var/backups/gymdocu` (`wal`, `hourly`) — **auf derselben Maschine**. Ausserhalb des Servers
 liegt damit nur, was Acronis sichert; genau das ist noch nie zurückgespielt worden.
 Ebene 2 steht aus (Acronis-Wiederherstellung an anderen Ort noch nicht durchgeführt).
+
+### Ebene 2 — Acronis-Test per Kommandozeile (23.09.2026)
+
+Plan „Backup entire workload", täglich 12:13, letzter Lauf OK. Speicher `online://`
+(Acronis-Cloud, Vault `NGCS_50EA1A_2452…`, 127,5 GB belegt, 69 Sicherungen), ein Archiv
+`ubuntu-7AC11E95-…` (Typ disk, seit 20.06.2026), neueste Sicherung `292177E8-…` vom
+23.09. 12:13:55 (inkrementell). Partitionen: `1-1` = vda1 (Ext4, 239 GB, System),
+dazu vda14/15/16.
+
+**Befund des Tests:** Die Sicherungen sind AUFLISTBAR, aber ihr INHALT ist von dieser
+Maschine aus nicht lesbar. `acrocmd list content --content_type=file` scheitert für alle
+Pfad-Schreibweisen (`0x1512026` „Failed to view files within the backup"), `acrocmd
+recover file` ebenso (`0xA100F1` „Failed to resolve file", `0xA10008` „Cannot browse the
+specified backup", `0x40007` aus `archive_mount_helper`/`mount_manager_unix`). `acrocmd
+mount` ist für Cloud-Speicher laut eigener Hilfe nicht vorgesehen. Nichts wurde
+geschrieben (`/root/acronis-restore-test` leer).
+
+Offen: Wiederherstellung über die Acronis-Weboberfläche; gelingt sie, sind die Daten
+lesbar und der Fehler betrifft nur das Durchsuchen vom Agenten aus → mit den Fehlercodes an
+den IONOS-/Acronis-Support.
