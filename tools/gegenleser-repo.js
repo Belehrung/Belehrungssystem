@@ -83,12 +83,103 @@ const { execFileSync } = require('node:child_process');
 const { StringDecoder } = require('node:string_decoder');
 const { pruefeGeheimnisse, entferneGeheimnisse, zeileEntferntMarker } = require('./geheimnis-riegel');
 
-const ENDPUNKT = 'https://api.openai.com/v1/responses';
+const ENDPUNKT_OPENAI = 'https://api.openai.com/v1/responses';
+// ZWEITER ANBIETER, DeepSeek (Auftrag "DeepSeek als zweiter Anbieter",
+// 23.09.2026). GEMESSEN (Executer, 23.09.2026, VOR dem Bau, auf Anweisung
+// des Haupt-Agenten -- Rohdaten in
+// /tmp/claude-0/.../scratchpad/ds-probe/*.raw): api-docs.deepseek.com nennt
+// fuer deepseek-v4-pro auch /v1/responses (Kontext 1M) -- eine echte Probe
+// gegen GENAU DIE FELDER, die anfragen() unten ohnehin verschickt, bestand:
+//   - "input" (flache Form), "tools" (flache Form {type,name,description,
+//     parameters}), "max_output_tokens", "store:false", "truncation:
+//     disabled", "stream:true" -- alle angenommen UND wirksam.
+//   - "reasoning.effort" wird WERTVALIDIERT (nicht nur angenommen): ein
+//     erfundener Wert "ultrahoch" -> HTTP 422 "unknown variant `ultrahoch`,
+//     expected one of `none`, `minimal`, `low`, `medium`, `high`, `xhigh`,
+//     `ultra`, `max`". Das ist aber ein GLOBALES Enum, keine Pruefung gegen
+//     die Stufen, die EIN Modell wirklich kennt -- Einzelheiten und die
+//     daraus folgende Vorgabe stehen bei EFFORT_DEEPSEEK weiter unten.
+//   - Zwei echte Runden mit function_call/function_call_output liefen
+//     sauber durch (echtes Woertchen KWIRZELPFAND-DS-91742 unversehrt
+//     zurueckerhalten), und die output[]-Form ist IDENTISCH zu OpenAI:
+//     {type:"function_call", id, call_id, name, arguments} in Runde 1,
+//     {type:"message", role:"assistant", content:[{type:"output_text",
+//     text}]} in Runde 2 -- genau die Form, die textAusAusgabe() und die
+//     Rundenschleife in main() unten schon lesen. KEIN Chat-Adapter noetig,
+//     nur Endpunkt und Schluessel je Anbieter umschalten (kleinerer Umbau,
+//     eine Protokollform).
+//   - GEGENPROBE bestanden: ein erfundenes MODELL -> HTTP 400 "The
+//     supported API model names are deepseek-flash, deepseek-v4-pro, but
+//     you passed …".
+//   - EIN UNTERSCHIED zu OpenAI, gemessen und WICHTIG: ein erfundenes FELD
+//     ("quatschfeld_xyz") wird NICHT abgelehnt (HTTP 200) -- dieselbe
+//     Krankheit wie bei Kimi K3 (CLAUDE.md): "wird angenommen" ist hier
+//     KEIN Beleg fuer Wirkung, nur die WERT-Pruefung bekannter Felder
+//     (s. reasoning.effort oben) ist scharf.
+//   - "metadata" wird zwar angenommen, aber NICHT gespeichert: das
+//     response.completed-Objekt zeigt dafuer immer "{}" zurueck, auch wenn
+//     befuellt gesendet. Bleibt trotzdem gesetzt (metadatenBauen() weiter
+//     unten, unveraendert fuer beide Anbieter) -- schadet nicht, und
+//     OpenAI braucht es fuer die eigene Auffindbarkeit.
+const ENDPUNKT_DEEPSEEK = 'https://api.deepseek.com/v1/responses';
+
+// Anbieterwahl aus dem Modellnamen (Punkt 1 des Auftrags): "deepseek-*" ist
+// DeepSeek, jedes andere Praefix bleibt OpenAI wie bisher. KEIN stiller
+// Rueckfall: ein unbekanntes Praefix ist wie heute ein OpenAI-Modell: es
+// nimmt weiterhin den OpenAI-Endpunkt/-Schluessel, nicht etwa DeepSeek oder
+// ein drittes Verhalten. Ein DeepSeek-Modell OHNE eigenen Schluessel bricht
+// LAUT mit Exit 2 ab (schluesselHolen() weiter unten), nie mit dem
+// OpenAI-Schluessel weiter.
+function istDeepseekModell(modell) {
+    return typeof modell === 'string' && modell.startsWith('deepseek-');
+}
+
+function endpunktFuerModell(modell) {
+    return istDeepseekModell(modell) ? ENDPUNKT_DEEPSEEK : ENDPUNKT_OPENAI;
+}
 // Pruefstufe. gpt-6-astra kann low|medium|high|xhigh|max (gemessen
 // 18.09.2026, kein none/minimal). Die CLAUDE.md verlangt xhigh fuer
 // Pruefláufe; max bleibt dem besonders Folgenschweren vorbehalten und
 // wird dann ueber die Umgebungsvariable gesetzt.
-const EFFORT = process.env.GEGENLESER_EFFORT || 'xhigh';
+const EFFORT_OPENAI = process.env.GEGENLESER_EFFORT || 'xhigh';
+// Eigene Stufe fuer DeepSeek statt EFFORT_OPENAI mitzubenutzen (Nacharbeit
+// 23.09.2026, Hinweis des Haupt-Agenten). GEMESSEN (Executer): "GET
+// https://api.deepseek.com/models" nennt fuer deepseek-v4-pro
+// effort.supported_levels: ["low","high","max"], default_level "high" --
+// "xhigh" (die OpenAI-Vorgabe oben) steht dort NICHT drin. Die Anfrage
+// selbst validiert aber nur gegen ein GLOBALES Enum (none/minimal/low/
+// medium/high/xhigh/ultra/max, s. Gegenprobe bei ENDPUNKT_DEEPSEEK oben)
+// und NICHT gegen die Modell-eigene Liste: sowohl "medium" als auch
+// "xhigh" liefen mit HTTP 200 durch und wurden im response.completed-
+// Objekt UNVERAENDERT echot -- "wird angenommen" ist hier wieder KEIN
+// Beleg fuer Wirkung.
+//
+// WIRKUNGSPROBE, ueber MEHRERE Laeufe (Nachtrag des Haupt-Agenten
+// 23.09.2026: derselbe Verdacht traf auf /v1/chat/completions zu, dort
+// blieb "reasoning.effort" wirkungslos, low/max streuten dort ZUFAELLIG,
+// wirksam war stattdessen ein FLACHES Top-Level-Feld "reasoning_effort").
+// Fuer /v1/responses -- den Endpunkt, den dieses Werkzeug tatsaechlich
+// benutzt -- GEGENGEPRUEFT, nicht angenommen:
+//   - Das flache Feld "reasoning_effort:'max'" AUF OBERSTER EBENE (ohne
+//     das verschachtelte "reasoning") wird zwar mit HTTP 200 angenommen,
+//     aber NICHT verarbeitet: das response.completed-Objekt liefert dafuer
+//     "reasoning":{"effort":null,...} zurueck -- das flache Chat-
+//     Completions-Feld existiert auf /v1/responses schlicht nicht.
+//   - Das VERSCHACHTELTE "reasoning.effort" -- das hier gesendete Feld --
+//     wirkt dagegen NACHWEISLICH: an derselben Aufgabe (Primzahlen
+//     zwischen 900 und 1000, korrektes Ergebnis 13330, in JEDEM Lauf
+//     richtig geliefert) DREI unabhaengige Laeufe "low" gegen "max":
+//     low = 2203, 190, 704 Denk-Token; max = 3294, 2384, 3897 Denk-Token.
+//     "low" liegt in ALLEN DREI Paaren klar UNTER "max" (Faktor 3 bis 12),
+//     obwohl "max" selbst stark streut (2384-3897) -- die Streuung ist
+//     also Rauschen der Denktiefe, nicht ein Zeichen von Wirkungslosigkeit.
+//     high/xhigh wurden nur je EINMAL gemessen (3457 bzw. 3156, im selben
+//     Bereich wie max) -- dafuer reicht die Beleglage NICHT, um sie
+//     untereinander zu ordnen, nur um "low" von "max" zu unterscheiden.
+// Vorgabe deshalb "max", die hoechste vom Modell selbst genannte Stufe
+// (GET .../models, s. o.), ueber eine EIGENE Variable aenderbar (nicht
+// GEGENLESER_EFFORT, die bleibt fuer OpenAI reserviert).
+const EFFORT_DEEPSEEK = process.env.GEGENLESER_EFFORT_DEEPSEEK || 'max';
 // Bis 10.09.2026 stand hier /v1/chat/completions mit gpt-5.5 als Vorgabe --
 // GEMESSEN als Sackgasse fuer die staerkeren Stufen: gpt-5.6-sol und
 // gpt-6-astra melden ueber /v1/chat/completions mit "tools" im Request
@@ -206,6 +297,12 @@ const PREISTABELLE = {
     // und store:false traegt.
     'gpt-6-sol': { rein: 4.00, raus: 15.00 },
     'gpt-6-luna': { rein: 0.20, raus: 0.75 },
+    // Zweiter Anbieter DeepSeek (23.09.2026), aus
+    // api-docs.deepseek.com/quick_start/pricing, Spitzenzeit als obere
+    // Schranke (DeepSeek staffelt nach Tageszeit, off-peak ist guenstiger --
+    // wir schaetzen mit dem teureren Wert). Endpunkt und Format s.
+    // ENDPUNKT_DEEPSEEK oben.
+    'deepseek-v4-pro': { rein: 1.32, raus: 3.96 },
 };
 
 // Liefert null (= ausdruecklich "unbekannt"), wenn das Modell nicht in der
@@ -337,9 +434,15 @@ class GeheimnisAbbruch extends Error {
     }
 }
 
-function schluesselHolen() {
-    if (process.env.OPENAI_API_KEY) return process.env.OPENAI_API_KEY.trim();
-    const pfad = process.env.OPENAI_KEY_DATEI;
+// Gemeinsamer Kern fuer beide Anbieter -- "gleiche Behandlung" (Auftrag
+// Punkt 2): env-Variable zuerst, sonst die Datei, die die zweite
+// Variable nennt, getrimmt; sonst null. NIE ueber argv, NIE ins Protokoll
+// (protokollSchreiben() bekommt keinen Header uebergeben, unveraendert),
+// NIE in eine Fehlermeldung (main() nennt unten nur die Variablennamen,
+// nie den Wert).
+function schluesselHolenAus(envName, dateiEnvName) {
+    if (process.env[envName]) return process.env[envName].trim();
+    const pfad = process.env[dateiEnvName];
     if (!pfad) return null;
     let wert;
     try {
@@ -348,6 +451,15 @@ function schluesselHolen() {
         return null;
     }
     return wert || null;
+}
+
+// modell entscheidet den Anbieter (istDeepseekModell() oben): OPENAI_* fuer
+// OpenAI-Modelle, DEEPSEEK_* fuer "deepseek-*" -- niemals einer fuer den
+// anderen (kein stiller Rueckfall, s. Kommentar bei istDeepseekModell()).
+function schluesselHolen(modell) {
+    return istDeepseekModell(modell)
+        ? schluesselHolenAus('DEEPSEEK_API_KEY', 'DEEPSEEK_KEY_DATEI')
+        : schluesselHolenAus('OPENAI_API_KEY', 'OPENAI_KEY_DATEI');
 }
 
 // Hart gesperrt, AUCH wenn versioniert (Schritt 5 der Erlaubnispruefung).
@@ -606,7 +718,10 @@ function anfragen(schluessel, modell, verlauf, mitWerkzeugen = true) {
         // effort: die CLAUDE.md verlangt seit 18.09.2026 xhigh fuer Pruefungen
         // ("high war die MITTE, nicht das Maximum" — gemessen ueber elf
         // Modelle). Ohne dieses Feld lief jeder Lauf auf der Voreinstellung.
-        reasoning: { effort: EFFORT },
+        // Je Anbieter eine eigene Stufe (EFFORT_DEEPSEEK oben, Nacharbeit
+        // 23.09.2026) -- deepseek-v4-pro kennt laut Herstellerauskunft nur
+        // low/high/max, xhigh war dort unbelegt.
+        reasoning: { effort: istDeepseekModell(modell) ? EFFORT_DEEPSEEK : EFFORT_OPENAI },
         // laut scheitern statt still kuerzen — unsere Regel "leeres Ergebnis
         // ist nicht sauberes Ergebnis".
         truncation: 'disabled',
@@ -661,7 +776,7 @@ function anfragen(schluessel, modell, verlauf, mitWerkzeugen = true) {
             try { anfrage.destroy(); } catch (e) { /* Socket ggf. schon weg -- ohne Belang */ }
         };
 
-        const anfrage = https.request(ENDPUNKT, {
+        const anfrage = https.request(endpunktFuerModell(modell), {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${schluessel}`,
@@ -886,6 +1001,9 @@ function konsoleUsage() {
     console.error('kein eingebauter Standardauftrag mehr (siehe Dateikopf).');
     console.error('--zweck beschriftet die Zeile im Lauf-Protokoll (ASTRA-LAEUFE.md); fehlt');
     console.error('er, wird der Basisname der --brief-Datei genommen.');
+    console.error('--modell=deepseek-... waehlt DeepSeek als Anbieter (z. B. deepseek-v4-pro);');
+    console.error('der Schluessel kommt dann aus DEEPSEEK_API_KEY oder DEEPSEEK_KEY_DATEI statt');
+    console.error('aus OPENAI_API_KEY/OPENAI_KEY_DATEI (gemessen 23.09.2026, siehe Dateikopf).');
 }
 
 function argumenteLesen(argv) {
@@ -1233,10 +1351,13 @@ async function main(argvUeberschreibung) {
         return 4;
     }
 
-    const schluessel = schluesselHolen();
+    const schluessel = schluesselHolen(optionen.modell);
     if (!schluessel) {
+        const deepseek = istDeepseekModell(optionen.modell);
+        const envName = deepseek ? 'DEEPSEEK_API_KEY' : 'OPENAI_API_KEY';
+        const dateiName = deepseek ? 'DEEPSEEK_KEY_DATEI' : 'OPENAI_KEY_DATEI';
         console.error(
-            'ABBRUCH: Kein Schluessel. Setze OPENAI_API_KEY oder OPENAI_KEY_DATEI (Pfad zu einer Datei\n'
+            `ABBRUCH: Kein Schluessel. Setze ${envName} oder ${dateiName} (Pfad zu einer Datei\n`
             + 'AUSSERHALB des Repos, Rechte 600). Der Schluessel gehoert nicht ins Repo und nicht\n'
             + 'in eine Chat-Nachricht.');
         return 2;
@@ -1652,8 +1773,14 @@ function sseRohEintragBauen({ chunks, statusCode, abgebrochen, fehler, vorzeitig
 // zusaetzlich "close" NACH "end" -- das ist die Positivkontrolle fuer GP7
 // ("ein normales close nach end darf nicht doppelt ablehnen"), gemessen an
 // praktisch jedem der bestehenden Faelle.
-function httpsStubBauen(warteschlange, aufgezeichnet, zerstoerungen) {
+// "aufgezeichneteUrls" ist ebenso OPTIONAL (vierter Parameter, DeepSeek-
+// Anbieterwahl 23.09.2026): zeichnet die tatsaechlich angesteuerte URL jedes
+// Aufrufs auf, damit ein Test belegen kann, welcher ENDPUNKT (OpenAI oder
+// DeepSeek) wirklich angesprochen wurde -- bisher ignorierte diese Stub-
+// Funktion "_url" vollstaendig, das liess sich nicht pruefen.
+function httpsStubBauen(warteschlange, aufgezeichnet, zerstoerungen, aufgezeichneteUrls) {
     return function (_url, _optionen, callback) {
+        if (aufgezeichneteUrls) aufgezeichneteUrls.push(_url);
         const antwortHandler = {};
         const fakeAntwort = {
             statusCode: 200,
@@ -1756,8 +1883,12 @@ async function selbsttest() {
     // B2: maxAusgabeBytesErmitteln() -- nicht gesetzt/leer/"900000" x3,
     // "-1"/"1.5"/"Infinity"/"abc"/"0" brechen ab x5) = 114. Von Hand
     // hergeleitet, nicht aus dem Lauf abgeschrieben -- unten durch den
-    // tatsaechlichen Lauf bestaetigt.
-    const ERWARTETE_FAELLE = 114;
+    // tatsaechlichen Lauf bestaetigt. Dazu 15 neue Faelle aus dem Auftrag
+    // "DeepSeek als zweiter Anbieter" (23.09.2026): ANBIETERWAHL x3,
+    // SCHLUESSEL x4, KOSTENFALL DEEPSEEK x1, DEEPSEEK OHNE SCHLUESSEL x1,
+    // LAUF DS x4, GP4-DEEPSEEK x2 (eigene EFFORT_DEEPSEEK-Stufe, Nacharbeit
+    // nach Hinweis des Haupt-Agenten) = 129.
+    const ERWARTETE_FAELLE = 129;
     let gelaufen = 0;
     let fehler = 0;
     const pruefen = (bezeichnung, bedingung) => {
@@ -2288,6 +2419,188 @@ async function selbsttest() {
                 Boolean(zeileE) && !zeileE.includes('abgebrochen'));
         }
 
+        // ===== DEEPSEEK ALS ZWEITER ANBIETER (Auftrag 23.09.2026) =====
+        // Der HTTP-Weg selbst (anfragen(), SSE-Parser, Rundenschleife,
+        // Geheimnis-Riegel) ist fuer DeepSeek UNVERAENDERTER Code -- gemessen
+        // wurde VOR dem Bau, dass /v1/responses bei deepseek-v4-pro exakt
+        // dieselbe Form spricht (Dateikopf, ENDPUNKT_DEEPSEEK). Geprueft
+        // wird hier deshalb NUR das NEUE: Anbieterwahl aus dem Modellnamen,
+        // Schluesselwahl je Anbieter (kein Rueckfall in beide Richtungen),
+        // der richtige Endpunkt wird angesteuert, und der Geheimnis-Riegel
+        // wirkt auf diesem Weg identisch.
+
+        // ----- Direkte Funktionspruefungen, ohne main()/Netz -----
+        {
+            pruefen('ANBIETERWAHL DEEPSEEK-PRAEFIX (istDeepseekModell erkennt "deepseek-v4-pro" und "deepseek-flash", NICHT "deepseek" ohne Bindestrich)',
+                istDeepseekModell('deepseek-v4-pro') === true
+                && istDeepseekModell('deepseek-flash') === true
+                && istDeepseekModell('deepseek') === false);
+            pruefen('ANBIETERWAHL KEIN STILLER RUECKFALL (ein unbekanntes Praefix bleibt wie heute ein OpenAI-Modell, kein drittes Verhalten)',
+                istDeepseekModell('gpt-6-sol') === false
+                && istDeepseekModell('mistral-large-2') === false
+                && istDeepseekModell(VORGABE_MODELL) === false);
+            pruefen('ANBIETERWAHL ENDPUNKT (endpunktFuerModell waehlt je Praefix den richtigen Endpunkt, unveraendert fuer OpenAI)',
+                endpunktFuerModell('deepseek-v4-pro') === ENDPUNKT_DEEPSEEK
+                && endpunktFuerModell('mistral-large-2') === ENDPUNKT_OPENAI
+                && endpunktFuerModell('gpt-6-sol') === ENDPUNKT_OPENAI);
+        }
+        {
+            const kostenDeepseek = kostenSchaetzen('deepseek-v4-pro', 2_000_000, 500_000);
+            pruefen(`KOSTENFALL DEEPSEEK (PREISTABELLE traegt deepseek-v4-pro mit 1,32 $ rein / 3,96 $ raus je Mio. Token: 2 Mio. rein + 0,5 Mio. raus = 4,62 $, gemessen ${kostenDeepseek})`,
+                typeof kostenDeepseek === 'number' && Math.abs(kostenDeepseek - 4.62) < 1e-9);
+        }
+        {
+            const alterOpenaiKey = process.env.OPENAI_API_KEY;
+            const alteOpenaiDatei = process.env.OPENAI_KEY_DATEI;
+            const alterDsKey = process.env.DEEPSEEK_API_KEY;
+            const alteDsDatei = process.env.DEEPSEEK_KEY_DATEI;
+            try {
+                delete process.env.OPENAI_API_KEY;
+                delete process.env.OPENAI_KEY_DATEI;
+                delete process.env.DEEPSEEK_API_KEY;
+                delete process.env.DEEPSEEK_KEY_DATEI;
+
+                pruefen('SCHLUESSEL FEHLT BEIDE (kein Schluessel gesetzt: schluesselHolen() liefert fuer BEIDE Anbieter null)',
+                    schluesselHolen('deepseek-v4-pro') === null && schluesselHolen('gpt-6-sol') === null);
+
+                process.env.DEEPSEEK_API_KEY = 'selbsttest-dummy-deepseek-schluessel-env';
+                pruefen('SCHLUESSEL KEIN RUECKFALL AUF OPENAI (nur DEEPSEEK_API_KEY gesetzt: ein OpenAI-Modell bekommt trotzdem null, KEIN falscher Schluessel)',
+                    schluesselHolen('deepseek-v4-pro') === 'selbsttest-dummy-deepseek-schluessel-env'
+                    && schluesselHolen('gpt-6-sol') === null);
+                delete process.env.DEEPSEEK_API_KEY;
+
+                process.env.OPENAI_API_KEY = 'selbsttest-dummy-openai-schluessel-env';
+                pruefen('SCHLUESSEL KEIN RUECKFALL AUF DEEPSEEK (nur OPENAI_API_KEY gesetzt: ein DeepSeek-Modell bekommt trotzdem null, KEIN falscher Schluessel)',
+                    schluesselHolen('gpt-6-sol') === 'selbsttest-dummy-openai-schluessel-env'
+                    && schluesselHolen('deepseek-v4-pro') === null);
+                delete process.env.OPENAI_API_KEY;
+
+                const dsKeyDateiPfad = path.join(klon, 'deepseek-schluessel-datei.txt');
+                fs.writeFileSync(dsKeyDateiPfad, 'selbsttest-dummy-deepseek-schluessel-datei\n');
+                process.env.DEEPSEEK_KEY_DATEI = dsKeyDateiPfad;
+                pruefen('SCHLUESSEL AUS DEEPSEEK_KEY_DATEI (Datei ausserhalb des Repos, getrimmt -- gleiche Behandlung wie OPENAI_KEY_DATEI)',
+                    schluesselHolen('deepseek-v4-pro') === 'selbsttest-dummy-deepseek-schluessel-datei');
+                delete process.env.DEEPSEEK_KEY_DATEI;
+            } finally {
+                if (alterOpenaiKey !== undefined) process.env.OPENAI_API_KEY = alterOpenaiKey; else delete process.env.OPENAI_API_KEY;
+                if (alteOpenaiDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteOpenaiDatei; else delete process.env.OPENAI_KEY_DATEI;
+                if (alterDsKey !== undefined) process.env.DEEPSEEK_API_KEY = alterDsKey; else delete process.env.DEEPSEEK_API_KEY;
+                if (alteDsDatei !== undefined) process.env.DEEPSEEK_KEY_DATEI = alteDsDatei; else delete process.env.DEEPSEEK_KEY_DATEI;
+            }
+        }
+
+        // ----- DEEPSEEK OHNE SCHLUESSEL: bricht LAUT ab, springt NICHT auf
+        // einen vorhandenen OpenAI-Schluessel um -----
+        {
+            const alterOpenaiKey = process.env.OPENAI_API_KEY;
+            const alteOpenaiDatei = process.env.OPENAI_KEY_DATEI;
+            const alterDsKey = process.env.DEEPSEEK_API_KEY;
+            const alteDsDatei = process.env.DEEPSEEK_KEY_DATEI;
+            process.env.OPENAI_API_KEY = 'selbsttest-dummy-schluessel-ohne-netz'; // vorhanden, darf NICHT einspringen
+            delete process.env.OPENAI_KEY_DATEI;
+            delete process.env.DEEPSEEK_API_KEY;
+            delete process.env.DEEPSEEK_KEY_DATEI;
+            const echtesHttpsRequest = https.request;
+            const echtesError = console.error;
+            const aufgezeichnetDsFehlt = [];
+            const fehlerZeilenDsFehlt = [];
+            https.request = httpsStubBauen([], aufgezeichnetDsFehlt);
+            console.error = (msg) => fehlerZeilenDsFehlt.push(String(msg));
+            let codeDsFehlt;
+            try {
+                codeDsFehlt = await main([
+                    path.join(klon, 'harmlos.txt'),
+                    `--brief=${briefFixturePfad}`,
+                    `--wurzel=${klon}`,
+                    '--modell=deepseek-v4-pro',
+                    '--max-runden=10',
+                    `--protokoll=${path.join(klon, 'selbsttest-protokoll-ds-fehlt.jsonl')}`,
+                ]);
+            } finally {
+                console.error = echtesError;
+                https.request = echtesHttpsRequest;
+                if (alterOpenaiKey !== undefined) process.env.OPENAI_API_KEY = alterOpenaiKey; else delete process.env.OPENAI_API_KEY;
+                if (alteOpenaiDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteOpenaiDatei;
+                if (alterDsKey !== undefined) process.env.DEEPSEEK_API_KEY = alterDsKey;
+                if (alteDsDatei !== undefined) process.env.DEEPSEEK_KEY_DATEI = alteDsDatei;
+            }
+            const abbruchMsgDsFehlt = fehlerZeilenDsFehlt.find((z) => z.includes('ABBRUCH: Kein Schluessel'));
+            pruefen(`DEEPSEEK OHNE SCHLUESSEL BRICHT LAUT AB (Exit ${codeDsFehlt} (erwartet 2), ${aufgezeichnetDsFehlt.length} Anfragen gebaut (erwartet 0), Meldung nennt DEEPSEEK_API_KEY/DEEPSEEK_KEY_DATEI, NICHT OPENAI_API_KEY: "${abbruchMsgDsFehlt}")`,
+                codeDsFehlt === 2 && aufgezeichnetDsFehlt.length === 0
+                && typeof abbruchMsgDsFehlt === 'string'
+                && abbruchMsgDsFehlt.includes('DEEPSEEK_API_KEY')
+                && abbruchMsgDsFehlt.includes('DEEPSEEK_KEY_DATEI')
+                && !abbruchMsgDsFehlt.includes('OPENAI_API_KEY'));
+        }
+
+        // ===== LAUF DS: DeepSeek-Anbieterwahl Ende-zu-Ende, gemessen am
+        // Anfragekoerper -- derselbe Aufbau wie LAUF D oben, nur mit
+        // --modell=deepseek-v4-pro und einem DEEPSEEK_API_KEY, OHNE dass je
+        // ein OPENAI_API_KEY gesetzt ist. Liest dieselbe Fixture-Datei
+        // schwaerzen-github.js wieder, die oben schon fuer LAUF D angelegt
+        // wurde (keine zweite Kopie). =====
+        {
+            const alterOpenaiKey = process.env.OPENAI_API_KEY;
+            const alteOpenaiDatei = process.env.OPENAI_KEY_DATEI;
+            const alterDsKey = process.env.DEEPSEEK_API_KEY;
+            const alteDsDatei = process.env.DEEPSEEK_KEY_DATEI;
+            delete process.env.OPENAI_API_KEY; // absichtlich NICHT gesetzt -- darf nicht gebraucht werden
+            delete process.env.OPENAI_KEY_DATEI;
+            process.env.DEEPSEEK_API_KEY = 'selbsttest-dummy-deepseek-schluessel-ohne-netz';
+            delete process.env.DEEPSEEK_KEY_DATEI;
+            const echtesHttpsRequest = https.request;
+            const echtesLog = console.log;
+
+            const aufgezeichnetDS = [];
+            const aufgezeichneteUrlsDS = [];
+            const ausgabeZeilenDS = [];
+            const warteschlangeDS = [
+                antwortKoerperBauen(elementFunktionsaufrufBauen('call-ds1', 'lies', { pfad: 'schwaerzen-github.js', von: 1, bis: 11 }), 100, 50),
+                antwortKoerperBauen(elementTextBauen('TESTBERICHT-DEEPSEEK'), 100, 50),
+            ];
+            https.request = httpsStubBauen(warteschlangeDS, aufgezeichnetDS, null, aufgezeichneteUrlsDS);
+            console.log = (msg) => ausgabeZeilenDS.push(String(msg));
+
+            let codeDS;
+            try {
+                codeDS = await main([
+                    path.join(klon, 'harmlos.txt'),
+                    `--brief=${briefFixturePfad}`,
+                    `--wurzel=${klon}`,
+                    '--modell=deepseek-v4-pro',
+                    '--max-runden=10',
+                    `--protokoll=${path.join(klon, 'selbsttest-protokoll-ds.jsonl')}`,
+                ]);
+            } finally {
+                console.log = echtesLog;
+                https.request = echtesHttpsRequest;
+                if (alterOpenaiKey !== undefined) process.env.OPENAI_API_KEY = alterOpenaiKey;
+                if (alteOpenaiDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteOpenaiDatei;
+                if (alterDsKey !== undefined) process.env.DEEPSEEK_API_KEY = alterDsKey; else delete process.env.DEEPSEEK_API_KEY;
+                if (alteDsDatei !== undefined) process.env.DEEPSEEK_KEY_DATEI = alteDsDatei;
+            }
+
+            pruefen(`LAUF DS ABGESCHLOSSEN (Exit ${codeDS} (erwartet 0), ${aufgezeichnetDS.length} Anfragen gebaut (erwartet 2), Bericht kam an -- OHNE dass je ein OPENAI_API_KEY gesetzt war)`,
+                codeDS === 0 && aufgezeichnetDS.length === 2
+                && ausgabeZeilenDS.some((z) => z.includes('TESTBERICHT-DEEPSEEK'))
+                && ausgabeZeilenDS.some((z) => z.includes('Bericht regulaer erstellt')));
+
+            pruefen(`LAUF DS ENDPUNKT (BEIDE Anfragen gingen an den DeepSeek-Endpunkt "${ENDPUNKT_DEEPSEEK}", KEINE an den OpenAI-Endpunkt: ${JSON.stringify(aufgezeichneteUrlsDS)})`,
+                aufgezeichneteUrlsDS.length === 2 && aufgezeichneteUrlsDS.every((u) => u === ENDPUNKT_DEEPSEEK));
+
+            const koerperDS = JSON.stringify(aufgezeichnetDS);
+            pruefen(`LAUF DS SCHLUESSEL NICHT IM KOERPER (der aufgezeichnete Anfragekoerper enthaelt den DeepSeek-Schluessel NICHT: ${koerperDS.includes('selbsttest-dummy-deepseek-schluessel-ohne-netz') ? 'GEFUNDEN' : 'nicht gefunden'})`,
+                !koerperDS.includes('selbsttest-dummy-deepseek-schluessel-ohne-netz'));
+
+            const funktionsausgabeDS = aufgezeichnetDS.length === 2
+                ? aufgezeichnetDS[1].input.filter((e) => e.type === 'function_call_output' && e.call_id === 'call-ds1').map((e) => e.output).join('\n')
+                : '';
+            pruefen(`LAUF DS GEHEIMNIS-RIEGEL WIRKT AUCH HIER (das GitHub-Token-Fragment kommt im GESAMTEN Anfragekoerper ${vorkommen(koerperDS, 'F'.repeat(20))}x vor (erwartet 0), das Funktionsergebnis traegt den Schwaerzungs-Marker: ${funktionsausgabeDS.includes('[ZEILE ENTFERNT — Geheimnis-Riegel: ')})`,
+                vorkommen(koerperDS, 'F'.repeat(20)) === 0
+                && funktionsausgabeDS.includes('[ZEILE ENTFERNT — Geheimnis-Riegel: ')
+                && funktionsausgabeDS.includes('GitHub-Token'));
+        }
+
         // ===== GEMISCHTER LAUF: derselbe Lauf liest dieselbe Datei ERST in
         // einem harmlosen Teilbereich, DANACH im vollen Bereich, wo der
         // Deckel reisst (Nacharbeit 13.09.2026, Gegenlesung) =====
@@ -2631,14 +2944,17 @@ async function selbsttest() {
         // destroy()-Aufruf auf der ANFRAGE eintraegt -- weitergereicht an
         // httpsStubBauen, bestehende Aufrufe ohne diesen Parameter bleiben
         // unveraendert.
-        const anfragenIsoliertPruefen = async (warteschlange, zerstoerungen) => {
+        // "modell" ist OPTIONAL (dritter Parameter, DeepSeek-Anbieterwahl
+        // 23.09.2026): bestehende Aufrufe uebergeben ihn nicht und bleiben
+        // bei 'gpt-5.6-sol' (OpenAI-Weg) unveraendert.
+        const anfragenIsoliertPruefen = async (warteschlange, zerstoerungen, modell = 'gpt-5.6-sol') => {
             const alterHttpsRequest = https.request;
             const aufgezeichnet = [];
             https.request = httpsStubBauen(warteschlange, aufgezeichnet, zerstoerungen);
             let ergebnis = null;
             let fehler = null;
             try {
-                ergebnis = await anfragen('selbsttest-dummy-schluessel-ohne-netz', 'gpt-5.6-sol', [{ role: 'user', content: 'GP-Selbsttest' }]);
+                ergebnis = await anfragen('selbsttest-dummy-schluessel-ohne-netz', modell, [{ role: 'user', content: 'GP-Selbsttest' }]);
             } catch (e) {
                 fehler = e;
             } finally {
@@ -2759,6 +3075,34 @@ async function selbsttest() {
                 !!k && !!k.reasoning && k.reasoning.effort === erwarteterEffort);
             pruefen(`GP4 metadata EXAKTE Schluesselmenge (71) (werkzeug,zweck,datum: "${k && k.metadata ? Object.keys(k.metadata).sort().join(',') : '(fehlt)'}")`,
                 !!k && !!k.metadata && Object.keys(k.metadata).sort().join(',') === 'datum,werkzeug,zweck');
+        }
+
+        // ----- GP4-DEEPSEEK (DeepSeek-Anbieterwahl 23.09.2026): derselbe
+        // Aufbau wie GP4, aber mit einem "deepseek-*"-Modellnamen -- EIN
+        // direkter Aufruf, geprueft wird sowohl der angesteuerte ENDPUNKT
+        // als auch reasoning.effort am AUFGEZEICHNETEN Anfragekoerper.
+        // Erwartungswert ABSICHTLICH als eigener, woertlich wiederholter
+        // Ausdruck (nicht ueber die Konstante referenziert), aus demselben
+        // Grund wie bei GP4 oben (N4). -----
+        {
+            const alterHttpsRequestGp4ds = https.request;
+            const aufgezeichnetGp4ds = [];
+            const aufgezeichneteUrlsGp4ds = [];
+            https.request = httpsStubBauen(
+                [antwortKoerperBauen(elementTextBauen('GP4-DEEPSEEK-BERICHT'), 5, 5)],
+                aufgezeichnetGp4ds, null, aufgezeichneteUrlsGp4ds);
+            try {
+                await anfragen('selbsttest-dummy-schluessel-ohne-netz', 'deepseek-v4-pro', [{ role: 'user', content: 'GP-Selbsttest' }]);
+            } finally {
+                https.request = alterHttpsRequestGp4ds;
+            }
+            const kDs = aufgezeichnetGp4ds[0];
+            const erwarteterEffortDeepseek = process.env.GEGENLESER_EFFORT_DEEPSEEK || 'max';
+            pruefen(`GP4-DEEPSEEK ENDPUNKT (anfragen() steuert fuer ein deepseek-Modell den DEEPSEEK-Endpunkt an, NICHT den OpenAI-Endpunkt: "${aufgezeichneteUrlsGp4ds[0]}")`,
+                aufgezeichneteUrlsGp4ds.length === 1 && aufgezeichneteUrlsGp4ds[0] === ENDPUNKT_DEEPSEEK);
+            pruefen(`GP4-DEEPSEEK reasoning.effort GEGEN DEN ERWARTETEN WERT (erwartet "${erwarteterEffortDeepseek}", tatsaechlich: "${kDs && kDs.reasoning && kDs.reasoning.effort}", zum Vergleich OpenAI-Vorgabe "${process.env.GEGENLESER_EFFORT || 'xhigh'}")`,
+                !!kDs && !!kDs.reasoning && kDs.reasoning.effort === erwarteterEffortDeepseek
+                && kDs.reasoning.effort !== (process.env.GEGENLESER_EFFORT || 'xhigh'));
         }
 
         // ----- GP5: der ALTE Stub (ein einzelner JSON-Block statt SSE) muss
