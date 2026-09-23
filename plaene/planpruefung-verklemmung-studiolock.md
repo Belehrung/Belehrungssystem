@@ -42,3 +42,23 @@ Dauer 1255 s, 20.520 Eingabe- / 38.636 Ausgabe-Token (davon 32.420 Denken).
 **Folge:** Fassung 2 (`plaene/auftrag-verklemmung-studiolock.md`) — systemweite Regel „L zuerst"
 über `auditTx`, Laufzeitvermerk, statischer Wächter; alle getragenen Befunde beider Spuren sind
 dort Anforderungen. Inventur-Skript: `scratchpad/lockinv/inv.js`, `inv2.js` (111 = 111 gegen grep).
+
+---
+
+# Planprüfung Fassung 2 (systemweite Regel, `auditTx`) — 23.09.2026
+
+## Spur A (`gpt-6-sol`, Repo-Lesezugriff) — nachgemessen
+
+18 Runden, 77 Lesungen, 2,53 Mio. ein / 22.024 aus, geschätzt 10,45 $.
+
+| # | Schwere | Befund | Nachmessung | trägt |
+|---|---|---|---|---|
+| F2-A1 | blockierend | AST = grep ist keine unabhängige Vollständigkeit: berechneter Zugriff, Aliase, Hüllen (`dbTransaction`), Weitergabe über `deps` entgehen beiden | Heute: `dbTransaction` importiert (`routes/sichtpruefung.js:15`), **0 Aufrufe**; kein berechneter Zugriff; Weitergabe über `deps` real (`routes/admin.js:42` → `ausmusterung.js:243`, `geraete-typen.js:110`), vom Namens-Erkenner erfasst, weil der Aufruf `auditAppend(` heisst. Die Klasse trägt als Grenze; ein heutiger Fehlfund nicht | ja (Grenze) |
+| F2-A2 | blockierend | „Tagesschlüssel als erste Anweisung im `auditTx`-Callback" passt nicht auf den Geräte-Löschweg: der nimmt den Tagesschlüssel in `db.tx` und protokolliert NACH dem Commit ohne Verbindung | `routes/admin/geraete.js:368-369` (`db.tx` + Tagesschlüssel), `:424` (`auditAppend` ohne `t` nach dem Commit) | ja |
+| F2-A3 | mittel | Drei Tests rufen die echten Helfer in blankem `db.tx` → nach dem Wurf rot | `test_feature_reparatur_freigabe_race.js:108/126/141`, `test_feature_seil_freigabe_race.js:189/206`, `test_feature_seil_freigabe_lock_reihenfolge.js:105` | ja |
+| F2-A4 | **blockierend** | Wurf deckt nur `conn` ohne Vermerk. `auditAppend` OHNE Verbindung IN einem `auditTx` öffnet eine zweite Transaktion, die auf das L der äusseren wartet → Hänger, den PostgreSQL nicht sieht (kein 40P01), Poolplätze belegt | `core/integritaet.js:97` `conn ? append(conn) : db.tx(append)`; Folge abgeleitet, Mechanismus am Code belegt | ja |
+| F2-A5 | mittel | Neue Zustände „L gehalten ohne Audit" bei Frühausstiegen (Korrekturblatt vorhanden, Umbenennung auf gleichen Namen, 0 Platzierungen, Retention ohne Kandidaten) | Fundstellen gelesen | ja |
+| F2-A6 | mittel | L-Wartende halten Poolverbindungen; Retention und PDF-Rendern halten L künftig lange → Poolmangel trifft auch Leser | Pool-Checkout-Timeout `core/db.js:408-413`; Haltedauer NICHT gemessen | ja (zu messen) |
+| F2-A7 | mittel | Rotation: Studio-Liste vorab lesen + Vergleich schützt nicht gegen eine danach committende Provisionierung | `core/provisioning.js` legt Studios in eigener `db.tx` ohne L an | ja — Papier ändert den Weg: L je Studio aufsteigend beim Durchlauf, kein Listenvergleich |
+| F2-A8 | mittel | Gegenprobe „eine Seite zurückbauen" legt nicht fest, WELCHE Seite den Kreis wiederherstellt (z. B. nur Tagescheck zurück → kein Kreis mit dem umgestellten Nachtrag) | Sperrfolgen gelesen | ja |
+| F2-A9 | Anmerkung | Unter der vollständig ausgeführten Regel kein notwendiger L-Ersterwerb nach anderer Sperre gefunden; Wächter prüfen Syntax, nicht ausgeführte Sperren | — | ja |
