@@ -75,6 +75,25 @@ c=$(code https://gymdocu.de/ "$TMP/land.html")
 [ "$c" = 200 ] && ok "Landingpage erreichbar (HTTP 200, $(wc -c <"$TMP/land.html") B)" \
                 || warn "Landingpage antwortet HTTP $c (erwartet 200)"
 
+# 1b. Keine Versionsangabe (nginx `server_tokens off`, umgestellt 23.09.2026,
+#     plaene/nginx-haertung-23-09-2026.md). Anders als das Zertifikat IST das
+#     von hier messbar: der Egress-Proxy reicht den Server-Header unverändert
+#     durch (gemessen: vorher `nginx/1.24.0 (Ubuntu)`, danach `nginx`). Geprüft
+#     werden Header UND 404-Seite — nginx schreibt die Version auch in den Rumpf
+#     seiner Fehlerseiten. Ist eines von beiden nicht lesbar, ist der Punkt
+#     UNGEPRÜFT (offen), nicht sauber.
+server_kopf=$(curl -sS -I --max-time 20 https://gymdocu.de/ 2>/dev/null | tr -d '\r' | grep -i '^server:' | head -1)
+fehlerseite=$(curl -sS --max-time 20 https://gymdocu.de/live-check-gibt-es-nicht 2>/dev/null)
+if [ -z "$server_kopf" ] || [ -z "$fehlerseite" ]; then
+    offen "Versionsangabe ungeprüft (Server-Header oder 404-Seite nicht lesbar)"
+elif printf '%s' "$server_kopf" | grep -q '[0-9]'; then
+    warn "Server-Header verrät die Version: ${server_kopf#*: } (erwartet ohne Nummer, server_tokens off)"
+elif printf '%s' "$fehlerseite" | grep -q 'nginx/[0-9]'; then
+    warn "404-Seite verrät die nginx-Version (server_tokens off fehlt?)"
+else
+    ok "Keine Versionsangabe (Server-Header: ${server_kopf#*: }, 404-Seite ohne Nummer)"
+fi
+
 # 2. Echtheitsprüfung — der beste Funktionsnachweis: eine echte Seite AUS der
 #    Anwendung, öffentlich und mandantenlos. Antwortet sie richtig, lebt der Prozess.
 c=$(code https://verify.gymdocu.de/ "$TMP/verify.html" -L)

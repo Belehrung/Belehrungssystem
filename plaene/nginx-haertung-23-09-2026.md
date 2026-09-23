@@ -49,4 +49,14 @@ schwächer. `limit_req` (je Anfrage) ist nicht betroffen.
 Deploy-Kontrolle rot. HTTP/2 bleibt von hier aus ungeprüft (ℹ, Proxy).
 `ops/SECURITY-HEADER.md` im GymDocu-Repo nimmt beide Erwartungen auf.
 
-**Status: wartet auf die Umstellung am Server durch den Betreiber.**
+**Status: UMGESETZT 23.09.2026, 12:08 Serverzeit** (Betreiber, Befehlsblock mit Sicherung
+`/root/nginx-sicherung-2026-09-23-1208.tgz`). Am Server: `nginx -t` erfolgreich, acht
+`listen 443 ssl http2`-Zeilen, `Server: nginx`, `HTTP/2 200`, kein `limit_conn`.
+Von hier nachgemessen: `server: nginx` auf Landingpage, 404-Seite und `verify.`; die
+404-Seite zeigt nur `<center>nginx</center>`.
+
+`tools/live-check.sh` prüft ab jetzt (Punkt 1b) Header UND 404-Seite. Gegenprobe gegen
+den lokalen Nachbau: Konfiguration wie vorher → `⚠ Server-Header verrät die Version`,
+fehler=1; gehärtet → `✓`, fehler=0; nichts erreichbar → `ℹ ungeprüft`, ungeprueft=1.
+Nicht herstellbar war der Fall „Header sauber, Fehlerseite mit Version" — der Zweig
+bleibt als Absicherung stehen.

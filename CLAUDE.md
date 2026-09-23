@@ -210,8 +210,8 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
 7. **Nach dem Merge zweierlei prüfen — steht der Betrieb, und ist er
    aktuell?**
    - `bash tools/live-check.sh` beantwortet das ERSTE: Landingpage,
-     Echtheitsprüfung, Abweisung auf der Studio-Subdomain, ausgelieferte
-     Handbuch-Version. Die **Zertifikatslaufzeit NICHT** — jede TLS-Verbindung
+     keine nginx-Versionsangabe (seit 23.09.2026), Echtheitsprüfung, Abweisung
+     auf der Studio-Subdomain, ausgelieferte Handbuch-Version. Die **Zertifikatslaufzeit NICHT** — jede TLS-Verbindung
      aus dieser Umgebung wird vom Egress-Proxy neu signiert, gemessen würde
      dessen Zertifikat statt des echten. Das Skript sagt das selbst (ℹ statt ✓)
      und zählt den Punkt als ungeprüft, solange kein Aussteller mit der
