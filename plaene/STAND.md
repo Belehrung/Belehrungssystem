@@ -4,10 +4,10 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-Stand 23.09.2026, 13:10 UTC.
+Stand 23.09.2026, 12:40 UTC.
 
 * **#467 ausgeliefert** (Deploy 434, live-check grün).
-* **Executer (Sonnet): Nachweis-unlink, Nacharbeit 2** — `/workspace/gymdocu-unlink`,
+* **Executer (Sonnet): Nachweis-unlink, Nacharbeit 3** (Nacharbeit 2 `85cdd0b` geprüft; jetzt: verschluckte Fehler bei abgewarteten Löschungen und `unlinkSync` in stillem `catch`, Wächter „unlink nur im Helfer") — `/workspace/gymdocu-unlink`,
   `fix-nachweis-unlink`. Stand `1254e5e` geprüft (Helfer `core/datei-entfernen.js`, 21 Stellen,
   AST-Wächter, 351 = 351, Lint 0). Nacharbeit 2 schliesst die drei Wächter-Grenzen.
 * **Executer (Fable): Sperrordnung `auditTx`** — `/workspace/gymdocu-sperre`,
