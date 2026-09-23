@@ -43,3 +43,20 @@ S1–S5, Paar-3-Gegenprobe mit echtem 40P01). Laufzeitwürfe im Bestand: 0.
 - B6: Zuweisung an Callback-/Helfer-Parameter = (b)-Fehler, Fixtur.
 - B7: T2 über die Route fahren; Kopfkommentar berichtigen.
 - B8: `auditTx`-Erstargument als leeres Array-Literal statisch verboten (zusätzlich zum Laufzeitwurf aus L1); Kommentar berichtigen.
+
+## Runde 2 — `deepseek-v4-pro` (Nacharbeit `d90c8d5..1830924`)
+
+Zwei Bündelläufe über `/v1/chat/completions` scheiterten (Lauf 1 abgeschnitten bei 64k, 3 Befunde
+lesbar; Lauf 2 mit `reasoning_effort: max` dachte 200k Token ohne Antwort). Lauf 3 über
+`tools/gegenleser-repo.js` mit Repo-Lesezugriff (2,62 $) vollständig.
+
+| # | Schwere | Befund | Nachmessung | getragen |
+|---|---|---|---|---|
+| R2-1 | mittel | Inventur zählt „Schreibanweisungen" mit `/UPDATE \|INSERT INTO \|DELETE FROM /` — trifft auch `FOR UPDATE <tabelle>`; die gemeldeten 68 sind überhöht | `test/helfer/auditlock-inventur.js:270` gelesen — trägt | ja |
+| R2-2 | gering | Kopf von `test_feature_seil_freigabe_lock_reihenfolge.js` beschreibt eine Gegenprobe, die als Code nicht existiert (sie war eine Handmessung) | trägt als Kommentarbefund; die Ordnungszusicherung selbst ist vorbestehend | ja |
+| R2-3 | gering | `memberAufrufe` wird vor der Auflösung gezählt — die Positivkontrolle belegt „verarbeitet", nicht „aufgelöst" | `test_feature_auditlock_ordnung_static.js:473` — trägt | ja |
+| R2-4 | gering | Fixtur-Schleife prüft Regel und Datei, nicht den Befundgrund | trägt (die Spur hat selbst belegt, dass jede neue Fixtur trotzdem fallen kann) | ja |
+| R2-5 | gering | Der Transaktionskontext (AsyncLocalStorage) erbt nicht in Callbacks, die ausserhalb der Kette entstanden (Timer vor der Tx, Event-Listener) — dort greifen die neuen Würfe nicht | Konstruktionsfolge, im Bestand kein Fall gefunden — dokumentieren | ja |
+| R2-6 | gering | (Lauf 1) `wirdZugewiesen` erkennt Destrukturierungs-Zuweisung `({ t } = …)` nicht | Code gelesen — trägt | ja |
+| R2-7 | gering | (Lauf 1) nicht abgewartetes `auditTx(…)` → Ablehnung statt Wurf, ohne statische Regel; Bestand 0 | trägt | ja |
+| R2-8 | gering | (Lauf 1) Zusicherung „N nach L" prüft Existenz, nicht Reihenfolge | Reihenfolge ist durch `auditTx` erzwungen (L vor dem Callback) — trägt nur als Präzisierung | teilweise |

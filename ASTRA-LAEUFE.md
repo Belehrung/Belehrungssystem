@@ -174,6 +174,7 @@ sondern falsch.
 | 23.09.2026 | Diffpruefung Sperrordnung Runde 2 (`deepseek-v4-pro`, Buendel ueber /v1/chat/completions, Lauf 1: effort-Feld still ignoriert = high, max_tokens 64k) | 31.218 ein / 64.000 aus (62.187 Denken), 1327 s — ABGESCHNITTEN (finish_reason length), 3 Befunde lesbar | — | — | — | ~0,26 $ |
 | 23.09.2026 | Diffpruefung Sperrordnung Runde 2, Lauf 2 (`deepseek-v4-pro`, `reasoning_effort: max`, max_tokens 200k) | 31.218 ein / 200.000 aus (ALLES Denken, 712.022 Zeichen), 1865 s — **KEINE ANTWORT** (Denkschleife bis ans Limit). Niemand hat geprueft. | — | — | — | ~0,79 $ |
 | 23.09.2026 | Planpruefung Pentest P1 Fassung 2, Spur A (Wiederholung nach Stromabbruch) (`deepseek-v4-pro`, Repo-Lesezugriff) | Diff 89 Zeilen, Suchen 42, Lesungen 44, Token rein 1839414, Token raus 60908, Runden 19 | 12 | **12** (blockierend: = Kimi R2-B1; neu u. a. Autostart von server.js im Test, Leseprobe wirkungslos, Identitaet statt Existenz). Einzelheiten `plaene/planpruefung-pentest.md` | 0 | 2,67 $ |
+| 23.09.2026 | Diffpruefung Sperrordnung Runde 2 (Nacharbeit), Werkzeugweg (`deepseek-v4-pro`, Repo-Lesezugriff) | Diff 1096 Zeilen, Suchen 13, Lesungen 38, Token rein 1827678, Token raus 53218, Runden 19 | 5 | **5** (mittel: Inventur zaehlt FOR UPDATE als Schreibanweisung). Einzelheiten `plaene/diffpruefung-sperrordnung.md` | 0 | 2,62 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
