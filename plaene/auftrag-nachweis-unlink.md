@@ -38,3 +38,42 @@ die Diffprüfung läuft wie üblich.
 Volle Suite (`bash test/run.sh > <log> 2>&1; echo "SUITE_EXIT=$?"`), Dateizahl-Ritual,
 `npm run lint` wörtlich, Marker-Scan 6. Gegenproben mit erstem FAIL wörtlich, Rücknahme per
 `cp`/`diff` EXIT 0. Commit + Push auf `fix-nachweis-unlink`, KEINE PR.
+
+---
+
+## Nacharbeit 1 (23.09.2026) — dieselbe Klasse überall, ein Helfer, ein Wächter
+
+Anlass: Bericht des Executers (`93c1478`). `core/pruefbericht.js`
+`loescheAlteBerichtDatei` ist derselbe Fehler (und `test_feature_pruefbericht.js` prüft
+`existsSync` direkt nach der Antwort — dieselbe Rennklasse). Dazu gut 20 weitere
+`fs.unlink(…, () => {})` in `routes/belehrungen.js`, `routes/admin/geraete.js`,
+`routes/wartung.js` (abgelehnte Uploads aufräumen). Nach der Betreiber-Regel „eine benannte
+Grenze ist kein Endzustand" werden sie in DIESEM Beitrag erledigt.
+
+**Planprüfung ausgelassen, Begründung:** dieselbe, bereits gebaute und mit drei Gegenproben
+gemessene Behebung wird mechanisch auf gleichartige Stellen übertragen; die Diffprüfung
+(Claude-Spur plus eine Lesespur) läuft danach voll.
+
+1. Neuer Helfer in `core/` (`entferneDatei(absPfad, req, quelle)`): wartet `fs.promises.unlink`
+   ab, `ENOENT` = erledigt, jeder andere Fehler an `melde()` (in `try/catch`), wirft NIE.
+2. `loescheAlteNachweisDatei` und `loescheAlteBerichtDatei` gehen über den Helfer; der Aufrufer
+   von `loescheAlteBerichtDatei` (`routes/admin/geraete.js`, Prüfbericht ersetzen) wartet ab.
+3. JEDES `unlink(…)` mit leerem Rückruf im Produktivcode wird ein abgewartetes
+   `entferneDatei(…)`, und zwar BEVOR die Antwort rausgeht. Wo der Aufruf in einer
+   synchronen Funktion steht (z. B. `uploadWegraeumen` in `routes/wartung.js`), wird der Weg
+   so umgebaut, dass die Antwort nach dem Löschen kommt — nicht nur das `await` davor setzen.
+4. Statischer Wächter (AST, `acorn`): im Produktivcode (Dateiliste aus `git ls-files`,
+   Wurzeln literal) KEIN `unlink(…)` mit leerem Rückruf (Pfeil- oder `function`-Form,
+   leerer Rumpf). Fixturen je Schreibweise rot, Durchlassfälle (abgewartetes
+   `fsP.unlink` im `try`, `unlinkSync`) grün, in Produktionsform aufgerufen. Die gescannte
+   Dateimenge wird gegen `git ls-files` gehalten.
+5. Verhaltensprobe für die Prüfbericht-Ersetzung wie bei den Nachweisen (verzögertes echtes
+   `unlink`, Datei ist nach der Antwort weg); Gegenprobe: Aufrufer ohne `await` → rot. Für
+   die Upload-Aufräumwege genügt je Datei EINE Verhaltensprobe über eine echte Route plus der
+   Wächter.
+6. Wortlaut: in Kommentar und Test „CI-Fund 23.09.2026" statt „Betreiber-Fund"; der
+   `melde`-Import-Kommentar nennt gescheiterte Dateilöschungen, nicht Protokoll-Ausfälle.
+7. Gegenproben: Helfer ohne `await` (Rückgabe vor dem Löschen) → rot; eine umgestellte Stelle
+   auf das alte Muster zurück → Wächter rot; ENOENT-Filter entfernt → rot.
+8. Volle Suite, Dateizahl-Ritual (neue Testdatei in `test/run.sh` registrieren), Lint,
+   Marker-Scan 6.
