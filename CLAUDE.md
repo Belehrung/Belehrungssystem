@@ -653,11 +653,13 @@ Sachfrage):
   rotes Pixel („Rot"), `deepseek-v4-pro` liefert leer (Pro hat laut Doku keine Bildeingabe).
   Umgeleitet werden laut Doku nur die ALTnamen `deepseek-v4-flash*` auf V4.1-Flash. Wer das
   wieder behauptet oder bezweifelt: dieselbe Bildprobe, nicht der Name im Antwortfeld.
-  **Denkstufe: `reasoning_effort` (oberste Ebene), NICHT `reasoning: {effort}`** — gemessen am
-  selben Tag: das OpenAI-Feld wird still angenommen und ignoriert (`"quatsch"` → HTTP 200), das
-  DeepSeek-Feld wirkt (`"quatsch"` → HTTP 422; `low` 670 / `max` 4929 Denk-Token an derselben
-  Aufgabe). Alle früheren DeepSeek-Läufe mit `reasoning.effort` liefen also auf der
-  Voreinstellung `high`, nicht auf der angegebenen Stufe. **Die Rollentrennung bleibt:** hat DeepSeek
+  **Denkstufe — das Feld hängt am ENDPUNKT** (gemessen am selben Tag, je mit ungültigem Wert
+  als Gegenprobe): auf `/v1/chat/completions` wirkt nur `reasoning_effort` (oberste Ebene;
+  `reasoning: {effort:"quatsch"}` → HTTP 200, still ignoriert); auf `/v1/responses`, den
+  `tools/gegenleser-repo.js` benutzt, wirkt nur `reasoning: {effort}` (`"quatsch"` → HTTP 422,
+  `low` 232 / `max` 10865 Denk-Token an derselben Aufgabe). Ein erfundenes Feld nehmen BEIDE
+  Endpunkte mit HTTP 200 an — dieselbe Falle wie bei Kimi. Die früheren Bündelläufe über
+  `/v1/chat/completions` mit `reasoning.effort` liefen also auf der Voreinstellung `high`. **Die Rollentrennung bleibt:** hat DeepSeek
   für einen Beitrag Code-Schnipsel geliefert, prüft diesen Beitrag eine ANDERE Lesespur — wer
   mitgeschrieben hat, prüft seinen eigenen Entwurf. Gebaut wird weiter über den Executer.
 - *Bis 23.09.2026:* **`gpt-5.6-sol`** — Betreiber-Entscheidung vom
