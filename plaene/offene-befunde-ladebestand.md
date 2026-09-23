@@ -37,3 +37,29 @@ vorkommt, braucht kein Muster.
   Sperren"). Gemessen, nie behoben, als „eigener Auftrag" vermerkt.
 * **`docs/offene-befunde-31-08-2026.md` im GymDocu-Repo** — die allgemeine
   Befundliste. Vor jedem Bau nachmessen, ob ein Punkt noch besteht.
+
+## Aus der Diffprüfung Runde 9 (Claude-Spur, 23.09.2026) — NOCH NICHT nachgemessen
+
+Keiner ist eine Regression im Produktivcode. Vor dem Bau jeden einzeln
+nachmessen (Hausregel).
+
+| # | Punkt |
+|---|---|
+| 7 | Riegel-Fixturen 4c: `\bdb\b`-Alternative unbewacht (`db.run(1)` trifft auch `run(`) |
+| 8 | Klammer-Aufruf-Zweig nur für `run` mit Fixtur, nicht für `one/tx/q/pool` |
+| 9 | Keine Fixtur mit einfachen Anführungszeichen `pool['query']` |
+| 10 | Leerraum-Toleranzen `\[\s*`, `\s*\]`, `\.\s*query\s*\(`, bare `\s*\(` unbewacht |
+| 11 | Wortgrenzen `\b` in Durchlassfällen unbewacht (`done(`, `prerun(`, `dbName`) |
+| 12 | Strukturelle Lösung für 7–11: jede Top-Level-Alternative programmatisch auf Notwendigkeit prüfen statt Fixturen von Hand |
+| 13 | Mengenabfrage: `studio_id = ANY($4)` verengt die Erkennung bei Primärschlüsseln; Studio-Schnappschuss aus Variablen |
+| 14 | M5: `srvEigen.listening === false` nach `close(cb)` kann nie fallen |
+| 15 | M6: Ursachen und Rest nicht in EINER Meldung; bei DB-Ausfall gehen die Ursachen verloren |
+| 16 | 4b bindet nur Längen, nicht Grenzen (gleich langes verschobenes Fenster fängt nur 2291) |
+| 17 | Kommentar zu `ursache()` beschreibt die Kante verkehrt (Klasse/Code gehen bei nicht-leerer Meldung verloren) |
+| 18 | Etiketten „4b"/„4c" doppelt vergeben |
+| 19 | M10-Prämisse im Kommentar falsch (Array war schon eine Wertkopie) |
+| 20 | Meldungen von Fixtur 1/3 und R3-Prosa beschreiben die alte Klammerregel |
+
+Quelle: Claude-Review `ee7179f..43449e4` im Sitzungsverlauf; Einzelheiten
+werden beim Nachmessen in `plaene/diffpruefung-ladebestand-runde9.md`
+festgehalten.
