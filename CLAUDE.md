@@ -16,6 +16,17 @@ Vorgabe des Betreibers (10.08.2026): Der Haupt-Agent baut selbst nichts.
 - Lesen, Diagnose, Recherche und Git-Verwaltung darf der Haupt-Agent weiterhin
   selbst erledigen; nur das Bauen ist delegiert.
 
+## Ausgabetext auf das nötige Minimum
+
+Betreiber-Vorgabe 23.09.2026: „reduziere deinen ausgabetext in zukunft auf
+das nötige minimum."
+
+- Meldungen an den Betreiber: Ergebnis, Zahlen, offene Entscheidung — sonst
+  nichts. Keine Nacherzählung des Vorgehens, keine Wiederholung aus früheren
+  Meldungen, keine Lehren im Chat (die gehören in die Dateien).
+- Zwischenstände nur, wenn sich etwas geändert hat. Ein Satz genügt.
+- Ausführliches bleibt in den Repo-Dateien (Befunde, Aufträge, STAND.md).
+
 ## Eine benannte Grenze ist kein Endzustand
 
 Betreiber-Vorgabe 23.09.2026, wörtlich: „Ich möchte ein fehlerfreies System
