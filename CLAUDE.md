@@ -635,7 +635,12 @@ Sachfrage):
 
 **Wofür was.** Das ist eine Empfehlung aus den Messungen oben, keine Vorschrift:
 
-- **Prüfen und Gegenlesen: `gpt-5.6-sol`** — Betreiber-Entscheidung vom
+- **Prüfen und Gegenlesen: `gpt-6-sol`** — Betreiber-Entscheidung vom
+  23.09.2026 („ja ab jetzt sol 6"), gestützt auf EINEN wortgleichen A/B
+  gegen `gpt-5.6-sol` (8 statt 9 Befunde, alle getragen, jede Spur mit
+  Eigenem, halbe Kosten; `ASTRA-LAEUFE.md`). Vorgabe in
+  `tools/gegenleser-repo.js`. Der Absatz darunter ist die Vorgeschichte.
+- *Bis 23.09.2026:* **`gpt-5.6-sol`** — Betreiber-Entscheidung vom
   18.09.2026, und der Grund sind die Kosten. Die Preistabelle in
   `tools/gegenleser-repo.js` nennt 5,00/30,00 $ je Mio Token gegen 12,50/75,00 $
   bei `gpt-6-astra`; ein Lauf, der mit astra 12,67 $ kostete, liegt damit bei

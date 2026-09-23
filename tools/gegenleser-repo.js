@@ -45,7 +45,7 @@
 // AUFRUF:
 //   node tools/gegenleser-repo.js <diff.txt> --brief=<auftrag.txt>
 //                                 [--wurzel=/pfad/zum/repo]
-//                                 [--modell=gpt-5.6-sol] [--max-runden=25]
+//                                 [--modell=gpt-6-sol] [--max-runden=25]
 //                                 [--protokoll=/pfad.jsonl] [--zweck=<text>]
 //   node tools/gegenleser-repo.js --selbsttest   (prueft die Riegel, OHNE Netz)
 //
@@ -138,13 +138,15 @@ const EFFORT = process.env.GEGENLESER_EFFORT || 'xhigh';
 // ANDERE Modell laeuft hier ungeprueft; vor Verlass darauf erst messen, nicht
 // annehmen, dass /v1/responses fuer jede Stufe gleich funktioniert.
 //
-// VORGABE seit 18.09.2026 gpt-5.6-sol statt gpt-6-astra -- Betreiber-
-// Entscheidung, Grund sind die Kosten: 5,00/30,00 $ je Mio Token gegen
-// 12,50/75,00 $ (PREISE unten), also Faktor 2,5.
-// WAS DAMIT NICHT BELEGT IST: dass sol als PRUEFER gleich gut ist. Gemessen
-// ist bisher nur, dass der WEG technisch traegt. Die Pruefguete steht aus und
-// wird an einem echten Diff gemessen, bevor sich jemand darauf beruft.
-const VORGABE_MODELL = 'gpt-5.6-sol';
+// VORGABE seit 23.09.2026 gpt-6-sol -- Betreiber-Entscheidung ("ja ab jetzt
+// sol 6"). Davor seit 18.09.2026 gpt-5.6-sol (Kosten gegen gpt-6-astra).
+// Grundlage: EIN wortgleicher A/B an der Planpruefung "Extrarunde
+// ladebestand" (ASTRA-LAEUFE.md, 23.09.2026): 8 statt 9 Befunde, alle
+// getragen, jede Spur mit Eigenem, 7,15 $ statt 14,54 $. Der Weg (Werkzeuge,
+// zweite Runde, store:false, effort xhigh) ist fuer gpt-6-sol gemessen.
+// WAS DAMIT NICHT BELEGT IST: dass gpt-6-sol besser oder gleich gut prueft --
+// eine Stichprobe von eins traegt eine Beobachtung, keine Rangfolge.
+const VORGABE_MODELL = 'gpt-6-sol';
 // 25 reichten in Messlauf 1 (09.09.2026) NICHT: das Modell rief je Antwort
 // genau EINEN Werkzeugaufruf auf (gemessen: 25 Antworten, 25 Aufrufe) und lief
 // mitten in der Arbeit ins Limit. Der Abbruch war richtig -- ein Lauf, der
@@ -877,7 +879,7 @@ function protokollSchreiben(eintrag) {
 
 function konsoleUsage() {
     console.error('Aufruf: node tools/gegenleser-repo.js <diff.txt> --brief=<auftrag.txt>');
-    console.error('        [--wurzel=/pfad/zum/repo] [--modell=gpt-5.6-sol] [--max-runden=25]');
+    console.error('        [--wurzel=/pfad/zum/repo] [--modell=gpt-6-sol] [--max-runden=25]');
     console.error('        [--protokoll=/pfad.jsonl] [--zweck=<text>]');
     console.error('        node tools/gegenleser-repo.js --selbsttest');
     console.error('--brief ist PFLICHT: liefert den beitragsspezifischen Teil des Auftrags,');
