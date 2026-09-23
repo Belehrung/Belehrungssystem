@@ -77,3 +77,22 @@ gemessene Behebung wird mechanisch auf gleichartige Stellen übertragen; die Dif
    auf das alte Muster zurück → Wächter rot; ENOENT-Filter entfernt → rot.
 8. Volle Suite, Dateizahl-Ritual (neue Testdatei in `test/run.sh` registrieren), Lint,
    Marker-Scan 6.
+
+## Nacharbeit 2 (23.09.2026) — die drei benannten Grenzen des Wächters schliessen
+
+Geprüft: `1254e5e` (Diff gelesen, 21 Stellen, fünf Gegenproben, Suite 351 = 351, Lint 0).
+Der Wächter nennt drei Grenzen; nach der Betreiber-Regel werden sie jetzt geschlossen, nicht
+stehen gelassen. Messung vorab (grep über alle Produktivwurzeln): heute KEIN
+nicht-abgewartetes `unlink(` ausserhalb `entferneDatei` — die Verschärfung macht also im
+Bestand nichts rot.
+
+1. **Regel verschärfen:** nicht „leerer Rückruf", sondern JEDER Rückruf-Aufruf von `unlink`
+   ist ein Verstoss (letztes Argument eine Funktion, gleich welcher Rumpf) — die Klasse ist
+   „nicht abgewartet", nicht „leer". `() => undefined` und `(err) => { … }` werden damit rot.
+2. **Berechneter Zugriff** `fs['unlink'](…)` / `fs["unlink"](…)` mit Zeichenketten-Literal ist
+   ein Treffer; ein berechneter Zugriff mit NICHT-literalem Schlüssel auf ein Objekt namens
+   `fs`/`fsP`/`fsSync`/`promises` ist ein FEHLER (nicht zuordenbar), kein Durchlass.
+3. **Erfassungsbereich:** alle Produktivwurzeln wie im Lock-Inventar
+   (`<wurzel>`, `core`, `ops`, `routes`, `tools`, `workers`), literal und gegen `git ls-files`.
+4. Fixturen entsprechend umstellen (die drei bisherigen Durchlassfälle werden rot), je neue
+   Regel eine Gegenprobe im Bestand (rot), zurückgenommen grün. Suite, Dateizahl, Lint, Marker.
