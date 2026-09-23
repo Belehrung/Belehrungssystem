@@ -140,9 +140,29 @@ zweite Fassung). Behoben in `4fc9bed` — und die ERSTE Behebung trug nicht,
 weil eine gemeinsame Fixtur bei einer Alternation `A|B` schon mit A grün
 bleibt; erst je eine Fixtur pro Form fällt gemessen.
 
-**Nächster Schritt:** Lesespur der Diffprüfung abwarten, ihre Befunde
-nachmessen, dann Runde 8 an den Executer. **Solange eine Prüfspur läuft,
-fasst niemand `/home/user/gymdocu` schreibend an.**
+**Stand 23.09.2026 04:45 UTC: Runde 8 ist beim Executer.**
+Auftrag: `plaene/auftrag-ladebestand-runde8.md`, acht Punkte, fünf
+Gegenproben. **Solange er läuft, fasst niemand `/home/user/gymdocu` an.**
+
+Die Lesespur der Diffprüfung lieferte EINEN Befund, deckungsgleich mit R2 —
+Überschneidung 1 von 1. Ihr Wert lag in der Präzision der Behebung, nicht im
+Finden; ihre eigene Nachmessung war im Detail falsch (sie sagte die
+Vorbedingung voraus, gemessen fällt Zusicherung 10). Ihr Vorschlag, die
+tautologische Zusicherung „als zusätzliche Konsistenzprüfung" stehen zu
+lassen, ist NICHT übernommen.
+
+**Drei Behebungen sind vorab gemessen**, damit der Auftrag nicht auf
+Vermutungen steht:
+
+| Behebung | Messung |
+|---|---|
+| Ganzdatei-Vertragsprüfung | unter dem Defekt `453828 ≠ 460811` → feuert |
+| C7-Wächter auf dem ROHEN Ausschnitt | richtiger Schnitt `false`, falscher `true` |
+| Riegel mit zurückgeholter Referenz-Form | 15 Proben, **0 Abweichungen** |
+
+**Punkt 7 der Vorrunde ist nicht zurückgedreht, aber zur BEDINGUNG gemacht:**
+wer die beiden Regressionen nicht in beide Richtungen belegen kann, dreht ihn
+zurück statt ihn zu behalten.
 
 **Fünf Korrekturen habe ich vor der Planprüfung an meinem EIGENEN Auftrag
 gemacht, alle gemessen:**
