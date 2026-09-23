@@ -114,3 +114,46 @@ Meine 218/143 waren korrekt, **als ich sie mass** — vor der Runde-7-Änderung
 am Kommentar in `geraete.js`, die INNERHALB des bewachten Abschnitts liegt und
 ihn um 14 Zeilen verlängert hat. Lehrbuchfall aus der eigenen CLAUDE.md: eine
 Zahl im Fliesstext veraltet, und zwar durch den eigenen Beitrag.
+
+---
+
+## Lesespur (`deepseek-v4-pro`, Bündel „Auftragspapier + Diff + Stand + Hausstandard")
+
+Lauf: 810,9 s, `beendet=stop`, 94.008 ein / 48.517 aus (47.578 Denken).
+Frage war bewusst eine andere als die übliche: **„welcher der zehn Punkte
+wurde so gebaut, dass er sein eigenes Ziel nicht erreicht?"**
+
+**EIN Befund — und er deckt sich mit R2/R10 der ausführenden Spur.**
+Überschneidung damit 1 von 1.
+
+Sein Wert liegt nicht im Finden, sondern in der PRÄZISION der Behebung: er
+benennt, dass die Vertragsprüfung auf die GANZE DATEI gehört UND vor den
+Schnitt, und zitiert dabei das Auftragspapier gegen sich selbst („muss VOR
+allem stehen, was Versatzwerte benutzt, also vor dem Schnitt" — gebaut ist
+das Gegenteil).
+
+**Seine NACHMESSUNG war im Detail falsch, der Kern trotzdem richtig.** Er
+sagte voraus, mit einem nicht mehr längenerhaltenden Masker falle zuerst die
+Vorbedingung. Gemessen fällt zuerst **Zusicherung 10**:
+
+```
+FEHLGESCHLAGEN: Punkt 1 (10): der PRUEFPLAN_SCHREIBBEREICH muss 2291
+Nicht-Leerraum-Zeichen enthalten (nichtLeerraum(abschnitt) = 3145)
+```
+
+Die Datei ERKENNT den Defekt also, nur an der falschen Zusicherung und mit
+einer Meldung, die über den Abschnitt spricht statt über den Helfer-Vertrag.
+Das ist genau der Schaden, den der Reihenfolgen-Block verhindern sollte.
+
+**Sein Vorschlag, die abschnittsbezogene Gleichheit „als zusätzliche
+Konsistenzprüfung" stehen zu lassen, wird NICHT übernommen** — sie ist
+nachweislich eine Tautologie, und eine Zusicherung, die nicht fallen kann,
+bleibt bei uns nicht stehen.
+
+## Vorab gemessene Behebungen für Runde 8
+
+| Behebung | Messung |
+|---|---|
+| Ganzdatei-Vertragsprüfung | unter dem Defekt `453828 ≠ 460811` → **feuert** |
+| C7-Wächter auf dem ROHEN Ausschnitt | richtiger Schnitt `false`, falscher Schnitt `true` → **unterscheidet wieder** |
+| Riegel mit Referenz-Form | 15 Proben, **0 Abweichungen**, kein Treffer am heutigen Abschnitt |
