@@ -23,6 +23,43 @@ Zeilennummer.** Das ist nicht Pedanterie: Befund A6 dieses Beitrags ist, dass
 zwei Zeilennummern in einem Kommentar DREI RUNDEN IN FOLGE falsch waren, weil
 jede Runde sie um den falschen Betrag fortgeschrieben hat.
 
+## VORRANGIG: die REIHENFOLGE der Zusicherungen im Punkt-4-Block
+
+**Das ist der wichtigste Satz dieses Auftrags, und er kommt aus der
+Planprüfung** (Spur A, Befund 1, selbst nachgemessen). `assert` wirft beim
+ERSTEN Verstoss. Die sieben Zusicherungen stehen heute so:
+
+```
+1 includes('schreibePruefplan(')     4 kein BEGINN-Marker
+2 Längengleichheit  ← hier käme 2291  5 PRUEFPLAN_VERBOTENES_MUSTER  ← DER RIEGEL
+3 Anzahl 6                            6 cteNamenTreffer   7 FOR UPDATE
+```
+
+Ein Mengen-Wächter auf Position 2 fällt **vor** dem Riegel auf Position 5.
+Die Gegenproben 3a (zwei Zeilen einfügen) und 8a (`neu AS (` umbenennen)
+verändern beide den Abschnitt — sie wären am Mengen-Wächter rot geworden und
+hätten den Riegel nie erreicht. **Das ist genau die Isolationsfalle, die
+dieser Auftrag bei 3a selbst benennt und bei Punkt 1 übersehen hatte.**
+
+**Verbindliche Reihenfolge nach dem Umbau — INHALTLICHE Prädikate zuerst,
+MENGEN zuletzt:**
+
+```
+1 includes('schreibePruefplan(')        (Vorbedingung, bleibt vorn)
+2 PRUEFPLAN_VERBOTENES_MUSTER           (der Riegel)
+3 kein BEGINN-Marker
+4 cteNamenTreffer === 1
+5 Existenz "neu AS (" === 1             (neu, Punkt 8)
+6 FOR-UPDATE-Fenster
+7 Code-Anker + Kommentar-Anker          (neu, Punkt 9b)
+8 nichtLeerraum(abschnitt) === 2291     (neu, Punkt 1)
+9 Anzahl schreibePruefplan( === 6
+```
+
+Unter der 1a-Mutation (Masker frisst `req.studioId`) bleibt der Riegel grün —
+es steht ja kein verbotenes Muster darin — und 2291 fällt trotzdem. Keine
+Gegenprobe verliert ihren Beweis.
+
 **Was dieser Auftrag NICHT ist:** eine Änderung am Produktivverhalten. Er fasst
 in `routes/admin/geraete.js` ausschliesslich einen KOMMENTAR an. Alles Übrige
 liegt in `test_feature_ladebestand_streng.js`.
@@ -119,6 +156,13 @@ nach der Zeilennummer.
 Danach ist jeder Bezeichner einmalig, und die Suche über die ganze Datei
 erzeugt keinen Fehlalarm mehr.
 
+**A14 hat aber ZWEI Fehlalarmwege, und die Umbenennung schliesst nur den
+ersten** (Spur A, Befund 6). Der zweite ist die Meldung selbst: wer einen
+16. Aufrufer legitim ergänzt, liest „es müssen 15 Aufrufe … gefunden 16" und
+bekommt keinen Hinweis, dass die Zahl von Hand nachzuziehen ist — der steht
+nur im Kommentar darüber. → **Die Meldung bekommt den Hinweis.** Vorbild im
+Hause: die Meldung der `schreibePruefplan(`-Anzahl trägt ihn bereits.
+
 **Der Kommentar, der die alten Namen aufzählt, wird mitgezogen.** Er steht
 heute als „bekannte Grenze" da; nach dieser Umsetzung gibt es die Grenze nicht
 mehr, und ein Kommentar, der eine behobene Schwäche beschreibt, ist eine
@@ -140,6 +184,29 @@ POSITIVKONTROLLE des Prädikats gegen eine synthetische Verletzungszeichenkette,
 wie sie Fixtur 4 für den Masker schon hat. Die Destrukturierung
 (`const { text } = r`) wird NICHT erfasst; das wird als bekannte Grenze
 BENANNT, nicht stillschweigend übergangen.
+
+**ACHTUNG — die Fixtur kollidiert mit dem eigenen Scan, und das ist neu**
+(Spur A, Befund 5, selbst nachgemessen). Durch die Erweiterung auf die ganze
+Datei liegt der C9-Block **erstmals im Trefferraum seines eigenen Scans**. Und
+`maskiereKommentare` leert ZEICHENKETTEN nicht:
+
+```
+Eingabe : const fixtur = "await rAusloesen.text();";
+maskiert: const fixtur = "await rAusloesen.text();";
+```
+
+Zwei dauerrote Endzustände sind damit eine Unachtsamkeit entfernt: trägt die
+Fixtur einen der 15 echten Aufrufernamen, schlägt die Verstoss-Zusicherung an
+der eigenen Fixtur an; enthält sie die Zeichenfolge `pruefeKeinFehlerseiten(`,
+zählt die Positivkontrolle 16 statt 15.
+
+**Drei verbindliche Bedingungen an die Fixtur:**
+
+1. ein fiktiver Bezeichner, der garantiert kein Aufrufer ist und es nie wird —
+   `rC9SynthetischNiemals`;
+2. sie enthält die Zeichenfolge `pruefeKeinFehlerseiten(` **NICHT**;
+3. ein Kommentar an der Fixtur benennt beide Kollisionen — sonst „repariert"
+   die nächste Runde den künstlichen Namen in einen realistischen.
 
 **Gegenprobe (2a):** in Punkt 1 wieder `const htmlAusloesen = await
 rAusloesen.text();` HINTER den Helferaufruf setzen → ROT.
@@ -168,8 +235,33 @@ hinein, plus `query`:
 
 ```js
 const PRUEFPLAN_VERBOTENES_MUSTER =
-    /\bdb\b|\.\s*query\s*\(|\[\s*['"](?:query|run|one|tx|q|pool)['"]\s*\]|\b(?:run|one|tx|q|pool)\s*\(/;
+    /\bdb\b|\.\s*query\s*\(|\[\s*['"`](?:query|run|one|tx|q|pool)['"`]\s*\]\s*\(|\b(?:run|one|tx|q|pool)\s*\(/;
 ```
+
+**Diese Fassung ist gegenüber meinem ersten Entwurf ZWEIMAL korrigiert, beide
+Male durch die Planprüfung und beide Male nachgemessen:**
+
+* **Backtick in die Zeichenklasse** (Befund 2). Mein erster Entwurf verlangte
+  `'` oder `"` — der ALTE Ausdruck fing `pool[`query`](1)` über sein
+  schlampiges `.?`, meiner hätte den Weg **geöffnet**. Gemessen:
+  `ALT: gefangen / NEU: DURCH`. Bei `pool[`run`]` und `pool[`one`]` war der
+  Weg schon vorher offen — der Befund trägt also im Kern, seine Reichweite
+  war zu weit angegeben.
+* **Eine aufrufende Klammer dahinter** (Befund 9). Ohne sie hätte mein
+  Entwurf reine LESEzugriffe neu verboten — gemessen `req.body['q']`,
+  `row['tx']`, `params['one']` alle drei neu gefangen, ohne dass ein
+  Datenbankaufruf vorläge.
+
+**Nachgemessen, 15 Proben, 0 Abweichungen:** acht Fangfälle gefangen (beide
+Backtick-Formen und `pool["query"] (x)` mit Leerzeichen eingeschlossen),
+sieben Durchlassfälle durch, und am heutigen Abschnitt schlägt er nicht an.
+Damit sind A5, R4, Befund 2 und Befund 9 mit EINEM Ausdruck geschlossen.
+
+**Bekannte Grenze, die BENANNT und nicht behoben wird:** `q(` sperrt auch
+einen künftigen lokalen Ein-Buchstaben-Helfer ohne Datenbankbezug. Im
+bewachten Abschnitt sind solche Helfer ohnehin nicht erwünscht; der Name
+bleibt in der Riegel-Meldung stehen, damit ein Fehlalarm richtig gelesen
+wird.
 
 **Die Lesespur fand am SELBEN Teilausdruck die Gegeneigenschaft (R4): er ist
 auch zu BREIT.** Gemessen gegen den HEUTIGEN Ausdruck:
@@ -250,37 +342,51 @@ Schreibweg auf" — hier wird bisher nicht einmal ein Zähler erhöht.
 Originalfehler des Tests verschlucken und wäre schlimmer als der Befund. Genau
 die Klasse, die in diesem Repo mehrfach zugeschlagen hat.
 
-**Die Unterscheidung ist sauber herstellbar, vom Haupt-Agenten am Quelltext
-nachgesehen** (`try {` … `} finally {` innerhalb der IIFE, deren `.catch()` mit
-`process.exit(1)` endet). Das Mittel ist ein Flag als LETZTE Anweisung des
-`try`-Rumpfs:
+**Die Planprüfung hat meinen Flag-Vorschlag durch einen EINFACHEREN ersetzt,
+und der ist besser** (Spur A, Befund 7): die saubere Unterscheidung ist die
+**POSITION**, nicht ein Flag. Die Zusicherung steht **NACH dem gesamten
+try/finally-Konstrukt**. Dann liefert der Kontrollfluss die Unterscheidung
+gratis:
+
+* Wirft der `try`-Rumpf, läuft der `finally` (räumt auf, sammelt Fehler), und
+  die Ausnahme propagiert danach weiter — die Zusicherung dahinter wird **nie
+  erreicht**. Der Originalfehler bleibt massgeblich, die Aufräumfehler stehen
+  nur im Protokoll.
+* Läuft der Rumpf durch, wird sie erreicht und fällt.
+
+Kein Flag, kein `assert` im `finally`, und die Fallstricke eines Flags
+(`return`/`break`/`continue` im Rumpf) entfallen mit ihm.
 
 ```js
-let durchgelaufen = false;
+let aufraeumFehler = [];              // ARRAY, nicht Zähler — s. u.
 try {
-    …                                    // unverändert
-    ok('Punkt 1: …');                    // die heutige letzte Zeile des Rumpfs
-    durchgelaufen = true;                // NEU, muss die letzte sein
+    …                                  // unverändert
 } finally {
-    let aufraeumFehler = 0;
-    …                                    // vier Schritte, jedes catch: aufraeumFehler++
-    if (durchgelaufen && aufraeumFehler > 0) {
-        assert.fail(`Punkt 1 Aufräumen: ${aufraeumFehler} von 4 Schritten …`);
-    }
+    …                                  // vier Schritte, jedes catch:
+                                       // aufraeumFehler.push('<Schritt>: ' + e.message)
 }
+assert.deepStrictEqual(aufraeumFehler, [],
+    `Punkt 1 Aufräumen: ${aufraeumFehler.length} von 4 Schritten fehlgeschlagen — …`);
 ```
 
-Wirft der Rumpf, bleibt `durchgelaufen` falsch, der Originalfehler fliegt
-weiter und die Aufräumfehler stehen nur im Protokoll. Läuft der Rumpf durch,
-macht ein liegengebliebener Aufräumschritt den Lauf rot.
+**Ein ARRAY, kein Zähler.** Gegenprobe 5a verlangt „eine Meldung, die alle
+drei gescheiterten Schritte nennt" — das kann eine Zahl nicht. Meine eigene
+Leitformulierung „einen Zähler führen" war dafür zu schwach.
 
-**Die Zahl 4 gehört literal in die Meldung** — sie sagt dem Lesenden, wie viele
-Schritte es überhaupt gibt, und fällt auf, wenn jemand einen fünften ergänzt,
-ohne sie nachzuziehen.
+**Die Zahl 4 gehört literal in die Meldung** — sie sagt dem Lesenden, wie
+viele Schritte es gibt, und fällt auf, wenn jemand einen fünften ergänzt, ohne
+sie nachzuziehen.
 
-**Gegenprobe (5a):** denselben Defekt wie oben setzen
-(`spalte_gibt_es_nicht`) → MUSS ab jetzt EXIT 1 liefern, mit einer Meldung,
-die alle drei gescheiterten Schritte nennt. Ohne den Defekt: EXIT 0.
+**Gegenprobe (5a), DREI Läufe** — der dritte ist der, den nur die
+Positionslösung richtig macht, und er kommt aus der Planprüfung:
+
+* **(a) Erfolgspfad mit Aufräumdefekt** (`spalte_gibt_es_nicht`) → EXIT 1,
+  Meldung nennt alle drei gescheiterten Schritte.
+* **(b) Fehlerpfad mit demselben Aufräumdefekt**: zusätzlich eine Zusicherung
+  im `try`-Rumpf brechen → EXIT 1, und die `FEHLGESCHLAGEN:`-Zeile zeigt den
+  **Originalfehler des Tests**, NICHT einen Aufräumfehler. Ein `assert` im
+  `finally` hätte hier den Originalfehler verdrängt.
+* **(c) unverändert** → EXIT 0.
 
 ## 6 — A11: den zweiten Reiniger löschen
 
@@ -315,10 +421,21 @@ ZITIERT, überlebt ihn und wird in der Z3-Zählung MITGEZÄHLT — die Suite wü
 an reiner Prosa rot. Das ist die Umkehrung von „Tests dürfen nicht an Prosa
 scheitern", und sie ist heute scharf, nicht latent.
 
-**Gegenprobe (6b), die neue Richtung:** einen mittigen Blockkommentar mit
-`ladeBestand(req.studioId,` in `routes/admin/geraete.js` einfügen.
-Vorher (mit dem schwachen Reiniger): die Z3-Zählung MUSS steigen und die Suite
-rot werden. Nachher (Hausstandard): sie MUSS grün bleiben. Beide Richtungen
+**Gegenprobe (6b), die neue Richtung — mit FESTER Einfügestelle**
+(Spur A, Befund 8): einen mittigen Blockkommentar mit
+`ladeBestand(req.studioId,` in `routes/admin/geraete.js` einfügen,
+**in einer Codezeile AUSSERHALB jedes Template-Literals** — zum Beispiel
+unmittelbar hinter einer der acht milden Aufrufstellen.
+
+**Warum die Stelle vorgeschrieben ist:** in einem Template-Literal überlebt ein
+mittiger Kommentar AUCH den Hausstandard (das ist Befund A8, den Punkt 10 nur
+benennt). Landet die Mutation dort, zählt die Z3-Zählung auch nachher 9, und
+die geforderte Richtung „nachher grün" ist **unerfüllbar** — die Gegenprobe
+scheiterte dann an der Einfügestelle, nicht an der Behebung. Das
+Mutationsskript verankert die Fundstelle entsprechend (Abbruch bei ≠ 1).
+
+Vorher (schwacher Reiniger): die Z3-Zählung MUSS steigen und die Suite rot
+werden. Nachher (Hausstandard): sie MUSS grün bleiben. Beide Richtungen
 wörtlich melden.
 
 **Umsetzung:** `GERAETE_QUELLTEXT_OHNE_KOMMENTARE` löschen (Zeile 466-468) und
@@ -355,9 +472,34 @@ sie gebaut.
 Der Kopfkommentar des Helfers nennt die Längenerhaltung ausdrücklich als Grund
 dafür, dass man EINMAL maskiert und DANACH schneidet.
 
-**Umsetzung:** einmal `maskiereKommentare(GERAETE_QUELLTEXT_ROH)` bilden, beide
-Verwendungen daraus bedienen (`.slice(zeilenbeginnNachMarke, ende)` für den
-Abschnitt). Spart zugleich einen Durchlauf.
+**Umsetzung — und die Planprüfung hat hier einen LAUFZEITFEHLER abgefangen,
+den `node --check` nicht gesehen hätte** (Spur A, Befund 4, selbst
+nachgemessen):
+
+`const geraeteOhneKommentare` steht heute auf Zeile 739 **im Block 590–746**.
+Die Verwendung, die Punkt 6 umstellen soll (`const quelltext`, Zeile 1792),
+liegt **im Block 1788–…** — einem ANDEREN. Sie kann die Konstante nicht sehen.
+Die naive Umsetzung ergäbe `ReferenceError: geraeteOhneKommentare is not
+defined` zur LAUFZEIT, während `node --check` grün bleibt.
+
+Nach Punkt 6 gibt es also **DREI** Verwendungen der Ganzdatei-Maskierung, nicht
+zwei, wie dieser Punkt ursprünglich annahm.
+
+**Also:** die einmalige Ganzdatei-Maskierung steht auf **IIFE-Ebene VOR dem
+Punkt-3-Block**, sichtbar für alle drei Verwendungen. Der Abschnitt entsteht
+daraus per `.slice(zeilenbeginnNachMarke, ende)`.
+
+**PUNKTE 6 UND 7 WERDEN ALS EIN SCHRITT GEBAUT**, und zwar VOR Punkt 1 —
+sonst misst Punkt 1 seinen Sollwert am alten Weg. Die Reihenfolge lautet:
+
+> **7+6 zuerst** (einmal maskieren, auf IIFE-Ebene, Z3 mit umstellen)
+> → **dann 1** (Sollwert am FINALEN Weg messen)
+> → **dann 9b** → dann der Rest.
+
+Damit entfällt auch der im Auftrag vorgesehene „danach neu messen"-Fall: der
+Wert wird von vornherein am richtigen Weg genommen. **Und der
+Erwartungswert 2195 der Gegenprobe 1a ist wegabhängig** — er gehört am
+finalen Weg neu gemessen, nicht aus diesem Papier abgeschrieben.
 
 **Reihenfolge — vom Haupt-Agenten vorab geklärt, damit sie kein Problem ist:**
 Punkt 1 schreibt den literalen Sollwert `2291` fest, gemessen am
@@ -413,12 +555,31 @@ SUCHMUSTER statt der Zahl:
 
 ```
 // Der gegenläufige Schreibweg steht in derselben Datei; zu finden über
-//   grep -n 'router.post("/geraetewartung/geraet/bearbeiten/:id"' routes/admin/geraete.js
+//   grep -n 'geraetewartung/geraet/bearbeite[n]' routes/admin/geraete.js
 // und das notizen-UPDATE darin über
-//   grep -n 'UPDATE wartung_geraete SET name=\$1' routes/admin/geraete.js
+//   grep -n 'UPDATE wartung_geraete SET name=[$]1' routes/admin/geraete.js
 // (KEINE Zeilennummer — sie war dreimal in Folge falsch, s.
-//  plaene/diffpruefung-ladebestand-runde6.md, Befund A6.)
+//  plaene/diffpruefung-ladebestand-runde6.md, Befund A6. Die eckigen
+//  Klammern sind Absicht: ohne sie findet das Kommando DIESEN Kommentar
+//  mit — gemessen 2 Treffer statt 1.)
 ```
+
+**Die eckigen Klammern sind der eigentliche Fund der Planprüfung hier**
+(Spur A, Befund 10). Ein Kommentar, der sein eigenes Suchmuster wörtlich
+trägt, findet sich selbst — der Suchende landet auf dem Hinweis, der ihm sagt,
+wo er suchen soll. Gemessen an einer Probedatei:
+
+```
+ohne Klammern         : 2 Treffer   ← der Kommentar findet sich selbst
+Vorschlag der Prüfspur: 2 Treffer   ← behebt es NICHT
+Klammertrick          : 1 Treffer, und zwar die richtige Zeile
+```
+
+**Der Behebungsvorschlag der Prüfspur trug nicht** — sie schlug vor, das
+`router.post("`-Präfix wegzulassen, was den Selbsttreffer nicht verhindert.
+Der Klammertrick ist derselbe, den wir aus demselben Grund schon bei
+`GEGENPROBE-`+`DEFEKT` benutzen. Nach dem Einfügen **beide Kommandos einmal
+ausführen und die Trefferzahl (je 1) in den Bau-Bericht schreiben.**
 
 Das ist die einzige Änderung an `routes/admin/geraete.js` in diesem Auftrag,
 und sie ist ein Kommentar.
@@ -467,6 +628,13 @@ vom Umfang der Datei:
   gewählte Zeichenkette, die im Bestand ausschliesslich in einem Kommentar
   vorkommt (vor dem Bau per `grep` belegen, dass sie genau einmal und nur im
   Kommentar steht) und im maskierten Text NICHT mehr vorkommen darf.
+* **eine RICHTUNGSKONTROLLE als Ungleichung** (Vorschlag der Planprüfung,
+  Spur A, Befund 3 — besser als meine erste Fassung):
+  `nichtLeerraum(geraeteOhneKommentare) < nichtLeerraum(GERAETE_QUELLTEXT_ROH)`.
+  Sie fällt bei `return src;`, kostet bei jeder legitimen Änderung nichts und
+  braucht nie nachgezogen zu werden. **Sie ist NICHT tautologisch** — anders
+  als eine Gleichheit über Längen kann sie falsch werden, sobald die
+  Maskierung nichts mehr tut.
 
 Die beiden zusammen schliessen beide Richtungen — zu wenig maskiert und zu
 viel maskiert — ohne von der Dateigrösse abzuhängen.
