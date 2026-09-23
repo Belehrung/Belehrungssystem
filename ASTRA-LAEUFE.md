@@ -3236,4 +3236,4 @@ gefährliche ein (Klammerzählung ist hier zudem unzuverlässig, weil der
 Masker Zeichenketten nicht leert); und ein AST-Parser als neue Abhängigkeit
 in einem Wächter kostet mehr als der Fehlalarm, den er verhindert.
 Stattdessen: die Grenze wird benannt.
-| 23.09.2026 | Planpruefung unlink Loeschauftrag Spur B (kimi-k3, Buendel 95 KB, effort high) | Bündel 31.203 Token ein, 36.570 aus, 1059 s | 9 | **8** (blockierend: `DELETE … RETURNING` statt SELECT→löschen→DELETE, einzig von dieser Spur). Einzelheiten `plaene/planpruefung-unlink-loeschauftrag.md` | **1** (Studio-Pfadkollision: Mitarbeiter-ID macht den Ordner eindeutig) | ~0,15 $ |
+| 23.09.2026 | Planpruefung unlink Loeschauftrag Spur B (kimi-k3, Buendel 95 KB, effort high) | Bündel 31.203 Token ein, 36.570 aus, 1059 s | 9 | **8** (blockierend: `DELETE … RETURNING` statt SELECT→löschen→DELETE, einzig von dieser Spur). Einzelheiten `plaene/planpruefung-unlink-loeschauftrag.md` | **1** (Studio-Pfadkollision: Mitarbeiter-ID macht den Ordner eindeutig) | — (keine Preisgrundlage im Repo; Verbrauch s. Material-Spalte) |
