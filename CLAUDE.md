@@ -640,6 +640,17 @@ Sachfrage):
   gegen `gpt-5.6-sol` (8 statt 9 Befunde, alle getragen, jede Spur mit
   Eigenem, halbe Kosten; `ASTRA-LAEUFE.md`). Vorgabe in
   `tools/gegenleser-repo.js`. Der Absatz darunter ist die Vorgeschichte.
+- **BETREIBER-ENTSCHEIDUNG 23.09.2026 nachmittags, sie ersetzt die sol-Vorgabe für
+  CODE:** wörtlich „Nutz DeepSeek V4 Pro, wenn du Code-Snippets generieren, Code-Reviews
+  durchführen oder komplexe Logik-Fehler suchen willst". Heisst: die LESESPUR jeder Diff- und
+  Planprüfung über Code ist `deepseek-v4-pro`; Kimi bleibt zweite Spur der Planprüfung.
+  Gemessen am selben Tag: zwei Runden Werkzeugaufruf MIT Denken tragen (Probe mit nicht
+  erratbarem Wert, Gegenprobe erfundenes Modell → HTTP 400); `tools/gegenleser-repo.js` bekommt
+  dafür einen DeepSeek-Weg mit denselben Lesewerkzeugen und Riegeln. Preis (Spitzenzeit, obere
+  Schranke) 1,32 $ ein / 3,96 $ aus je Mio. Token. **Die Rollentrennung bleibt:** hat DeepSeek
+  für einen Beitrag Code-Schnipsel geliefert, prüft diesen Beitrag eine ANDERE Lesespur — wer
+  mitgeschrieben hat, prüft seinen eigenen Entwurf. Gebaut wird weiter über den Executer.
+- *Bis 23.09.2026 nachmittags (für Code):* **`gpt-6-sol`** — Vorgeschichte darunter.
 - *Bis 23.09.2026:* **`gpt-5.6-sol`** — Betreiber-Entscheidung vom
   18.09.2026, und der Grund sind die Kosten. Die Preistabelle in
   `tools/gegenleser-repo.js` nennt 5,00/30,00 $ je Mio Token gegen 12,50/75,00 $
