@@ -69,3 +69,22 @@ der Replikationszeile, deren Lebenslauf vier andere Wege mitschreiben. Jede weit
 verschiebt die Lücke nur eine Stelle weiter. Strukturelle Lösung: Löschaufträge als EIGENE Zeilen
 (eigene Tabelle, je Auftrag die exakte `remote_ref`), unabhängig vom Lebenslauf der Replikationszeile.
 Plan folgt nach der ausführenden Spur (`plaene/auftrag-unlink-loeschauftrag.md`).
+
+## Runde 4 — ausführende Claude-Spur (`/workspace/gymdocu-unlink-pruef`, eigener PG-Cluster Port 5497)
+
+Mutationen (Protokoll Scratchpad `unlink-pruef4/logs/`): A1b, A1c-DELETE, A2-CASE, A2-Zweig, rowCount-Erfolg → ROT
+über Zusicherung. **Grün trotz Mutation:** M3b (Rücksetz-UPDATE ohne Statusklausel), M3c/M6b (Fehlerzweig),
+M7a (Schlussprüfung 0060 auf `IF false` — nur die Prüfsumme merkt es), M7d (Frühausstieg ohne Wertevergleich),
+M8b (studio_id-Klausel: Tautologie, `id` ist PK). M1 (Claim) wird rot nur durch Absturz.
+
+| # | Schwere | Befund | Messung | getragen |
+|---|---|---|---|---|
+| R4-S1 | mittel, NEU durch A2 | Retention-Weg: Primärdatei-Löschung scheitert (Retry-Queue), `.enc`-Löschung erst auch, dann gelingt sie → A2 schliesst aus „Quelle existiert“ auf Neu-Upload, setzt `pending`, die Datei wird WIEDER repliziert; danach löscht die Retry-Queue (ohne Replica-Weg) die Primärdatei → `.enc` + `succeeded`-Zeile bleiben für immer | Szenario c: 1fc97ee `["succeeded", true]` gegen 974816d `[null, false]` | ja |
+| R4-S2 | mittel | = R4-B1, gemessen: a1 `loeschen_offen → succeeded`, a2 zwei Backends, a3 `→ failed`; auch auf 974816d | Probe a1–a3 | ja |
+| R4-S3 | niedrig–mittel | DELETE in `loescheReplikaFuerDatei()` trifft eine `running`-Zeile → hochgeladene `.enc` ohne Zeile | Probe b | ja |
+| R4-S4 | niedrig | Neu-Upload zwischen `existsSync` und DELETE geht verloren | Probe d | ja |
+| R4-S5 | niedrig | A1b schützt einen Zweig ohne Produktionsaufrufer; der echte Weg (`enqueueForFile`) plant den No-op-Job | Probe e = R4-B2 | ja |
+| R4-S6 | niedrig | Testlücken M3b/M3c/M6b/M7a/M7d, M1 als Absturz | Tabelle | ja |
+
+**Summe Runde 4:** 13 Befunde aus zwei Spuren (Überschneidung R4-B1/S2, R4-B2/S5, R4-C1/S6), alle getragen.
+Entscheidung: Umbau „Löschauftrag als eigene Zeile“, Plan `plaene/auftrag-unlink-loeschauftrag.md`.
