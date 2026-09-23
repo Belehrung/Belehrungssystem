@@ -85,8 +85,34 @@ Isolation tests. Am PR hängen nur meine EIGENEN Kommentare vom 20.09.
 (Kollations-Untersuchung), keine offenen Bot-Befunde.
 
 **Bauauftrag Runde 7:** `plaene/auftrag-ladebestand-runde7.md`, zehn Punkte,
-zwölf Gegenproben. Er fasst am Produktivcode NUR einen Kommentar an.
-Läuft zur Zeit durch eine Planprüfung (`kimi-k3`).
+zwölf Gegenproben, verbindliche Baureihenfolge. Er fasst am Produktivcode NUR
+einen Kommentar an.
+
+**Planprüfung durch — ZWEI Lesespuren mit verschiedenen Bündeln, 15 Befunde,
+14 getragen, Überschneidung 1 von 15.** Einzelheiten samt eigener Nachmessung
+in `plaene/planpruefung-ladebestand-runde7.md`, Zahlen in `ASTRA-LAEUFE.md`.
+
+**Sechs der zehn Befunde von Spur A trafen Fehler in MEINEM Auftragspapier**,
+nicht im Bestand — darunter zwei, die eine Bau-Runde gekostet hätten:
+die Zusicherungs-Reihenfolge (zwei Gegenproben hätten ihren Beweis verloren)
+und ein `ReferenceError` zur LAUFZEIT durch Blockgrenzen, den `node --check`
+nicht sieht.
+
+**Der wichtigste Befund kam von Spur B und kippt A1 zur Hälfte.** Sie hatte als
+einzige die Geschwisterwächter im Bündel; der tragende Hinweis stand in einem
+KOMMENTAR des Vorbilds („die Fenster-/Klammer-Arithmetik unten setzt das
+voraus"). Nachgemessen erzeugt Punkt 7 genau diese Arithmetik — Versatzwerte
+aus dem ROHEN Quelltext werden in den MASKIERTEN geschnitten, die
+Bereichsmarken stehen selbst in Kommentaren, der Schnitt trifft
+ausschliesslich wegen gleicher Längen (459.772 = 459.772). Die
+Längengleichheit BLEIBT deshalb — als Vertragsprüfung über den Helfer, mit
+ehrlicher Meldung — und `nichtLeerraum` kommt daneben.
+
+**Stand 23.09.2026 03:03 UTC: Runde 7 ist beim Executer.** Er hat einen
+Zwischenstand `dc799f32` gepusht und selbst als UNGEPRÜFT gekennzeichnet:
+alle zehn Punkte umgesetzt, Einzeldatei-Lauf EXIT 0 / 32 PASS / 0 FAIL, volle
+Suite, Lint und die zwölf Gegenproben stehen aus. **Solange er läuft, fasst
+niemand `/home/user/gymdocu` an.**
 
 **Fünf Korrekturen habe ich vor der Planprüfung an meinem EIGENEN Auftrag
 gemacht, alle gemessen:**
