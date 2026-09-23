@@ -3141,3 +3141,63 @@ gemeldet, nicht nur der Exit-Code.
 Zeitlimit von `frage.js` liegt bei 1800 s; der Lauf hat also zwei Drittel
 davon verbraucht. Wer `kimi-k3` mit `high` auf ein grosses Bündel setzt,
 plant das ein — und fährt die zweite Spur parallel, statt zu warten.
+
+---
+
+## 23.09.2026 — Planprüfung Bauauftrag Runde 9 „ladebestand" (`deepseek-v4-pro`)
+
+**EINE** Lesespur statt zweier — Abweichung von der Regel, begründet: die
+beiden Kernbehebungen waren vorab selbst gemessen. Bündel: Auftrag + Befunde
+der Vorrunde + heutiger Stand der Testdatei, 176 KB ≈ 48k Token.
+327,6 s, `beendet=stop`, 56.317 ein / 20.664 aus (16.887 Denken).
+
+| Datum | Zweck | Material | Befunde | getragen | gefallen | Kosten |
+|---|---|---|---|---|---|---|
+| 23.09.2026 | Planprüfung Runde 9, eine Lesespur | 3 Dateien, 176 KB, 56.317 ein / 20.664 aus, 327,6 s | 6 | **5** | 1 (in der Folge) | unbekannt |
+
+### Warum sie sich gelohnt hat
+
+**Die Leitfrage war eine Diagnose, keine Suche:** „welche Behebung in diesem
+Auftrag macht denselben Fehler noch einmal?" — mit dem Nenner, den ich aus
+den zwei Fehlschlägen der Runde 8 gezogen hatte. Vier von sechs Befunden
+treffen konkrete Lücken in MEINEM Papier:
+
+* die Fixturliste bewachte den bare-Aufruf-Zweig nur für `run` (gemessen:
+  `q|one|tx|pool` entfernt → alle meine Fangfälle bleiben gefangen);
+* die Leerzeichen-Fixtur testete das Leerzeichen gar nicht (gemessen:
+  `pool["query"] (x)` trifft schon ohne Aufrufklammer);
+* dem `INSERT INTO wartung_pruefungen` fehlt `RETURNING id` — die dritte
+  Tabelle wäre in der Mengenabfrage blind gewesen;
+* die Bestätigungsabfrage hätte ohne `studio_id` gebaut werden können — das
+  ist Punkt 1 unserer Prüfreihenfolge.
+
+### Ein Befund, der in der FOLGE fällt — zum vierten Mal dasselbe Muster
+
+Befund 1 hält fest, meine neue Längenbindung sei blind gegen eine Mutation
+der Versatzwerte SELBST (beide Schnitte gleich falsch). **Die Prämisse
+stimmt, die Folge nicht:** genau dafür ist der C7-Wächter da, und er feuert.
+Selbst nachgemessen als Abdeckungstabelle:
+
+| Mutation | gefangen von |
+|---|---|
+| nur `abschnitt` ab `begin` | Längenbindung (neu) |
+| BEIDE ab `begin` | C7 |
+| `ende` 500 zu früh | nichtLeerraum |
+| `ende` 500 zu spät / `zb` 200 zu spät | keiner — **und das ist richtig**: beide Bereiche sind reiner Kommentar (`nichtLeerraum` des Zusatzes = 0) |
+
+**Zum vierten Mal in Folge trägt die Beobachtung einer Prüfspur, während ihre
+vorhergesagte Messung nicht eintritt** (13.09. Schwereeinstufung, 20.09.
+Prämisse, 23.09. Lesespur „Vorbedingung fällt zuerst", jetzt hier). Das ist
+kein Argument gegen die Spuren — es ist das Argument für die Hausregel, jeden
+Befund SELBST nachzumessen, bevor er ein Auftrag wird.
+
+### Eine Behebung wurde HERABGESTUFT statt gebaut
+
+Befund 4 (Helfer-Rumpf aus dem Selbstscan ausnehmen) ist richtig beobachtet
+und schlägt eine AST-Lösung vor. Abgelehnt, mit drei Gründen: der heutige
+Zustand ist die SICHERE Richtung (Fehlalarm statt stillem Grün); jede
+einfache Abgrenzung tauscht die ungefährliche Richtung gegen die
+gefährliche ein (Klammerzählung ist hier zudem unzuverlässig, weil der
+Masker Zeichenketten nicht leert); und ein AST-Parser als neue Abhängigkeit
+in einem Wächter kostet mehr als der Fehlalarm, den er verhindert.
+Stattdessen: die Grenze wird benannt.
