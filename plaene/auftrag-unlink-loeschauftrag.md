@@ -262,3 +262,65 @@ Proben der Spur (gleiche Invariante wie der Test): Scratchpad `unlink-pruef5/` (
 
 Einordnung unverändert (sehr komplex). Abschluss wie immer: Gegenproben ROT/GRÜN wörtlich, volle Suite mit
 Dateizahl-Ritual, Lint wörtlich, Commit + Push vor jedem langen Lauf.
+
+---
+
+# NACHARBEIT 9 — Fassung 1 (Diffprüfung Runde 6)
+
+Einordnung: **sehr komplex** — unwiderrufliche Dateilöschung, Semantik eines ungewissen COMMIT, Änderung an
+`core/db.js#tx` (wird überall benutzt). Befunde: `plaene/diffpruefung-unlink.md`, Abschnitt „Runde 6“.
+Ort: `/workspace/gymdocu-unlink`, Zweig `fix-nachweis-unlink`, HEAD `dceda2c`.
+
+**Wurzel (R6-1, R6-2, R6-3, R6-10):** Der Fehlerweg RÄT, ob committet wurde, obwohl `db.tx` es weiss: bis zum
+Senden von `COMMIT` ist ein Wurf ein sicherer Rollback, danach ist er ungewiss.
+
+1. **`core/db.js#tx`:** vor `client.query("COMMIT")` ein Merker `commitGesendet = true`. Im `catch` den geworfenen
+   Fehler (nur wenn er ein Objekt ist, nie neu erzeugen) mit `commitUngewiss` kennzeichnen — **aber einen schon
+   gesetzten `true` NIE mit `false` überschreiben** (ein innerer `db.tx`-Wurf, der durch den Callback eines äusseren
+   läuft, behält seine Ungewissheit). `rollbackFehler` bleibt wie es ist.
+   Test: Callback wirft → `false`; COMMIT scheitert serverseitig (z. B. verzögert geprüfte Bedingung
+   `DEFERRABLE INITIALLY DEFERRED`, die erst beim COMMIT bricht) → `true`; innerer `true` durch äusseren Callback →
+   bleibt `true`; ein Wurf, der kein Objekt ist, wird unverändert weitergereicht.
+2. **`processReplica`, Abschluss 1c:** ist `error.commitUngewiss === false` (sicherer Rollback), wird die eigene Datei
+   sofort geräumt wie vor 1c (`raeumeEigeneDatei`); sonst — `true` ODER fehlt (Attrappen, fremde Würfe) — bleibt es
+   bei `markiereAnkerVerwaist`. Der Entzogen-Zweig bleibt unverändert. Szenario: der Callback wirft in einer ECHTEN
+   Transaktion (z. B. Attrappe an `t.one` für das `SELECT … FOR UPDATE`) → Datei sofort weg, kein Auftrag übrig;
+   S4 (Attrappe wirft ohne Kennzeichen) bleibt wie heute.
+3. **Fehlerweg-UPDATEs** (Status und Entzogen-Rücksetzen) je in eigenem `try/catch` mit Log; das Aufräumen danach
+   läuft IMMER, geworfen wird der URSPRÜNGLICHE Fehler (R6-4). Szenario: das Status-UPDATE wirft → ursprünglicher
+   Fehler kommt an, Anker bzw. Datei werden trotzdem wie vorgesehen behandelt.
+4. **Offboarding-Queue je Lauf eine eigene Datei** (R6-2): `schreibeOffboardingRest` schreibt
+   `<studioId>-<laufkennung>.json` (Kennung aus `crypto.randomBytes`) und gibt den Namen zurück; Entfernen geht über
+   den DATEINAMEN, nie über die Studio-ID. `cleanup_pending` nennt die eigene Datei. Bestehende Einträge im alten
+   Format `<id>.json` (auf dem Server möglich) muss der Reaper weiter abarbeiten und entfernen
+   (`test_feature_audit2_offboarding.js` schreibt solche; bleibt grün).
+5. **`catch` in `deprovisionStudio`:** KEINE Studio-Prüfung mehr. `e.commitUngewiss === false` → eigene Queue-Datei
+   entfernen (Rollback sicher). Sonst eigene Datei stehen lassen — der Reaper entscheidet nach der Karenz, wenn ein
+   laufender COMMIT längst sichtbar ist (R6-1).
+6. **Nach dem COMMIT, vor der Dateilöschung, die eigene Queue-Datei NEU schreiben** (frisches `erstellt`) — heilt
+   den Fall, dass der Reaper sie während einer langen Transaktion verworfen hat (R6-3).
+7. **Reaper `raeumeOffboardingRueckstaende`:**
+   (a) Eintrag prüfen: `studio_id` positive Ganzzahl, `erstellt` lesbar — sonst `melde()` mit Kennung
+   `provisioning:offboarding_rest_ungueltig`, Eintrag bleibt (R6-9);
+   (b) scheitert die Studio-Prüfung → offen, nichts löschen (wie heute) — jetzt MIT Szenario (R6-6);
+   (c) Karenz von 15 min auf 24 h (der Reaper läuft ohnehin nur täglich 03:20; eine Deprovisionierung dauert
+   Sekunden; ein älterer Eintrag eines lebenden Studios ist ein gescheiterter Lauf) — Begründung als Kommentar;
+   (d) entfernt wird die gelesene DATEI.
+   Kommentar „(Boot/Cron)“ berichtigen (R6-11).
+8. **Weg 2: Parameter `client` entfernen** (kein Produktivaufrufer übergibt ihn, gesucht) und damit auch den
+   Zweig ohne eigene Transaktion. Die Wiederholung bleibt; `melde()` bekommt den ZWEITEN Fehler mit dem ersten als
+   `cause` bzw. im Text (R6-5).
+9. **Szenarien/Tests:** S23-Variante mit einem Fehler, der KEIN Entzogen ist (R6-7); S17 zusätzlich mit EIO und mit
+   einem Fehler ohne `code` (R6-8); Reaper mit werfender Studio-Prüfung (R6-6); zwei gleichzeitige
+   Deprovisionierungen: A scheitert im Callback, B committet und seine Dateilöschung scheitert → B's Eintrag
+   überlebt, der Reaper räumt (R6-2); COMMIT „in der Luft“ (C-Probe `probe_e_offboarding.js` unter
+   `scratchpad/dpu6/mess/` als Vorlage: COMMIT verzögert, Wurf sofort) → Eintrag bleibt, Reaper räumt (R6-1);
+   Reaper verwirft während der Transaktion → nach dem COMMIT steht der Eintrag wieder (R6-3); beschädigte Einträge
+   (R6-9). S24/S25 an die neue Logik anpassen (S24: Callback-Wurf → eigene Datei sofort weg; S25: Wurf nach dem
+   COMMIT → Eintrag bleibt).
+
+**Gegenproben** je Punkt 1–8 (ROT gemutiert, GRÜN zurück, Zahlen wörtlich), insbesondere: Merker vor statt nach
+`COMMIT` gesetzt; `true` wird überschrieben; `=== false` durch `!` ersetzt (dann gilt „fehlt“ als sicher);
+Queue-Entfernen wieder über die Studio-ID; Neuschreiben nach dem COMMIT weggelassen; Karenz zurück auf 15 min
+(welche Zusicherung fällt?).
+**Abschluss:** volle Suite, Dateizahl-Ritual, Lint, Marker-Scan, Commit, Push, Bericht mit Widersprüchen.
