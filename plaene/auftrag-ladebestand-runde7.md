@@ -72,13 +72,38 @@ Unter der 1a-Mutation (Masker frisst `req.studioId`) bleibt der Riegel grün —
 es steht ja kein verbotenes Muster darin — und 2291 fällt trotzdem. Keine
 Gegenprobe verliert ihren Beweis.
 
+## DIE BAUREIHENFOLGE — verbindlich
+
+Die Punkte sind nach Befunden nummeriert, **nicht** nach Baureihenfolge. Zwei
+Abhängigkeiten zwingen die Folge; beide sind in ihren Punkten begründet und
+gemessen:
+
+```
+Schritt 1:  Punkte 7 + 6 ZUSAMMEN   (einmal maskieren auf IIFE-Ebene,
+                                     Z3 mit umstellen, zweiten Reiniger löschen)
+Schritt 2:  Punkt 1                 (Sollwerte am FINALEN Weg messen)
+Schritt 3:  Punkt 9b                (Anker + Richtungskontrolle)
+Schritt 4:  Punkte 2, 3, 4, 5, 8, 9, 10   (Reihenfolge untereinander frei)
+Schritt 5:  Die REIHENFOLGE der Zusicherungen herstellen (s. Abschnitt oben)
+Schritt 6:  Alle Gegenproben, einzeln
+```
+
+**Warum 7+6 zuerst:** sie verschieben den Weg, auf dem Punkt 1 seinen Sollwert
+misst. Umgekehrt gebaut, misst Punkt 1 am alten Weg und der Wert müsste
+hinterher nachgezogen werden — das ist genau die Sorte Nacharbeit, die still
+falsch wird.
+
+**Warum 7 und 6 ZUSAMMEN:** Punkt 6 braucht die Konstante, die Punkt 7 auf
+IIFE-Ebene hebt. Einzeln gebaut ergibt Punkt 6 einen `ReferenceError` zur
+LAUFZEIT, den `node --check` nicht sieht (gemessen, s. Punkt 7).
+
 **Was dieser Auftrag NICHT ist:** eine Änderung am Produktivverhalten. Er fasst
 in `routes/admin/geraete.js` ausschliesslich einen KOMMENTAR an. Alles Übrige
 liegt in `test_feature_ladebestand_streng.js`.
 
 ---
 
-## 1 — A1: die tautologische Längenzusicherung ersetzen
+## 1 — A1 + B2: die Längenzusicherung EHRLICH machen und ergänzen
 
 **Befund (gemessen):** `assert.strictEqual(abschnitt.length, ende -
 zeilenbeginnNachMarke, …)` in Zeile 660 kann nicht fallen.
