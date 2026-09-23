@@ -4,7 +4,18 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-Stand 23.09.2026, 16:15 UTC.
+Stand 23.09.2026, 16:45 UTC.
+
+* **Container-Neustart 16:41 UTC; beide Executer sind dabei abgebrochen und auf Betreiber-Seite
+  angehalten.** Ohne ausdrückliche Freigabe werden sie NICHT neu gestartet.
+  * **Pentest P1** (`/workspace/gymdocu-p1`, `fix-pentest-p1-idwache`, `ad5d609`, gepusht, Baum
+    sauber). Laut Protokoll: Suite 362 = 362, Lint gelaufen, Abschlussbericht fehlt. Offen: Diff
+    lesen, Diffprüfung; dazu mein Befund: `test_feature_pentest_p1_struktur.js:256/:281` tragen
+    den Marker-Text im committeten Quelltext, muss umbenannt werden.
+  * **Nachweis-unlink** (`fix-nachweis-unlink`, `974816d`, gepusht, Baum sauber). Runde 3
+    festgehalten (`plaene/diffpruefung-unlink.md`, 8/8 getragen). Nacharbeit 7 ausformuliert,
+    aber vor dem Abbruch nichts gebaut. Der Auftragstext steht als Nachricht im Sitzungsverlauf;
+    Kern: A1–A4, P1–P4 aus Runde 3.
 
 * **Sperrordnung ausgeliefert** (#469, Deploy 436 `success` für `4312eaf`, live-check grün mit 2× ℹ). Der bekannte Verklemmungskreis ist geschlossen; Sammelliste `plaene/offene-befunde-sperrordnung.md` bleibt für die Extrarunde.
 
