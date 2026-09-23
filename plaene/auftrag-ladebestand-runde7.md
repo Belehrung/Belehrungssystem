@@ -4,7 +4,16 @@
 
 **Grundlage:** `plaene/diffpruefung-ladebestand-runde6.md`. Dort stehen 14
 Befunde der ausführenden Prüfspur, **jeder einzeln vom Haupt-Agenten
-nachgemessen**, mit den Messwerten. Der Auftrag setzt nur um, was getragen hat.
+nachgemessen**, mit den Messwerten. Dazu 6 Befunde einer Lesespur
+(`deepseek-v4-pro`, Bündel „Geschwisterwächter", s. `ASTRA-LAEUFE.md`),
+ebenfalls alle nachgemessen, davon **3 neu**. Der Auftrag setzt nur um, was
+getragen hat.
+
+**Eine Warnung vorweg, gemessen:** die Lesespur hat zu ihrem Befund R3 als
+Behebung ausgerechnet die Tautologie vorgeschlagen, die die andere Spur als
+blind GEMESSEN hat (`x.length === original.length`). Kein Vorschlag einer
+Prüfspur geht ungemessen in diesen Auftrag — deshalb steht unter jedem Punkt
+die eigene Messung, nicht der Vorschlag.
 
 **Was dieser Auftrag NICHT ist:** eine Änderung am Produktivverhalten. Er fasst
 in `routes/admin/geraete.js` ausschliesslich einen KOMMENTAR an. Alles Übrige
@@ -128,6 +137,39 @@ const PRUEFPLAN_VERBOTENES_MUSTER =
     /\bdb\b|\.\s*query\s*\(|\[\s*['"](?:query|run|one|tx|q|pool)['"]\s*\]|\b(?:run|one|tx|q|pool)\s*\(/;
 ```
 
+**Die Lesespur fand am SELBEN Teilausdruck die Gegeneigenschaft (R4): er ist
+auch zu BREIT.** Gemessen gegen den HEUTIGEN Ausdruck:
+
+```
+SCHLAEGT AN const feld = werte[query];
+SCHLAEGT AN obj[ query ]
+SCHLAEGT AN a[queryX]
+```
+
+`\[\s*.?query.?\s*\]` — die beiden `.?` matchen jedes beliebige Zeichen.
+Eine harmlose künftige Zeile mit einer Variablen `query` in eckigen Klammern
+macht den Riegel rot. Das Muster ist also bei den NAMEN zu eng (A5) und bei den
+TRENNZEICHEN zu breit (R4); **beides ist wahr und beides schliesst derselbe
+Ausdruck unten.**
+
+**Vom Haupt-Agenten vorab gemessen**, damit der Auftrag nicht auf einer
+Vermutung steht — der vorgeschlagene Ausdruck gegen neun Proben:
+
+```
+schlaegt am HEUTIGEN Abschnitt an (darf NICHT): false
+GEFANGEN  pool["run"]("UPDATE x")     GEFANGEN  pool['one']("SELECT 1")
+GEFANGEN  pool["tx"](f)               GEFANGEN  pool["query"]("x")
+GEFANGEN  run("UPDATE x")             GEFANGEN  db.run(1)
+GEFANGEN  t.query(1)
+DURCH     await schreibePruefplan(x, y)
+DURCH     const rows = ergebnis.rows
+```
+
+Er fängt alle sechs Umgehungsformen, lässt die beiden legitimen Zeilen durch
+und schlägt am heutigen Abschnitt NICHT an. **Und er schliesst R4 mit:**
+`werte[query]`, `obj[ query ]`, `a[queryX]` und `daten["suchquery"]` gehen
+DURCH, `pool["query"](1)` schlägt weiterhin an (selbst gemessen).
+
 **Gegenprobe (3a):** je eine Zeile `pool["run"]("UPDATE x")` und
 `pool["one"]("SELECT 1")` IN den bewachten Bereich einfügen (nicht eine
 bestehende Zeile ersetzen — sonst fällt die Anzahl-Zusicherung zuerst und
@@ -142,7 +184,8 @@ Vorher gegen den ALTEN Ausdruck messen und wörtlich belegen, dass er DURCHLÄSS
 angewandt. → Fixtur 1 ebenfalls auf das geteilte Muster umstellen.
 
 **A13:** die Fehlermeldung von Fixtur 3 nennt nur `"db" muss erhalten bleiben`,
-während das geprüfte Prädikat inzwischen sieben Alternativen umfasst. Fällt sie
+während das geprüfte Prädikat inzwischen SIEBEN Namen abdeckt
+(`db`, `query`, `run`, `one`, `tx`, `q`, `pool`). Fällt sie
 aus einem anderen Grund, schickt die Meldung die Diagnose in die falsche
 Richtung. → Meldung auf das nennen, was wirklich geprüft wird.
 
@@ -193,8 +236,35 @@ Alle vier IDENTISCH. Der einzige genannte Grund trägt nicht. Der schwächere
 Reiniger kennt weder Zeichenketten noch Regex-Literale — also genau die Klasse,
 die Runde 6 bei seinem Geschwister als BLOCKIEREND eingestuft hat.
 
-**Umsetzung:** `GERAETE_QUELLTEXT_OHNE_KOMMENTARE` löschen, die Z3-Zählungen
-(Zeile ~1792) auf den maskierten Quelltext umstellen. Hausregel „Dieselbe
+**Die Lesespur liefert dazu den POSITIVEN Grund (R1/R5), den A11 nicht hatte:
+der Zweitreiniger ist nicht nur überflüssig, er ist ein aktiver
+Fehlalarmweg.** Selbst nachgemessen:
+
+```
+Eingabe            : const x = 1;  /* Beispiel: ladeBestand(req.studioId, "wo") */
+schwacher Reiniger : const x = 1;  /* Beispiel: ladeBestand(req.studioId, "wo") */
+  -> zaehlt mit?   : true
+Hausstandard       : const x = 1;
+  -> zaehlt mit?   : false
+```
+
+Sein Muster `^[ \t]*\/\*[\s\S]*?\*\//gm` verlangt, dass der Blockkommentar
+am ZEILENANFANG öffnet. Ein MITTIGER Kommentar, der einen gezählten Aufruf nur
+ZITIERT, überlebt ihn und wird in der Z3-Zählung MITGEZÄHLT — die Suite würde
+an reiner Prosa rot. Das ist die Umkehrung von „Tests dürfen nicht an Prosa
+scheitern", und sie ist heute scharf, nicht latent.
+
+**Gegenprobe (6b), die neue Richtung:** einen mittigen Blockkommentar mit
+`ladeBestand(req.studioId,` in `routes/admin/geraete.js` einfügen.
+Vorher (mit dem schwachen Reiniger): die Z3-Zählung MUSS steigen und die Suite
+rot werden. Nachher (Hausstandard): sie MUSS grün bleiben. Beide Richtungen
+wörtlich melden.
+
+**Umsetzung:** `GERAETE_QUELLTEXT_OHNE_KOMMENTARE` löschen (Zeile 466-468) und
+die einzige Verwendung, `const quelltext = GERAETE_QUELLTEXT_OHNE_KOMMENTARE;`
+in **Zeile 1792** (selbst nachgemessen), auf den maskierten Quelltext umstellen.
+Die drei übrigen Nennungen (588, 620 und die falsche Begründung in 476) sind
+Kommentare und werden mitgezogen bzw. gelöscht. Hausregel „Dieselbe
 Aussage an zwei Orten": die zweite Kopie wird gelöscht, nicht nachgezogen.
 
 **Gegenprobe (6a):** die vier Z3-Zählungen müssen VOR und NACH der Umstellung
@@ -209,6 +279,17 @@ ZUSTANDSBEHAFTETER Tokenizer (Stapel offener Template-Literale,
 Kontext. Heute liefern beide Wege **byteweise dasselbe** (selbst gemessen) —
 der Unterschied ist LATENT und wird scharf, sobald der Ausschnitt an einer
 Stelle beginnt, an der der Tokenizer-Zustand nicht neutral ist.
+
+**Die Lesespur (R2) stuft denselben Befund als BLOCKIEREND ein und liefert die
+konkrete Konstruktion:** endet der Code unmittelbar VOR der Marke mit einem
+Ausdruckswert und beginnt der Bereich mit einer Division, liest der isolierte
+Aufruf das `/` als Regex-Start und maskiert echten Code weg — der Riegel bliebe
+blind grün. **Die Einstufung „blockierend" trägt für den HEUTIGEN Stand
+nicht** (selbst nachgemessen: beide Wege byteweise identisch; die Marke steht
+auf Zeile 2773 an einer Anweisungsgrenze im Schleifenrumpf, wo
+`letztesTokenWert` in beiden Fällen falsch ist). Die KLASSE trägt, die
+Dringlichkeit nicht — und die Behebung ist dieselbe und billig, deshalb wird
+sie gebaut.
 
 Der Kopfkommentar des Helfers nennt die Längenerhaltung ausdrücklich als Grund
 dafür, dass man EINMAL maskiert und DANACH schneidet.
@@ -238,7 +319,9 @@ echt, sobald irgendwo ein zweites entsteht.
 maskierten Quelltext GENAU EINMAL vorkommt, vor der Fensterprüfung.
 
 **Gegenprobe (8a):** `neu AS (` in `geraete.js` nach `nachtrag AS (` umbenennen
-(beide Vorkommen) → die neue Existenz-Zusicherung MUSS fallen.
+→ die neue Existenz-Zusicherung MUSS fallen. **Es gibt genau EIN Vorkommen**
+(selbst nachgemessen, roh wie maskiert 1) — der Sollwert der Zusicherung ist
+also `=== 1`, und die Mutation ist eine einzige Ersetzung.
 
 ## 9 — A6: die Zeilennummern durch ein SUCHMUSTER ersetzen
 
@@ -271,6 +354,45 @@ SUCHMUSTER statt der Zahl:
 Das ist die einzige Änderung an `routes/admin/geraete.js` in diesem Auftrag,
 und sie ist ein Kommentar.
 
+## 9b — R3: der GANZDATEI-Weg braucht eine Positivkontrolle
+
+**Befund der Lesespur, selbst nachgemessen.** Für die FOR-UPDATE-Zusicherung
+wird `maskiereKommentare()` auf die GANZE Datei angewendet
+(`geraeteOhneKommentare`). Dieser Weg hat **überhaupt keine** Kontrolle, dass
+die Maskierung gewirkt hat:
+
+```
+Laengen-Zusicherung darauf   : false
+nichtLeerraum darauf         : false
+Anker-Zusicherung (includes) : false
+```
+
+Die einzige Positivkontrolle des Blocks ist `cteNamenTreffer === 1` — sie prüft
+den CTE-NAMEN, nicht die Bereinigung. Die ausführende Spur fand die Tautologie
+am AUSSCHNITTS-Weg (A1) und übersah, dass der Ganzdatei-Weg gar nichts hat.
+Beleg aus derselben Messung: unter der A1-Mutation lief die ganze Datei mit
+29 PASS / 0 FAIL durch — also auch dieser Block.
+
+**ACHTUNG, HIER IST DIE BEHEBUNG DIE GEFAHR.** Die Lesespur schlägt als ersten
+Punkt `geraeteOhneKommentare.length === GERAETE_QUELLTEXT_ROH.length` vor. Das
+ist WÖRTLICH die Tautologie aus Punkt 1 dieses Auftrags, eine Ebene höher.
+**Sie wird NICHT gebaut.**
+
+**Gebaut wird stattdessen**, analog zu Punkt 1:
+
+* ein literaler Sollwert für `nichtLeerraum(geraeteOhneKommentare)`, vor dem
+  Bau frisch zu messen und mit Datum zu kommentieren;
+* ein CODE-ANKER, der die Maskierung überleben MUSS — etwa
+  `geraeteOhneKommentare.includes('router.post("/geraetewartung/brandschutz"')`.
+  Er unterscheidet „hat Kommentare entfernt" von „hat Code entfernt", was eine
+  blosse Mengenzahl nicht kann.
+
+**Gegenprobe (9b-a):** dieselbe codefressende Mutation wie 1a
+(`req.studioId` längenerhaltend leeren) → der Nicht-Leerraum-Sollwert MUSS
+fallen. **Gegenprobe (9b-b):** eine Mutation, die den Masker NICHTS tun lässt
+(`return src;`) → der Sollwert MUSS ebenfalls fallen, in die andere Richtung.
+Eine Gegenprobe, die nur eine Richtung misst, belegt den Einzelfall.
+
 ## 10 — A8: bekannte Grenze BENENNEN, nicht beheben
 
 **Befund (gemessen):** ein mittiger Kommentar in einem Template-Literal
@@ -302,8 +424,8 @@ Template herausziehen, nicht den Riegel abschwächen).
 * Dateizahl-Ritual: gelaufene gegen registrierte Dateien, `diff` EXIT 0.
   Beide Seiten mit DEMSELBEN Sieb.
 * `npm run lint`, Ergebnis WÖRTLICH melden, auch bei Grün.
-* Die Gegenproben 1a, 2a, 2b, 2c, 3a, 5a, 6a, 8a einzeln, jede wörtlich mit
-  EXIT und PASS/FAIL, **Mutation UND Rücknahme**.
+* Die Gegenproben 1a, 2a, 2b, 2c, 3a, 5a, 6a, 6b, 8a, 9b-a, 9b-b einzeln, jede
+  wörtlich mit EXIT und PASS/FAIL, **Mutation UND Rücknahme**.
 * Mutationsskript mit Zielpfad als ARGUMENT, Abbruch bei ≠ 1 Fundstelle,
   Marker `GEGENPROBE-`+`DEFEKT` im Ersatztext, `node --check` danach,
   Rücknahme gegen eine unabhängige `cp`-Kopie mit `diff` EXIT 0.

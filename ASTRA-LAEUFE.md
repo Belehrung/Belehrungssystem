@@ -2992,3 +2992,80 @@ Kategorien, `core/db.js:1567-1570`).
 Ausgabe-Token lief die Lesespur vollständig durch (`beendet=stop`, 52.674 ein,
 37.567 aus, davon 33.771 Denken, 982,1 s). Die Lehre aus dem vorigen Eintrag
 hat gewirkt und ist damit gemessen, nicht nur notiert.
+
+---
+
+## 23.09.2026 — Diffprüfung Runde 6 „ladebestand", Lesespur (`deepseek-v4-pro`)
+
+**Aufbau:** eine Lesespur neben der ausführenden Claude-Spur (Betreiber-Vorgabe
+zur Spurenreduktion vom 20.09.2026 abends), mit einem **anderen Bündel**: nicht
+Diff + Produktivkontext, sondern Diff + der neuangeschlossene Wächter + der
+Hausstandard + **DREI GESCHWISTERWÄCHTER**, die denselben Helfer seit längerem
+benutzen. Leitfrage nach der Hausregel „wer zwei Wächter an denselben Helfer
+hängt, erbt dessen Stärken NICHT automatisch".
+
+**Material:** 6 Dateien, 331.847 Bytes, gezählt ≈ 89k Token (Abrechnung nennt
+105.410 prompt / 22.304 completion, davon 18.953 Denken). 304,5 s,
+`beendet=stop`, keine Abschneidung. `stream: true`, `effort: high`.
+
+| Datum | Zweck | Material | Befunde | getragen | gefallen | Kosten |
+|---|---|---|---|---|---|---|
+| 23.09.2026 | Diffprüfung Runde 6 „ladebestand", Lesespur, Bündel „Geschwisterwächter" | 6 Dateien, 332 KB, 105.410 ein / 22.304 aus, 304,5 s | 6 | **6** | 0 | **unbekannt** (s. u.) |
+| 23.09.2026 | Diffprüfung Runde 6 „ladebestand", ausführende Claude-Spur (darf messen) | Diff + beide Dateien + Hausstandard, eigene statische Proben | 14 | **14** | 0 | — |
+
+**Kosten: UNBEKANNT, und das bleibt so.** Ich hatte hier zuerst „~0,05 $"
+eingetragen — abgeschrieben aus einer Nachbarzeile, die für `deepseek-flash`
+gilt, nicht für `deepseek-v4-pro`. Dieses Protokoll sagt an zwei Stellen selbst,
+dass für `deepseek-v4-pro` kein Preis in unserer Tabelle steht und „eine Zahl
+wird nicht erfunden". Zeile 2273 verstösst bereits dagegen; ich hätte sie
+beinahe ein zweites Mal fortgeschrieben. Eine Kostenzahl gilt je MODELL, nicht
+je Anbieter.
+
+**Überschneidung: 3 von 6.** Neu nur in der Lesespur:
+
+* **R3** — der GANZDATEI-Maskierweg (`geraeteOhneKommentare`, für die
+  FOR-UPDATE-Zusicherung) hat **überhaupt keine** Positivkontrolle: keine
+  Längenprüfung, kein `nichtLeerraum`, kein Code-Anker (selbst nachgemessen).
+  Die ausführende Spur fand die Tautologie am AUSSCHNITTS-Weg (A1) und übersah,
+  dass der Ganzdatei-Weg gar nichts hat.
+* **R4** — `\[\s*.?query.?\s*\]` ist zugleich zu BREIT: gemessen schlägt es an
+  `werte[query]`, `obj[ query ]` und `a[queryX]` an. Die ausführende Spur fand
+  am selben Teilausdruck die Gegeneigenschaft (zu ENG bei den Namen, A5).
+  **Beide sind wahr** — dasselbe Muster ist bei den Namen zu eng und bei den
+  Trennzeichen zu breit.
+* **Die Prosa-Begründung zu R1/R5** — der schwache Zweitreiniger ist nicht nur
+  überflüssig (A11: seine Begründung ist falsch), er ist ein aktiver
+  Fehlalarmweg. Gemessen: ein MITTIGER Blockkommentar
+  `/* Beispiel: ladeBestand(req.studioId, "wo") */` überlebt ihn vollständig und
+  würde in der Z3-Zählung MITGEZÄHLT — die Suite würde an reiner Prosa rot.
+  Der Hausstandard maskiert ihn korrekt weg.
+
+### Was diese Lesespur NICHT konnte — und das ist der Beleg für die andere Spur
+
+Auf die ausdrückliche Frage „welche Zusicherung dieses Beitrags kann NICHT ROT
+WERDEN?" antwortete sie:
+
+> „Frage 4 konnte ich im aktuellen Stand **nicht** identifizieren: Alle
+> hinzugefügten Zusicherungen verwenden literale Sollwerte … oder unabhängige
+> Referenzen (Längen aus der Originaldatei, roher vs. bereinigter Ausschnitt)."
+
+**Das ist falsch, und zwar genau bei dem Befund, den die ausführende Spur mit
+einer Mutation belegt hat:** die Längengleichheit des Ausschnitts (A1) ist eine
+Tautologie, gemessen blieb sie unter einer codefressenden Mutation grün
+(29 PASS / 0 FAIL). Die Lesespur hat die Zeile gesehen und für eine
+„unabhängige Referenz" gehalten.
+
+**Schlimmer — ihr eigener Behebungsvorschlag hätte den Defekt EINGEBAUT.** Zu
+R3 schlägt sie vor: „a) `geraeteOhneKommentare.length ===
+GERAETE_QUELLTEXT_ROH.length` (Längenerhalt)". Das ist wörtlich die Tautologie,
+die die andere Spur eine Ebene tiefer als blind gemessen hat.
+
+Damit steht zum vierten Mal dieselbe Messung aus dem eigenen Bestand: **eine
+Spur, die AUSFÜHREN darf, findet eine andere KLASSE als eine, die nur LESEN
+kann** (13.09., 18.09., 20.09., jetzt 23.09.). Die Lesespur liefert
+Kontrollfluss und Vergleich mit den Geschwistern; die messende Spur liefert
+„diese Zeile zurückdrehen, der Lauf bleibt grün". Wer eine davon weglässt,
+verliert nicht Redundanz, sondern eine Klasse.
+
+Und zum dritten Mal in Folge gilt: **der BEFUND trug, die BEHEBUNG war die
+Gefahr.** Kein Vorschlag einer Prüfspur geht ungemessen in einen Bauauftrag.
