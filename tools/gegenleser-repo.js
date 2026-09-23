@@ -91,8 +91,20 @@ const ENDPUNKT_OPENAI = 'https://api.openai.com/v1/responses';
 // fuer deepseek-v4-pro auch /v1/responses (Kontext 1M) -- eine echte Probe
 // gegen GENAU DIE FELDER, die anfragen() unten ohnehin verschickt, bestand:
 //   - "input" (flache Form), "tools" (flache Form {type,name,description,
-//     parameters}), "max_output_tokens", "store:false", "truncation:
-//     disabled", "stream:true" -- alle angenommen UND wirksam.
+//     parameters}), "max_output_tokens", "truncation:disabled",
+//     "stream:true" -- alle angenommen UND wirksam.
+//   - "store:false" GESONDERT, weil "angenommen UND wirksam" dafuer NICHT
+//     belegt ist (B2, Gegenlesung 23.09.2026): GEMESSEN (Haupt-Agent,
+//     23.09.2026) -- POST /v1/responses mit store:false liefert im Echo
+//     store:false, GET /v1/responses/<id> danach HTTP 404; MIT store:true
+//     gesendet liefert das Echo EBENFALLS store:false, und GET liefert
+//     EBENFALLS 404. DeepSeek meldet also in BEIDEN Faellen dasselbe, und
+//     einen Abrufweg gibt es so oder so nicht -- die WIRKUNG von
+//     store:false ist ueber diese API schlicht NICHT MESSBAR (keine
+//     Positivkontrolle moeglich). Was DeepSeek tatsaechlich aufbewahrt,
+//     regeln allein deren eigene Bedingungen; das Feld bleibt trotzdem
+//     gesetzt (unser Quelltext soll nicht aufbewahrt werden, unabhaengig
+//     davon, ob der Schalter etwas bewirkt).
 //   - "reasoning.effort" wird WERTVALIDIERT (nicht nur angenommen): ein
 //     erfundener Wert "ultrahoch" -> HTTP 422 "unknown variant `ultrahoch`,
 //     expected one of `none`, `minimal`, `low`, `medium`, `high`, `xhigh`,
@@ -298,11 +310,16 @@ const PREISTABELLE = {
     'gpt-6-sol': { rein: 4.00, raus: 15.00 },
     'gpt-6-luna': { rein: 0.20, raus: 0.75 },
     // Zweiter Anbieter DeepSeek (23.09.2026), aus
-    // api-docs.deepseek.com/quick_start/pricing, Spitzenzeit als obere
-    // Schranke (DeepSeek staffelt nach Tageszeit, off-peak ist guenstiger --
-    // wir schaetzen mit dem teureren Wert). Endpunkt und Format s.
+    // api-docs.deepseek.com/quick_start/pricing, Spitzenzeit/Cache-Miss als
+    // obere Schranke (DeepSeek staffelt nach Tageszeit UND nach Cache-Treffer,
+    // off-peak bzw. Cache-Treffer sind guenstiger -- wir schaetzen mit dem
+    // teuersten Wert). GEGEN DIE PREISSEITE GEHALTEN (B5, Gegenlesung
+    // 23.09.2026, Tabellenzeile "1M INPUT TOKENS (CACHE MISS)/PEAK" bzw.
+    // "1M OUTPUT TOKENS/PEAK"): deepseek-v4-pro $1.32/$3.96 (unveraendert
+    // bestaetigt), deepseek-flash $0.3/$1.2. Endpunkt und Format s.
     // ENDPUNKT_DEEPSEEK oben.
     'deepseek-v4-pro': { rein: 1.32, raus: 3.96 },
+    'deepseek-flash': { rein: 0.30, raus: 1.20 },
 };
 
 // Liefert null (= ausdruecklich "unbekannt"), wenn das Modell nicht in der
@@ -438,28 +455,42 @@ class GeheimnisAbbruch extends Error {
 // Punkt 2): env-Variable zuerst, sonst die Datei, die die zweite
 // Variable nennt, getrimmt; sonst null. NIE ueber argv, NIE ins Protokoll
 // (protokollSchreiben() bekommt keinen Header uebergeben, unveraendert),
-// NIE in eine Fehlermeldung (main() nennt unten nur die Variablennamen,
-// nie den Wert).
+// NIE in eine Fehlermeldung.
+// B9 (Gegenlesung DeepSeek-Weg, 23.09.2026): liefert seither ZUSAETZLICH
+// "grund" -- gesetzt NUR, wenn eine Schluesseldatei zwar KONFIGURIERT, aber
+// nicht lesbar war (falscher Pfad, fehlende Rechte, Verzeichnis statt
+// Datei). "grund" traegt HOECHSTENS den Fehlercode (e.code) und den Pfad,
+// NIEMALS den Dateiinhalt -- der wuerde bei einem versehentlich falschen
+// Pfad (der auf eine andere, echte Datei zeigt) sonst genau das Geheimnis
+// in die Konsole schreiben, das dieser Riegel schuetzen soll.
 function schluesselHolenAus(envName, dateiEnvName) {
-    if (process.env[envName]) return process.env[envName].trim();
+    if (process.env[envName]) return { wert: process.env[envName].trim(), grund: null };
     const pfad = process.env[dateiEnvName];
-    if (!pfad) return null;
-    let wert;
+    if (!pfad) return { wert: null, grund: null };
     try {
-        wert = fs.readFileSync(pfad, 'utf8').trim();
+        const wert = fs.readFileSync(pfad, 'utf8').trim();
+        return { wert: wert || null, grund: null };
     } catch (e) {
-        return null;
+        return { wert: null, grund: `${dateiEnvName}="${pfad}" nicht lesbar (${e.code || e.message})` };
     }
-    return wert || null;
 }
 
 // modell entscheidet den Anbieter (istDeepseekModell() oben): OPENAI_* fuer
 // OpenAI-Modelle, DEEPSEEK_* fuer "deepseek-*" -- niemals einer fuer den
 // anderen (kein stiller Rueckfall, s. Kommentar bei istDeepseekModell()).
-function schluesselHolen(modell) {
+function schluesselDetailsHolen(modell) {
     return istDeepseekModell(modell)
         ? schluesselHolenAus('DEEPSEEK_API_KEY', 'DEEPSEEK_KEY_DATEI')
         : schluesselHolenAus('OPENAI_API_KEY', 'OPENAI_KEY_DATEI');
+}
+
+// Bestehender, einfacher Vertrag (string|null) UNVERAENDERT -- main()s
+// "if (!schluessel)" und alle Selbsttests, die schluesselHolen() direkt
+// aufrufen, pruefen weiterhin genau das, was sie heute pruefen. Der neue
+// Grund (B9) ist ein eigener, zusaetzlicher Zugang (schluesselDetailsHolen),
+// kein veraenderter Rueckgabewert dieser Funktion.
+function schluesselHolen(modell) {
+    return schluesselDetailsHolen(modell).wert;
 }
 
 // Hart gesperrt, AUCH wenn versioniert (Schritt 5 der Erlaubnispruefung).
@@ -688,11 +719,28 @@ function werkzeugLies(pfad, von, bis) {
 // -- das waeren Pfade und Auftragsinhalte aus dem Repo, die hier nicht
 // hinsollen (GP10 sichert das gegen einen absichtlich auffaelligen --zweck
 // UND Briefdateinamen zu).
+// B8 (Gegenlesung DeepSeek-Weg, 23.09.2026): dasselbe Intl/Europe-Berlin-
+// Muster wie laufprotokollDatum() weiter unten, nur im ISO-Format
+// (JJJJ-MM-TT statt TT.MM.JJJJ) -- toISOString() lieferte bisher den
+// UTC-Kalendertag, der oestlich von UTC nahe Mitternacht den VORTAG zeigen
+// kann (CLAUDE.md, Pruefpunkt 2 "Zeitzonen": "unter UTC liefert dieser
+// Fehler zufaellig das richtige Ergebnis"). "en-CA" formatiert direkt in
+// dieser Reihenfolge, ohne die Teile selbst zusammensetzen zu muessen.
+// "datum" ist OPTIONAL (Parameter, fuer den Selbsttest): ohne ihn gilt der
+// echte Zeitpunkt wie bisher, der Selbsttest kann aber einen FESTEN
+// Zeitpunkt an der Tagesgrenze uebergeben, statt auf ein schmales Fenster
+// um Mitternacht zu warten (dieselbe Ueberlegung wie beim Vorbild).
+function metadatenDatumBerlin(datum = new Date()) {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(datum);
+}
+
 function metadatenBauen() {
     return {
         werkzeug: 'gegenleser-repo.js',
         zweck: 'stufe-2-diff-gegenlesung',
-        datum: new Date().toISOString().slice(0, 10),
+        datum: metadatenDatumBerlin(),
     };
 }
 
@@ -1351,7 +1399,7 @@ async function main(argvUeberschreibung) {
         return 4;
     }
 
-    const schluessel = schluesselHolen(optionen.modell);
+    const { wert: schluessel, grund: schluesselGrund } = schluesselDetailsHolen(optionen.modell);
     if (!schluessel) {
         const deepseek = istDeepseekModell(optionen.modell);
         const envName = deepseek ? 'DEEPSEEK_API_KEY' : 'OPENAI_API_KEY';
@@ -1359,7 +1407,11 @@ async function main(argvUeberschreibung) {
         console.error(
             `ABBRUCH: Kein Schluessel. Setze ${envName} oder ${dateiName} (Pfad zu einer Datei\n`
             + 'AUSSERHALB des Repos, Rechte 600). Der Schluessel gehoert nicht ins Repo und nicht\n'
-            + 'in eine Chat-Nachricht.');
+            + 'in eine Chat-Nachricht.'
+            // B9: der Grund (nur Fehlercode/Pfad, NIE der Dateiinhalt) hilft
+            // beim Unterscheiden "gar nichts gesetzt" von "Datei konfiguriert,
+            // aber nicht lesbar" -- fehlt er, war schlicht nichts gesetzt.
+            + (schluesselGrund ? `\nGrund: ${schluesselGrund}` : ''));
         return 2;
     }
 
@@ -1414,7 +1466,14 @@ async function main(argvUeberschreibung) {
         // Closures, weil sie erst beim tatsaechlichen Eintragen (an mehreren
         // Stellen unten) ausgewertet werden, dabei aber immer den AKTUELLEN
         // Stand von runde/sucheAnzahl/... sehen muessen.
-        const protokollZweck = () => optionen.zweck || path.basename(optionen.briefPfad, path.extname(optionen.briefPfad));
+        // B7 (Gegenlesung DeepSeek-Weg, 23.09.2026): das MODELL steht ab
+        // jetzt IMMER hinter dem Zweck, unabhaengig davon, ob --zweck es
+        // erwaehnt -- vorher stand der Anbieter nur dann in der Zeile, wenn
+        // die freie --zweck-Prosa ihn zufaellig nannte (wie im Lauf vom
+        // 23.09.2026, "... (deepseek-v4-pro, ...)"), sonst gar nicht.
+        // Bestehende Zeilen in ASTRA-LAEUFE.md bleiben unangefasst, das
+        // betrifft nur NEUE Eintraege.
+        const protokollZweck = () => `${optionen.zweck || path.basename(optionen.briefPfad, path.extname(optionen.briefPfad))} (${optionen.modell})`;
         const protokollMaterial = (abbruchGrund) => {
             const kern = `Diff ${zeilenAus(diffInhalt).length} Zeilen, Suchen ${sucheAnzahl}, Lesungen ${liesAnzahl}, `
                 + `Token rein ${promptTokenSumme}, Token raus ${completionTokenSumme}, Runden ${runde}`;
@@ -1778,9 +1837,20 @@ function sseRohEintragBauen({ chunks, statusCode, abgebrochen, fehler, vorzeitig
 // Aufrufs auf, damit ein Test belegen kann, welcher ENDPUNKT (OpenAI oder
 // DeepSeek) wirklich angesprochen wurde -- bisher ignorierte diese Stub-
 // Funktion "_url" vollstaendig, das liess sich nicht pruefen.
-function httpsStubBauen(warteschlange, aufgezeichnet, zerstoerungen, aufgezeichneteUrls) {
+// "aufgezeichneteHeaders" (B11, fuenfter Parameter, ebenso OPTIONAL):
+// zeichnet "_optionen.headers" jedes Aufrufs auf -- genau das, was
+// anfragen() unten tatsaechlich an https.request() als Kopfzeilen
+// UEBERGIBT. GEMESSEN (Executer, 23.09.2026, lokaler http-Server, echter
+// Client mit denselben drei Kopfzeilen): auf dem Draht kommen zusaetzlich
+// "host" und "connection" an -- die setzt Node SELBST beim Verbindungsaufbau,
+// sie stehen NIE in "_optionen.headers" und sind fuer einen Stub ohne
+// echten Socket nicht sichtbar. Ein "accept"-Kopf kam in dieser Messung an
+// KEINER Stelle vor (weder in "_optionen.headers" noch auf dem Draht) --
+// s. Kommentar bei der zugehoerigen Zusicherung im Selbsttest.
+function httpsStubBauen(warteschlange, aufgezeichnet, zerstoerungen, aufgezeichneteUrls, aufgezeichneteHeaders) {
     return function (_url, _optionen, callback) {
         if (aufgezeichneteUrls) aufgezeichneteUrls.push(_url);
+        if (aufgezeichneteHeaders) aufgezeichneteHeaders.push(_optionen && _optionen.headers);
         const antwortHandler = {};
         const fakeAntwort = {
             statusCode: 200,
@@ -1883,12 +1953,18 @@ async function selbsttest() {
     // B2: maxAusgabeBytesErmitteln() -- nicht gesetzt/leer/"900000" x3,
     // "-1"/"1.5"/"Infinity"/"abc"/"0" brechen ab x5) = 114. Von Hand
     // hergeleitet, nicht aus dem Lauf abgeschrieben -- unten durch den
-    // tatsaechlichen Lauf bestaetigt. Dazu 15 neue Faelle aus dem Auftrag
+    // tatsaechlichen Lauf bestaetigt. Dazu 15 Faelle aus dem Auftrag
     // "DeepSeek als zweiter Anbieter" (23.09.2026): ANBIETERWAHL x3,
     // SCHLUESSEL x4, KOSTENFALL DEEPSEEK x1, DEEPSEEK OHNE SCHLUESSEL x1,
     // LAUF DS x4, GP4-DEEPSEEK x2 (eigene EFFORT_DEEPSEEK-Stufe, Nacharbeit
-    // nach Hinweis des Haupt-Agenten) = 129.
-    const ERWARTETE_FAELLE = 129;
+    // nach Hinweis des Haupt-Agenten) = 129. Dazu 9 weitere aus der
+    // Gegenlesung des DeepSeek-Wegs (B1-B11, 23.09.2026, Zweig
+    // ds-lesewerkzeug2): B4 Einzelpreise x2, B5/B6 deepseek-flash x1, B7
+    // Modell in der ASTRA-LAEUFE-Zeile x1, B8 Zeitzonen-Gegenprobe x2, B9
+    // unlesbare Schluesseldatei x2, B11 Kopfzeilen exakt x1 (B1/B2/B3/B10
+    // korrigieren bestehende Faelle bzw. Kommentare, ohne die Zahl zu
+    // aendern) = 138.
+    const ERWARTETE_FAELLE = 138;
     let gelaufen = 0;
     let fehler = 0;
     const pruefen = (bezeichnung, bedingung) => {
@@ -2439,15 +2515,59 @@ async function selbsttest() {
                 istDeepseekModell('gpt-6-sol') === false
                 && istDeepseekModell('mistral-large-2') === false
                 && istDeepseekModell(VORGABE_MODELL) === false);
+            // B1 (Gegenlesung DeepSeek-Weg, 23.09.2026): Sollwert woertlich,
+            // NICHT ueber ENDPUNKT_DEEPSEEK selbst -- eine Zusicherung, die
+            // ihren Sollwert aus derselben Konstante bezieht, die sie
+            // bewachen soll, kann nicht falsch werden (CLAUDE.md). Zusaetzlich
+            // die Gegenrichtung ausgeschlossen: die DeepSeek-URL darf nicht
+            // zufaellig gleich der OpenAI-URL sein.
             pruefen('ANBIETERWAHL ENDPUNKT (endpunktFuerModell waehlt je Praefix den richtigen Endpunkt, unveraendert fuer OpenAI)',
-                endpunktFuerModell('deepseek-v4-pro') === ENDPUNKT_DEEPSEEK
+                endpunktFuerModell('deepseek-v4-pro') === 'https://api.deepseek.com/v1/responses'
+                && endpunktFuerModell('deepseek-v4-pro') !== 'https://api.openai.com/v1/responses'
                 && endpunktFuerModell('mistral-large-2') === ENDPUNKT_OPENAI
                 && endpunktFuerModell('gpt-6-sol') === ENDPUNKT_OPENAI);
         }
         {
+            // B4 (Gegenlesung 23.09.2026): zusaetzlich zum gemischten Fall die
+            // EINZELPREISE getrennt zusichern -- ein vertauschtes rein/raus
+            // kann bei einer bestimmten Token-Mischung zufaellig dieselbe
+            // Summe ergeben, an den Einzelpreisen faellt es sicher auf.
+            const kostenReinDeepseek = kostenSchaetzen('deepseek-v4-pro', 1_000_000, 0);
+            const kostenRausDeepseek = kostenSchaetzen('deepseek-v4-pro', 0, 1_000_000);
+            pruefen(`KOSTENFALL DEEPSEEK REIN (1 Mio. Eingabe-Token allein kostet 1,32 $, gemessen ${kostenReinDeepseek})`,
+                typeof kostenReinDeepseek === 'number' && Math.abs(kostenReinDeepseek - 1.32) < 1e-9);
+            pruefen(`KOSTENFALL DEEPSEEK RAUS (1 Mio. Ausgabe-Token allein kostet 3,96 $, gemessen ${kostenRausDeepseek})`,
+                typeof kostenRausDeepseek === 'number' && Math.abs(kostenRausDeepseek - 3.96) < 1e-9);
             const kostenDeepseek = kostenSchaetzen('deepseek-v4-pro', 2_000_000, 500_000);
-            pruefen(`KOSTENFALL DEEPSEEK (PREISTABELLE traegt deepseek-v4-pro mit 1,32 $ rein / 3,96 $ raus je Mio. Token: 2 Mio. rein + 0,5 Mio. raus = 4,62 $, gemessen ${kostenDeepseek})`,
+            pruefen(`KOSTENFALL DEEPSEEK GEMISCHT (2 Mio. rein + 0,5 Mio. raus = 4,62 $, gemessen ${kostenDeepseek})`,
                 typeof kostenDeepseek === 'number' && Math.abs(kostenDeepseek - 4.62) < 1e-9);
+            // B5: deepseek-flash gegen dieselbe Preisseite gehalten (0,30 $
+            // rein / 1,20 $ raus je Mio. Token, Spitzenzeit/Cache-Miss).
+            const kostenFlash = kostenSchaetzen('deepseek-flash', 1_000_000, 1_000_000);
+            pruefen(`KOSTENFALL DEEPSEEK-FLASH (1 Mio. rein + 1 Mio. raus = 1,50 $, gemessen ${kostenFlash})`,
+                typeof kostenFlash === 'number' && Math.abs(kostenFlash - 1.50) < 1e-9);
+        }
+        {
+            // B8 (Gegenlesung DeepSeek-Weg, 23.09.2026): deterministische
+            // Gegenprobe an einem FESTEN Zeitpunkt nahe der Tagesgrenze --
+            // 23:30 UTC am 15.01.2026 ist in Berlin (Winterzeit, UTC+1)
+            // bereits 00:30 am 16.01.2026. toISOString() haette hier den
+            // 15. geliefert; die Berliner Formel muss den 16. liefern. Ein
+            // Test gegen die AKTUELLE Uhrzeit waere nur in einem schmalen
+            // Fenster um Mitternacht ueberhaupt rot geworden (CLAUDE.md,
+            // Pruefpunkt 2 "Zeitzonen").
+            const grenzfallUtc = new Date('2026-01-15T23:30:00.000Z');
+            pruefen(`METADATEN-DATUM BERLIN, NICHT UTC (23:30 UTC am 15.01. ist in Berlin bereits 00:30 am 16.01.: metadatenDatumBerlin() liefert "${metadatenDatumBerlin(grenzfallUtc)}", erwartet "2026-01-16")`,
+                metadatenDatumBerlin(grenzfallUtc) === '2026-01-16');
+            // Positivkontrolle: dieselbe Formel gegen eine UNABHAENGIGE
+            // externe Referenz (Systembefehl "date", TZ=Europe/Berlin) fuer
+            // HEUTE -- bindet die Formel an die Wirklichkeit statt nur an
+            // sich selbst (derselbe Grund wie bei datumUeberSystemBefehl
+            // weiter unten).
+            const isoUeberSystemBefehl = execFileSync('date', ['+%Y-%m-%d'], { env: { ...process.env, TZ: 'Europe/Berlin' } })
+                .toString().trim();
+            pruefen(`METADATEN-DATUM GEGEN UNABHAENGIGE REFERENZ (Systembefehl "date", TZ=Europe/Berlin, fuer heute: "${metadatenDatumBerlin()}" vs. "${isoUeberSystemBefehl}")`,
+                metadatenDatumBerlin() === isoUeberSystemBefehl);
         }
         {
             const alterOpenaiKey = process.env.OPENAI_API_KEY;
@@ -2475,11 +2595,36 @@ async function selbsttest() {
                     && schluesselHolen('deepseek-v4-pro') === null);
                 delete process.env.OPENAI_API_KEY;
 
+                // B10 (Gegenlesung DeepSeek-Weg, 23.09.2026): Kommentar
+                // berichtigt -- diese Fixture-Datei liegt TATSAECHLICH
+                // INNERHALB von "klon" (der Wurzel dieses Selbsttests), nicht
+                // ausserhalb. Das ist hier folgenlos: DEEPSEEK_KEY_DATEI wird
+                // in schluesselHolenAus() direkt per fs.readFileSync()
+                // gelesen, OHNE ueber pfadPruefen()/die Erlaubnisliste zu
+                // laufen (die gilt nur fuer die Werkzeuge suche()/lies() des
+                // Modells) -- der Ort der Datei ist fuer DIESEN Weg beliebig,
+                // ein echter Aufrufer zeigt typischerweise auf eine Datei
+                // ausserhalb des Repos, muss es aber nicht.
                 const dsKeyDateiPfad = path.join(klon, 'deepseek-schluessel-datei.txt');
                 fs.writeFileSync(dsKeyDateiPfad, 'selbsttest-dummy-deepseek-schluessel-datei\n');
                 process.env.DEEPSEEK_KEY_DATEI = dsKeyDateiPfad;
-                pruefen('SCHLUESSEL AUS DEEPSEEK_KEY_DATEI (Datei ausserhalb des Repos, getrimmt -- gleiche Behandlung wie OPENAI_KEY_DATEI)',
+                pruefen('SCHLUESSEL AUS DEEPSEEK_KEY_DATEI (Datei-Inhalt getrimmt uebernommen -- gleiche Behandlung wie OPENAI_KEY_DATEI, Pfad geht NICHT durch die Erlaubnisliste)',
                     schluesselHolen('deepseek-v4-pro') === 'selbsttest-dummy-deepseek-schluessel-datei');
+                delete process.env.DEEPSEEK_KEY_DATEI;
+
+                // B9: eine KONFIGURIERTE, aber nicht lesbare Datei (Pfad
+                // existiert nicht) liefert einen Grund mit dem Fehlercode --
+                // schluesselHolen() selbst bleibt bei "null" (Vertrag
+                // unveraendert), schluesselDetailsHolen() traegt den Grund
+                // zusaetzlich.
+                const dsKeyDateiFehlt = path.join(klon, 'existiert-nicht-deepseek-schluessel.txt');
+                process.env.DEEPSEEK_KEY_DATEI = dsKeyDateiFehlt;
+                const detailsUnlesbar = schluesselDetailsHolen('deepseek-v4-pro');
+                pruefen(`SCHLUESSEL DATEI UNLESBAR TRAEGT GRUND (schluesselHolen() bleibt null, schluesselDetailsHolen().grund nennt ENOENT und die Variable, NIE einen Dateiinhalt (es gab keinen): wert=${schluesselHolen('deepseek-v4-pro')}, grund="${detailsUnlesbar.grund}")`,
+                    schluesselHolen('deepseek-v4-pro') === null
+                    && typeof detailsUnlesbar.grund === 'string'
+                    && detailsUnlesbar.grund.includes('ENOENT')
+                    && detailsUnlesbar.grund.includes('DEEPSEEK_KEY_DATEI'));
                 delete process.env.DEEPSEEK_KEY_DATEI;
             } finally {
                 if (alterOpenaiKey !== undefined) process.env.OPENAI_API_KEY = alterOpenaiKey; else delete process.env.OPENAI_API_KEY;
@@ -2533,6 +2678,51 @@ async function selbsttest() {
                 && !abbruchMsgDsFehlt.includes('OPENAI_API_KEY'));
         }
 
+        // ----- B9 Ende-zu-Ende: DEEPSEEK_KEY_DATEI ist GESETZT, zeigt aber
+        // auf eine nicht existierende Datei -- die ABBRUCH-Meldung aus
+        // main() muss den Grund (ENOENT) nennen, nicht nur "kein Schluessel"
+        // sagen wie beim Fall oben, wo die Variable ganz fehlte. -----
+        {
+            const alterOpenaiKey = process.env.OPENAI_API_KEY;
+            const alteOpenaiDatei = process.env.OPENAI_KEY_DATEI;
+            const alterDsKey = process.env.DEEPSEEK_API_KEY;
+            const alteDsDatei = process.env.DEEPSEEK_KEY_DATEI;
+            delete process.env.OPENAI_API_KEY;
+            delete process.env.OPENAI_KEY_DATEI;
+            delete process.env.DEEPSEEK_API_KEY;
+            process.env.DEEPSEEK_KEY_DATEI = path.join(klon, 'existiert-nicht-deepseek-schluessel-e2e.txt');
+            const echtesHttpsRequestB9 = https.request;
+            const echtesErrorB9 = console.error;
+            const aufgezeichnetB9 = [];
+            const fehlerZeilenB9 = [];
+            https.request = httpsStubBauen([], aufgezeichnetB9);
+            console.error = (msg) => fehlerZeilenB9.push(String(msg));
+            let codeB9;
+            try {
+                codeB9 = await main([
+                    path.join(klon, 'harmlos.txt'),
+                    `--brief=${briefFixturePfad}`,
+                    `--wurzel=${klon}`,
+                    '--modell=deepseek-v4-pro',
+                    '--max-runden=10',
+                    `--protokoll=${path.join(klon, 'selbsttest-protokoll-b9.jsonl')}`,
+                ]);
+            } finally {
+                console.error = echtesErrorB9;
+                https.request = echtesHttpsRequestB9;
+                if (alterOpenaiKey !== undefined) process.env.OPENAI_API_KEY = alterOpenaiKey; else delete process.env.OPENAI_API_KEY;
+                if (alteOpenaiDatei !== undefined) process.env.OPENAI_KEY_DATEI = alteOpenaiDatei;
+                if (alterDsKey !== undefined) process.env.DEEPSEEK_API_KEY = alterDsKey;
+                if (alteDsDatei !== undefined) process.env.DEEPSEEK_KEY_DATEI = alteDsDatei; else delete process.env.DEEPSEEK_KEY_DATEI;
+            }
+            const abbruchMsgB9 = fehlerZeilenB9.find((z) => z.includes('ABBRUCH: Kein Schluessel'));
+            pruefen(`DEEPSEEK KEY_DATEI UNLESBAR NENNT DEN GRUND (Exit ${codeB9} (erwartet 2), ${aufgezeichnetB9.length} Anfragen (erwartet 0), Meldung nennt "Grund:" und ENOENT: "${abbruchMsgB9}")`,
+                codeB9 === 2 && aufgezeichnetB9.length === 0
+                && typeof abbruchMsgB9 === 'string'
+                && abbruchMsgB9.includes('Grund:')
+                && abbruchMsgB9.includes('ENOENT'));
+        }
+
         // ===== LAUF DS: DeepSeek-Anbieterwahl Ende-zu-Ende, gemessen am
         // Anfragekoerper -- derselbe Aufbau wie LAUF D oben, nur mit
         // --modell=deepseek-v4-pro und einem DEEPSEEK_API_KEY, OHNE dass je
@@ -2553,12 +2743,13 @@ async function selbsttest() {
 
             const aufgezeichnetDS = [];
             const aufgezeichneteUrlsDS = [];
+            const aufgezeichneteHeadersDS = [];
             const ausgabeZeilenDS = [];
             const warteschlangeDS = [
                 antwortKoerperBauen(elementFunktionsaufrufBauen('call-ds1', 'lies', { pfad: 'schwaerzen-github.js', von: 1, bis: 11 }), 100, 50),
                 antwortKoerperBauen(elementTextBauen('TESTBERICHT-DEEPSEEK'), 100, 50),
             ];
-            https.request = httpsStubBauen(warteschlangeDS, aufgezeichnetDS, null, aufgezeichneteUrlsDS);
+            https.request = httpsStubBauen(warteschlangeDS, aufgezeichnetDS, null, aufgezeichneteUrlsDS, aufgezeichneteHeadersDS);
             console.log = (msg) => ausgabeZeilenDS.push(String(msg));
 
             let codeDS;
@@ -2585,12 +2776,32 @@ async function selbsttest() {
                 && ausgabeZeilenDS.some((z) => z.includes('TESTBERICHT-DEEPSEEK'))
                 && ausgabeZeilenDS.some((z) => z.includes('Bericht regulaer erstellt')));
 
-            pruefen(`LAUF DS ENDPUNKT (BEIDE Anfragen gingen an den DeepSeek-Endpunkt "${ENDPUNKT_DEEPSEEK}", KEINE an den OpenAI-Endpunkt: ${JSON.stringify(aufgezeichneteUrlsDS)})`,
-                aufgezeichneteUrlsDS.length === 2 && aufgezeichneteUrlsDS.every((u) => u === ENDPUNKT_DEEPSEEK));
+            // B1: Sollwert woertlich, nicht ueber ENDPUNKT_DEEPSEEK selbst
+            // (Begruendung bei ANBIETERWAHL ENDPUNKT oben).
+            pruefen(`LAUF DS ENDPUNKT (BEIDE Anfragen gingen an den DeepSeek-Endpunkt "https://api.deepseek.com/v1/responses", KEINE an den OpenAI-Endpunkt: ${JSON.stringify(aufgezeichneteUrlsDS)})`,
+                aufgezeichneteUrlsDS.length === 2
+                && aufgezeichneteUrlsDS.every((u) => u === 'https://api.deepseek.com/v1/responses')
+                && aufgezeichneteUrlsDS.every((u) => u !== 'https://api.openai.com/v1/responses'));
 
             const koerperDS = JSON.stringify(aufgezeichnetDS);
             pruefen(`LAUF DS SCHLUESSEL NICHT IM KOERPER (der aufgezeichnete Anfragekoerper enthaelt den DeepSeek-Schluessel NICHT: ${koerperDS.includes('selbsttest-dummy-deepseek-schluessel-ohne-netz') ? 'GEFUNDEN' : 'nicht gefunden'})`,
                 !koerperDS.includes('selbsttest-dummy-deepseek-schluessel-ohne-netz'));
+
+            // B11: die tatsaechlich UEBERGEBENEN Kopfzeilen (_optionen.headers,
+            // s. httpsStubBauen()) sind EXAKT diese drei -- nicht mehr, nicht
+            // weniger -- und der Schluessel steht NUR in Authorization.
+            // GEMESSEN (Kommentar bei httpsStubBauen()): "host"/"connection"
+            // fuegt Node selbst auf dem Draht hinzu, unsichtbar fuer diesen
+            // Stub; ein "accept"-Kopf kam in der Messung NIRGENDS vor -- diese
+            // Zusicherung prueft deshalb bewusst NUR die drei Kopfzeilen, die
+            // der Quelltext selbst setzt.
+            pruefen(`LAUF DS KOPFZEILEN EXAKT (beide Anfragen tragen NUR Authorization/Content-Type/Content-Length, der Schluessel steht NUR in Authorization: ${JSON.stringify(aufgezeichneteHeadersDS.map((h) => h && Object.keys(h).sort()))})`,
+                aufgezeichneteHeadersDS.length === 2
+                && aufgezeichneteHeadersDS.every((h) => !!h
+                    && Object.keys(h).sort().join(',') === 'Authorization,Content-Length,Content-Type')
+                && aufgezeichneteHeadersDS.every((h) => h.Authorization === 'Bearer selbsttest-dummy-deepseek-schluessel-ohne-netz')
+                && aufgezeichneteHeadersDS.every((h) => !String(h['Content-Type']).includes('selbsttest-dummy-deepseek-schluessel-ohne-netz')
+                    && !String(h['Content-Length']).includes('selbsttest-dummy-deepseek-schluessel-ohne-netz')));
 
             const funktionsausgabeDS = aufgezeichnetDS.length === 2
                 ? aufgezeichnetDS[1].input.filter((e) => e.type === 'function_call_output' && e.call_id === 'call-ds1').map((e) => e.output).join('\n')
@@ -2599,6 +2810,15 @@ async function selbsttest() {
                 vorkommen(koerperDS, 'F'.repeat(20)) === 0
                 && funktionsausgabeDS.includes('[ZEILE ENTFERNT — Geheimnis-Riegel: ')
                 && funktionsausgabeDS.includes('GitHub-Token'));
+
+            // B7: die ASTRA-LAEUFE-Zeile nennt das Modell automatisch --
+            // LAUF DS setzt weder --zweck noch ASTRA_LAUFPROTOKOLL selbst,
+            // die Zeile landet also in der globalen Wegwerfdatei vom Kopf
+            // von selbsttest(). Zweck faellt auf den Briefnamen zurueck
+            // ("brief-selbsttest"), das Modell muss dahinter stehen.
+            const hintergrundNachLaufDS = fs.readFileSync(process.env.ASTRA_LAUFPROTOKOLL, 'utf8');
+            pruefen('LAUF DS ASTRA-LAEUFE-ZEILE NENNT DAS MODELL (die neu eingetragene Zeile enthaelt "brief-selbsttest (deepseek-v4-pro)" -- automatisch, OHNE dass --zweck es erwaehnt)',
+                hintergrundNachLaufDS.includes('brief-selbsttest (deepseek-v4-pro)'));
         }
 
         // ===== GEMISCHTER LAUF: derselbe Lauf liest dieselbe Datei ERST in
@@ -3081,9 +3301,17 @@ async function selbsttest() {
         // Aufbau wie GP4, aber mit einem "deepseek-*"-Modellnamen -- EIN
         // direkter Aufruf, geprueft wird sowohl der angesteuerte ENDPUNKT
         // als auch reasoning.effort am AUFGEZEICHNETEN Anfragekoerper.
-        // Erwartungswert ABSICHTLICH als eigener, woertlich wiederholter
-        // Ausdruck (nicht ueber die Konstante referenziert), aus demselben
-        // Grund wie bei GP4 oben (N4). -----
+        // Erwartungswerte ABSICHTLICH als eigene, woertliche Ausdruecke
+        // (nicht ueber ENDPUNKT_DEEPSEEK referenziert), aus demselben Grund
+        // wie bei GP4 oben (N4) bzw. bei ANBIETERWAHL ENDPUNKT (B1, weiter
+        // oben in diesem Selbsttest).
+        // B3 (Gegenlesung 23.09.2026): der fruehere Zusatzvergleich
+        // "effort !== aktuelle OpenAI-Vorgabe" ist GESTRICHEN -- er wurde
+        // faelschlich ROT, wenn jemand GEGENLESER_EFFORT=max setzt (dann
+        // sind OpenAI- und DeepSeek-Stufe zufaellig dieselbe Zeichenkette,
+        // ohne dass etwas kaputt waere). Der Sollwert bleibt woertlich
+        // "max" im Normalfall (unveraendert ueber GEGENLESER_EFFORT_DEEPSEEK
+        // absichtlich aenderbar). -----
         {
             const alterHttpsRequestGp4ds = https.request;
             const aufgezeichnetGp4ds = [];
@@ -3099,10 +3327,11 @@ async function selbsttest() {
             const kDs = aufgezeichnetGp4ds[0];
             const erwarteterEffortDeepseek = process.env.GEGENLESER_EFFORT_DEEPSEEK || 'max';
             pruefen(`GP4-DEEPSEEK ENDPUNKT (anfragen() steuert fuer ein deepseek-Modell den DEEPSEEK-Endpunkt an, NICHT den OpenAI-Endpunkt: "${aufgezeichneteUrlsGp4ds[0]}")`,
-                aufgezeichneteUrlsGp4ds.length === 1 && aufgezeichneteUrlsGp4ds[0] === ENDPUNKT_DEEPSEEK);
-            pruefen(`GP4-DEEPSEEK reasoning.effort GEGEN DEN ERWARTETEN WERT (erwartet "${erwarteterEffortDeepseek}", tatsaechlich: "${kDs && kDs.reasoning && kDs.reasoning.effort}", zum Vergleich OpenAI-Vorgabe "${process.env.GEGENLESER_EFFORT || 'xhigh'}")`,
-                !!kDs && !!kDs.reasoning && kDs.reasoning.effort === erwarteterEffortDeepseek
-                && kDs.reasoning.effort !== (process.env.GEGENLESER_EFFORT || 'xhigh'));
+                aufgezeichneteUrlsGp4ds.length === 1
+                && aufgezeichneteUrlsGp4ds[0] === 'https://api.deepseek.com/v1/responses'
+                && aufgezeichneteUrlsGp4ds[0] !== 'https://api.openai.com/v1/responses');
+            pruefen(`GP4-DEEPSEEK reasoning.effort GEGEN DEN ERWARTETEN WERT (erwartet "${erwarteterEffortDeepseek}", tatsaechlich: "${kDs && kDs.reasoning && kDs.reasoning.effort}")`,
+                !!kDs && !!kDs.reasoning && kDs.reasoning.effort === erwarteterEffortDeepseek);
         }
 
         // ----- GP5: der ALTE Stub (ein einzelner JSON-Block statt SSE) muss
@@ -3570,7 +3799,11 @@ async function selbsttest() {
             const inhaltNachher = fs.readFileSync(protokollPfad, 'utf8');
             const zusatzZeilen = inhaltNachher.split('\n').length - protokollFixtureInhalt.split('\n').length;
             const neueZeile = zeileUnmittelbarUeberMarke(inhaltNachher);
-            const erwarteterZweck = path.basename(briefFixturePfad, path.extname(briefFixturePfad));
+            // B7 (Gegenlesung DeepSeek-Weg, 23.09.2026): das Modell steht ab
+            // jetzt IMMER hinter dem Zweck -- protokolliertenLaufAusfuehren()
+            // ruft fest mit --modell=gpt-6-astra, das gehoert deshalb WOERTLICH
+            // in den Erwartungswert.
+            const erwarteterZweck = `${path.basename(briefFixturePfad, path.extname(briefFixturePfad))} (gpt-6-astra)`;
             // Woertlicher Erwartungswert (gpt-6-astra: 12,50 $/Mio rein,
             // 75,00 $/Mio raus): 1,5 * 12,50 = 18,75; 0,3 * 75,00 = 22,50;
             // Summe 41,25 $ -- NICHT aus kostenSchaetzen() zurueckgerechnet.
@@ -3581,7 +3814,7 @@ async function selbsttest() {
             pruefen(`LAUF-PROTOKOLL FALL 1 (36) (normaler Lauf endet mit Exit ${code1} und traegt GENAU EINE neue Zeile unmittelbar ueber der (mehrzeiligen) Marke ein, ${zusatzZeilen} zusaetzliche Zeile(n), Bestandszeile bleibt erhalten)`,
                 code1 === 0 && zusatzZeilen === 1 && inhaltNachher.includes('Bestandszeile, darf nicht angefasst werden'));
 
-            pruefen(`LAUF-PROTOKOLL FALL 1 SPALTEN (37) (die neue Zeile stimmt WOERTLICH -- Datum unabhaengig ueber "date" ermittelt, Zweck ist der Basisname der Brief-Datei (kein --zweck gesetzt), Befunde/getragen/gefallen sind "—", Kosten "41,25 $": "${neueZeile}")`,
+            pruefen(`LAUF-PROTOKOLL FALL 1 SPALTEN (37) (die neue Zeile stimmt WOERTLICH -- Datum unabhaengig ueber "date" ermittelt, Zweck ist der Basisname der Brief-Datei plus das Modell in Klammern (kein --zweck gesetzt), Befunde/getragen/gefallen sind "—", Kosten "41,25 $": "${neueZeile}")`,
                 neueZeile === zeileVollstaendigErwartet);
         }
 
