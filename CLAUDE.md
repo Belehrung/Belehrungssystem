@@ -659,7 +659,12 @@ Sachfrage):
   `tools/gegenleser-repo.js` benutzt, wirkt nur `reasoning: {effort}` (`"quatsch"` → HTTP 422,
   `low` 232 / `max` 10865 Denk-Token an derselben Aufgabe). Ein erfundenes Feld nehmen BEIDE
   Endpunkte mit HTTP 200 an — dieselbe Falle wie bei Kimi. Die früheren Bündelläufe über
-  `/v1/chat/completions` mit `reasoning.effort` liefen also auf der Voreinstellung `high`. **Die Rollentrennung bleibt:** hat DeepSeek
+  `/v1/chat/completions` mit `reasoning.effort` liefen also auf der Voreinstellung `high`.
+  **`max` ohne Werkzeuge kann sich tot denken** (gemessen am selben Tag): ein Einzelaufruf mit
+  Bündel (97 KB), `reasoning_effort: max`, `max_tokens` 200.000 → 200.000 Denk-Token, 0 Zeichen
+  Antwort, 31 Minuten. Über `tools/gegenleser-repo.js` (viele kurze Runden mit Lesewerkzeugen)
+  lieferte dieselbe Stufe dagegen dreimal vollständige Berichte. Für Einzelaufrufe mit Bündel
+  deshalb `high`; `max` nur mit Werkzeugweg. **Die Rollentrennung bleibt:** hat DeepSeek
   für einen Beitrag Code-Schnipsel geliefert, prüft diesen Beitrag eine ANDERE Lesespur — wer
   mitgeschrieben hat, prüft seinen eigenen Entwurf. Gebaut wird weiter über den Executer.
 - *Bis 23.09.2026:* **`gpt-5.6-sol`** — Betreiber-Entscheidung vom
