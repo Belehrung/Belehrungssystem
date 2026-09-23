@@ -68,3 +68,109 @@ Einordnung: normaler Auftrag mit Planprüfung, KEIN sehr komplexer — der Umbau
 3. Was wird SCHLECHTER (Speicher auf dem Spiegel, Betriebsübersicht, bestehende Spiegeldateien mit
    deterministischem Namen, `ops/replica-verify.sh`)?
 4. Welche Fundstellen fehlen (weitere Schreiber auf `storage_replica`, weitere Leser von Spiegelpfaden)?
+
+---
+
+# FASSUNG 2 (ersetzt Fassung 1 vollständig; Befunde: `plaene/planpruefung-unlink-loeschauftrag.md`)
+
+**Einordnung: SEHR komplex** — eine Zustandsmaschine zwischen Worker (rund um die Uhr), Cron und DB mit
+Dateisystem-Nebenwirkungen, in der eine falsche Annahme still grün bleibt (zwei Planprüfungsrunden,
+dreimal eine Lücke eine Stelle weiter). Nach CLAUDE.md damit Fable-fähig.
+
+## Grundsatz: Anker ZUERST (write-ahead)
+
+Jede Referenz auf eine Spiegeldatei, die gelöscht werden SOLL oder deren Schicksal offen ist, steht als
+Zeile in `storage_replica_loeschauftrag`, BEVOR die Datei geschrieben oder gelöscht wird. Die Zeile
+verschwindet erst, wenn feststeht, dass die Datei entweder weg ist oder einer lebenden
+Replikationszeile gehört. Damit gilt nach JEDEM Absturz an JEDER Stelle:
+
+> **Invariante:** jede `.enc` im Spiegel ist `remote_ref` GENAU EINER Replikationszeile oder GENAU
+> EINES Löschauftrags — und kein Löschauftrag ausser `vorbelegt` zeigt auf eine Referenz, die eine
+> Replikationszeile trägt.
+
+## Schema
+
+* Tabelle `storage_replica_loeschauftrag`: `id` (Identität), `studio_id` NOT NULL (FK wie
+  `storage_replica`, ON DELETE CASCADE), `backend` (CHECK `= 'local_mirror'`), `remote_ref` NOT NULL,
+  `local_path`, `grund` NOT NULL CHECK IN (`vorbelegt`, `quelle_geloescht`, `ersetzt`, `verwaist`),
+  `attempts`, `last_error`, `created_at`, `updated_at`, UNIQUE (`studio_id`, `remote_ref`).
+* Deklarativ in `core/db.js#init()` (CREATE TABLE IF NOT EXISTS, Hausmuster) UND als Migration.
+  Die bisherige Datei `migrations/0060_storage_replica_loeschen_offen.sql` wird ersetzt durch
+  `0060_storage_replica_loeschauftrag.sql` (strukturell idempotent). Status-Check von `storage_replica`
+  zurück auf die fünf Werte von master. `loeschen_offen` verschwindet überall.
+* **Vor dem Bau messen und melden:** legt `test/run.sh` `gymdocu_test` je Lauf frisch an? Hat irgendeine
+  DB ausserhalb von Test-DBs die alte 0060 gesehen? (Soll: nein — der Zweig war nie auf master.) Wenn eine
+  lokale Test-DB sie hält: neu anlegen, nicht migrieren; im Bericht nennen.
+
+## Wege
+
+1. **`processReplica()` — Schreiben:**
+   a. Nach dem Claim, VOR `writeFile`: Name `${destPath}.${replica.id}-${hex(6)}.enc`; INSERT Auftrag
+      (`vorbelegt`, diese Referenz).
+   b. `writeFile` mit `flag: 'wx'`.
+   c. EINE Transaktion: `SELECT remote_ref … FOR UPDATE` der Zeile (alte Referenz), `UPDATE … SET
+      status='succeeded', remote_ref=neu … WHERE id AND studio_id RETURNING`, `DELETE` des eigenen
+      `vorbelegt`-Auftrags (muss 1 Zeile treffen, sonst Abbruch der Transaktion — der Auftrag wurde
+      inzwischen als verwaist abgearbeitet und die Datei ist weg), und falls die alte Referenz existiert
+      und abweicht: INSERT Auftrag (`ersetzt`, alte Referenz). COMMIT.
+   d. Nach dem COMMIT: alte Referenz löschen; Erfolg (auch ENOENT) → ihren Auftrag löschen.
+   e. Trifft das UPDATE in c keine Zeile (Quelle inzwischen gelöscht): statt Abbruch den eigenen
+      Auftrag auf `verwaist` umstellen, COMMIT, dann Datei löschen, Erfolg → Auftrag löschen.
+   f. Fehlerzweig (catch): Status/Fehler wie heute; den eigenen `vorbelegt`-Auftrag auf `verwaist`
+      umstellen (falls er noch existiert), dann Löschversuch, Erfolg → Auftrag löschen.
+2. **`loescheReplikaFuerDatei(studio, pfad)`:** EINE Transaktion: `DELETE FROM storage_replica WHERE
+   studio_id AND local_path RETURNING remote_ref` und für jede zurückgegebene `.enc`-Referenz unter dem
+   Spiegel-Root INSERT Auftrag (`quelle_geloescht`, ON CONFLICT DO NOTHING). COMMIT. Danach je Auftrag
+   Löschversuch, Erfolg → Auftrag löschen. Rückgabe `{ok, enc_geloescht, fehler}` wie bisher; `ok` nur,
+   wenn alle Löschversuche gelangen. Ein laufender Worker trifft danach in 1c keine Zeile → 1e.
+3. **`requeueLoeschauftraege()`** (ersetzt `requeueLoeschenOffen`, Cron 03:15 wie bisher): alle Aufträge
+   ausser `vorbelegt`-Aufträgen, die jünger als `RUNNING_LEASE_MINUTES` sind. Löschversuch; Erfolg →
+   `DELETE … WHERE id AND studio_id`; Fehlschlag → `attempts + 1`, `last_error`. Keine Obergrenze,
+   `melde()` je Fehlschlag (wie heute über `entferneDatei`). Ein abgelaufener `vorbelegt`-Auftrag heisst:
+   der Worker ist tot → die Datei ist Waise → löschen (trifft ein noch lebender Worker danach in 1c auf
+   0 Zeilen beim DELETE des Auftrags, bricht er ab — kein `succeeded` auf eine gelöschte Datei).
+4. **Entfernt:** Status `loeschen_offen`, alle Sonderzweige aus Nacharbeit 6/7 (Claim-, enqueue-,
+   upsert-Ausnahmen, Rücksetzlogik, `veraltet`). Diese Stellen wieder wie auf master, Kommentare
+   berichtigt.
+5. **`healthMetrics()`:** Zähler `loeschauftraege` (ohne junge `vorbelegt`), in `countsCapped`; NICHT
+   in `degraded` (Deploy-Gate). `routes/health-intern.js`-Kommentar nachziehen.
+6. **`ops/replica-verify.sh`:** offene Aufträge zählen und als eigenen Zustand melden; „nicht
+   konfiguriert“ nur, wenn BEIDE Tabellen leer sind. `docs/RESTORE_DRILLS.md` nachziehen.
+7. **Studio-Löschung:** `deprovisionStudio()` nimmt die Auftrags-Referenzen in `ziele.replicaRefs` auf
+   (persistierte Offboarding-Queue, `core/provisioning.js:405-416`), gleiche Spiegel-Root-Prüfung.
+8. **Nicht angefasst, Sammelliste U-LOE2:** DB-Fehler in 2 → Aufrufer kommen nicht wieder (Bestand,
+   `core/pdf-loeschung.js` setzt `datei_geloescht` vorher). Keine automatische Löschung von
+   Replikationszeilen mit fehlender Quelle — eine Zweitkopie ohne Quelle ist gerade das, was ein
+   Restore braucht.
+
+## Fundstellen, die der Bau anfasst (gemessen, nicht vollständig — Bau misst nach)
+
+`core/storage-replica.js`, `core/db.js` (Tabelle, Status-Check, Kommentar `:2246`),
+`migrations/0060_*`, `server.js:1529-1543`, `routes/health-intern.js:210-230`, `core/provisioning.js:401-416`,
+`ops/replica-verify.sh` + `ops/replica-verify-logik.js`, `docs/RESTORE_DRILLS.md`,
+`test_feature_storage_replica.js` (umbauen), `test_feature_storage_replica_static.js`,
+`test_feature_audit_batch3.js:80-93` (Pfad aus `remote_ref`), `test_feature_migration_0060_semantik.js`
+(ersetzen), `test_feature_migrationen_unveraendert.js` (Pin), `test/run.sh`. Vor dem Bau per `grep`
+nach weiteren Lesern von Spiegelpfaden suchen (`readdir`/Glob auf `pdf_zusatz_pfad`).
+
+## Nachweis
+
+* **Invariante als Test** (Dateimenge im Test-Spiegel per `readdir` rekursiv gegen die Vereinigung der
+  Referenzen aus BEIDEN Tabellen, beide Richtungen, plus „kein nicht-vorbelegter Auftrag auf eine
+  lebende Referenz“). Positivkontrolle: eine von Hand gelegte Datei macht sie ROT; mindestens eine
+  Datei muss in jedem Szenario existiert haben (Zähler der Schreib-Attrappe > 0).
+* **Szenarien, je mit Invariante danach:** normaler Upload; zweiter Upload desselben Pfads (zwei Namen,
+  alte Datei weg); Löschfehlschlag der alten Datei (Attrappe) → Auftrag `ersetzt`, nach Reaper weg;
+  UPDATE-Fehler nach `writeFile` (Attrappe) → `verwaist`, nach Reaper weg; Absturz simuliert zwischen
+  `writeFile` und Transaktion (Auftrag bleibt `vorbelegt`, Lease abgelaufen) → Reaper löscht; Absturz nach
+  COMMIT vor Schritt 1d → Auftrag `ersetzt` → Reaper; Quelle gelöscht während Upload läuft (2 zwischen
+  1b und 1c) → 1e; `loescheReplikaFuerDatei` mit Löschfehlschlag → Auftrag, nach Reaper weg; ein
+  lebender Worker nach abgelaufenem Lease (Reaper löscht zuerst) → kein `succeeded`.
+  Nebenläufigkeit OHNE echte Zeitabhängigkeit (Attrappen, die an einer benannten Stelle den anderen Weg
+  ausführen); zu jedem Szenario ein Beleg, dass die Verzahnung wirklich eintrat.
+* **Migration:** die DATEI ausführen gegen (a) eine frische DB nach `db.init()`, (b) zweimal; danach
+  Schema-Rundgang: INSERT ohne `studio_id` scheitert, ungültiger `grund` scheitert, doppelte Referenz
+  scheitert, gültige Zeile geht.
+* **Gegenproben** je Riegel (ROT/GRÜN wörtlich): write-ahead-INSERT in 1a entfernt; `wx` entfernt;
+  1c ohne Prüfung „eigener Auftrag gelöscht = 1“; 2 als SELECT→löschen→DELETE statt RETURNING;
+  Reaper ohne Lease-Schutz für `vorbelegt`; Invariante mit leerer Menge.
