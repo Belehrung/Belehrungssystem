@@ -48,3 +48,13 @@ Zwei getrennte Ebenen:
    an einen ANDEREN Ort (nie überschreiben), z. B. `/etc/nginx` und ein PDF-Verzeichnis nach
    `/root/acronis-restore-test/`, dann `sha256sum` gegen den Live-Stand. Ein vollständiger
    Maschinen-Restore auf einen Testserver ist der zweite Schritt.
+
+### Ergebnis Ebene 1 (Serverausgabe 23.09.2026)
+
+Cron eingerichtet (`/etc/cron.d/gymdocu-restore-drills`, 01.08.2026). Status **Gesamt OK**:
+`dump_restore` OK (23.09. 04:30, 6 s), `pitr` OK (01.09., 15 s — monatlich, nächster 01.10.),
+`file_sample` OK (20.09., 13 s), `replica_verify` NICHT KONFIGURIERT (keine Zweitkopie,
+`storage_replica` leer — so gewollt, kein Mangel). Backups liegen unter
+`/var/backups/gymdocu` (`wal`, `hourly`) — **auf derselben Maschine**. Ausserhalb des Servers
+liegt damit nur, was Acronis sichert; genau das ist noch nie zurückgespielt worden.
+Ebene 2 steht aus (Acronis-Wiederherstellung an anderen Ort noch nicht durchgeführt).
