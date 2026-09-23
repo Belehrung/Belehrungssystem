@@ -6,8 +6,12 @@ Stand: 23.09.2026, 09:45 UTC.
 
 Stand 23.09.2026, 22:20 UTC.
 
-* **Pentest P1 gemergt** (#470, Squash `221a7b2`, CI 4/4 grün auf `7e2f8dd`, kein Bot-Kommentar). Deploy und
-  live-check stehen aus. Sammelliste `plaene/offene-befunde-pentest-p1.md` für die Extrarunde. **P2** ist
+* **Pentest P1 gemergt** (#470, Squash `221a7b2`, CI 4/4 grün auf `7e2f8dd`, kein Bot-Kommentar). **Deploy 437
+  ZWEIMAL gescheitert** (22:27 und 22:33 UTC), beide Male schon beim SSH-Handshake: `ssh: handshake failed: read:
+  connection reset by peer` — vor jedem Schritt auf dem Server. Live-Betrieb läuft (live-check 22:35 grün, 2× ℹ),
+  also mit dem ALTEN Stand `4312eaf`. Letzter erfolgreicher Deploy 436 um 16:07 UTC. Ursache liegt am Server
+  (sshd/Firewall/fail2ban), von hier nicht erreichbar → Betreiber gefragt. Nicht weiter neu anstossen, bis er
+  Bescheid gibt (weitere Versuche können eine Sperre verlängern). Sammelliste `plaene/offene-befunde-pentest-p1.md` für die Extrarunde. **P2** ist
   eigener Beitrag.
 * **Nachweis-unlink**: Runde 6 ausgewertet (14 Zeilen, drei Spuren). Auftrag Nacharbeit 9 Fassung 1
   (`plaene/auftrag-unlink-loeschauftrag.md`), **Planprüfung läuft** (DeepSeek Repo + Kimi Bündel,
