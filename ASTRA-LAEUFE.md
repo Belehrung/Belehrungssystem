@@ -186,6 +186,7 @@ sondern falsch.
 | 23.09.2026 | Diffpruefung unlink Runde 6 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 940 Zeilen, Suchen 4, Lesungen 22, Token rein 880935, Token raus 66507, Runden 11 | 5 | 5 (einzig von dieser Spur: gleichzeitige Deprovisionierungen teilen sich den Queue-Eintrag; Status-UPDATEs im Fehlerweg ohne eigenes `try/catch`). Einzelheiten `plaene/diffpruefung-unlink.md` Runde 6 | 0 | 1,43 $ |
 | 23.09.2026 | Diffpruefung unlink Runde 6 Spur K (kimi-k3, Bündel 249 KB, effort high) | Bündel 78.975 Token ein, 37.222 aus, 949 s | 5 | 5 (Kern-Vorschlag: `db.tx` weiss, ob COMMIT gesendet wurde — der Fehlerweg soll das nutzen statt nachzumessen) | 0 | — (keine Preisgrundlage im Repo) |
 | 23.09.2026 | Planpruefung unlink Nacharbeit 9 (deepseek-v4-pro), ERSTER Versuch | abgebrochen durch Container-Neustart (22:0x UTC), keine Ausgabe | — | — | — | unbekannt (angefallen, nicht messbar) |
+| 23.09.2026 | Planpruefung unlink Nacharbeit 9 (deepseek-v4-pro) + Spur K (kimi-k3), ZWEITER Versuch | beide abgebrochen durch Container-Neustart (22:40 UTC, nach ~23 min), keine Ausgabe | — | — | — | unbekannt (angefallen, nicht messbar) |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
