@@ -4,7 +4,9 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-Stand 23.09.2026, 14:45 UTC.
+Stand 23.09.2026, 15:35 UTC.
+
+* **S6 ausgeliefert** (#468, Deploy 435 `success` für `753b833`, live-check grün mit 2× ℹ wie immer; Health-Gate im Deploy = Migration 0059 durch).
 
 * **Betreiber-Entscheidung:** Code-Prüfungen und Logikfehlersuche über `deepseek-v4-pro`
   (CLAUDE.md). DeepSeek-Weg in `tools/gegenleser-repo.js` gemergt (`9209499`, Selbsttest 129/0);
@@ -15,8 +17,6 @@ Stand 23.09.2026, 14:45 UTC.
   DeepSeek Runde 2 (Bündel) — erster Lauf abgeschnitten (64k Ausgabe), Wiederholung mit 200k
   läuft (`scratchpad/dpsperre2/`). Nachgesehen bisher: Destrukturierungs-Zuweisung unerkannt
   (trägt), N-nach-L-Zusicherung ohne Reihenfolge (strukturell erzwungen, gering).
-* **S6** (`fix-s6-pin-generation`, `1181d5b`): Nacharbeit gelesen, Suite 355 = 355. DeepSeek
-  Runde 2 mit Repo-Lesezugriff läuft.
 * **Nachweis-unlink** (`fix-nachweis-unlink`, `e262f47`, master gemergt): N4/N5 gelesen, Suite
   354 = 354. DeepSeek Runde 2 läuft.
 * **Pentest P1**: Fassung 2 (`plaene/auftrag-pentest-p1-p2.md`), Planprüfung Runde 2 läuft
