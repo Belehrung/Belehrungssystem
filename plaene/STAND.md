@@ -4,23 +4,23 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-Stand 23.09.2026, 12:40 UTC.
+Stand 23.09.2026, 14:00 UTC.
 
 * **#467 ausgeliefert** (Deploy 434, live-check grün).
-* **Executer (Sonnet): Nachweis-unlink, Nacharbeit 3** (Nacharbeit 2 `85cdd0b` geprüft; jetzt: verschluckte Fehler bei abgewarteten Löschungen und `unlinkSync` in stillem `catch`, Wächter „unlink nur im Helfer") — `/workspace/gymdocu-unlink`,
-  `fix-nachweis-unlink`. Stand `1254e5e` geprüft (Helfer `core/datei-entfernen.js`, 21 Stellen,
-  AST-Wächter, 351 = 351, Lint 0). Nacharbeit 2 schliesst die drei Wächter-Grenzen.
-* **Executer (Fable): Sperrordnung `auditTx`** — `/workspace/gymdocu-sperre`,
-  `fix-studiolock-ordnung`, Auftrag Fassung 3.
-* **Executer (Fable): S6 Generationszähler** — `/workspace/gymdocu-s6`,
-  `fix-s6-pin-generation`, Auftrag Fassung 3 nach zwei Planprüfungsrunden
-  (`plaene/planpruefung-s6.md`).
-* **H2** (anonyme Sitzungen/Cookie-Schleife): Auftrag Fassung 3 nach zwei Runden
-  (`plaene/planpruefung-h2.md`). Bau startet, sobald der unlink-Beitrag fertig ist (sonst
-  warten vier Suiten auf dieselbe Sperre, `flock -w 900`).
-* **H1** (CSP): gemessen 212 Inline-Handler in 26 Dateien, 74 Inline-Skripte. Vorschlag: erst die
-  heutige Richtlinie durchsetzen, Nonces als eigener grosser Beitrag (App-seitiger Header nötig).
-* Lesebaum `/workspace/gymdocu-lock` (master `f4c0f07`) nur für Prüfläufe.
+* **Nachweis-unlink** (`/workspace/gymdocu-unlink`, `fix-nachweis-unlink`): Nacharbeit 3 geprüft
+  (`a0dbcf6`, `f095ec3`, Suite 351 = 351, Lint 0). Läuft: Nacharbeit 4 (Verhaltenstest für beide
+  Löschhelfer) + master-Merge (Zweig steht auf `e2a9e9e`). Lesespur-Diffprüfung (`sol`) läuft
+  auf dem Lesebaum `/workspace/gymdocu-unlink-lese` (`f095ec3`).
+* **Sperrordnung** (`/workspace/gymdocu-sperre`, `fix-studiolock-ordnung`, Fable): Suite auf
+  `d90c8d5` grün (355 = 355). Diffprüfung beider Spuren nachgemessen
+  (`plaene/diffpruefung-sperrordnung.md`); Nacharbeit läuft (L1 blockierend + B1–B8).
+* **S6** (`/workspace/gymdocu-s6`, `fix-s6-pin-generation`, Fable): Diffprüfung beider Spuren
+  nachgemessen (`plaene/diffpruefung-s6.md`, 2 blockierend); Nacharbeit läuft (15 Punkte).
+* **Pentest P1/P2**: Auftragspapier Fassung 1 (`plaene/auftrag-pentest-p1-p2.md`), Planprüfung
+  Spur A nachgemessen (`plaene/planpruefung-pentest.md`), Spur B (kimi) läuft. Fassung 2 danach.
+* **H2**: Auftrag Fassung 3 fertig; Bau startet nach dem unlink-Merge.
+* **H1** (CSP): erst die heutige Richtlinie durchsetzen, Nonces als eigener Beitrag.
+* MiMo-V2.6-Pro: Doku gelesen, nicht belegt (`plaene/mimo-v2-6-pro-eignung-23-09-2026.md`).
 
 **#465 ausgeliefert:** Deploy 433 `success` für `e2a9e9e`, live-check grün
 (2× ℹ wie immer).
