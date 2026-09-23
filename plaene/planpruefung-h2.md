@@ -51,3 +51,23 @@ Sitzungen, Freischalt-Fehler ohne Sitzung, `requireAdmin` schreibt nur mit Sitzu
 | R2-A7 | mittel | Cookie-KOPF beweist keine geladene Sitzung (erfundenes/abgelaufenes `connect.sid`) → `requireAdmin` schriebe weiter anonyme Zeilen | express-session erzeugt bei unbekannter sid eine neue | ja — Fassung 3: Ziel für Admin ebenfalls als Parameter, keine Sitzung |
 | R2-A8 | mittel | Ziel in der Sitzung zwischen zwei Sprüngen: zwei Tabs, PIN-Sperre schreibt ihr eigenes `returnTo` (`server.js:806-809`) | gelesen | ja — Fassung 3: Ziel auch über den Marker-Sprung als Parameter |
 | R2-A9 | gering | Befund-Formulierung: `pending2fa` vor 2FA, Archiv-Anmeldung; QR-Einstiege zeigen direkt auf `/login/tablet` | gelesen | ja |
+
+## Runde 2, Spur B (`deepseek-v4-pro`, Bündel: Auth-Kern, Login-Wege, Sitzungs-Setup, Freischaltweg, Sitzungs-Test, E2E-Helfer) — nachgemessen
+
+492 s, 17.889 ein / 23.435 aus (19.025 Denken).
+
+| # | Schwere | Befund | Nachmessung | trägt |
+|---|---|---|---|---|
+| R2-B1 | blockierend | Mitarbeiter-Sitzung (Rolle `mitarbeiter`) fiele in den 400-Zweig | PIN-Erfolg setzt `benutzer.rolle = 'tablet'` plus `req.session.mitarbeiter` (`routes/tablet-sperre.js:742-743`) — eine Rolle `mitarbeiter` gibt es nicht | nein (Prämisse falsch); Fassung 3 deckt trotzdem „jede andere angemeldete Rolle" ab |
+| R2-B2 | mittel | `requireTabletOrAdmin` leitet ebenfalls um und wird nicht geändert | kein Aufrufer im Repo (`grep`: nur Definition und Export) | nein; Fassung 3 entfernt die tote Funktion |
+| R2-B3 | blockierend | Abfragen auf `session` ohne `studio_id` verletzen die Mandantenregel | Rahmentabelle von `connect-pg-simple` ohne `studio_id`, Tests laufen nur in der Wegwerf-DB über `sid` | nein |
+| R2-B4 | gering | `weiter` legt interne Pfade in URL/Logs offen | der Pfad steht schon in der Zugriffszeile der ersten Anfrage | nein (im Papier benannt) |
+| R2-B5 | mittel | `expire` muss zu ZWEI Zeitpunkten gemessen werden (5 min nach dem ersten Sprung, 8 h nach dem Marker) | trägt | ja |
+
+Drei der fünf Befunde fallen an Tatsachen, die im Bündel dieser Spur nicht standen
+(`tablet-sperre.js` PIN-Erfolg, Aufrufer von `requireTabletOrAdmin`) — dieselbe Klasse wie am
+20.09. („gefallene Befunde fallen an fehlendem Material").
+
+**Folge:** Fassung 3 — Ziel auch über den Marker-Sprung und für Admin als Parameter, keine
+anonyme Sitzung mehr in `requireLogin`/`requireAdmin`, nicht interaktive Freischalt-Fehlerseite,
+toter Helfer entfernt, bestehender Gate-Test fachlich umgestellt.

@@ -1,91 +1,125 @@
-# Bauauftrag H2: Anonyme Sitzungen und Weiterleitungsschleife (Fassung 2, 23.09.2026)
+# Bauauftrag H2: Anonyme Sitzungen und Weiterleitungsschleife (Fassung 3, 23.09.2026)
 
 **Zielrepo:** GymDocu, Zweig `fix-h2-cookie-schleife` ab dem dann aktuellen master.
 **Herkunft:** `plaene/haertung-weitere-moeglichkeiten-23-09-2026.md`, H2; Pentest-Vorbereitung.
 **Modellwahl, VOR dem Auftrag entschieden:** Standard-Executer — wenige Routen, keine Sperren,
-keine Migration; die Falltabelle unten legt jeden Zweig fest.
+keine Migration; die Falltabelle legt jeden Zweig fest.
 **Nach SUCHMUSTER arbeiten** (Zeilen = Stand `f4c0f07`).
-Planprüfung Fassung 1: `plaene/planpruefung-h2.md` (zwei Spuren, 17 Befunde, alle getragen).
+Planprüfung: `plaene/planpruefung-h2.md` (zwei Runden, je zwei Spuren). Alle getragenen Befunde
+sind Anforderungen; die nicht getragenen stehen dort mit Begründung.
 
-## Befund (gemessen am Code und von aussen)
+## Befund
 
 * Ohne Cookies läuft eine Studio-Subdomain im Kreis: `/` → `requireLogin` → `/login/tablet` →
   Sitzung gespeichert → `/` → … (`curl -L` bricht nach 50 ab).
-* **Sitzungszeilen ohne Anmeldung entstehen auf vier Wegen**, nicht nur in der Schleife:
-  `requireLogin` (`core/auth.js`, `returnToMerkenFallsGet` schreibt `returnTo` → die Sitzung ist
-  verändert und wird gespeichert, trotz `saveUninitialized: false`), `requireAdmin` (dasselbe),
-  `GET /login/tablet` (speichert ausdrücklich), `GET /tablet/freischalten`
-  (`routes/tablet-sperre.js`, speichert auch bei UNGÜLTIGEM Token). Jede Zeile lebt 8 h.
+* **Sitzungszeilen OHNE Zugangsdaten** entstehen heute auf vier Wegen: `requireLogin` und
+  `requireAdmin` (`returnToMerkenFallsGet` verändert die Sitzung → sie wird gespeichert, trotz
+  `saveUninitialized: false`), `GET /login/tablet` (speichert ausdrücklich),
+  `GET /tablet/freischalten` (speichert auch bei UNGÜLTIGEM Token). Jede Zeile lebt 8 h.
+  Davon zu unterscheiden und NICHT Gegenstand: `pending2fa` nach richtigem Passwort, die
+  Archiv-Anmeldung (`dArchivAuth`) — beide erst nach geprüften Zugangsdaten.
 * `req.session.save(() => …)` in `/login/tablet` ignoriert Store-Fehler.
-* Der Tablet-Filter für das Rücksprungziel lässt `/favicon.ico` und andere Dateipfade durch
-  (anders als `sicheresReturnTo` für Admin, `routes/auth.js`).
+* Der Tablet-Filter für das Rücksprungziel (`/^\/(?!\/|admin|login)/`, an zwei Stellen:
+  `routes/auth.js` `/login/tablet` und `routes/tablet-sperre.js` PIN-Erfolg) lässt
+  `/favicon.ico` und andere Dateipfade durch.
+* `requireTabletOrAdmin` (`core/auth.js`) ist exportiert, hat aber keinen Aufrufer (gemessen).
 
-## Entwurf — vollständige Falltabelle
+## Entwurf
 
-1. **`requireLogin`, GET ohne Anmeldung:** KEIN Schreiben in die Sitzung. Weiterleitung auf
-   `/login/tablet?weiter=<Pfad+Query, URL-kodiert>`, sofern das Ziel den Tablet-Filter besteht
-   (interner Pfad, kein `//`, kein `/admin`, kein `/login`, KEIN Datei-/Iconpfad — `favicon`,
-   `apple-touch-icon`, Endungen `.ico .png .jpg .svg .js .css .map .webmanifest`); sonst ohne
-   `weiter`. Nicht-GET wie heute. Der Filter ist EINE Funktion, von beiden Stellen benutzt.
-2. **`requireAdmin`:** schreibt `returnTo` nur noch, wenn die Anfrage bereits ein
-   Sitzungs-Cookie mitbringt (Name aus dem Sitzungs-Setup in `server.js`, gemessen, nicht
-   geraten). Ein ganz frischer Browser ohne Cookie landet nach dem Admin-Login auf `/admin`
-   statt am tiefen Ziel — bewusst hingenommen, im Kommentar benannt.
-3. **`GET /login/tablet` ohne `c`:**
-   * angemeldet (beliebige Rolle) → wie heute weiter (`/`);
-   * sonst: Tablet-Sitzung anlegen, `weiter` (erneut durch den Filter) in der Sitzung merken,
-     **Lebensdauer der Sitzung 5 Minuten** (`req.session.cookie.maxAge`), speichern; bei
-     Speicherfehler → 500-Seite „Anmeldung konnte nicht gespeichert werden", `melde()`, KEINE
-     Weiterleitung; sonst Weiterleitung auf `/login/tablet?c=1`.
-4. **`GET /login/tablet?c=1`** — dieser Zweig steht VOR „schon angemeldet":
-   * Tablet-Sitzung vorhanden (das Cookie kam zurück) → Lebensdauer auf 8 h setzen, gemerktes
-     Ziel lesen, löschen, speichern (Fehler wie oben), weiterleiten (Ziel oder `/`);
-   * angemeldete Nicht-Tablet-Sitzung (Admin) → `/admin`;
-   * sonst (keine Sitzung, oder Sitzung ohne `benutzer`) → Hinweisseite, **HTTP 400**,
-     `Cache-Control: no-store`, OHNE die Sitzung zu verändern. Text wahrheitsgemäss:
-     „Die Anmeldung konnte nicht bestätigt werden. Bitte Cookies für diese Seite zulassen und
-     dann ‚Erneut versuchen' tippen — ein Neuladen dieser Seite genügt nicht." Knopf auf
-     `/login/tablet` ohne Marker. Kein Meta-Refresh (erzeugte eine neue Schleife).
-5. **`GET /tablet/freischalten`:** ungültiger Token → Sperrseite mit Fehlermeldung DIREKT
-   rendern (die Meldung steht in `req.query`, braucht keine Sitzung), KEINE Sitzung anlegen;
-   gültiger Token → wie heute (Sitzung + Geräte-Cookie), Speicherfehler behandeln wie in 3.
-6. Veraltete Zeilenangaben in Kommentaren, die auf `/login/tablet` zeigen
-   (`routes/tablet-sperre.js`: „routes/auth.js:452"), durch ein Suchmuster ersetzen.
+**Grundsatz: das Rücksprungziel reist als geprüfter Query-Parameter `weiter`, nie in einer
+Sitzung, die ein Anonymer anlegt.** (Der ursprüngliche Pfad steht ohnehin schon in den
+Zugriffslogs der ersten Anfrage; es wird nichts preisgegeben, was nicht schon dort steht.)
 
-## Nachweis (Wegwerf-DB; Sitzungen sid-basiert, nicht über eine globale Zahl)
+1. **Ein Filter, eine Funktion** in `core/auth.js` (z. B. `erlaubtesTabletZiel(pfad)`): interner
+   Pfad, kein `//`, kein `/admin`, kein `/login`, kein Datei-/Iconpfad (`favicon`,
+   `apple-touch-icon`, Endungen `.ico .png .jpg .jpeg .svg .webp .js .css .map .webmanifest`);
+   liefert den Pfad oder `null`. Benutzt von `requireLogin`, `/login/tablet` und dem PIN-Erfolg in
+   `routes/tablet-sperre.js` (dort ersetzt er die zweite Kopie der Regex).
+2. **`requireLogin`, GET ohne Anmeldung:** KEIN Schreiben in die Sitzung. Weiterleitung auf
+   `/login/tablet?weiter=<kodiert>`, wenn der Filter das Ziel zulässt, sonst `/login/tablet`.
+   Nicht-GET: `/login/tablet` ohne Ziel (wie heute: ein POST-Pfad ist nie ein Ziel).
+3. **`requireAdmin`:** KEIN Schreiben in die Sitzung. Weiterleitung auf
+   `/login?weiter=<kodiert>` für GET (Prüfung mit `sicheresReturnTo`), sonst `/login`.
+   `GET /login` trägt `weiter` (erneut geprüft) als verstecktes Feld im Formular;
+   `POST /login` liest es aus dem Rumpf, prüft es mit `sicheresReturnTo` und setzt es NACH der
+   Passwortprüfung wie heute als `returnTo` in die regenerierte Sitzung. Damit bleiben tiefe
+   Admin-Ziele auch in einem frischen Browser erhalten.
+4. **`GET /login/tablet` ohne `c`:**
+   * `benutzer` vorhanden → Admin nach `/admin`, jede andere Rolle nach dem geprüften `weiter`
+     oder `/`;
+   * sonst: Tablet-Sitzung anlegen, **Lebensdauer 5 Minuten** (`req.session.cookie.maxAge`),
+     speichern; Speicherfehler → 500-Seite „Anmeldung konnte nicht gespeichert werden",
+     `melde()`, KEINE Weiterleitung; sonst Weiterleitung auf
+     `/login/tablet?c=1&weiter=<dasselbe geprüfte Ziel>`.
+5. **`GET /login/tablet?c=1`** — steht VOR jedem anderen Zweig:
+   * Tablet-Sitzung vorhanden → Lebensdauer auf 8 h, speichern (Fehler wie oben), Weiterleitung
+     auf das geprüfte `weiter` oder `/`;
+   * andere angemeldete Rolle → wie in 4 (Admin `/admin`, sonst `/`);
+   * sonst (keine Sitzung oder Sitzung ohne `benutzer`, z. B. `pending2fa`) → Hinweisseite
+     **HTTP 400**, `Cache-Control: no-store`, OHNE die Sitzung zu verändern. Text als MÖGLICHE
+     Ursache: „Die Anmeldung konnte nicht bestätigt werden — womöglich lässt der Browser keine
+     Cookies zu, oder die Anmeldung ist abgelaufen. Bitte Cookies für diese Seite zulassen und
+     ‚Erneut versuchen' tippen; ein Neuladen dieser Seite genügt nicht." Knopf auf
+     `/login/tablet` (mit demselben geprüften `weiter`). Kein Meta-Refresh.
+6. **`GET /tablet/freischalten`:**
+   * ungültiger Token → eine NICHT interaktive Fehlerseite (kein PIN-Formular — ohne
+     Tablet-Sitzung liefe es an `requireLogin` auf) mit Knopf auf `/login/tablet`; KEINE
+     Sitzung;
+   * gültiger Token → wie heute; scheitert NUR das Speichern der Sitzung, ist das Gerät bereits
+     freigeschaltet (Link verbraucht, Geräte-Cookie gesetzt): dann eine Erfolgsseite mit Knopf
+     auf `/login/tablet`, `melde()`, kein 500.
+7. **`requireTabletOrAdmin`** ohne Aufrufer entfernen (samt Export); vorher erneut messen, dass
+   es keinen Aufrufer gibt.
+8. Veraltete Zeilenangaben in Kommentaren auf `/login/tablet` durch Suchmuster ersetzen.
 
-Jede Antwort wird mit ihren `Set-Cookie`-Kopfzeilen ausgewertet (der Server sendet sie, der
-cookielose Client ignoriert sie); geprüft wird, WELCHE `sid` in der `session`-Tabelle stehen —
-immun gegen Pruner und fremden Verkehr. Die Tabelle hat keine `studio_id`; die Proben laufen
-gegen eine eigene Wegwerf-DB.
+## Bestehende Tests, die das Gegenteil zusichern (fachlich umstellen, nicht streichen)
+
+* `test_feature_qr_trainer_defekt.js` (Abschnitt um `returnToMerkenFallsGet`): verlangt „genau
+  zwei Aufrufe" und nach `GET /login/tablet` sofort `/`. Umstellen auf: kein Schreiben von
+  `returnTo` durch `requireLogin`/`requireAdmin`; ein POST liefert kein `weiter`; die Kette
+  endet über den Marker-Sprung auf dem gefilterten Ziel. Die KERNAUSSAGE (ein POST-Pfad ist nie
+  ein Ziel) bleibt als Zusicherung erhalten.
+* Weitere Tests, die `returnTo`, `/login/tablet` oder `requireTabletOrAdmin` zusichern: der
+  Executer sucht sie selbst (`grep`) und nennt die Liste mit der jeweiligen Umstellung.
+
+## Nachweis (eigene Wegwerf-DB)
+
+Sitzungen werden über die `sid` aus den `Set-Cookie`-Kopfzeilen der Antworten verfolgt (der
+Server sendet sie, der cookielose Client ignoriert sie). Die `session`-Tabelle ist die
+Rahmentabelle von `connect-pg-simple` ohne `studio_id`; Abfragen darauf laufen nur in der
+Wegwerf-DB und nur über `sid`.
 
 * **Ohne Cookie-Speicher, ab `/`:** Kette `/` → `/login/tablet?weiter=/` →
-  `/login/tablet?c=1` → 400 mit Hinweis; neu angelegte sid: GENAU EINE (aus Schritt 3), mit
-  Lebensdauer ≤ 5 min. Gegenprobe: Schritt 1 auf das alte `returnTo`-Schreiben zurück → zwei
-  sids, rot.
-* **Ohne Cookie-Speicher, ab einem tiefen Tablet-Pfad mit Query:** das `weiter` im ersten
-  `Location` ist genau dieser Pfad samt Query.
-* **Mit Cookie-Speicher, ab tiefem Tablet-Pfad:** `Location` der Marker-Antwort ist genau das
-  Ziel; die Sitzung hat danach 8 h. Gegenprobe: Ziel im Marker-Zweig auf `/` festnageln → rot.
-  Gegenprobe: die beiden Zweige (Marker / „schon angemeldet") vertauschen → rot.
-* **Filter:** `//fremd`, `/admin/x`, `/login`, `/favicon.ico`, `/apple-touch-icon.png` → kein
-  `weiter`; ein erlaubter Pfad → vorhanden. Positivkontrolle und Negativfälle je einzeln.
-* **Marker direkt ohne Vorlauf** → 400, keine neue sid; **Marker mit Sitzung ohne `benutzer`**
-  → 400, sid unverändert, Inhalt unverändert.
+  `/login/tablet?c=1&weiter=/` → 400 mit Hinweis. Neue sids: **GENAU EINE** (literal), ihr
+  `expire` unmittelbar NACH Schritt 2 ≤ jetzt + 5 min. Gegenprobe: `requireLogin` schreibt
+  wieder `returnTo` → zwei sids, rot.
+* **Mit Cookie-Speicher, frischer Kontext, ab tiefem Tablet-Pfad samt Query:** erstes
+  `Location` enthält genau diesen Pfad als `weiter`; Marker-Antwort leitet genau dorthin; `expire`
+  danach ≈ jetzt + 8 h (getrennt zu den beiden Zeitpunkten gemessen). Gegenproben: Ziel im
+  Marker-Zweig auf `/` festnageln → rot; Marker-Zweig hinter „angemeldet" verschieben → rot.
+* **Zwei Tabs:** zwei verschiedene tiefe Ziele verschränkt → jeder Tab landet auf SEINEM Ziel.
+* **Filter:** `//fremd`, `/admin/x`, `/login`, `/favicon.ico`, `/apple-touch-icon.png`,
+  `/x.js` → kein `weiter`; ein erlaubter Pfad → vorhanden. Je einzeln, Positivkontrolle dabei.
+  Derselbe Filter am PIN-Erfolg (`/favicon.ico` als gemerktes Ziel → `/`).
+* **Marker direkt** (ohne Vorlauf) → 400, keine neue sid. **Marker mit gespeicherter
+  `pending2fa`-Sitzung und einem Merkfeld** → 400, sid und vollständiger `sess`-Inhalt
+  unverändert (Vergleich vorher/nachher; die Zusicherung fällt, wenn der Zweig ein Feld löscht).
 * **Speicherfehler:** Store-Attrappe liefert beim Speichern einen Fehler → 500, keine
-  Weiterleitung, kein Hinweis „Cookies", `melde()` (Attrappe) genau einmal.
-* **Freischaltweg:** ungültiger Token ohne Cookie → Fehlermeldung sichtbar, KEINE neue sid;
-  gültiger Token → wie heute.
-* **`requireAdmin`:** ohne Cookie → keine neue sid; mit Sitzungs-Cookie → `returnTo` gespeichert
-  wie heute (Positivkontrolle).
-* Browser-E2E-Suite grün; ein zusätzlicher Browserfall: Tablet-Einstieg über einen tiefen Pfad
-  landet dort.
+  Weiterleitung, kein Cookie-Hinweis, `melde()` (Attrappe) genau einmal.
+* **Freischaltweg:** ungültiger Token ohne Cookie → Fehlerseite ohne PIN-Formular, KEINE neue
+  sid; gültiger Token mit gestörtem Speichern → Erfolgsseite, Gerätezeile angelegt, Geräte-Cookie
+  gesetzt, `melde()` einmal.
+* **Admin:** `/admin/…` ohne Cookie → `/login?weiter=/admin/…`, KEINE neue sid; Formular trägt
+  das Ziel; nach Passwort + 2FA landet der Admin dort. Gegenprobe: das versteckte Feld entfernen
+  → Landung auf `/admin`, rot.
+* **Browser-E2E:** ein zusätzlicher Fall mit FRISCHEM Kontext ohne vorheriges Login: tiefer
+  Tablet-Pfad → PIN-Sperre bzw. Ziel. Die bestehenden E2E-Fälle bleiben grün.
 * Volle Suite, Dateizahl-Ritual, Lint, Marker-Scan.
 
 ## Server (Betreiber, nach dem Merge) — Pflichtteil
 
-1. nginx-Ratenbegrenzung für `/login/tablet` und `/tablet/freischalten` prüfen
-   (`grep -n "location\|limit_req" /etc/nginx/conf.d/00-login-ratelimit.conf /etc/nginx/sites-enabled/*`)
-   und, wo sie fehlt, ergänzen — mit der Zahl zwei Anfragen je normalem Tablet-Einstieg.
-2. Überwachung: falls eine Studio-Subdomain ohne Cookies abgefragt wird, sieht sie künftig 400
-   statt einer Schleife. Ein sitzungsfreier 200-Endpunkt ist `/login`.
+1. Wirksame nginx-Ratenbegrenzung für `/login/tablet`, `/login` und `/tablet/freischalten`
+   prüfen (`nginx -T | grep -n "limit_req\|location"`) und mit einem echten Tablet-Einstieg (zwei
+   Anfragen) gegenmessen; wo sie fehlt, ergänzen.
+2. Überwachung: eine Studio-Subdomain ohne Cookies sieht künftig 400 statt einer Schleife;
+   sitzungsfreier 200-Endpunkt ist `/login`.
