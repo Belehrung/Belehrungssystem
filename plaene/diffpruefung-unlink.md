@@ -125,3 +125,21 @@ und n (Entzogen-Riegel) GRÜN; t5/t5b (Offboarding) GRÜN.
 | R5-12 | DeepSeek | Anmerkung | stündlicher Reaper sequenziell bis 200 × 10 s; Seq-Scan ohne passenden Index | trägt | ja |
 
 → Nacharbeit 8 (`plaene/auftrag-unlink-loeschauftrag.md`, Abschnitt „NACHARBEIT 8“).
+
+## Nacharbeit 8 (`2a9e62a..dceda2c`) — gelesen, Runde 6 läuft
+
+Executer: Suite `SUITE_EXIT=0`, 537 s, Dateizahl 362 = 362 (`diff` EXIT 0), Lint 0, Szenarien 124/0,
+`test_deprovision` 27/0. Zwölf Gegenproben, elf ROT; `n` (nur `status='running'` aus dem Entzogen-Riegel) bleibt
+GRÜN, weil der neue `attempts`-Riegel dieselbe Klasse deckt — `n2` (ganzer Riegel) ROT. Übernommene, gemessene
+Widersprüche zum Auftrag: frische Studio-Prüfung im `catch` von `deprovisionStudio` statt unbedingtem Entfernen
+(sonst Datenverlust bei verlorener COMMIT-Quittung, S25); dritte Phase `nach_abschluss`; Entzogen-Zweig löscht die
+eigene Datei weiter (COMMIT nie versucht — `db.tx` wirft den Callback-Fehler auch bei gescheitertem ROLLBACK
+unverändert weiter, `core/db.js` nachgesehen). Karenz 15 min im Offboarding-Reaper: übernommen (eine
+Deprovisionierung dauert Sekunden).
+
+Studio-Wächter der Suite „NICHT GEPRÜFT (Messung fehlgeschlagen)": in diesem Container fehlt die
+Entwicklungs-DB `gymdocu_dev` (gemessen, `pg_database` leer) — Umgebung, nicht Änderung.
+
+Produktivdiff selbst gelesen (`core/storage-replica.js`, `core/provisioning.js`). Runde 6 mit DREI Spuren —
+Anlass nach Regel: unwiderrufliche Dateilöschung. Claude ausführend (eigener Cluster), DeepSeek mit Repo,
+Kimi mit Bündel (Diff + beide Module + beide Testdateien vollständig, Schwerpunkt Zusicherungen).
