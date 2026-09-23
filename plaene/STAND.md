@@ -4,19 +4,16 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-Stand 23.09.2026, 21:45 UTC.
+Stand 23.09.2026, 22:20 UTC.
 
-* **Pentest P1**: Runde 3 (DeepSeek allein, über Nacharbeit 2) ausgewertet — 7 kleine Befunde, alle
-  getragen (Logzeile, Testschärfe). **Nacharbeit 3 läuft** (`plaene/auftrag-pentest-p1-nacharbeit3.md`,
-  derselbe Executer, `/workspace/gymdocu-p1`). Danach KEINE weitere Prüfrunde (nur Test/Logtext):
-  Diff lesen, Gegenproben sichten, Suite, dann PR.
-* **Nachweis-unlink**: Nacharbeit 8 gebaut (`dceda2c`, Suite 362 = 362, Lint 0, 11 von 12 Gegenproben ROT,
-  die zwölfte begründet grün). **Diffprüfung Runde 6 läuft mit drei Spuren** (unwiderrufliche Löschung):
-  Claude ausführend in `/workspace/gymdocu-unlink-pruef` (eigener Cluster), DeepSeek mit Repo, Kimi mit
-  Bündel (`scratchpad/dpu6`).
-* **Routing-Messung** (Betreiber 23.09.): `plaene/routing-messung.md`, 13 Zeilen, noch keine Empfehlung.
-  Offen dort: der geplante Tausch „Kimi mit denselben Rechten“ braucht einen Kimi-Weg in
-  `tools/gegenleser-repo.js` — den gibt es noch nicht.
+* **Pentest P1 gemergt** (#470, Squash `221a7b2`, CI 4/4 grün auf `7e2f8dd`, kein Bot-Kommentar). Deploy und
+  live-check stehen aus. Sammelliste `plaene/offene-befunde-pentest-p1.md` für die Extrarunde. **P2** ist
+  eigener Beitrag.
+* **Nachweis-unlink**: Runde 6 ausgewertet (14 Zeilen, drei Spuren). Auftrag Nacharbeit 9 Fassung 1
+  (`plaene/auftrag-unlink-loeschauftrag.md`), **Planprüfung läuft** (DeepSeek Repo + Kimi Bündel,
+  `scratchpad/ppn9`; nach Container-Neustart 22:1x neu gestartet). Danach Bau durch denselben Executer
+  (sehr komplex). Zweig muss danach master (#470) hereinnehmen.
+* **Routing-Messung**: `plaene/routing-messung.md`, 16 Zeilen, noch keine Empfehlung.
 * Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
 
 ### Vorgeschichte des Tages (gekürzt)
