@@ -47,10 +47,12 @@ Kosten: siehe `ASTRA-LAEUFE.md`; Claude-Spur ohne Kosten, Kimi ohne Preisgrundla
 | 23.09. | Plan unlink F1 | Kimi, Bündel | 10 | 6 | 1 | 1 |
 | 23.09. | Plan unlink F2 | DeepSeek, Repo | 9 | 7 | 5 | 0 |
 | 23.09. | Plan unlink F2 | Kimi, Bündel | 6 | 4 | 3 | 0 |
+| 23.09. | Diff P1 R3 (nur diese Spur) | DeepSeek, Repo | 7 | — | — | 0 |
 
 Zählweise: **eine Zeile der Befunddatei = ein Befund** (`plaene/diffpruefung-pentest-p1.md`,
 `plaene/diffpruefung-unlink.md`, `plaene/planpruefung-unlink-loeschauftrag.md`); gruppierte Zeilen wie
 „R2-B2/B3/B4“ zählen einmal, eine Zeile mit zwei Spuren („A1/B1“) zählt bei beiden und bei keiner als „nur“.
+Eine Runde mit nur EINER Spur trägt bei „nur“ einen Strich — dort gibt es keinen Vergleich.
 „nur-hoch“ = blockierend, hoch, mittel oder „sollte“ nach der NACHGEMESSENEN Einstufung.
 
 **Zwischenstand 23.09.2026 (6 Runden, KEINE Empfehlung):** Bei den Diffprüfungen liefert die ausführende
