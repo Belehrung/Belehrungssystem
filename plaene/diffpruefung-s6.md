@@ -62,3 +62,14 @@ Link überlebt eine Identitätsänderung). Webhook-Upsert ohne `id` setzt `exter
 - B6: Erzeuger-Rennen mit echtem Deaktivierer. B7: werfende `sendMail`-Attrappe über die Einladen-Route, Audit zugesichert.
 - B8: (d) als Funktion über den Quelltext, Fixturen durch dieselbe Funktion; unbedingter Aufruf zugesichert.
 - A8: E-Mail-Wechsel entwertet offene Links (alle Wege, auf denen sich `mitarbeiter.email` ändert).
+
+## Runde 2 — Lesespur `deepseek-v4-pro` mit Repo-Lesezugriff (Nacharbeit `c74bc7e..1181d5b`, 1,46 $)
+
+| # | Schwere | Befund | Nachmessung | getragen |
+|---|---|---|---|---|
+| R2-1 | mittel | L3(a) misst „Import wartet", nicht „an der Tabellensperre": ohne LOCK wartet das Modell am Token-DELETE; Positivkontrolle (b) ändert zugleich die Reihenfolge. Kommentar `S20-migrate.js:269` behauptet mehr als gemessen | Test-Aufbau gelesen; die LOCK-Präsenz trägt allein Wächter (d) | ja |
+| R2-2 | mittel | Entwerten in den Zweigen `generation_geaendert`/`email_geaendert` (`routes/mitarbeiter-auth.js:268,272`) ungeschützt: Wurf → Fehlerseite; bei `email_geaendert` mit gleicher Generation bleibt ein wirksames, nie versandtes Token stehen | gelesen — trägt | ja |
+| R2-3 | gering | `angelegt: !entwertet` liefert true auch bei `rowCount 0` (Token schon weg) → Audit „eingeladen" ohne Token | gelesen — trägt | ja |
+| R2-4 | gering | Tabellensperre blockiert Token-Schreibwege ALLER Studios für die Importdauer; `golive-studio.sh` stoppt nur die Instanz des einen Studios (je Subdomain eigene PM2-Instanz) — Kommentar zu weit, kein `lock_timeout` | Herleitung trägt | ja |
+| R2-5 | gering | L2 „wartet an der Tabellensperre" nur zeitbasiert (400 ms) ohne Gegenkontrolle der Latenz ohne Import | trägt | ja |
+| R2-6 | gering | Webhook (`routes/webhooks.js:216`) wertet die Rückgabe der Einladung nicht aus | gelesen — trägt; `/pin-vergessen` bewusst neutral | ja |
