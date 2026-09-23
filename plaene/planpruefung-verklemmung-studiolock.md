@@ -21,3 +21,24 @@ Kosten: 6,77 $ (abgebrochen) + 15,34 $ (Wiederholung).
 
 Die Drei-Wege-Sicht trägt nicht. Es braucht eine **systemweite Regel** für L und eine
 vollständige Inventur aller Transaktionen mit `auditAppend(…, t)` — Fassung 2.
+
+## Spur B (`kimi-k3`, festes Auszugsbündel) — nachgemessen
+
+Dauer 1255 s, 20.520 Eingabe- / 38.636 Ausgabe-Token (davon 32.420 Denken).
+
+| # | Schwere | Befund | Nachmessung | trägt |
+|---|---|---|---|---|
+| K-Urteil | — | „B nimmt L zuerst erzeugt keinen neuen Kreis" | **Widerlegt durch A-1** (Umbenennung). `routes/admin/geraete.js` war nicht im Bündel; Kimi benennt das selbst als Prüfgrenze | nein (Material fehlte) |
+| K-1 | mittel | pg_locks-Beleg nicht auf PIDs und Lock-Schlüssel eingegrenzt | Papier Fassung 1: „`granted = false`" ohne Eingrenzung | ja |
+| K-2 | mittel | Existenzmessung falsch-negativ, wenn das UPDATE keine Zeile trifft (B/C erreichen L dann nie) | `rowCount`-Zweige in `nachtragUebernehmen` und Freigabe gelesen | ja |
+| K-3 | mittel | Tor: Zuordnung je Anfrage, Parkpunkt nach Gewährung, Gegenprobe greift sonst nicht, begrenzter Fehlerpfad | Papier Fassung 1 schweigt dazu | ja |
+| K-4 | mittel | Inventur-Kriterium übersieht `auditAppend` OHNE Verbindung innerhalb einer sperrenden Transaktion | Kriterium trägt. Bestand gemessen: **0 Fälle** (AST, eine Helfer-Ebene, Positivkontrolle 1 Treffer) | ja (als Kriterium) |
+| K-5 | mittel | Tabelle unvollständig (Mangel-Nachtrag, Cardio/Kraft); Verdacht Wartung–Freigabe | Unvollständigkeit trägt. **Verdacht Wartung–Freigabe trägt NICHT:** Wartung ändert nur `typ='wartung'`-Zeilen, die Freigabe nur `typ='seilkontrolle'` | teilweise |
+| K-6 | gering | Tabelle unterschlägt Bedingungen (L nur bei Treffer) | deckt sich mit A-3 | ja |
+| K-7 | gering | Kommentar an N muss sagen, dass N allein den Kreis mit C nicht verhindert | — | ja |
+| K-8 | gering | SQLSTATE statt Text, zweite Anfrage muss committen, Schlüssel protokollieren | deckt sich teilweise mit A-6 | ja |
+| K-9 | gering | Kosten (Serialisierung) nicht beziffert | — | ja |
+
+**Folge:** Fassung 2 (`plaene/auftrag-verklemmung-studiolock.md`) — systemweite Regel „L zuerst"
+über `auditTx`, Laufzeitvermerk, statischer Wächter; alle getragenen Befunde beider Spuren sind
+dort Anforderungen. Inventur-Skript: `scratchpad/lockinv/inv.js`, `inv2.js` (111 = 111 gegen grep).
