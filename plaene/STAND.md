@@ -4,17 +4,14 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-Stand 23.09.2026, 18:45 UTC.
+Stand 23.09.2026, 20:00 UTC.
 
-* **Pentest P1** (`fix-pentest-p1-idwache`): Abschluss fertig (`a9f06dc`, Suite 362 = 362, Lint 0).
-  Diffprüfung fertig (22 Befunde, alle getragen, `plaene/diffpruefung-pentest-p1.md`).
-  **Läuft:** Nacharbeit 1 (N1–N9, `plaene/auftrag-pentest-p1-nacharbeit1.md`) beim P1-Executer.
-  Sammelliste `plaene/offene-befunde-pentest-p1.md` (B1, A3, F1, V1).
-* **Nachweis-unlink** (`fix-nachweis-unlink`): Nacharbeit 7 gebaut (`1fc97ee`, Suite 361 = 361).
-  Runde 4: Lesespur fertig (7/7 getragen); **läuft:** ausführende Spur (Gegenproben A1–A3).
-  **Entscheidung (Haupt-Agent):** Löschaufträge bekommen eine EIGENE Tabelle statt des Status
-  `loeschen_offen` — R4-B1/B2/B3 und U-LOE1 haben dieselbe Wurzel. Plan
-  `plaene/auftrag-unlink-loeschauftrag.md` nach der ausführenden Spur, dann Planprüfung.
+* **Pentest P1**: Nacharbeit 1 gebaut (`713ba58`, Suite 362 = 362, Lint 0). Verhalten geändert (JSON
+  bei Accept ohne `text/html`, Drossel begrenzt) → **Diffprüfung Runde 2 läuft** (DeepSeek, Lesebaum
+  `/workspace/gymdocu-p1-lese`; ausführende Spur `/workspace/gymdocu-p1-pruef`, eigener PG-Cluster).
+* **Nachweis-unlink**: Runde 4 → Umbau „Löschauftrag als eigene Zeile“, zwei Planprüfungsrunden
+  (29 Befunde, einer gefallen), Fassung 3 in `plaene/auftrag-unlink-loeschauftrag.md`. **Bau läuft**
+  (Executer, Einordnung sehr komplex, `/workspace/gymdocu-unlink`).
 * Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
 
 ### Vorgeschichte des Tages (gekürzt)
