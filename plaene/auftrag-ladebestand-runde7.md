@@ -84,6 +84,13 @@ Suite rot. Heute hält der Lauf nur, weil alle Kommentar-Erwähnungen von Hand
 `<r>` schreiben — eine Disziplin, keine Zusicherung.
 → `maskiereKommentare(fs.readFileSync(__filename, 'utf8'))`.
 
+**Vorab gemessen, damit die Umstellung keine Überraschung wird:** der Sollwert
+15 bleibt dabei gültig — roh wie maskiert dieselben 15 Treffer, in derselben
+Reihenfolge, mit denselben Namen. Die Maskierung nimmt heute also NICHTS weg
+(eben weil alle Kommentar-Erwähnungen `<r>` schreiben). Sollte die Zahl beim
+Bau trotzdem abweichen, ist das ein eigener Befund und wird gemeldet statt der
+Sollwert stillschweigend angepasst.
+
 **A3: die Suche läuft nur VORWÄRTS** (`eigenerQuelltext.slice(nachStelle)`).
 Die umgekehrte Reihenfolge — erst `r.text()`, dann
 `pruefeKeinFehlerseiten(r, …)` — ist unsichtbar und seit dem Wegfall von
@@ -94,9 +101,28 @@ Die umgekehrte Reihenfolge — erst `r.text()`, dann
 **A14 (gemessen): `r1` und `r3` kommen je ZWEIMAL als Helferargument vor.**
 Mit der Suche über die ganze Datei wird daraus ein echter Fehlalarmweg statt
 eines dokumentierten.
-→ Die vier Vorkommen eindeutig benennen (`r1Z1`/`r1Z2`, `r3Z1`/`r3Z2` oder
-sprechender). Danach ist jeder Bezeichner einmalig, und die Suche über die
-ganze Datei erzeugt keinen Fehlalarm mehr.
+→ Die vier Vorkommen eindeutig benennen. **Vom Haupt-Agenten vorab kartiert**,
+damit nicht gesucht werden muss — je drei Verwendungen, alle im selben Block:
+
+| heute | Block | Verwendungen | neu |
+|---|---|---|---|
+| `r1` | Ausstattung | Deklaration, `.status`-Zusicherung, Helferaufruf | `r1Ausstattung` |
+| `r3` | Ausstattung | dieselben drei | `r3Ausstattung` |
+| `r1` | Brandschutz | dieselben drei | `r1Brandschutz` |
+| `r3` | Brandschutz | dieselben drei | `r3Brandschutz` |
+
+Zwölf Ersetzungen, alle blocklokal, kein Verhaltenswechsel. **Die Blöcke sind
+über ihren POST-Pfad eindeutig zu unterscheiden** (`/admin/geraetewartung/
+ausstattung` gegen `/admin/geraetewartung/brandschutz`) — danach suchen, nicht
+nach der Zeilennummer.
+
+Danach ist jeder Bezeichner einmalig, und die Suche über die ganze Datei
+erzeugt keinen Fehlalarm mehr.
+
+**Der Kommentar, der die alten Namen aufzählt, wird mitgezogen.** Er steht
+heute als „bekannte Grenze" da; nach dieser Umsetzung gibt es die Grenze nicht
+mehr, und ein Kommentar, der eine behobene Schwäche beschreibt, ist eine
+falsche Tatsachenbehauptung über den eigenen Code.
 
 **A2 (gemessen): das Prädikat selbst ist ungeprüft.** Von fünf Schreibweisen
 fängt es genau eine:
@@ -219,11 +245,38 @@ zusätzlich zum `console.error`. Nach dem Block eine echte Zusicherung
 Hausregel dazu: „eine Zusicherung, die nur einen Zähler erhöht, hält keinen
 Schreibweg auf" — hier wird bisher nicht einmal ein Zähler erhöht.
 
-**Wichtig, damit die Behebung nichts verschlimmert:** der Zähler darf den
-ORIGINALFEHLER des Tests nicht verdrängen. Läuft der `finally` nach einem
-geworfenen Fehler, bleibt der geworfene Fehler massgeblich; die Aufräumfehler
-werden dann nur protokolliert. Nur auf dem ERFOLGSPFAD macht der Zähler den
-Lauf rot.
+**Wichtig, damit die Behebung nichts verschlimmert:** ein `assert` IM
+`finally` ERSETZT eine noch fliegende Ausnahme — die Behebung würde dann den
+Originalfehler des Tests verschlucken und wäre schlimmer als der Befund. Genau
+die Klasse, die in diesem Repo mehrfach zugeschlagen hat.
+
+**Die Unterscheidung ist sauber herstellbar, vom Haupt-Agenten am Quelltext
+nachgesehen** (`try {` … `} finally {` innerhalb der IIFE, deren `.catch()` mit
+`process.exit(1)` endet). Das Mittel ist ein Flag als LETZTE Anweisung des
+`try`-Rumpfs:
+
+```js
+let durchgelaufen = false;
+try {
+    …                                    // unverändert
+    ok('Punkt 1: …');                    // die heutige letzte Zeile des Rumpfs
+    durchgelaufen = true;                // NEU, muss die letzte sein
+} finally {
+    let aufraeumFehler = 0;
+    …                                    // vier Schritte, jedes catch: aufraeumFehler++
+    if (durchgelaufen && aufraeumFehler > 0) {
+        assert.fail(`Punkt 1 Aufräumen: ${aufraeumFehler} von 4 Schritten …`);
+    }
+}
+```
+
+Wirft der Rumpf, bleibt `durchgelaufen` falsch, der Originalfehler fliegt
+weiter und die Aufräumfehler stehen nur im Protokoll. Läuft der Rumpf durch,
+macht ein liegengebliebener Aufräumschritt den Lauf rot.
+
+**Die Zahl 4 gehört literal in die Meldung** — sie sagt dem Lesenden, wie viele
+Schritte es überhaupt gibt, und fällt auf, wenn jemand einen fünften ergänzt,
+ohne sie nachzuziehen.
 
 **Gegenprobe (5a):** denselben Defekt wie oben setzen
 (`spalte_gibt_es_nicht`) → MUSS ab jetzt EXIT 1 liefern, mit einer Meldung,
