@@ -15,6 +15,14 @@ blind GEMESSEN hat (`x.length === original.length`). Kein Vorschlag einer
 Prüfspur geht ungemessen in diesen Auftrag — deshalb steht unter jedem Punkt
 die eigene Messung, nicht der Vorschlag.
 
+**ALLE Zeilennummern in diesem Papier sind am Stand `5735eac` gemessen und
+gelten NUR dort.** Sobald der erste Punkt umgesetzt ist, stimmen sie nicht mehr
+— die Punkte 1, 2 und 6 fügen im vorderen Teil der Datei Zeilen ein und
+verschieben alles danach. **Gearbeitet wird deshalb nach SUCHMUSTER, nicht nach
+Zeilennummer.** Das ist nicht Pedanterie: Befund A6 dieses Beitrags ist, dass
+zwei Zeilennummern in einem Kommentar DREI RUNDEN IN FOLGE falsch waren, weil
+jede Runde sie um den falschen Betrag fortgeschrieben hat.
+
 **Was dieser Auftrag NICHT ist:** eine Änderung am Produktivverhalten. Er fasst
 in `routes/admin/geraete.js` ausschliesslich einen KOMMENTAR an. Alles Übrige
 liegt in `test_feature_ladebestand_streng.js`.
@@ -298,11 +306,19 @@ dafür, dass man EINMAL maskiert und DANACH schneidet.
 Verwendungen daraus bedienen (`.slice(zeilenbeginnNachMarke, ende)` für den
 Abschnitt). Spart zugleich einen Durchlauf.
 
-**Achtung, Reihenfolge:** Punkt 1 dieses Auftrags schreibt einen literalen
-Sollwert `2291` für den Abschnitt fest. Er wurde am AUSSCHNITTS-Weg gemessen.
-Nach der Umstellung den Wert ERNEUT messen und, falls er abweicht, den
-literalen Sollwert anpassen UND die Abweichung melden — sie wäre ein eigener
-Befund (sie hiesse, dass die beiden Wege doch nicht gleich sind).
+**Reihenfolge — vom Haupt-Agenten vorab geklärt, damit sie kein Problem ist:**
+Punkt 1 schreibt den literalen Sollwert `2291` fest, gemessen am
+AUSSCHNITTS-Weg. Nachgemessen auf BEIDEN Wegen:
+
+```
+Punkt 1 Sollwert am ALTEN Weg (Ausschnitt): 2291
+Punkt 1 Sollwert am NEUEN Weg (Punkt 7)  : 2291
+gleich?                                  : true
+```
+
+Punkt 7 verschiebt den Sollwert also NICHT. Trotzdem nach der Umstellung
+einmal nachmessen und wörtlich melden — weicht er wider Erwarten ab, ist das
+ein eigener Befund (es hiesse, die beiden Wege sind doch nicht gleich).
 
 ## 8 — A4: Existenz-Zusicherung für den Anker
 
@@ -378,20 +394,41 @@ Punkt `geraeteOhneKommentare.length === GERAETE_QUELLTEXT_ROH.length` vor. Das
 ist WÖRTLICH die Tautologie aus Punkt 1 dieses Auftrags, eine Ebene höher.
 **Sie wird NICHT gebaut.**
 
-**Gebaut wird stattdessen**, analog zu Punkt 1:
+**UND ein literaler Sollwert wird hier AUCH NICHT gebaut** — anders als in
+Punkt 1, und der Unterschied ist gemessen. Für den Abschnitt ist `2291` ein
+brauchbarer Wert, weil der Abschnitt ein absichtlich stabiler, bewachter
+Bereich ist: ändert ihn jemand, SOLL das auffallen. Für die GANZE Datei wäre
+er `202415` (roh 345073, selbst gemessen) — und `routes/admin/geraete.js`
+ändert sich bei fast jedem Beitrag. Ein literaler Sollwert darauf verwandelt
+jede legitime Produktivänderung in einen roten Lauf und wird nach dem dritten
+Mal nicht mehr nachgezogen, sondern entfernt. Hausregel dazu: eine Zusicherung,
+die aus dem falschen Grund rot wird, wird abgeschaltet statt gelesen.
 
-* ein literaler Sollwert für `nichtLeerraum(geraeteOhneKommentare)`, vor dem
-  Bau frisch zu messen und mit Datum zu kommentieren;
-* ein CODE-ANKER, der die Maskierung überleben MUSS — etwa
+**Gebaut werden stattdessen zwei INHALTLICHE Zusicherungen**, beide unabhängig
+vom Umfang der Datei:
+
+* **ein CODE-ANKER, der die Maskierung überleben MUSS** —
   `geraeteOhneKommentare.includes('router.post("/geraetewartung/brandschutz"')`.
-  Er unterscheidet „hat Kommentare entfernt" von „hat Code entfernt", was eine
-  blosse Mengenzahl nicht kann.
+  Er unterscheidet „hat Kommentare entfernt" von „hat Code entfernt".
+* **ein KOMMENTAR-ANKER, der VERSCHWUNDEN sein muss** — eine wörtlich
+  gewählte Zeichenkette, die im Bestand ausschliesslich in einem Kommentar
+  vorkommt (vor dem Bau per `grep` belegen, dass sie genau einmal und nur im
+  Kommentar steht) und im maskierten Text NICHT mehr vorkommen darf.
+
+Die beiden zusammen schliessen beide Richtungen — zu wenig maskiert und zu
+viel maskiert — ohne von der Dateigrösse abzuhängen.
 
 **Gegenprobe (9b-a):** dieselbe codefressende Mutation wie 1a
-(`req.studioId` längenerhaltend leeren) → der Nicht-Leerraum-Sollwert MUSS
-fallen. **Gegenprobe (9b-b):** eine Mutation, die den Masker NICHTS tun lässt
-(`return src;`) → der Sollwert MUSS ebenfalls fallen, in die andere Richtung.
-Eine Gegenprobe, die nur eine Richtung misst, belegt den Einzelfall.
+(`req.studioId` längenerhaltend leeren) → **erwartetes Ergebnis benennen, bevor
+gemessen wird**: der CODE-ANKER liegt NICHT im gefressenen Bereich, er bleibt
+also grün; rot werden MUSS die Zusicherung aus Punkt 1. Wird dabei
+unerwartet etwas anderes rot, ist das ein Befund, kein Erfolg.
+**Gegenprobe (9b-b):** eine Mutation, die den Masker nichts tun lässt
+(`return src;`) → der KOMMENTAR-ANKER MUSS fallen.
+**Gegenprobe (9b-c):** eine Mutation, die den Masker ALLES fressen lässt
+(längenerhaltend, z. B. `return " ".repeat(src.length);`) → der CODE-ANKER
+MUSS fallen. Erst diese drei zusammen belegen die Klasse; eine Gegenprobe in
+nur einer Richtung belegt den Einzelfall.
 
 ## 10 — A8: bekannte Grenze BENENNEN, nicht beheben
 
@@ -424,8 +461,10 @@ Template herausziehen, nicht den Riegel abschwächen).
 * Dateizahl-Ritual: gelaufene gegen registrierte Dateien, `diff` EXIT 0.
   Beide Seiten mit DEMSELBEN Sieb.
 * `npm run lint`, Ergebnis WÖRTLICH melden, auch bei Grün.
-* Die Gegenproben 1a, 2a, 2b, 2c, 3a, 5a, 6a, 6b, 8a, 9b-a, 9b-b einzeln, jede
-  wörtlich mit EXIT und PASS/FAIL, **Mutation UND Rücknahme**.
+* Die Gegenproben 1a, 2a, 2b, 2c, 3a, 5a, 6a, 6b, 8a, 9b-a, 9b-b, 9b-c
+  einzeln, jede wörtlich mit EXIT und PASS/FAIL, **Mutation UND Rücknahme**.
+  Vor jeder Gegenprobe das ERWARTETE Ergebnis hinschreiben, danach das
+  gemessene — weicht es ab, ist das ein Befund und kein Betriebsunfall.
 * Mutationsskript mit Zielpfad als ARGUMENT, Abbruch bei ≠ 1 Fundstelle,
   Marker `GEGENPROBE-`+`DEFEKT` im Ersatztext, `node --check` danach,
   Rücknahme gegen eine unabhängige `cp`-Kopie mit `diff` EXIT 0.
