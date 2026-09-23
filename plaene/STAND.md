@@ -8,7 +8,10 @@ Stand 23.09.2026, 16:45 UTC.
 
 * **Container-Neustart 16:41 UTC; beide Executer abgebrochen. Betreiber: „neu starten“ → zwei neue
   Executer laufen (P1-Abschluss in `/workspace/gymdocu-p1`, unlink Nacharbeit 7 in
-  `/workspace/gymdocu-unlink`).**
+  `/workspace/gymdocu-unlink`).** P1-Diffprüfung läuft parallel auf `ad5d609`: DeepSeek-Lesespur
+  (`/workspace/gymdocu-p1-lese`) und ausführende Claude-Spur (`/workspace/gymdocu-p1-pruef`). Eigene
+  Lesebefunde vorab: Selbstproben im Strukturtest prüfen eine Kopie der Prüflogik (K1),
+  body_query erkennt Validierung per Regex ohne Reihenfolge (K2), Dateiliste ohne git-Referenz (K3).
   * **Pentest P1** (`/workspace/gymdocu-p1`, `fix-pentest-p1-idwache`, `ad5d609`, gepusht, Baum
     sauber). Laut Protokoll: Suite 362 = 362, Lint gelaufen, Abschlussbericht fehlt. Offen: Diff
     lesen, Diffprüfung; dazu mein Befund: `test_feature_pentest_p1_struktur.js:256/:281` tragen
