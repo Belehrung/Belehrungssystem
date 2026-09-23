@@ -197,6 +197,13 @@ const PREISTABELLE = {
     'gpt-5.6-terra': { rein: 2.50, raus: 15.00 },
     'gpt-5.6-luna': { rein: 1.00, raus: 6.00 },
     'gpt-6-astra': { rein: 12.50, raus: 75.00 },
+    // Nachgetragen 23.09.2026 aus platform.openai.com/docs/pricing (Standard,
+    // LONG context = obere Schranke; short context: sol 2,00/10,00, luna
+    // 0,10/0,50). Beide Modelle am echten Endpunkt gemessen: erreichbar,
+    // effort none|low|medium|high|xhigh|max, Werkzeugweg mit zweiter Runde
+    // und store:false traegt.
+    'gpt-6-sol': { rein: 4.00, raus: 15.00 },
+    'gpt-6-luna': { rein: 0.20, raus: 0.75 },
 };
 
 // Liefert null (= ausdruecklich "unbekannt"), wenn das Modell nicht in der
