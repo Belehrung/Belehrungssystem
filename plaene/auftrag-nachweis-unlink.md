@@ -96,3 +96,36 @@ Bestand nichts rot.
    (`<wurzel>`, `core`, `ops`, `routes`, `tools`, `workers`), literal und gegen `git ls-files`.
 4. Fixturen entsprechend umstellen (die drei bisherigen Durchlassfälle werden rot), je neue
    Regel eine Gegenprobe im Bestand (rot), zurückgenommen grün. Suite, Dateizahl, Lint, Marker.
+
+## Nacharbeit 3 (23.09.2026) — dieselbe Klasse in ihren zwei übrigen Formen
+
+Geprüft: `85cdd0b` (Regel, berechneter Zugriff, alle Wurzeln; drei Gegenproben; 351 = 351,
+Lint 0). Der Executer meldete einen Nebenfund und eine neue benannte Grenze; gemessen dazu:
+
+* **Abgewartet, aber Fehler verschluckt:** `core/korrektur-pdf.js:179` und
+  `routes/verify.js:203` (`.catch(() => {})`), `core/integritaet.js:48` und
+  `routes/verify.js:220` (nur `console.warn`).
+* **`unlinkSync` in einem stillen `catch`:** 17 Stellen (u. a. `routes/lageplan.js` ×6,
+  `routes/sichtpruefung.js` ×2 — Mängelfotos, also personenbezogen —, `routes/archiv.js`,
+  `routes/bezirk-export.js`, `routes/belehrungen.js`, `routes/verbandbuch-admin.js`,
+  `core/export-studio.js`, `core/foto-reaper.js`, `tools/…`).
+* **Grenze des Wächters:** ein per Namen übergebener Rückruf (`fs.unlink(p, cb)`) wird nicht
+  erkannt.
+
+Die Klasse ist „eine Dateilöschung, deren Scheitern niemand erfährt oder abwartet"; sie wird
+jetzt vollständig über den Helfer geschlossen.
+
+1. **Regel des Wächters, endgültig:** ein Aufruf von `unlink`/`unlinkSync` (benannt oder
+   berechnet mit Literal) steht NUR in `core/datei-entfernen.js` — ÜBERALL sonst ist er ein
+   Verstoss, gleich welcher Form. Ausnahmen als LITERALE Liste (Datei + Anzahl + Grund), nur wo
+   ein Fehler dort schon nachweislich gezählt oder gemeldet wird (z. B. `core/retention.js`,
+   `core/pdf-loeschung.js`, `core/foto-reaper.js` Zeile mit `stat.dateiFehler++` — der Executer
+   prüft jede einzeln und begründet sie). Das schliesst die Grenze „Rückruf per Namen" mit.
+2. Helfer um eine synchrone Schwester ergänzen (`entferneDateiSync`, dieselbe Semantik: ENOENT
+   erledigt, sonst `melde()`, wirft nie) für Stellen in synchronem Kontext; wo der Kontext
+   asynchron ist, die abgewartete Form.
+3. Alle Stellen aus den beiden Listen oben umstellen, die nicht auf die Ausnahmeliste kommen.
+   Wo ein stiller `catch` bewusst war (z. B. „evtl. schon weg"), deckt ENOENT das ab.
+4. Gegenproben: eine Stelle zurück auf `try { fs.unlinkSync(p) } catch {}` → rot; ein
+   `fs.unlink(p, cb)` mit benanntem Rückruf → rot; ein Eintrag der Ausnahmeliste gestrichen →
+   rot. Suite, Dateizahl, Lint, Marker.
