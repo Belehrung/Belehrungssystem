@@ -652,7 +652,12 @@ Sachfrage):
   Token-Zählung für denselben Text, und die Bildprobe trennt sie — `deepseek-flash` erkennt ein
   rotes Pixel („Rot"), `deepseek-v4-pro` liefert leer (Pro hat laut Doku keine Bildeingabe).
   Umgeleitet werden laut Doku nur die ALTnamen `deepseek-v4-flash*` auf V4.1-Flash. Wer das
-  wieder behauptet oder bezweifelt: dieselbe Bildprobe, nicht der Name im Antwortfeld. **Die Rollentrennung bleibt:** hat DeepSeek
+  wieder behauptet oder bezweifelt: dieselbe Bildprobe, nicht der Name im Antwortfeld.
+  **Denkstufe: `reasoning_effort` (oberste Ebene), NICHT `reasoning: {effort}`** — gemessen am
+  selben Tag: das OpenAI-Feld wird still angenommen und ignoriert (`"quatsch"` → HTTP 200), das
+  DeepSeek-Feld wirkt (`"quatsch"` → HTTP 422; `low` 670 / `max` 4929 Denk-Token an derselben
+  Aufgabe). Alle früheren DeepSeek-Läufe mit `reasoning.effort` liefen also auf der
+  Voreinstellung `high`, nicht auf der angegebenen Stufe. **Die Rollentrennung bleibt:** hat DeepSeek
   für einen Beitrag Code-Schnipsel geliefert, prüft diesen Beitrag eine ANDERE Lesespur — wer
   mitgeschrieben hat, prüft seinen eigenen Entwurf. Gebaut wird weiter über den Executer.
 - *Bis 23.09.2026:* **`gpt-5.6-sol`** — Betreiber-Entscheidung vom
