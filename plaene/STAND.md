@@ -4,13 +4,19 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-Stand 23.09.2026, 20:40 UTC.
+Stand 23.09.2026, 21:45 UTC.
 
-* **Pentest P1**: Runde 2 fertig (17 Befunde aus zwei Spuren, alle getragen; wichtigster:
-  `istGueltigeId(['5'])` ist `true`). **Nacharbeit 2 läuft** (`plaene/auftrag-pentest-p1-nacharbeit2.md`).
-* **Nachweis-unlink**: Umbau „Löschauftrag als eigene Zeile“ gebaut (`2a9e62a`, Suite 362 = 362,
-  Lint 0, 12 Gegenproben ROT). **Diffprüfung Runde 5 läuft** (DeepSeek-Lesespur + ausführende Spur mit
-  eigenem Cluster); offene Messung F-A (Teil-Datei bei Schreibabbruch ≠ EEXIST).
+* **Pentest P1**: Runde 3 (DeepSeek allein, über Nacharbeit 2) ausgewertet — 7 kleine Befunde, alle
+  getragen (Logzeile, Testschärfe). **Nacharbeit 3 läuft** (`plaene/auftrag-pentest-p1-nacharbeit3.md`,
+  derselbe Executer, `/workspace/gymdocu-p1`). Danach KEINE weitere Prüfrunde (nur Test/Logtext):
+  Diff lesen, Gegenproben sichten, Suite, dann PR.
+* **Nachweis-unlink**: Nacharbeit 8 gebaut (`dceda2c`, Suite 362 = 362, Lint 0, 11 von 12 Gegenproben ROT,
+  die zwölfte begründet grün). **Diffprüfung Runde 6 läuft mit drei Spuren** (unwiderrufliche Löschung):
+  Claude ausführend in `/workspace/gymdocu-unlink-pruef` (eigener Cluster), DeepSeek mit Repo, Kimi mit
+  Bündel (`scratchpad/dpu6`).
+* **Routing-Messung** (Betreiber 23.09.): `plaene/routing-messung.md`, 13 Zeilen, noch keine Empfehlung.
+  Offen dort: der geplante Tausch „Kimi mit denselben Rechten“ braucht einen Kimi-Weg in
+  `tools/gegenleser-repo.js` — den gibt es noch nicht.
 * Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
 
 ### Vorgeschichte des Tages (gekürzt)
