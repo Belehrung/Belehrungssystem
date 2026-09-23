@@ -1,19 +1,20 @@
 # STAND — Übergabepunkt
 
-Stand: 23.09.2026, 07:45 UTC.
+Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-**Ein Executer baut die EXTRARUNDE „ladebestand"** im eigenen Arbeitsbaum
-`/workspace/gymdocu-extra` (Zweig `extrarunde-ladebestand`, Basis `e2a9e9e`).
-`/home/user/gymdocu` steht detached auf `e2a9e9e` und ist frei. **Nicht in
-`/workspace/gymdocu-extra` hineinarbeiten, bevor seine Benachrichtigung da
-ist** (und nach einem SendMessage erst die NÄCHSTE).
+**Der Executer baut die NACHARBEIT der Extrarunde „ladebestand"** im eigenen
+Arbeitsbaum `/workspace/gymdocu-extra` (Zweig `extrarunde-ladebestand`, zuletzt
+`91f7a5e`). **Nicht hineinarbeiten, bevor seine Benachrichtigung da ist.**
+`/workspace/gymdocu-lese` ist eine Lesekopie auf `91f7a5e` für den Gegenleser —
+nach dem Merge entfernen (`git worktree remove`).
 
-Auftrag: `plaene/auftrag-extrarunde-ladebestand.md` (Fassung 2) plus ein
-Nachtrag per SendMessage mit sechs Punkten aus dem A/B-Lauf (stehen in
-`plaene/planpruefung-extrarunde-ladebestand.md`, Abschnitt A/B).
-Planprüfung: drei Spuren (sol 5.6, kimi, A/B sol 6), alle Befunde nachgemessen.
+Auftrag: `plaene/auftrag-extrarunde-ladebestand-nacharbeit.md`. Zwei blockierende
+Befunde der Diffprüfung (`plaene/diffpruefung-extrarunde-ladebestand.md`):
+Zeitbombe im Golden-File-Anker (Datumsnormalisierung, Festdatum in Schritt 0 —
+gemessen 5 FAIL bei +30 Tagen) und unbewachte Zähler-Übernahme im Aufrufer.
+Danach: Diff lesen, volle Suite, Gegenproben, PR, CI, Merge, Deploy-Kontrolle.
 
 **#465 ausgeliefert:** Deploy 433 `success` für `e2a9e9e`, live-check grün
 (2× ℹ wie immer).
