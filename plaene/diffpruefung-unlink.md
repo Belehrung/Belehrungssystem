@@ -271,3 +271,16 @@ C = Claude ausführend (Proben `scratchpad/dpu9/probe_*`), D = DeepSeek mit Repo
 
 **Nacharbeit 12**: R9-1 bis R9-12. Danach eine abschliessende Lesespur; bringt sie nichts Schweres, geht der Beitrag
 mit der Sammelliste in den PR.
+
+## Nacharbeit 12 (`81e74f4..6654c9d`) — gelesen, abschliessende Lesespur läuft
+
+Executer: vier Commits; Suite `SUITE_EXIT=0` auf dem End-HEAD, Dateizahl 368 = 368, Lint 0; zwölf Gegenproben
+ROT/GRÜN. Diff selbst gelesen (`core/provisioning.js`, `core/storage-replica.js`, Route-Test, Szenarien-Test S36/S37).
+Umgesetzt: ENOENT beim Lesen still (R9-1); Fehlernamen je Kennung (`OffboardingQueueFehler:<code>`,
+`LoeschauftragReaperFehler:<code>`) und damit eigene Drosselgruppen (R9-2); `fd = null` vor `closeSync` (R9-3);
+Buchführung je Öffnung statt je Nummer bewacht das Schliessen im Fehlerweg (R9-4, S37); S36 prüft den Ort im Stack
+und seine Abwesenheit in der Meldung (R9-5 — V8 formatiert den Stack erst beim ersten Zugriff); `queue_fehlt` in allen
+Rückgaben (R9-7); Logzeile berichtigt (R9-8); Route-Test mit `DATABASE_URL`-Riegel, gelöschten `GYMDOCU_TG_*`,
+gesperrtem `fetch` und Mail-Transport sowie Zähler `fremderVersand` (R9-11, R9-12).
+Vom Executer benannt: `ladeCreds()` fällt auf `/etc/environment` zurück — das Löschen der `GYMDOCU_TG_*` im Prozess
+allein genügt auf dem Live-Server nicht; der gesperrte `fetch` trägt. → Sammelliste R9-12b ergänzt.
