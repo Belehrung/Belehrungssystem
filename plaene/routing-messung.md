@@ -92,3 +92,26 @@ Claude-Spur die meisten Befunde, die nur sie hat, und davon die meisten schweren
 13.09. (Fähigkeit schlägt Modell). Bei den Planprüfungen liefert DeepSeek mit Repo mehr, Kimi mit Bündel hatte
 aber je Runde mindestens einen schweren Befund, den nur es hatte. Modell und Rechte sind hier noch nicht
 getrennt; der Tausch oben ist dafür da.
+
+## EMPFEHLUNG 24.09.2026 (Schwelle erreicht: 17 Runden — 11 Diff, 6 Plan; je zwei Tauschrunden)
+
+Summen „nur-hoch“ (schwere Befunde, die NUR diese Spur hatte) und „gef.“ aus der Tabelle oben:
+
+| Vergleich | was sich unterscheidet | Ergebnis |
+|---|---|---|
+| Plan, Normalpaarung (unlink F1, F2, N9) | Modell UND Rechte | DeepSeek-Repo 13 / gef. 1 — Kimi-Bündel 6 / gef. 3 |
+| Plan, gleiches Bündel (P3, P4) | nur das Modell | DeepSeek 3 / gef. 1 — **Kimi 7** / gef. 1 |
+| Plan T1, gleiches Modell | nur die Rechte | DeepSeek-**Repo 3** — DeepSeek-Bündel 1 |
+| Diff, Claude ausführend (11 Runden) | Fähigkeit | **17** / gef. 0 |
+| Diff, DeepSeek-Repo (9 Runden) | — | 10 / gef. 3 |
+| Diff, Kimi-Bündel (R6, R7, T1) | — | 4 / gef. 0 |
+
+1. **Planprüfung: Paarung beibehalten (DeepSeek mit Repo + Kimi mit Bündel).** Bei GLEICHEM Material war Kimi
+   das stärkere Modell; DeepSeeks Vorsprung in der Normalpaarung kommt vom Repo-Zugriff, nicht vom Modell.
+   Nächster Hebel ist deshalb ein Kimi-Weg in `tools/gegenleser-repo.js` (Kimi MIT Repo) — erst danach lässt
+   sich sagen, ob Kimi-Repo DeepSeek-Repo ersetzen kann.
+2. **Diffprüfung: Claude ausführend bleibt Pflicht** (die meisten schweren Eigenbefunde, keiner gefallen).
+   Lesespur bleibt DeepSeek mit Repo; Kimi mit Bündel liegt je Runde gleichauf (1,3 gegen 1,1) — nicht
+   unterscheidbar, der Tausch jede dritte Runde läuft weiter.
+3. **Grenzen:** viele Runden am selben Gegenstand (unlink), Zählung durch den Haupt-Agenten selbst, Kimi-Kosten
+   ohne Preisgrundlage. Eine Empfehlung, keine Messung mit Signifikanz.
