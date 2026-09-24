@@ -13,6 +13,13 @@ Stand 24.09.2026, 07:20 UTC.
   (sshd/Firewall/fail2ban), von hier nicht erreichbar → Betreiber gefragt. Nicht weiter neu anstossen, bis er
   Bescheid gibt (weitere Versuche können eine Sperre verlängern). Sammelliste `plaene/offene-befunde-pentest-p1.md` für die Extrarunde. **P2** ist
   eigener Beitrag.
+* **24.09.2026 ~10:00 UTC — SSH-Ursache gefunden** (Betreiber-Ausgabe): sshd lief, aber im Log
+  `exited MaxStartups throttling after 00:25:13, 296 connections dropped` — Dauer-Brute-Force (fail2ban: 177 gesperrt,
+  9630 Fehlversuche) füllt die Pre-Auth-Plätze, neue Verbindungen (auch der Deploy) werden verworfen. Dazu: root-Login
+  mit PASSWORT ist erlaubt (`Accepted password for root`) — pentest-relevant. Deploy 438 von Hand: **success**,
+  P1 ausgeliefert, live-check grün (2× ℹ). **#471 gemergt** (`d191323`). nginx: kein `error_page`/`proxy_intercept_errors`
+  → P2 nicht blockiert. Entscheidungen V01-1, V09-1, V15-2 gefallen (Sammelliste).
+  Offen: Deploy-Schritt mit Wiederholung bei SSH-Abbruch (eigener kleiner Beitrag); SSH-Härtung beim Betreiber.
 * **Nachweis-unlink**: PR #471 (Kopf `ff7026a`), CI 4/4 grün, kein Bot-Kommentar. **Merge ZURÜCKGEHALTEN** — ein Merge
   stösst den Deploy an, der am SSH-Problem scheitert (s. P1). Sammelliste `plaene/offene-befunde-unlink.md`.
 * **H2 Cookie-Schleife**: PR #472 (Kopf `6d537a5`), CI 4/4 grün (E2E mit neuem Fall), kein Bot-Kommentar. Zwei

@@ -13,7 +13,7 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V06-7 | `formate: [null]` besteht die Formprüfung | offen |
 | V06-8 | `GET /qr/kleben` ohne eigenes try/catch | offen, Anmerkung |
 | V06-9 | 500 statt 422 für Datenzustände (`qr-druckdaten.js:361-366`) | offen |
-| V01-1 | `S20-migrate.js` REPLACE löscht zentral entstandene Tabellen (QR-Nummernbuch u. a.) mit | offen, **Entscheidung Betreiber:** ziehen noch Studios um? sonst Werkzeug stilllegen oder DELETE auf Quelltabellen begrenzen |
+| V01-1 | `S20-migrate.js` REPLACE löscht zentral entstandene Tabellen (QR-Nummernbuch u. a.) mit | offen, **entschieden 24.09.2026:** alle Altstudios sind umgezogen, neue kommen über die Provisionierung → Werkzeug stilllegen |
 | V01-2 | `setval` in S20 nicht transaktional (Probelauf/Rollback hinterlässt Sequenzen) | offen |
 | V01-4 | `/admin/archiv/neu-single` ersetzt den Archiv-Eintrag nicht atomar | offen |
 | V01-5 | 413-Meldung nennt 25 MB | offen, Text |
@@ -39,7 +39,7 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V08-4 | verlorenes Korrekturblatt wird nie neu erzeugt, still | offen |
 | V08-5 | `hilfeButton` ignoriert `position` | offen, Anmerkung |
 | V08-6 | `ladeMonatliche()` lädt zu viel | offen, Anmerkung |
-| V09-1 | QR-Vergabe läuft bei kaputten Journalzeilen weiter (nur Alarm); mit zurückgespielter DB Doppelvergabe möglich | offen, **mittel, Entscheidung Betreiber**: fail-closed nur, wenn die DB hinter dem lesbaren Journal liegt? oder bei jeder kaputten Zeile (sperrt alle Studios)? |
+| V09-1 | QR-Vergabe läuft bei kaputten Journalzeilen weiter (nur Alarm); mit zurückgespielter DB Doppelvergabe möglich | offen, **mittel, entschieden 24.09.2026:** fail-closed nur, wenn die DB hinter dem lesbaren Journal liegt; sonst Alarm |
 | V09-2 | Monats-PDF: Sperr-Sichtkontrollen fehlen bei Ladefehler still | offen, mittel |
 | V09-3 | Echtheits-Registrierung scheitert still, PDF trägt toten Prüfcode | offen, mittel |
 | V09-4 | Bezirk-Archiv: `sendFile` ohne Wurzelprüfung | offen |
@@ -84,7 +84,7 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V22-2..4 | Zählangabe im Kommentar, Erfassungsbereich des PIN-Wächters, Backtick-Muster | offen, Anmerkung |
 | V15-1a | Rennen-Test Neue-Version erkennt die vertauschte Reihenfolge nicht (im Test benannte Grenze) | offen, gering |
 | V15-1r | `belehrung_freischaltung.freigeschaltet_am`: zwei Formate in einer TEXT-Spalte | offen, Anmerkung |
-| V15-2 | Gültigkeitsregel der Belehrungsübersicht: `MAX(gueltig_bis)` oder neueste Unterschrift? Test unterscheidet nicht | offen, **Entscheidung Betreiber** |
+| V15-2 | Gültigkeitsregel der Belehrungsübersicht: `MAX(gueltig_bis)` oder neueste Unterschrift? Test unterscheidet nicht | offen, **entschieden 24.09.2026:** die neueste Unterschrift zählt |
 | V23-1..6 | Rechtsaussagen-Wächter schluckt Datei-Lesefehler; `>=`-Zusicherung; wandernder Sollwert NUMMER_START; Gegenprobe ohne Rücknahme; Studio nicht entsperrt; Satztrenner-Grenze | offen, gering |
 | V17-1..4 | Error-Tracking-Test ohne eigene Versandsperre; Sollwert aus derselben Funktion; dekorative PASS-Zeilen; `indexOf`-Rückfall | offen, gering |
 | V24-1..4 | UTC-Tag im Retention-Test, Text-Anker ohne Positivkontrolle, Test-Abfragen ohne `studio_id`, Unverwechselbarkeit nur ein Paar | offen, gering |
