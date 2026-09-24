@@ -82,3 +82,6 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V14-1..7 | Testfragen: `status !== 200` akzeptiert 500, Wächter blind für Member-Aufrufe, tautologische Oder-Zweige, SQL-Kommentare, Helfer ohne `studio_id`, festes Kürzel, fehlende Sollzahl | offen, gering |
 | V22-1 | Tests, die `core/provisioning` laden: `OFFBOARDING_QUEUE_DIR` nicht suite-weit gesetzt (landet in `/tmp`), `DOKUMENTE_DIR` nur über `run.sh` gedeckt | offen, gering — zusammen mit der unlink-Extrarunde (R9-12b) ansehen |
 | V22-2..4 | Zählangabe im Kommentar, Erfassungsbereich des PIN-Wächters, Backtick-Muster | offen, Anmerkung |
+| V15-1a | Rennen-Test Neue-Version erkennt die vertauschte Reihenfolge nicht (im Test benannte Grenze) | offen, gering |
+| V15-1r | `belehrung_freischaltung.freigeschaltet_am`: zwei Formate in einer TEXT-Spalte | offen, Anmerkung |
+| V15-2 | Gültigkeitsregel der Belehrungsübersicht: `MAX(gueltig_bis)` oder neueste Unterschrift? Test unterscheidet nicht | offen, **Entscheidung Betreiber** |

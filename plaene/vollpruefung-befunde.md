@@ -289,3 +289,16 @@ Lauf 24.09.2026 06:47–07:07 UTC, 14 Runden, 4,37 Mio. Token ein, geschätzt 6,
 | V22-4 | Require-Muster ohne Backtick (Fehlalarm, kein falsches Grün) | nicht gemessen | Anmerkung |
 
 4 Befunde, 4 getragen, 0 gefallen.
+
+## Bereich 15 — Testdateien `test_feature_belehrung_loeschen_reihenfolge.js` … `test_feature_datum_monatsrollover.js` (24 Dateien)
+
+Lauf 24.09.2026 07:03–07:24 UTC, 24 Runden, 7,73 Mio. Token ein, geschätzt 10,51 $.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V15-1a | `test_feature_belehrung_neue_version_wettlauf.js`: der Rennen-Test erkennt eine vertauschte Schreibreihenfolge nicht zuverlässig — im eigenen Kopfkommentar als Grenze benannt, aber nicht auf einer Sammelliste | gelesen `:51-68` | gering (benannte Grenze) |
+| V15-1b | Generationstoken `freigeschaltet_am` habe Sekundenauflösung → das DELETE des Unterschriftenwegs könne die NEUE Freischaltung treffen | **gefallen:** die neue Generation schreibt `CURRENT_TIMESTAMP::text` mit Mikrosekunden und Zone (gemessen: `2026-09-24 07:25:38.166287+00`); gleich wäre sie nur bei identischem Transaktionsbeginn. Daraus eine Anmerkung: dieselbe TEXT-Spalte trägt zwei Formate (Voreinstellung Berlin sekundengenau, Aktualisierung UTC mit Mikrosekunden) — heute nur als Gleichheits-Token benutzt | — (Rest: Anmerkung) |
+| V15-2 | Belehrungsübersicht zählt „gültig“ über `MAX(gueltig_bis)`, der Test-Kopf behauptet „die NEUESTE Unterschrift zählt“; die Testdaten unterscheiden beide Regeln nicht | gelesen `routes/belehrungen.js:1828-1832`; ein Unterschied entsteht nur, wenn eine neuere Unterschrift früher abläuft als eine ältere (geänderte Gültigkeitsdauer). Das zweite Beispiel des Prüfers (alte unbefristete + neue abgelaufene) ergibt nach BEIDEN Regeln „ungültig“ | gering — Entscheidung: welche Regel gilt? |
+| V15-3 | `test_feature_dashboard.js:63` UTC-Vortag, hier folgenlos | — | Anmerkung |
+
+4 Befunde, 3 getragen, 1 gefallen.
