@@ -308,3 +308,10 @@ Beim Betreiber offen: SSH nur Schlüssel (`sshd -T`), 48 Updates, HSTS-Preload (
 der Suite: die Entwicklungs-DB `gymdocu` existiert in diesem Container nicht
 (nachgemessen: `database "gymdocu" does not exist`). Der Wächter fällt korrekt
 „nicht geprüft" aus statt falsch grün. Nicht neu untersuchen.
+
+Stand 24.09.2026 21:40 UTC: QR-J Planprüfung (DeepSeek 10, Kimi 8 Befunde, keiner gefallen) → Fassung 2. Drei
+blockierende Lücken im Papier (keine Obergrenze beim Korrigieren, Verwerfen ohne tragfähigen Beleg, Präfix-Zuordnung)
+und ein BESTEHENDER Fehler, selbst gemessen: eine abgebrochene Schreibung verschluckt die nächste echte Charge
+(Wegwerf-Journal: `hoechste` 199 statt 399). Dazu: die Sperre greift künftig bei JEDER unerledigten kaputten Zeile des
+Studios (Kimi: lesbare Spur + spätere kaputte Zeile war fail-open), und kein Fehlertext rät mehr zum Entfernen der
+Datei. Bau nach dem C1-Merge.
