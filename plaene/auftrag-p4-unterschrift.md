@@ -123,3 +123,21 @@ Der Betreiber hat die Erkennung meiner Empfehlung überlassen; daraus diese Ents
 
 Phase 1b: Regel nach 1–3 umbauen, neu messen, STOPP-Bedingungen wie Fassung 2 mit den Klassen aus 3. Danach
 Planprüfung dieser Fassung mit den Messdaten, dann Phase 2 (Einhängen).
+
+## Nachtrag 3a (24.09.2026) — nach Messung Phase 1b (`1adb0e2`)
+
+Gemessen: Die Punktschwelle trennt in keinem Bezug; `geradheit` trennt mit 15,2 %; 38 Figuren liegen auf der falschen Seite.
+Alle drei Treiber liegen auf E3 (verzerrtes Raster), dazu kommt `name_winzig_8_flach` („K. Li“ in 4 CSS-px Höhe). Ohne E3 und
+ohne diese Figur: Punkt 29,2 %, geradheit 18,7 %. Entscheidungen:
+
+1. **E3-Raster zuerst beheben** (Pad beim Öffnen des Dialogs auf die echte Grösse initialisieren), dann neu messen.
+   Gemessen wird der Zustand, der ausgeliefert wird.
+2. **`name_winzig_8_flach` → Grenze.** Eine Unterschrift von 4 CSS-px Höhe ist auf einem Tablet mit dem Finger nicht
+   ernsthaft zu erwarten.
+3. **Grund nur als erlaubte Menge:** Waagerechte und senkrechte Striche dürfen `flaeche` oder `strich` heissen,
+   Einzelpunkte `punkt` oder `flaeche`. Der Betreiber sieht ohnehin eine gemeinsame Meldung. Tests sichern zu, dass
+   der Grund in der erlaubten Menge liegt und NIE `leer`/`unbestimmt` ist, wo Tinte da ist.
+4. **Asymmetrische Marge, vorab festgelegt:** Reicht der Abstand nicht für 20 % auf beiden Seiten, bekommt die
+   ANNEHMEN-Seite 20 % und die Ablehnen-Seite den Rest. Liegt der Rest unter 10 %, gilt STOPP. Begründung wie
+   Fassung 3 Punkt 3.
+5. `unbestimmt` (Laufdeckel erreicht, gemessen Faktor 85 über dem grössten Namenszug) bleibt fail-closed.
