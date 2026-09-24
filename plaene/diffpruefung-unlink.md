@@ -182,3 +182,29 @@ gegen dasselbe Objekt (Kreisbezug) — an die Prüfspur gegeben.
 Runde 7 (Verhaltensänderung → zweite Runde nach Regel; drei Spuren, Anlass unwiderrufliche Löschung): Claude
 ausführend (eigener Cluster), **DeepSeek UND Kimi mit DEMSELBEN Bündel** (Tauschrunde der Routing-Messung: gleiche
 Rechte, gleiches Material, nur das Modell verschieden).
+
+## Runde 7 — drei Spuren über Nacharbeit 9 (`27f5f24..5aa0fb9`)
+
+C = Claude ausführend (eigener Cluster, Proben `scratchpad/dpu7/probe_*`), D = DeepSeek, K = Kimi — D und K mit
+DEMSELBEN Bündel (Tauschrunde der Routing-Messung). Alles selbst nachgesehen; die Messungen von C liegen als Proben vor.
+
+| Nr. | Befund | Spuren | Nachgemessen | Einstufung |
+|---|---|---|---|---|
+| R7-1 | Neuschreiben nach dem COMMIT ist nicht atomar (`writeFileSync` kürzt erst): Absturz/ENOSPC dazwischen hinterlässt einen Torso, der Reaper stellt ihn nach `.ungueltig`, die Dateien des gelöschten Studios bleiben für immer; `cleanup_pending` zeigt auf den Torso | C, K | C: SIGKILL beim Schreiben → `ungueltig:1`, PDF und `.enc` bleiben; ENOSPC ebenso. Vorschlag „tmp + rename“ gemessen: `erledigt:1`. **Rückschritt durch N9** | mittel |
+| R7-2 | Scheitert das Schreiben der Queue-Datei schon IN der Transaktion, läuft die Deprovisionierung ohne Anker weiter; `cleanup_pending: null` bei `dateien_geloescht: false` | D | gelesen: `schreibeOffboardingRest` schluckt den Fehler und liefert `null`, der Callback prüft das nicht (Bestand, durch N9 sichtbarer) | mittel |
+| R7-3 | Lesefehler (EMFILE/EIO) und Parsefehler landen im selben `catch` → ein vorübergehender Lesefehler stellt einen GÜLTIGEN Eintrag dauerhaft unter Quarantäne | C | EMFILE-Attrappe → `ungueltig:1`, `.enc` bleibt; getrennt gemessen: `offen:1`, nächster Lauf `erledigt:1` | mittel |
+| R7-4 | Alte Einträge ohne `erstellt` würden nicht mehr abgearbeitet | D | **gefallen**: die Queue trug `erstellt` seit ihrer Einführung (`608906d`, von C nachgesehen) | — |
+| R7-5 | `renameSync` nach `.ungueltig` überschreibt eine schon vorhandene gleichnamige Beweisdatei still | K | POSIX-Semantik; bei alten `<id>.json` denkbar | niedrig |
+| R7-6 | `cause` hat keinen Leser (`melde()` loggt nur `err.stack`); die wirksame Spur des ersten Fehlers ist die `console.warn`-Zeile — und die sichert kein Test | C | Probe A: erster Fehler nicht im melde-Log; Mutation M10 (erster aus der warn-Zeile entfernt) bleibt 7/0 | niedrig |
+| R7-7 | Die Karenz-Zusicherung umschliesst nur (2 h, 25 h] — ein Rückbau auf 3 h bleibt grün | C | Mutation M1: alle vier Dateien EXIT 0 | niedrig |
+| R7-8 | Verbraucher von `cleanup_pending` ausserhalb dieses Repos (Hauptserver) | K, C | `server.js:235` reicht nur durch; Hauptserver-Repo nicht im Container → unbelegt, Sammelliste | Fundort |
+| R7-9 | `error-tracker`: alle `melde(new Error(…), null, …)` teilen die Signatur `Error:- -` und werden 15 min lang ÜBER Quellen hinweg gedrosselt — eine „ungültig“-Meldung kann ganz ausfallen (Log bleibt) | C | Probe A4: zweite Meldung `senden: false`. Bestand, nicht durch N9 | mittel (Bestand) |
+| R7-10 | Ein serverseitig ABGELEHNTES COMMIT (SQLSTATE) ist ein sicherer Rollback, gilt aber als ungewiss — Eintrag bleibt bis 24 h | K | stimmt; bewusst konservativ (nur Verzögerung + späte Meldung) | keine Aktion |
+
+Keine neue SQL, Mandantentrennung unverändert (C, D, K). Hergestellte Zustände ohne Befund (C): Kennzeichen an fremden
+`db.tx`-Aufrufern unsichtbar für `deepStrictEqual`/`inspect`/JSON; kein Pool-Zugriff in einem Callback, der ein falsches
+`false` erzeugen könnte (81 Aufrufe gescannt, mit Positivkontrolle); Kreisbezug über `cause` wirft in `melde()` nicht;
+verschränkter Reaper während der Deprovisionierung unschädlich.
+
+**Nacharbeit 10** (`plaene/auftrag-unlink-loeschauftrag.md`): R7-1, R7-2, R7-3, R7-5, R7-6, R7-7. Ohne Planprüfung:
+sechs eng umrissene Stellen, zu R7-1 und R7-3 hat C die Lösung schon gemessen.
