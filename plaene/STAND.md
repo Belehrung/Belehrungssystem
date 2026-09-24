@@ -20,11 +20,14 @@ Stand 24.09.2026, 07:20 UTC.
   5 min abgemeldet), beide behoben und gegengeprobt; Runde 2 nichts Blockierendes. Merge ebenfalls zurückgehalten.
   Sammelliste `plaene/offene-befunde-h2.md`. Nach dem Merge: `test/run.sh`-Konflikt mit #471 möglich (beide
   registrieren Tests).
-* **DeepSeek-Vollprüfung**: 16 von 27 Bereichen ausgewertet (`plaene/vollpruefung-befunde.md`, Sammelliste
-  `plaene/offene-befunde-vollpruefung.md`); 4 als blockierend gemeldet: 2 gemessen widerlegt (V02-1, V10-1), 2 getragen und auf mittel herabgestuft (V01-1, V09-1).
-  Kosten gemessen ≈ 0,4 $ je Lauf (Guthaben 34,44 $ um 06:28). Vor dem Pentest vorzuziehen: V03-6 (Array-Body auf
-  `/tablet/sperre` → 500), V10-2 (Signatur aus einem Pixel). Entscheidungen für den Betreiber: V01-1 (S20-REPLACE),
-  V09-1 (QR-Journal fail-closed?).
+* **DeepSeek-Vollprüfung ABGESCHLOSSEN**: 27 von 27 Bereichen ausgewertet (`plaene/vollpruefung-befunde.md`,
+  Sammelliste `plaene/offene-befunde-vollpruefung.md`). 188 Befunde, 179 getragen, 9 gefallen (die meisten
+  gefallenen an JS-/PostgreSQL-Semantik). 4 als blockierend gemeldet: 2 gemessen widerlegt (V02-1, V10-1), 2 getragen
+  und auf mittel herabgestuft (V01-1, V09-1). Grösster echter Fund V25-1 (Tests löschen im PDF-Archiv) → T1.
+  Kosten GEMESSEN: Guthaben 39,84 → 20,02 $ für alle DeepSeek-Läufe seit Beginn (≈ 34 Läufe, ≈ 0,6 $ je Lauf; die
+  Werkzeugschätzung liegt rund 9× zu hoch). Vor dem Pentest vorzuziehen: V03-6 (Array-Body auf `/tablet/sperre` →
+  500), V10-2 (Signatur aus einem Pixel). Entscheidungen für den Betreiber: V01-1 (S20-REPLACE), V09-1
+  (QR-Journal fail-closed?), V15-2 (Gültigkeitsregel Belehrungsübersicht).
 * **Umgebung, gemessen 23.09. abends:** der Container wird im LEERLAUF abgeräumt (Neustarts 22:1x, 22:40, 23:40,
   jeweils kurz nach Ende eines Zuges). Hintergrundprozesse sterben dabei; ein laufender Agent hält die Sitzung
   wach, ein Hintergrund-`node` nicht. Lange Gegenlesungen deshalb im Vordergrund abwarten (`timeout 570 bash -c

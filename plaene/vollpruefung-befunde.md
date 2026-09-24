@@ -434,3 +434,16 @@ bis auf einen alles Anmerkungen zu Kommentaren und Schranken.
 | V27-5 | `test_feature_zustaendigkeit_static.js:223-230`: „STRIKT“ versprochen, nur Untergrenze geprüft | Anmerkung |
 | V27-6 | `test_feature_wiederherstellung_static.js:285`: Sollzahl zählt Kommentare mit | Anmerkung |
 | V27-7 | `test_feature_zip_download.js:54-56`: echte Prozesse, bewusst ausgenommen | Anmerkung |
+
+## Bereich 20 — Testdateien `test_feature_mandantengrenze_fremd_ids.js` … `test_feature_netzsperre.js` (27 Dateien)
+
+Lauf 24.09.2026, 13 Runden, 3,69 Mio. Token ein, geschätzt 5,16 $.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V20-1 | `test_feature_mangel_darstellung_einheitlich.js:103-108`: Teil 3 prüft den ROHEN Quelltext; `mangelKarte(` steht in `routes/sichtpruefung.js:1250`, `mangelFotos(` in `:1480` in Kommentaren — ohne die echten Aufrufe (`:1275, :1291, :1487`) bleibt Teil 3 grün. Die im Test berichtete Gegenprobe „auskommentiert → ROT“ trägt deshalb nicht | gelesen (Kommentarzeilen enthalten die Suchwörter) | mittel |
+| V20-2 | ebd. `:38-42`: `vorTagen()` baut lokales Datum und liest es über `toISOString()` — auf einem Rechner mit UTC+14 liefert `vorTagen(0)` den Vortag; Kommentar „dieselbe Rechnung wie `tageSeit()`“ stimmt nicht | gemessen: `TZ=Pacific/Kiritimati` → `2026-09-23` statt `2026-09-24` | gering |
+| V20-3 | Test-Abfragen ohne `studio_id` (`messfehler_nicht_behaupten.js:494`, `nachweis_waisen.js:237-238, 263-264`, `monatlich_einmal.js:142`) | gelesen | gering |
+| V20-4 | `test_feature_mangel_nachtrag.js:372-373`: globale Gegenprüfung statt mandantengebunden | nicht gemessen | Anmerkung |
+
+4 Befunde, alle getragen, 0 gefallen.
