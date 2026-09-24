@@ -72,6 +72,8 @@ Kosten: siehe `ASTRA-LAEUFE.md`; Claude-Spur ohne Kosten, Kimi ohne Preisgrundla
 | 24.09. | Plan T1 (Kimi gesperrt) | DeepSeek, Repo | 9 | 6 | 3 | 0 |
 | 24.09. | Plan T1 (Kimi gesperrt) | DeepSeek, Bündel | 6 | 2 | 1 | 0 |
 | 24.09. | Plan T1 Fassung 2 (eine Spur) | Kimi, Bündel | 10 | — | — | 2 |
+| 24.09. | Plan P3 (TAUSCH: gleiches Bündel) | DeepSeek, Bündel = K | 6 | 3 | 1 | 1 |
+| 24.09. | Plan P3 (TAUSCH: gleiches Bündel) | Kimi, Bündel = D | 8 | 6 | 3 | 0 |
 
 Zählweise: **eine Zeile der Befunddatei = ein Befund** (`plaene/diffpruefung-pentest-p1.md`,
 `plaene/diffpruefung-unlink.md`, `plaene/planpruefung-unlink-loeschauftrag.md`); gruppierte Zeilen wie

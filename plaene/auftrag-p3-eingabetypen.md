@@ -58,3 +58,58 @@ die Fehlerbehandlung (welcher Fehler darf den Alarm verlieren?) und der Wächter
 ## Anhang: Fundstellen (grep, 68)
 
 Liegt dem Bündel bei.
+
+# FASSUNG 2 (24.09.2026) — nach der Planprüfung (`plaene/planpruefung-p3.md`)
+
+Massgeblich ist dieser Abschnitt; wo er Fassung 1 widerspricht, gilt er.
+
+## Umfang, berichtigt
+
+Nicht 68, sondern **29 Stellen**: 38 der 68 grep-Treffer sind in `String(…)` gehüllt und werfen nicht, einer ist ein
+Kommentar (`routes/module.js:3258`). Die `String(…)`-Stellen bleiben UNVERÄNDERT (sie bedienen u. a.
+`lageplan.js:451` mit `ids[]=…`). Die endgültige Menge ermittelst du per AST (Destrukturierungen, `?.`, `??`,
+Zwischenvariablen innerhalb derselben Funktion) und meldest sie IMMER vollständig als Tabelle.
+
+## Auftrag
+
+1. **Vorher messen** (am echten Router, s. Punkt 5): `pin[]=1` und `pin[x]=1` an `/tablet/sperre`, kaputtes JSON an
+   eine JSON-Route → heute 500 und `melde()`? Ergebnis wörtlich melden.
+2. **`core/eingabe.js`**: `textFeld(wert)` → String; `undefined`/`null` → `''`; alles andere (Array, Objekt, Zahl …)
+   wirft `EingabeFehler` (`status 400`, `expose: true`, `type: 'eingabe.feldtyp'`). An den 29 Stellen ersetzt
+   `textFeld(req.body.X)` den Ausdruck `(req.body.X || '')` — der ROHWERT ist das Argument, nie ein vorher
+   umgewandelter.
+3. **Fehlerbehandler in ein eigenes Modul** (z. B. `core/fehlerbehandler.js`, Fabrik mit `errorTracker` als
+   Abhängigkeit); `server.js` hängt genau dieses Modul ein, die Tests laden dasselbe. Ablauf: (i) `headersSent` →
+   `next(err)` ohne Antwortversuch (Eingabefehler dabei ohne `melde()`, sonst wie heute); (ii) 413-Zweig unverändert
+   ZUERST; (iii) **Positivliste** → Status aus `err.status || err.statusCode`, HTML/JSON wie im 413-Zweig, KEIN
+   `melde()`, eine gebündelte Warnzeile nach dem Muster `[id-wache]` (`core/error-tracker.js:38-43`), Präfix
+   `[eingabe]`, mit Route und `err.type`. Positivliste: `err instanceof EingabeFehler`, sowie Body-Parser-Fehler mit
+   `expose === true` und `type` in {`entity.parse.failed`, `charset.unsupported`, `encoding.unsupported`,
+   `request.aborted`} — `request.aborted` bewusst: ein abgebrochener Upload ist kein Serverfehler. Die Werte von
+   `status`/`expose`/`type` misst du an der installierten body-parser-Version, statt sie anzunehmen. (iv) Alles
+   andere unverändert 500 + `melde()`.
+4. **Wächter (AST)**: (a) kein String-Methodenaufruf auf einem Wert aus `req.body`/`req.query` ohne `textFeld()`
+   dazwischen, ausser das Argument ist in `String(…)` gehüllt (bestehende, gewollte Form); (b) `textFeld()` bekommt
+   den Rohwert, nicht `String(…)`, kein Template-Literal, keine Verkettung. Regeln an den Fundstellen aus Punkt 1
+   gelernt. Mengen-Zusicherung: gescannte Dateien gegen `git ls-files` mit einem EIGENSTÄNDIG im Test
+   hingeschriebenen Filter; `git` mit Exit ≠ 0 oder leerer Liste → FAIL; mindestens eine benannte Datei mit
+   Fundstelle (`routes/tablet-sperre.js`) muss in der Menge sein. **Benannte Grenzen im Wächter-Kopf:**
+   stille Stringifizierung ohne Methodenaufruf (`/re/.test(arr)`, `parseInt`, Verkettung, Vorlagen-Literal),
+   Weitergabe an Hilfsfunktionen, Wahrheitsprüfungen auf Arrays.
+5. **Verhaltenstests über den ECHTEN Router** (`test/helfer/route-harness.js`): `/tablet/sperre` mit `pin[]=1` und
+   `pin[x]=1` → 400, `melde()` NICHT aufgerufen (Stub, nie echt). Über das echte Fehlerbehandler-Modul: kaputtes
+   JSON → 400 ohne `melde()`; Wurf ohne `expose` → 500 mit `melde()`; `createError`-artiger Fehler mit
+   `status 401, expose: true` OHNE Positivlisten-Typ → 500 mit `melde()`; Eingabefehler nach `res.write()` → kein
+   zweiter Antwortversuch.
+6. Einmalige, von Punkt 1 UNABHÄNGIGE Querprüfung im Bericht: alle `req.body.`/`req.query.`-Zugriffe ohne
+   `textFeld`, die in einen String-Kontext fliessen (grep, Stichprobe gelesen) — was übrig ist, als Liste melden;
+   ich übertrage es auf die Sammelliste.
+
+## Gegenproben (je einzeln ROT und zurück GRÜN, wörtlich)
+
+(a) `routes/tablet-sperre.js:551` alter Ausdruck zurück → Verhaltenstest rot UND Wächter rot.
+(b) Im Fehlerbehandler-Modul die Positivliste durch „`expose && 4xx`“ ersetzen → der 401-Test rot.
+(c) `textFeld(String(req.body.pin))` in einer Fixtur → Wächter rot.
+(d) Die `headersSent`-Prüfung entfernen → der `res.write()`-Test rot.
+
+Nicht Teil von P3: V10-2 (Mindestumfang einer Unterschrift) — Betreiber-Entscheidung.
