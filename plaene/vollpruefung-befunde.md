@@ -145,3 +145,19 @@ genannten Zeilen selbst gelesen; die übrigen sind Anmerkungen, am Code plausibe
 | V04-17 | Bericht-Spalten von `wartung_pruefungen` nur per Migration, nicht selbstheilend im SCHEMA | nicht gemessen; praktisch unerreichbar | Anmerkung |
 
 17 Befunde, 17 getragen (5 gelesen, 12 als Anmerkung ohne Einzelmessung), 0 gefallen.
+
+## Bereich 10 — `core/signaturbild.js` … `core/zustaendigkeit.js`, `ops/*` (49 Dateien)
+
+Lauf 24.09.2026 05:15–05:30 UTC, 10 Runden, 2,90 Mio. Token ein, geschätzt 4,04 $. Im Material geschwärzt: ein
+Kommentar-Beispiel `https://md001.gymdocu.de:1@evil.com` (Geheimnis-Riegel), der Prüfer sah dort `[zugang-geschwaerzt]`.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V10-1 | `gymdocu-wiederherstellen.sh --zeitpunkt`: mit `recovery_target_inclusive = on` spiele PostgreSQL die erste Transaktion NACH dem Ziel mit ein, der K2-Wächter breche deshalb jeden Zeitpunkt-Restore ab (Modell: blockierend) | **gefallen**, am Quelltext von PostgreSQL 16 (`xlogrecovery.c`, `recoveryStopsBefore`, geholt aus `REL_16_STABLE`): für Zeitziele gilt mit inclusive `stopsHere = recordXtime > recoveryTargetTime`, `recoveryStopAfter = false` — angehalten wird VOR dem ersten Commit nach dem Ziel. `audit_log.zeit` wird vor dem Commit geschrieben, liegt also nie über dem Commit-Zeitpunkt. Nicht durch einen echten PITR-Lauf gemessen | — |
+| V10-2 | Signaturprüfung: ein einziges schwarzes Pixel gilt als Unterschrift (keine Untergrenze) — derselbe Trust-Boundary-Weg (CWE-501/602), den das Modul schliessen soll | **gemessen** mit `pruefeSignaturbild()` aus dem Bestand: 1×1 schwarz → akzeptiert (`tintenPixel 1`), 3×3 schwarz → akzeptiert; 1×1 weiss → abgelehnt (Positivkontrolle) | **mittel, Pentest-relevant** |
+| V10-3 | `upsertReplica()` setzt `attempts` bei neuem Inhalt nicht zurück — nach einem früheren `dead` scheitert die neue Dateiversion beim ersten Fehler endgültig, still | gelesen `core/storage-replica.js:108-121` (master und Zweig `fix-nachweis-unlink` gleich) | mittel |
+| V10-4 | `monitoring-alert.sh`: fehlender Restore-Bericht (`unknown`) zählt als „ok“ | gelesen `ops/monitoring-alert.sh:59-60, 109-111` | gering |
+| V10-5 | Zuständigkeit bei gemischter DGUV-V3-Externlage nur einer Partei zugeschrieben | nicht gemessen | Anmerkung |
+| V10-6 | Steckbrief-Ladefunktionen verschlucken DB-Fehler (im Code als offen benannt); Kommentar „alle Aufrufer in try/catch“ stimmt für zwei Admin-Aufrufer nicht | nicht gemessen | Anmerkung |
+
+6 Befunde, 5 getragen, 1 gefallen (der als blockierend eingestufte).

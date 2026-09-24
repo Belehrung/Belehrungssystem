@@ -61,3 +61,8 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V04-2 | „Fehler beim Speichern“ nach Commit → Doppelprüfung | offen, mittel |
 | V04-3 | Dashboard verschluckt DB-Fehler bei Wochenfälligkeiten | offen, mittel |
 | V04-4..17 | Anmerkungen aus Bereich 04 (TZ-Randfälle, Leistung, Texte, Magicline-Randfälle) — Liste in `plaene/vollpruefung-befunde.md` | offen, gesammelt |
+| V10-2 | Signaturprüfung ohne Untergrenze: ein schwarzes Pixel gilt als Unterschrift | offen, **mittel, vor dem Pentest** |
+| V10-3 | Replik-`attempts` bei neuem Inhalt nicht zurückgesetzt → neue Version still ungespiegelt | offen, mittel (Nähe zu R6-13 in `offene-befunde-unlink.md`) |
+| V10-4 | fehlender Restore-Bericht zählt als ok | offen |
+| V10-5 | DGUV-V3-Zuständigkeit bei Mischlage | offen, Anmerkung |
+| V10-6 | Steckbrief-Ladefehler still; Kommentar zu Aufrufern ungenau | offen, Anmerkung |
