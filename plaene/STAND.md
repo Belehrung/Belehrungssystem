@@ -62,8 +62,9 @@ Stand 24.09.2026, 07:20 UTC.
   eingetragen und getestet; Härtung wieder aktiv (`sshd -T`: passwordauthentication no, permitrootlogin without-password). **T1 gemergt** (#473, `34a83fa`), Deploy 441 success (erster Deploy nach der SSH-Härtung — Schlüsselweg trägt), live-check grün.
 * **Routing-Messung**: Schwelle erreicht (17 Runden), Empfehlung steht in `plaene/routing-messung.md` (Paarungen
   beibehalten; Kimi mit Repo-Zugriff wäre der nächste Hebel).
-* **Stand 24.09.2026 12:45 UTC:** P3 Nacharbeit 1 fertig (`da06de0`), master hereingemergt (`62eb5f7`, gepusht), Lint
-  EXIT 0; volle Suite und DeepSeek-Diffprüfung Runde 2 laufen. Danach PR.
+* **Stand 24.09.2026 13:45 UTC:** P3 Nacharbeit 2 und 3 abgenommen (DeepSeek R2: 7 Befunde, 5 getragen; `b6e9990`),
+  volle Suite läuft, danach PR. P4 Phase 1 gemessen: 13 Eintrittspunkte, Mass (iii) trennt nicht → Fassung 3
+  (Komponenten + Geradheit, Bezug Strichdicke); Phase 1b (Neumessung) läuft in `/workspace/gymdocu-p4`.
 * Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
 
 ### Vorgeschichte des Tages (gekürzt)
