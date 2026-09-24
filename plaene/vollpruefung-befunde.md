@@ -330,3 +330,17 @@ Lauf 24.09.2026 07:25–07:45 UTC, 30 Runden, 9,62 Mio. Token ein, geschätzt 12
 | V17-4 | `test_feature_filters.js:37`: `indexOf === -1` lässt die Zusicherung leer grün | nicht gemessen | Anmerkung |
 
 4 Befunde, 4 getragen (ungemessen), 0 gefallen.
+
+## Bereich 24 — Testdateien `test_feature_rechtsstand.js` … `test_feature_seilkontrolle_geraet_geloescht.js` (31 Dateien)
+
+Lauf 24.09.2026 07:29–07:48 UTC, 30 Runden, 9,94 Mio. Token ein, geschätzt 13,35 $. Im Material geschwärzt: vier
+Test-Verbindungszeichenfolgen. Befunde nicht einzeln gemessen.
+
+| Nr. | Befund | Einstufung |
+|---|---|---|
+| V24-1 | `test_feature_retention_sperr_sichtkontrollen.js`: `setDate` + `toISOString()` (UTC-Tag) und der Vergleich gegen einen zweiten, späteren Aufruf — bei Prozesszeit Berlin kurz vor Mitternacht rot ohne Ursache | gering (Server-TZ unbelegt) |
+| V24-2 | `test_feature_seil_tablet_ux.js:34-38`: Text-Anker ohne Positivkontrolle, `indexOf === -1` macht die Zusicherung leer grün | gering |
+| V24-3 | zwei Test-Abfragen ohne `studio_id` | Anmerkung |
+| V24-4 | `test_feature_rechtsstand.js`: Unverwechselbarkeit nur für ein Paar der drei Lagen geprüft | Anmerkung |
+
+4 Befunde, 4 getragen (ungemessen), 0 gefallen.

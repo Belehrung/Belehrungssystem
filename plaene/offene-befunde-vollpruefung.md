@@ -87,3 +87,4 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V15-2 | Gültigkeitsregel der Belehrungsübersicht: `MAX(gueltig_bis)` oder neueste Unterschrift? Test unterscheidet nicht | offen, **Entscheidung Betreiber** |
 | V23-1..6 | Rechtsaussagen-Wächter schluckt Datei-Lesefehler; `>=`-Zusicherung; wandernder Sollwert NUMMER_START; Gegenprobe ohne Rücknahme; Studio nicht entsperrt; Satztrenner-Grenze | offen, gering |
 | V17-1..4 | Error-Tracking-Test ohne eigene Versandsperre; Sollwert aus derselben Funktion; dekorative PASS-Zeilen; `indexOf`-Rückfall | offen, gering |
+| V24-1..4 | UTC-Tag im Retention-Test, Text-Anker ohne Positivkontrolle, Test-Abfragen ohne `studio_id`, Unverwechselbarkeit nur ein Paar | offen, gering |
