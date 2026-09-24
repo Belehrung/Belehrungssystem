@@ -371,3 +371,38 @@ nicht raten).
 
 Einordnung unverändert: sehr komplex. Gegenproben wie in Fassung 1, dazu: Guard-Eintrag ohne `erstellt` (alter
 Zustand) → PN9-4-Zusicherung rot; Umbenennen zu `.ungueltig` weggelassen → zweiter Reaper-Lauf meldet erneut → rot.
+
+---
+
+# NACHARBEIT 10 (Diffprüfung Runde 7)
+
+Einordnung: normaler Auftrag mit einer heiklen Stelle (atomares Schreiben der Queue) — weiter derselbe Executer.
+Befunde: `plaene/diffpruefung-unlink.md`, Abschnitt „Runde 7“. Proben der Prüfspur (Anschauung):
+`scratchpad/dpu7/probe_b_test.js`, `probe_c_test.js`. Ort: `/workspace/gymdocu-unlink`, HEAD `5aa0fb9`.
+
+1. **R7-1 — Queue-Datei atomar schreiben.** `schreibeOffboardingRest` schreibt in `<pfad>.tmp-<pid>-<zufall>` und
+   benennt dann mit `renameSync` auf den Zielnamen um; scheitert etwas, wird die tmp-Datei entfernt (nie die
+   Zieldatei). Der Reaper räumt liegengebliebene `*.tmp-*`-Dateien, die älter als eine Stunde sind (sie sind nie ein
+   gültiger Eintrag). Beim Neuschreiben nach dem COMMIT bleibt so die in der Transaktion geschriebene Datei intakt,
+   wenn das Neuschreiben scheitert. Szenario: Neuschreiben scheitert NACH dem Anlegen der tmp-Datei (Attrappe an
+   `fs.writeFileSync`, schreibt Teilinhalt und wirft) → die Queue-Datei aus der Transaktion ist unverändert lesbar,
+   der Reaper arbeitet sie ab (`erledigt:1`); Gegenprobe: direkt auf den Zielnamen schreiben → Torso → rot.
+2. **R7-2 — Schreibt die Transaktion keine Queue-Datei, bricht die Deprovisionierung ab.** Liefert
+   `schreibeOffboardingRest` im Callback `null`, wirft der Callback (sicherer Rollback, nichts gelöscht, Studio lebt),
+   Fehler benannt (`offboarding_queue_nicht_schreibbar`). Scheitert erst das Neuschreiben nach dem COMMIT, bleibt die
+   Datei aus der Transaktion der Rückhalt (Punkt 1) — `cleanup_pending` nennt dann diese, und sie MUSS existieren.
+   Szenario + Gegenprobe (Wurf entfernt → Studio weg ohne Queue-Datei → rot).
+3. **R7-3 — Lesen und Parsen trennen.** Lesefehler (`readFileSync` wirft) → `offen++`, Eintrag bleibt, kein
+   Umbenennen; nur ein PARSE-Fehler bzw. ein ungültiger Inhalt ist `ungueltig`. Szenario: einmaliger EMFILE → erster
+   Lauf `offen:1`, zweiter `erledigt:1`.
+4. **R7-5 — `.ungueltig` nie überschreiben:** Ziel `<name>.<zeitstempel>.ungueltig` (bleibt ausserhalb des
+   `.json`-Filters). Szenario: dieselbe kaputte Datei zweimal → zwei Beweisdateien.
+5. **R7-6 — die Spur des ersten Fehlers zusichern:** S22a prüft die `console.warn`-Zeile auf BEIDE Meldungstexte
+   (abgefangen). Zusätzlich die `melde()`-Nachricht so bauen, dass der erste Fehler darin steht (z. B. den zweiten
+   Fehler vor dem Melden in einen neuen `Error` mit beiden Texten und `cause` einpacken) — `melde()` loggt nur den
+   Stack. Gegenprobe M10 (erster aus der Zeile entfernt) muss rot werden.
+6. **R7-7 — Karenzwert festhalten:** zusätzlich ein Eintrag eines lebenden Studios, 23 h alt → `uebersprungen`.
+   Gegenprobe: Karenz 3 h → rot.
+
+**Gegenproben** je Punkt (ROT/GRÜN wörtlich), **Abschluss** wie gehabt: volle Suite mit `SUITE_EXIT`, Dateizahl-
+Ritual, Lint, Marker-Scan, Commit, Push. Zweig nicht hinter master? prüfen und ggf. hereinmergen. Widersprüche gemessen melden.
