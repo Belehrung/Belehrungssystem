@@ -33,3 +33,9 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V02-8 | `pdftoppm` synchron | offen, Anmerkung |
 | V02-9 | Health meldet `db:false` bei jedem Teilausfall | offen, Anmerkung |
 | V02-10 | Datumswerte der Betriebszeiten nur formal geprüft | offen, Anmerkung |
+| V08-1 | Jahres-Check: Name der Bestätigung per `MAX` statt aus der jüngsten Zeile; Test mit nur einer Zeile | offen |
+| V08-2 | `nachtragBanner()` liest geerbte Eigenschaften (`constructor`, `__proto__`) | offen |
+| V08-3 | OneDrive ohne Zeitlimit (Backend inaktiv) | offen, Anmerkung |
+| V08-4 | verlorenes Korrekturblatt wird nie neu erzeugt, still | offen |
+| V08-5 | `hilfeButton` ignoriert `position` | offen, Anmerkung |
+| V08-6 | `ladeMonatliche()` lädt zu viel | offen, Anmerkung |

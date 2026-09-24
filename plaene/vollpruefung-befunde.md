@@ -66,3 +66,19 @@ Lauf 24.09.2026 04:45–05:05 UTC, 11 Runden, 3,25 Mio. Token ein, geschätzt 4,
 | V02-10 | Ferien-/Ausnahmedaten nur formal geprüft (`2026-99-99` wird gespeichert) | gelesen | Anmerkung |
 
 10 Befunde, 9 getragen, 1 gefallen (der als blockierend eingestufte).
+
+## Bereich 08 — `core/hilfe-texte.js` … `core/pdf-dokument-erzeugen.js` (27 Dateien)
+
+Lauf 24.09.2026 04:45–05:02 UTC, 28 Runden, 6,98 Mio. Token ein, geschätzt 9,47 $. Guthaben 05:03: 38,67 $
+(−0,83 $ seit 04:42 für die Bereiche 02 und 08 plus angelaufene 03/09).
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V08-1 | `ladeStand()` im Jahres-Check: `MAX(geprueft_durch)` ist das Text-Maximum aller Namen, nicht der Name der jüngsten Bestätigung; der Test hat nur EINE Zeile und kann das nicht sehen | gelesen `core/jahrescheck.js:279`; Schwesterfunktion `:455` macht es mit `DISTINCT ON` richtig | gering (Feld heute ohne Anzeige) |
+| V08-2 | `nachtragBanner()` schlägt im Wörterbuch auch geerbte Eigenschaften nach — `?nachtrag=constructor` rendert `function Object() { [native code] }` und unterdrückt den „Gespeichert“-Banner; der Kommentar sagt „liefert nur vorformuliertes HTML“ | **gemessen:** `nachtragBanner(true,"constructor")` → `function Object() { [native code] }`, `"__proto__"` → `[object Object]`; kein fremder Text im HTML (kein XSS) | gering |
+| V08-3 | OneDrive-Anfragen ohne Zeitlimit | gelesen `core/onedrive.js:32-97`; Backend heute nicht aktiv | Anmerkung |
+| V08-4 | Korrekturblatt: fehlt die Datei zum DB-Eintrag, wird sie nie neu erzeugt, der Worker endet still | gelesen `core/korrektur-pdf.js:128-144`, `workers/pdf-job-worker.js:23` | gering |
+| V08-5 | `hilfeButton(key, position)` liest `position` nie | gelesen `core/hilfe-texte.js:1630` | Anmerkung |
+| V08-6 | `ladeMonatliche()` lädt Protokolle auch für Nicht-Pflichteinträge | gelesen, nicht gemessen | Anmerkung (Leistung) |
+
+6 Befunde, 6 getragen, 0 gefallen.
