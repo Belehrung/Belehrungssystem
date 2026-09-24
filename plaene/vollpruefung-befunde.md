@@ -213,3 +213,22 @@ Test-Verbindungszeichenfolgen.
 | V12-8 | veralteter Scan-Tick stoppt seinen Stream nicht (Weg über die Oberfläche unbelegt) | — | Anmerkung |
 
 8 Befunde, 8 getragen (2 gelesen, Rest ohne Einzelmessung), 0 gefallen.
+
+## Bereich 07 — `core/db.js` … `core/geraete-hinweisfenster.js` (25 Dateien)
+
+Lauf 24.09.2026 05:55–06:34 UTC, 9 Runden, 1,92 Mio. Token ein, geschätzt 2,78 $. Im Material geschwärzt: zwei
+Platzhalter-Verbindungszeichenfolgen in `core/db.js`.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V07-1 | Defekt-/Wartungsmail: scheitert der atomare Claim (`UPDATE … mail_gesendet_am`), wird `claim = null` und die Mail geht OHNE Doppelversand-Schutz raus, still. `mail_gesendet_am` steht nur im `CREATE TABLE`, es gibt kein `ADD COLUMN IF NOT EXISTS` und keine Migration — eine ältere Tabelle ohne die Spalte bliebe dauerhaft ungeschützt | gelesen `core/defekt_mailer.js:166-178`; `grep mail_gesendet_am core/db.js migrations/` → nur `CREATE TABLE` (`:1256, 1359, 1513`). Ob die Live-Tabelle die Spalte hat: unbelegt (Schema-Drift-Wächter auf dem Server) | **mittel** |
+| V07-2 | Demo-Daten mit `toISOString().slice(0,10)` (UTC-Tag), Kommentar „UTC wie überall“ ist falsch | nicht gemessen | gering |
+| V07-3 | Demo-Seed schreibt `unterschrift = NULL` in eine `NOT NULL`-Spalte — die zugesagte „erledigte Prüfung“ entsteht nie | gelesen `core/db.js:1288` (`unterschrift TEXT NOT NULL`) | gering |
+| V07-4 | Demo-Registrierung in leerem `catch` — unregistrierte Zeilen, doppeltes Anlegen | nicht gemessen | gering |
+| V07-5 | `reapeFotos.js` bricht auf einer DB ohne Migration 0003 ab, bevor die übrigen Schritte laufen | nicht gemessen | gering |
+| V07-6 | DSGVO-Export: Erhebungsfehler erscheint als „keine Fotos gefunden“ | nicht gemessen | gering |
+| V07-7 | Feiertage ohne Jahresgrenzen (Frauentag BE ab 2019, MV ab 2023; Weltkindertag TH ab 2019; Reformationstag HB/HH/NI/SH ab 2018) — `betriebszeiten.js` verspricht „historisch korrekt“ | Tatsachen stimmen; Code nicht einzeln gemessen | gering |
+| V07-8 | Prozess-Tod zwischen Claim und `sendMail` → Mail nie gesendet, Zeile sagt „gesendet“ | — | Anmerkung |
+| V07-9 | `decryptStream` puffert die ganze Datei im Speicher | — | Anmerkung (Leistung) |
+
+9 Befunde, 9 getragen (2 gelesen, Rest ohne Einzelmessung), 0 gefallen.

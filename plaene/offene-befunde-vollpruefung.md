@@ -75,3 +75,5 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V12-1 | Offline-Warteschlange wiederholt Foto-Endzustände (409) endlos | offen, mittel |
 | V12-3 | E2E-Datensparsamkeit ohne Status/Anker — grün bei 500 | offen, mittel |
 | V12-2,4..8 | übrige Befunde aus Bereich 12 | offen, gesammelt |
+| V07-1 | Mailversand ohne Doppelversand-Schutz, wenn der Claim scheitert; `mail_gesendet_am` ohne Nachzug für Alttabellen | offen, **mittel** — zuerst Live-Schema prüfen lassen |
+| V07-2..9 | übrige Befunde aus Bereich 07 (Demo-Daten, Reaper, Export-Hinweis, Feiertags-Historie, Claim-Verwaisung, Speicher) | offen, gesammelt |
