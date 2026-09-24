@@ -20,3 +20,19 @@ DeepSeek mit Repo (9 Runden, 1,73 $ geschätzt). Claude-Spur: Diff gelesen, Befu
 14 Zeilen (A2 gebündelt), alle getragen, 0 gefallen. Aus der Klasse, aber NICHT P3 (Sammelliste): Felder ohne
 `.trim()` wie `req.body.studio_name || 'Standard'` speichern ein Array ungeprüft; `passwort` als Array an
 `bcrypt.compare` (unbelegt).
+
+## Runde 2 — Nacharbeits-Diff `0dbdadc..da06de0` (DeepSeek mit Repo, 7 Runden, 1,00 $ geschätzt)
+
+Lokal vorher: Lint EXIT 0; volle Suite auf `62eb5f7` läuft.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| P3-R2-1 | `postGeraeteHinweisUebernehmenHandler`: `textFeld(req.body.pruefer)` (`sichtpruefung.js:5361`) läuft NACH dem `DELETE … RETURNING` (`:5323`) — die einzige Stelle, an der ein Schreibvorgang VOR `textFeld` blieb; der Hinweis wird beansprucht und im `catch` wiederhergestellt | gelesen; `zusatz` wirft nicht (`normalisiereZeilenumbrueche` hüllt in `String`) | sollte — vor das `try` heben |
+| P3-R2-2 | Derselbe `catch` (`:5462`) verwirft die Warnung von `hinweisWiederherstellen()` („Hinweis verloren“) | auf master schon so (`:5448`), also VORBESTEHEND; `hinweisWiederherstellen` wirft nie, `.catch(() => {})` ist toter Code | sollte — Warnung in die Fehlerseite |
+| P3-R2-3 | `/admin/einstellungen`: `studio_name`, `studio_ort`, `archiv_mail_an`, `mail_absender_name` laufen weiter ungeprüft | Prämisse FALSCH: es wirft nichts und schreibt nicht halb — `pg` macht aus einem Array einen Array-Literal-Text (`node_modules/pg/lib/utils.js:63`), gespeichert wird `{"a","b"}`. Substanz = P3-S1 | sollte — gleiche Route, mitnehmen |
+| P3-R2-4 | Wächter-Regel `eingabetyp-scan.js:175` prüft nur, dass im `if (e instanceof EingabeFehler)` irgendwo `next`/`throw` steht (auch unerreichbar hinter `return`) | gelesen | sollte — erste Anweisung muss weiterreichen |
+| P3-R2-5 | Sollzahl 69 ist eine ZAHL: −1 an einer Stelle, +1 an einer anderen bleibt grün | gelesen; 69 per Nachzählung richtig | Anmerkung — Zuordnung je Datei statt Summe |
+| P3-R2-6 | JSON-Aufrufer (`antwort=json`) bekommen bei Feldtyp-Fehler HTML | gelesen `fehlerbehandler.js:111`; nur bei manipulierter Anfrage (eigene Formulare senden Strings) | kein Defekt |
+| P3-R2-7 | Verschärfungen: `geraetName`/`standort` immer gelesen, `/setup` 403 vor 400, `/einstellungen` 400 statt Redirect | beabsichtigt, im Diff kommentiert | kein Defekt |
+
+7 Befunde, 5 getragen (davon 1 vorbestehend), 1 mit falscher Prämisse (Substanz getragen), 2 kein Defekt.
