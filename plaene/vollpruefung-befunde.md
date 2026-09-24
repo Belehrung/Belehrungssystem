@@ -276,3 +276,16 @@ Lauf 24.09.2026 06:45–07:03 UTC, 16 Runden, 4,86 Mio. Token ein, geschätzt 6,
 | V14-7 | zwei Dateien ohne Sollzahl-Bremse; `test_feature_ausstattung.js` druckt „0 FAIL“ als festen Text | nicht gemessen | gering |
 
 7 Befunde, 7 getragen (2 gelesen), 0 gefallen.
+
+## Bereich 22 — Testdateien `test_feature_pin_generation_static.js` … `test_feature_qr_kleben_dom_ids_static.js` (15 Dateien)
+
+Lauf 24.09.2026 06:47–07:07 UTC, 14 Runden, 4,37 Mio. Token ein, geschätzt 6,08 $.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V22-1 | `test_feature_provisioning_pdf_root_static.js` Abschnitt 1 („ALLE Requirer setzen PDF_ROOT“) deckt nicht die zwei weiteren Wurzeln von `deprovisionStudio()`: `OFFBOARDING_QUEUE_DIR` (beim `require`) und `DOKUMENTE_DIR` (rekursives Löschen `<maId>_*`, beim Aufruf) | gelesen: im Gate setzt `test/run.sh:462` `DOKUMENTE_DIR` auf ein Temp-Verzeichnis; `OFFBOARDING_QUEUE_DIR` setzt `run.sh` nicht — die Queue landet dann unter `<PDF_ROOT>/../offboarding-pending`, bei der Suite also in `/tmp` statt im Temp-Baum. Im Einzelaufruf ungeschützt | gering (im Gate halb gedeckt) |
+| V22-2 | Kopfkommentar nennt „elf direkte Requirer“ von `core/retention.js`, es sind 13 (Listen selbst stimmen) | nicht gemessen | Text |
+| V22-3 | PIN-Regel-Wächter scannt nur `routes/`/`core/`, die Meldung behauptet mehr | nicht gemessen | Anmerkung |
+| V22-4 | Require-Muster ohne Backtick (Fehlalarm, kein falsches Grün) | nicht gemessen | Anmerkung |
+
+4 Befunde, 4 getragen, 0 gefallen.

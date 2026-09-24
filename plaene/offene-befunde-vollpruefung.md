@@ -80,3 +80,5 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V13-1..3 | Test-Stub `DESIGN_TOKENS_CSS`; falsche Begründung in der Ausnahmeliste `keine_systemeingriffe`; Zusicherung ohne Prüfung zählt als PASS | offen, gering |
 | V21-1..6 | Test-PDFs ohne Umleitung, Aufräumpfad, Vorzustand erzwingt Sortierung, Mandantenfilter der Session-Entwertung ungeprüft, stilles Überspringen, ungeschütztes `git ls-files` | offen, gering |
 | V14-1..7 | Testfragen: `status !== 200` akzeptiert 500, Wächter blind für Member-Aufrufe, tautologische Oder-Zweige, SQL-Kommentare, Helfer ohne `studio_id`, festes Kürzel, fehlende Sollzahl | offen, gering |
+| V22-1 | Tests, die `core/provisioning` laden: `OFFBOARDING_QUEUE_DIR` nicht suite-weit gesetzt (landet in `/tmp`), `DOKUMENTE_DIR` nur über `run.sh` gedeckt | offen, gering — zusammen mit der unlink-Extrarunde (R9-12b) ansehen |
+| V22-2..4 | Zählangabe im Kommentar, Erfassungsbereich des PIN-Wächters, Backtick-Muster | offen, Anmerkung |
