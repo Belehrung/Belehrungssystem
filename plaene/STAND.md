@@ -4,7 +4,7 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-Stand 24.09.2026, 01:30 UTC.
+Stand 24.09.2026, 02:50 UTC.
 
 * **Pentest P1 gemergt** (#470, Squash `221a7b2`, CI 4/4 grün auf `7e2f8dd`, kein Bot-Kommentar). **Deploy 437
   ZWEIMAL gescheitert** (22:27 und 22:33 UTC), beide Male schon beim SSH-Handshake: `ssh: handshake failed: read:
@@ -13,10 +13,9 @@ Stand 24.09.2026, 01:30 UTC.
   (sshd/Firewall/fail2ban), von hier nicht erreichbar → Betreiber gefragt. Nicht weiter neu anstossen, bis er
   Bescheid gibt (weitere Versuche können eine Sperre verlängern). Sammelliste `plaene/offene-befunde-pentest-p1.md` für die Extrarunde. **P2** ist
   eigener Beitrag.
-* **Nachweis-unlink**: Nacharbeit 10 gebaut (`8f20cfe`, Suite 367 = 367, 9 Gegenproben), Runde 8 (zwei Spuren)
-  ausgewertet: 10 Zeilen, darunter ein Rückschritt (dauerhafter Lesefehler bleibt stumm offen). **Nacharbeit 11
-  läuft** (derselbe Executer). Die Runden werden schmaler (R6: 14, R7: 10, R8: 10, aber zunehmend Kanten und
-  Test-Schärfe).
+* **Nachweis-unlink**: Nacharbeit 11 (`81e74f4`) gebaut, Runde 9 ausgewertet (12 kleine Befunde, 1 gefallen).
+  **Nacharbeit 12 im Abschluss** (Suite `SUITE_EXIT=0`, Bericht steht aus). Plan danach: EINE abschliessende
+  Lesespur; nichts Schweres → PR mit Sammelliste (`plaene/offene-befunde-unlink.md`).
 * **Umgebung, gemessen 23.09. abends:** der Container wird im LEERLAUF abgeräumt (Neustarts 22:1x, 22:40, 23:40,
   jeweils kurz nach Ende eines Zuges). Hintergrundprozesse sterben dabei; ein laufender Agent hält die Sitzung
   wach, ein Hintergrund-`node` nicht. Lange Gegenlesungen deshalb im Vordergrund abwarten (`timeout 570 bash -c
