@@ -208,6 +208,7 @@ sondern falsch.
 | 24.09.2026 | Vollpruefung GymDocu Bereich 05 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 8035 Zeilen, Suchen 15, Lesungen 21, Token rein 1763469, Token raus 58170, Runden 7 | 7 | 6 (mittel: Mitarbeiter-Löschung ohne Audit bei Protokollfehler) | 1 (ID-Wache fehle — zentrale `router.param`-Wache aus #470 deckt dieselben Routen, gemessen) | 2,56 $ |
 | 24.09.2026 | Vollpruefung GymDocu Bereich 12 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 8108 Zeilen, Suchen 10, Lesungen 7, Token rein 2176754, Token raus 67617, Runden 10 | 8 | 8 (mittel: Offline-Warteschlange wiederholt Endzustände endlos; E2E-Datensparsamkeit grün bei 500) | 0 | 3,14 $ |
 | 24.09.2026 | Vollpruefung GymDocu Bereich 07 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 8047 Zeilen, Suchen 11, Lesungen 16, Token rein 1920748, Token raus 61404, Runden 9 | 9 | 9 (mittel: Mailversand ohne Schutz bei gescheitertem Claim, Spalte ohne Nachzug) | 0 | 2,78 $ |
+| 24.09.2026 | Vollpruefung GymDocu Bereich 13 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 10599 Zeilen, Suchen 54, Lesungen 33, Token rein 10279679, Token raus 61855, Runden 32 | 3 | 3 (alle gering) | 0 | 13,81 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht

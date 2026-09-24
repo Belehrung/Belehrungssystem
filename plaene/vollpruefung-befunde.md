@@ -232,3 +232,15 @@ Platzhalter-Verbindungszeichenfolgen in `core/db.js`.
 | V07-9 | `decryptStream` puffert die ganze Datei im Speicher | — | Anmerkung (Leistung) |
 
 9 Befunde, 9 getragen (2 gelesen, Rest ohne Einzelmessung), 0 gefallen.
+
+## Bereich 13 — Testdateien `test_deprovision.js` … `test_feature_auditlock_ordnung_nebenlaeufigkeit.js` (45 Dateien)
+
+Lauf 24.09.2026 06:25–06:45 UTC, 32 Runden, 10,28 Mio. Token ein, geschätzt 13,81 $ (obere Schranke).
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V13-1 | `test_feature_admin_logout.js`: Stub liefert `DESIGN_CSS`, das Modul importiert `DESIGN_TOKENS_CSS` → `undefined` im gerenderten `<style>`; Kopfkommentar beschreibt einen Import, den es nicht mehr gibt | gelesen `test_feature_admin_logout.js:36-39`, `core/admin-sidebar.js:43` | gering |
+| V13-2 | Ausnahmeliste des Wächters `keine_systemeingriffe`: `2fa_replay` (`node -e`) und `audit_batch3` (`bash ops/replica-verify.sh`) stehen unter einem Begründungstext, der nur `git`-Aufrufe beschreibt | gelesen `test_feature_keine_systemeingriffe.js:155-163` | gering (Begründung falsch, Ausnahme selbst bewusst) |
+| V13-3 | `test_feature_audit_csv.js:163`: Zusicherung zählt ausserhalb 00–02 Uhr Berliner Zeit als PASS, ohne etwas zu prüfen (im Namen benannt) | gelesen | gering |
+
+3 Befunde, 3 getragen, 0 gefallen.
