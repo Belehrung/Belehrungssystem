@@ -216,3 +216,22 @@ Executer: Suite `SUITE_EXIT=0`, 519 s, Dateizahl 367 = 367 (`diff` EXIT 0), Lint
 Übernommene Anmerkungen: Zähler bei gleichem Zeitstempel (defensiv); die neue `melde(new Error(…))` fällt in die
 Drosselklasse `Error:- -` (R7-9, Bestand) — die warn-Zeile bleibt in jedem Fall; neues Rückgabefeld `tmpEntfernt`.
 Runde 8 (Verhaltensänderung, eng): Claude ausführend + DeepSeek mit Repo.
+
+## Runde 8 — zwei Spuren über Nacharbeit 10 (`5aa0fb9..8f20cfe`)
+
+C = Claude ausführend (eigener Cluster, Proben `scratchpad/dpu8/probe_*`), D = DeepSeek mit Repo. Selbst nachgesehen.
+
+| Nr. | Befund | Spuren | Nachgemessen | Einstufung |
+|---|---|---|---|---|
+| R8-1 | JEDER Lesefehler gilt als vorübergehend: ein dauerhafter (EACCES, EISDIR) hält den Eintrag ewig „offen“, OHNE `melde()` — vorher Meldung + Quarantäne | C, D | C: echtes EACCES als `nobody`, drei Läufe `offen:1`, `meldungen: []`, PDF bleibt; alte Fassung meldete. **Rückschritt durch N10** | blockierend |
+| R8-2 | Abbruch bei nicht schreibbarer Queue: Aufrufer sieht nur generischen 500er, kein `melde()`; bei ENOTDIR eine irreführende Meldung „tmp entfernen“; catch-Logzeile behauptet „Eintrag entfernt“, obwohl keiner existiert | C, D | C: echter HTTP-Aufruf (ENOTDIR) → 500 „Interner Fehler…“, Studio lebt; gelesen `core/fehler-antwort.js` | mittel |
+| R8-3 | Neue `melde(new Error(…))` fällt in die Drosselgruppe `Error:- -` (R7-9), vorher `error:- -` (pg); Stack-Ort des zweiten Fehlers fehlt im Log | C | Probe: neue Meldung `senden:false` nach einer anderen `Error`-Meldung; Stack-Ort nicht im Log | niedrig |
+| R8-4 | tmp-Altersgrenze nur nach oben gesichert (1 s bleibt grün) | C | Mutation M2: S31 9/0 | niedrig |
+| R8-5 | Scheitert das Neuschreiben UND hat der Reaper die Transaktions-Datei (Transaktion > 24 h) verworfen, zeigt `cleanup_pending` ins Leere; Kommentar behauptet „intakt“ | D | Logik; Kombination unbelegt (beide Hälften einzeln belegt) | niedrig |
+| R8-6 | tmp-Torso wird erst beim nächsten Reaper-Lauf (täglich 03:20) geräumt — Kommentar sagt „nach 1 h“ | D | `server.js:1555` | Text |
+| R8-7 | S30 „je EINE Beweisdatei mit Zeitstempel“ prüft den Zeitstempel nicht (alte Benennung bestünde); trägt erst die Zweitlauf-Zusicherung | D | gelesen | niedrig |
+| R8-8 | S31 „trägt die Spiegelreferenz“: das Szenario erzeugt keine Replica, `replicaRefs` ist leer, `Array.isArray([])` wahr | D | gelesen | niedrig |
+| R8-9 | `ops/seed-performance-data.js` ruft `deprovisionStudio` ohne `try` — der neue Abbruch beendet das Skript | D | gelesen; Entwicklerwerkzeug, lautes Scheitern ist richtig | keine Aktion |
+| R8-10 | Kein `fsync` vor `rename`/COMMIT: nach Stromausfall kann die Queue-Datei fehlen, „atomar“ gilt nur gegen Prozessabsturz | C | Bestand, nicht gemessen | mittel (Bestand) |
+
+**Nacharbeit 11**: R8-1 bis R8-8 und R8-10.
