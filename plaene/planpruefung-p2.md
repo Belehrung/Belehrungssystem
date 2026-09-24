@@ -18,3 +18,13 @@ verloren, neu gestartet).
 | PP2-11 | A | Offline-Queue: jede Nicht-401-Antwort ohne JSON → Endlos-Wiederholung, Kettenblockade — VORBESTEHEND, P2 ändert daran nichts (Queue wertet den Rumpf aus) | gelesen `offline-queue.js:125-134` | nicht P2; Sammelliste (V12-1-Nähe) |
 | PP2-12 | A | Service Worker cacht nur 200, Navigationen nie → kein neuer Zustand | gelesen | kein Befund |
 | PP2-13 | A | nginx `error_page … =200` wäre für den statischen Wächter unsichtbar | Logik | benannte Grenze im Wächterkopf |
+| PP2-K1 | B | Soll und Ist aus derselben Vermessung → der Wächter bestätigt seine eigene Blindheit | Logik | Gegenmessung mit einem ANDEREN Verfahren (grep auf `class="error"`, alle `layout("…"`-Titel, `ok: *false`); Differenzmenge leer oder je Eintrag begründet |
+| PP2-K2 | B | errorTracker-Stub für 500er-Tests nicht vorgeschrieben (Deploy-Gate!) | gelesen `fehlerbehandler.js` Fabrik | Pflicht: Stub über `baueFehlerbehandler({errorTracker})`, Aufrufe zählen |
+| PP2-K3 | B | Offline-Queue: deterministische 4xx/5xx ohne `code` → Endlos-Wiederholung; ein Test darf das nicht als Soll festschreiben | gelesen `offline-queue.js:125-134, 292, 356-364` | vorbestehend → Sammelliste; P2 schreibt keinen Test, der das Ist zementiert |
+| PP2-K4 | B | Statusregel-Lücken: fachlicher Fall im catch (`module.js` BEREITS_HEUTE → 409), Vorbedingung (`spuelplan.js:272` → 409), Zustandsseiten, `jFehler` braucht code→Status | gelesen | Regel ergänzt (Fassung 2) |
+| PP2-K4b | B | `sendeFoto` prüft nur 401, nicht `resp.redirected` (Bestand) | gelesen `offline-queue.js:147` | Sammelliste |
+| PP2-K5 | B | Überwachung als 200-Verbraucher fehlt in der Messliste | Logik | 1(e): live-check, health-gate, Wochenreport erfassen |
+| PP2-K6 | B | Zulassung der Teilausfall-Marker ohne Mechanismus; Zeilennummern verrotten | Logik | Kennung im Marker gegen eine kurze Kennungsliste |
+| PP2-K7 | B | SW-Ausweichseite bei 500? | gelesen `service-worker.js:312-321`: Ausweichseite NUR bei Netzfehler | gefallen |
+
+DeepSeek 13, Kimi 8 (einer gefallen). Zusammen 20 getragen.

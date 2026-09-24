@@ -54,3 +54,35 @@ sondern neu gemessen.
   Scanner, Überwachung, Weiterleitungsketten.
 * Was wird durch die Behebung schlechter?
 * Kann der Wächter grün sein, obwohl eine Fehlerseite mit 200 übrig ist?
+
+# FASSUNG 2 (24.09.2026) — nach der Planprüfung (`plaene/planpruefung-p2.md`)
+
+Massgeblich; wo sie Fassung 1 widerspricht, gilt sie.
+
+**Statusregel, vollständig:**
+- Eingabefehler des Clients → 400. Die P3-Positivliste bleibt, wie sie ist (413/415).
+- Anmeldung fehlt: Aufrufe mit JSON (`antwort=json`, `Accept: application/json`, XHR) → 401; Browser-Navigation → Weiterleitung wie heute.
+- Fehlende Rechte → 403. Nicht gefunden, auch fremdes Studio → 404.
+- Zustandskonflikt und serverseitige Vorbedingung, die der Client nicht durch eine andere Eingabe beheben kann → 409 (z. B. „bereits heute geprüft“, „keine aktiven Spülstellen“, „bereits ausgemustert“).
+- Unerwartete Ausnahme → 500. „Im `catch`“ heisst NICHT automatisch 500: Fachliche Fälle, die im catch per Code erkannt werden, folgen ihrer Klasse.
+- Die Seite meldet einen Fehler des angeforderten Vorgangs, obwohl Teilschritte gespeichert sind (`geraete.js` Ladebestand streng) → 500. Der Text bleibt.
+- `jFehler`-Helfer mit `code` bekommen eine Zuordnung code→Status (`bereits_geprueft` 409, `validierung` 400, `server` 500), EINMAL am Helfer.
+
+**Bewusst 200, mit Kennung im Marker-Kommentar** (Form `// STATUS-200: <kennung> — <Grund>`). Der Wächter hält die Kennungen gegen eine kurze Liste im Test, nicht gegen Zeilennummern:
+- `health-intern` — Vertrag mit `ops/health-gate.sh`
+- `qr-orakel` — `qr-scan.js keineAuskunft`
+- `ergebniszustand` — `module.js {ok:false, keineSperre:true}`
+- `teilausfall` — die Seiten aus `test_feature_ladestand_dbfehler.js`
+
+**Wächter:**
+- Fehlerinhalt braucht einen Status ≥ 400 am selben `res`-Ausdruck, sonst eine Kennung. `res.status(200)` mit Fehlerinhalt ohne Kennung ist ein Verstoss.
+- Gelernt wird an ALLEN Formen aus 1(a), auch an Zustandsseiten ohne Marker, am Helfer `ladeBestandFehlerinhalt()` und an den `jFehler`-Pfeilen, je Form eine Fixtur.
+- **Gegenmessung** mit einem zweiten Verfahren (grep auf `class="error"`, auf alle `layout("…"`-Titel und auf `ok: *false`). Die Differenz zur AST-Tabelle steht im Bericht, leer oder je Eintrag begründet.
+- Benannte Grenze im Kopf: Rumpf aus einer Variable ohne erkennbaren Fehlerinhalt; nginx `error_page … =200`.
+
+**Tests:**
+- 500er-Verhaltenstests injizieren einen `errorTracker`-Stub (`baueFehlerbehandler({ errorTracker })`) und zählen die Aufrufe; `melde()` ist nie echt.
+- U-LBW1 heisst jetzt: Die bestehenden 200-Zusicherungen für Teilausfälle bleiben grün. `test_feature_ladestand_dbfehler.js:460` (`rFehler`) wird fachlich geprüft und gegebenenfalls auf den neuen Status umgestellt.
+- Für die Offline-Queue wird KEIN Test geschrieben, der das heutige Endlos-Wiederholen als Soll festschreibt. Das bleibt vorbestehend und steht auf der Sammelliste.
+
+**1(e) Überwachung:** `tools/live-check.sh`, `ops/health-gate.sh` und den Wochenreport erfassen: Welche Endpunkte, welcher Status gilt dort als Erfolg? Keiner darf durch P2 kippen.
