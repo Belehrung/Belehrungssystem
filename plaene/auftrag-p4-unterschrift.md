@@ -205,3 +205,25 @@ G. **Tests**: je Fixturdatei der EXAKTE Grund als Literal; Schwellen als Literal
    einen diagonalen Strich; Farbfiguren (rot, blau, dunkelgrün) in Validierung und Fixturen; die Liste aus DS 1a
    (`test_feature_signatur_verbrauch.js`) wird fachlich umgestellt. „Server = Browser“ ist eine Transportprüfung,
    kein Abdeckungsbeleg.
+
+## Nachtrag 4a (24.09.2026) — nach STOPP in Phase 2 Schritt 1 (`347e195`)
+
+Gemessen: Die Validierung (40 neue Figuren, 2080 Messungen) beurteilt **`v_initialen_12`** („J. K.“, 12 px, dPR 1) 4-mal als
+Punkt: Die grösste Komponente liegt bei 4,66, die Schwelle bei 4,69. Die Punktmarge fällt auf **9 %** (`v_punkt_25px` bei
+dPR 2: 4,27). Das Punktmass `Ausdehnung²/Pixel` trennt kleine Buchstaben nicht sauber von kleinen Klecksen. Die Wandzeit
+bei 16 MP liegt im Worst Case bei **615 ms** (volle Fläche) bzw. 461 ms (Schachbrett); realistisch sind es ≤ 231 ms.
+
+1. **Punktmass neu herleiten (Phase 1d)**, Schwellen offen, beide bisherigen Mengen zusammen. Kandidaten:
+   (a) wie bisher; (b) zusätzlich die Kompaktheit je Komponente (Pixel / Box) — ein Punkt ist klein UND gefüllt, ein
+   Buchstabe ist dünn; (c) Strichdicke aus dem Umfang (2·Pixel/Umfang, je Komponente oder über die ganze Figur).
+   Genommen wird das einfachste Mass, das mit Annehmen-Seite ≥ 20 % und Ablehnen-Seite ≥ 10 % trennt. Danach eine
+   DRITTE, frische Validierungsmenge (andere Seeds und Namen, dazu kleine Initialen in 10/12/14 px und Mehrfachpunkte),
+   Schwellen eingefroren. Trennt keines → STOPP.
+   Ein einzelner Klecks, der der Punktregel entgeht, fällt über `geradheit` als `strich`. Für Einzelpunkte ist deshalb
+   `strich` in der erlaubten Grund-Menge; entscheidend sind die MEHRpunkt-Figuren.
+2. **Laufzeit**: `flaeche` und `unbestimmt` stehen nach Durchlauf 1 fest; beide kehren VOR Durchlauf 2 zurück (dasselbe
+   Urteil, weniger Arbeit). **Pixel-Deckel für Unterschriften**: das grösste Pad-Raster auf realistischen Geräten
+   messen (1920×1080 bei dPR 1, 1366×1024 bei dPR 2, 430×932 bei dPR 3) und den Deckel auf das Doppelte davon setzen,
+   gerundet und höchstens 16 MP. Danach den Worst Case neu messen: > 250 ms → STOPP.
+3. JSON-Wege (E1, E3, E4, E10, E11) fangen den Unterschriftsfehler selbst in ihrem Antwortformat ab — ohne Alarm. Die
+   übrigen Routen prüfen vor dem `try`. Das ist in Ordnung.
