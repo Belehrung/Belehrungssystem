@@ -69,6 +69,10 @@ Stand 24.09.2026, 07:20 UTC.
 * **Stand 24.09.2026 15:45 UTC:** P4 Regel in drei Runden nachgeschärft (Nachträge 4a–4c im Papier). Jede neue Figurenmenge fand
   einen Rand bei Figuren von nur wenigen Strichdicken → Entscheidung 4c: Grund `zu_klein` („Bitte grösser unterschreiben“),
   danach wird die Regel eingefroren, Kalibrierung im Betrieb. Phase 1f + Phase 2 laufen in `/workspace/gymdocu-p4`.
+* **Stand 24.09.2026 16:45 UTC — Betreiber: „alle aufgaben lösen die noch offen sind“** (Guthaben 250 $ für
+  Cloud-Sitzungen läuft). Reihenfolge in `plaene/arbeitsplan-offen.md`. Laufend: P4-Bau; Planprüfungen P2
+  (`plaene/auftrag-p2-fehlerstatus.md`, Baum `/workspace/gymdocu-p2`) und C1 (`plaene/auftrag-c1-entschiedene.md`,
+  Baum `/workspace/gymdocu-c1`).
 * Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
 
 ### Vorgeschichte des Tages (gekürzt)
