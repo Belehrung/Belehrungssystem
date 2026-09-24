@@ -8,3 +8,4 @@ Verweist auf die Befunddateien, kopiert sie nicht.
 | PP4b-21 | `core/signaturbild.js` dekodiert je Upload dreimal | ebd. | offen, Leistung |
 | PP4b-22 | `routes/spuelplan.js:324` verschluckt einen PDF-Fehler und meldet „gespeichert“ (vorbestehend) | ebd. | offen |
 | PP4b-19 | Helle Farben (Luminanz ≥ 128) gelten nicht als Tinte → „leer“ | ebd. | Grenze, dokumentiert — Betreiber-Entscheidung offen |
+| PP4b-23 | Ein gerader Strich in zwei Ansätzen (kleine Lücke) gilt als Unterschrift (≥ 2 Komponenten = ok, Fassung 3); verfehlt den Wortlaut „einzelne … Striche ablehnen“ im Grenzfall (`plaene/diffpruefung-p4.md`, P4-C7) | Grenze, benannt — Erkennung kollinearer Stücke wäre eine neue Regel mit eigener Messung |

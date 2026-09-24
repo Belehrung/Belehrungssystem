@@ -33,3 +33,23 @@ oder Übergrösse durchkommt oder mit 500 endet“.
 | P4-R2-4 | `routes/spuelplan.js:286`, `routes/verbandbuch.js:567` fangen nur `UnterschriftFehler` | gelesen | auf `EingabeFehler` wie die übrigen elf |
 
 4 Befunde, 3 getragen (1 an P2 verwiesen), 1 gefallen. Nacharbeit 3 (klein) läuft.
+
+## Runde 2, ausführende Claude-Spur (eigener Baum `/workspace/gymdocu-p4-pruef` @ `4b03d32`)
+
+Mutationen je per cp zurückgenommen, Baum danach sauber. Stichprobe selbst nachgemessen: P4-C5 (Bedingung entfernt →
+`test_feature_unterschrift_regel.js` EXIT 0, 45 PASS / 0 FAIL; Rücknahme `diff` EXIT 0).
+
+| Nr. | Befund | Messung (Spur) | Entscheidung |
+|---|---|---|---|
+| P4-C1 | Die Kopf-Riegel an den vier `doc.image`-Stellen (`core/pdf-engine.js:424, 1171, 1784, 1897`) hält kein Verhaltenstest; der PDF-Test prüft eine eigene Kopie der Logik | `if (false && !bild.ok)` → 28/0; mit 4100×4100-Altbild mutiert `image()` 4100x4100, RSS +262 MB | je Generator ein Verhaltenstest mit Altbild > 16 MP und Spion auf `PDFDocument.prototype.image` |
+| P4-C2 | Der Kopfleser deckelt IHDR-Pixel, nicht die entpackte Menge: IHDR 10×10, IDAT = 300 MB Nullen → `unterschriftBild` ok, PDF-Erzeugung RSS +608 MB (vorbestehend, nur Altdaten) | gemessen von der Spur | `zlib.inflateSync` mit `maxOutputLength` probeweise im Kopfleser; Überlauf → Platzhalter |
+| P4-C3 | Im Browser sind nur 2 von 12 Absende-Handlern verhaltensgeprüft; `if (false && !sigPruefung.ok)` an E11 → browser 21/0 | gemessen von der Spur | `page.route`-Muster als Schleife über alle Pad-Seiten, mindestens E4 und E11 |
+| P4-C4 | E3-Raster-Behebung ungeprüft: `if(false)initSig_freigabePad();` → browser 21/0, race 48/0; mutiert Raster 400×200 auf CSS 516×150 | gemessen von der Spur | Dialog öffnen, „Raster = CSS × dPR“ zusichern; `/unterschrift-regel.js` im race-Test montieren |
+| P4-C5 | `&& masse.verhaeltnis < VERHAELTNIS_MAX` hält keine Zusicherung; nicht tot (Zickzack 80×30, 30° → heute ok, mutiert „strich“) | **selbst nachgemessen**: 45/0 unter Mutation | Zickzack als ANGENOMMEN-Fixtur |
+| P4-C6 | Kalibrierprotokoll `[unterschrift-masse]` (PP4b-20 hängt daran) ohne Zusicherung; Aufruf entfernt → 210/0 | gemessen von der Spur | `console.log`-Spion: Pflichtfelder + Verbotsliste für ID-Schlüssel |
+| P4-C7 | Gerader Strich in zwei Ansätzen (3 px Lücke) → ok (2 Komponenten) | gemessen von der Spur | benannte Grenze, Sammelliste (PP4b-23): ≥ 2 Komponenten = ok ist Fassung 3; kollineare Stücke zu erkennen wäre eine neue, ungemessene Regel |
+| P4-C8 | 1×4.000.000 (unter dem 4-MP-Deckel) braucht 238 ms, STOPP-Grenze 250 ms | gemessen von der Spur | zusätzlich Kantenlänge je Seite ≤ 4096 (gut das Doppelte der breitesten gemessenen Fixtur, 1880 px) → „zu gross“ |
+| P4-C9 | Eintrittspunkte-Test räumt `SCRATCH_DIR` nie ab (45 Reste in /tmp; Vorbild `signatur_verbrauch` 217) — läuft auch auf dem Live-Gate | gemessen von der Spur | Aufräumen bei Prozessende, in beiden Tests |
+| P4-C10 | unbenutzte Importe `vomAltenTablet, MARKER_FELD` in vier Routen | gelesen | entfernen |
+
+10 Befunde, 10 getragen (einer als Grenze), 0 gefallen. Nacharbeit 4 läuft.
