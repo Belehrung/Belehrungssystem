@@ -21,7 +21,7 @@ Stand 24.09.2026, 07:20 UTC.
   Sammelliste `plaene/offene-befunde-h2.md`. Nach dem Merge: `test/run.sh`-Konflikt mit #471 möglich (beide
   registrieren Tests).
 * **DeepSeek-Vollprüfung**: 16 von 27 Bereichen ausgewertet (`plaene/vollpruefung-befunde.md`, Sammelliste
-  `plaene/offene-befunde-vollpruefung.md`); 5 als blockierend gemeldete Befunde gemessen widerlegt, keiner trug.
+  `plaene/offene-befunde-vollpruefung.md`); 4 als blockierend gemeldet: 2 gemessen widerlegt (V02-1, V10-1), 2 getragen und auf mittel herabgestuft (V01-1, V09-1).
   Kosten gemessen ≈ 0,4 $ je Lauf (Guthaben 34,44 $ um 06:28). Vor dem Pentest vorzuziehen: V03-6 (Array-Body auf
   `/tablet/sperre` → 500), V10-2 (Signatur aus einem Pixel). Entscheidungen für den Betreiber: V01-1 (S20-REPLACE),
   V09-1 (QR-Journal fail-closed?).
