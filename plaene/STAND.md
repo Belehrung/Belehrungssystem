@@ -4,7 +4,7 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-Stand 24.09.2026, 03:55 UTC.
+Stand 24.09.2026, 04:10 UTC.
 
 * **Pentest P1 gemergt** (#470, Squash `221a7b2`, CI 4/4 grün auf `7e2f8dd`, kein Bot-Kommentar). **Deploy 437
   ZWEIMAL gescheitert** (22:27 und 22:33 UTC), beide Male schon beim SSH-Handshake: `ssh: handshake failed: read:
@@ -13,9 +13,14 @@ Stand 24.09.2026, 03:55 UTC.
   (sshd/Firewall/fail2ban), von hier nicht erreichbar → Betreiber gefragt. Nicht weiter neu anstossen, bis er
   Bescheid gibt (weitere Versuche können eine Sperre verlängern). Sammelliste `plaene/offene-befunde-pentest-p1.md` für die Extrarunde. **P2** ist
   eigener Beitrag.
-* **Nachweis-unlink**: Runde 10 (abschliessende Lesespur) → Nacharbeit 13 (`ff7026a`), Suite 368 = 368 grün,
-  Lint 0, Gegenproben gesichtet. **PR wird angelegt** (Zweig `fix-nachweis-unlink`), danach CI, Bot, Merge; Deploy
-  hängt am SSH-Problem wie bei P1. Sammelliste `plaene/offene-befunde-unlink.md`.
+* **Nachweis-unlink**: PR #471 angelegt (Kopf `ff7026a`), CI 4/4 grün, kein Bot-Kommentar. **Merge ZURÜCKGEHALTEN:**
+  ein Merge stösst automatisch einen Deploy an, und der scheitert am SSH-Problem (s. P1) — erst nach Rückmeldung des
+  Betreibers mergen. Sammelliste `plaene/offene-befunde-unlink.md` (neu W-1: Wächter-Grenzen).
+* **H2 Cookie-Schleife**: Executer baut in `/workspace/gymdocu-h2` (Zweig `fix-h2-cookie-schleife` ab `221a7b2`),
+  Auftrag Fassung 3. Danach Diffprüfung (Claude ausführend + eine Lesespur).
+* **DeepSeek-Vollprüfung**: Bereiche neu geschnitten auf `221a7b2` (27 Bereiche, `scratchpad/vollpruefung/g221`,
+  Lesebaum `/workspace/gymdocu-lock`). Pilot Bereich 06 (Anmeldung, 2FA, CSRF, Token) läuft; danach Kosten je Bereich
+  gemessen hochrechnen — die Schätzung „< 1 $ je Bereich“ im Plan ist durch R10 (4,10 $ für 458 Diffzeilen) fraglich.
 * **Umgebung, gemessen 23.09. abends:** der Container wird im LEERLAUF abgeräumt (Neustarts 22:1x, 22:40, 23:40,
   jeweils kurz nach Ende eines Zuges). Hintergrundprozesse sterben dabei; ein laufender Agent hält die Sitzung
   wach, ein Hintergrund-`node` nicht. Lange Gegenlesungen deshalb im Vordergrund abwarten (`timeout 570 bash -c
