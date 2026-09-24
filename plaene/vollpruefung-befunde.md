@@ -195,3 +195,21 @@ Lauf 24.09.2026 05:35–05:50 UTC, 7 Runden, 1,76 Mio. Token ein, geschätzt 2,5
 | V05-7 | Z2-Sollwert in `test_feature_ladebestand_streng.js` aus derselben Quelle wie der geprüfte Weg (im Test als bewusst benannt) | nicht gemessen | Anmerkung |
 
 7 Befunde, 6 getragen, 1 gefallen (durch #470 schon geschlossen).
+
+## Bereich 12 — `public/offline-queue.js`, `public/qr-kamera-scan.js`, `e2e/*`, `test/*`-Helfer (58 Dateien)
+
+Lauf 24.09.2026 05:52–06:25 UTC, 10 Runden, 2,18 Mio. Token ein, geschätzt 3,14 $. Im Material geschwärzt: zwei
+Test-Verbindungszeichenfolgen.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V12-1 | Offline-Warteschlange: Foto-Antwort `409 {ok:false, code:'geschlossen'/'max'}` ist ein Endzustand, `fotosNachziehen` kennt nur `ok`/`kaputt`/`auth` → Eintrag bleibt für immer „offen“, Wiederholung alle 60 s, Badge verspricht Übertragung | gelesen `public/offline-queue.js:144-174`, Server `routes/sichtpruefung.js:3311, 3318` | **mittel** |
+| V12-2 | Nach erfolgreichem Live-Senden mit Fotos bleibt ein leerer „offen“-Eintrag, Badge zeigt „wartet auf Übertragung“ | nicht gemessen | gering |
+| V12-3 | E2E „öffentliche Prüfung bleibt datensparsam“: nur `not.toContain`, kein Status, kein positiver Anker — ein 500er der Route lässt den Test grün | gelesen `e2e/gymdocu.spec.js:187-191` | **mittel** (grün aus falschem Grund) |
+| V12-4 | `test/e2e-durchlauf.js`: Archiv-Monat aus Prozesszeit, Soll aus demselben Datenfluss | nicht gemessen | gering |
+| V12-5 | `test/e2e-durchlauf.js` schreibt ohne `PDF_ROOT`/`BELEHRUNGEN_UPLOAD_DIR` in die Repo-Bäume (nicht Teil von `run.sh`) | nicht gemessen | gering |
+| V12-6 | `utcJetzt()` liefert Berliner Zeit (Name falsch) | — | Text |
+| V12-7 | `gdSyncQueue`/`gdVerwerfen` ohne `catch` an der IndexedDB-Kette | nicht gemessen | gering |
+| V12-8 | veralteter Scan-Tick stoppt seinen Stream nicht (Weg über die Oberfläche unbelegt) | — | Anmerkung |
+
+8 Befunde, 8 getragen (2 gelesen, Rest ohne Einzelmessung), 0 gefallen.

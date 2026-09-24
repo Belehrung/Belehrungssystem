@@ -72,3 +72,6 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V05-2 | Mitarbeiter-Löschung: Audit ausserhalb der Transaktion, ohne Absicherung | offen, **mittel** |
 | V05-3 | CSV-Import ohne Kalendertag-Prüfung | offen |
 | V05-4..7 | Import-Fehler still, Freischaltungs-Aufräumen still, Import-Rennen, Z2-Sollwert | offen, gesammelt |
+| V12-1 | Offline-Warteschlange wiederholt Foto-Endzustände (409) endlos | offen, mittel |
+| V12-3 | E2E-Datensparsamkeit ohne Status/Anker — grün bei 500 | offen, mittel |
+| V12-2,4..8 | übrige Befunde aus Bereich 12 | offen, gesammelt |
