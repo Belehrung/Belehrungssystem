@@ -49,3 +49,30 @@ gehalten. Test: Daten, in denen die neuere Unterschrift früher abläuft. Heute 
 (b) Die neue Bedingung in `qr-token.js` entfernen → Test „kaputt + DB hinter Journal“ ROT; die drei übrigen Fälle
     bleiben GRÜN.
 (c) Einen Fundort auf `MAX(gueltig_bis)` zurücksetzen → dessen Verhaltenstest ROT UND Wächter ROT.
+
+# FASSUNG 2 (24.09.2026) — nach der Planprüfung (`plaene/planpruefung-c1.md`)
+
+**V01-1:**
+- Die Stilllegung steht in `S20-migrate.js` VOR jedem `require` einer Datenbank bzw. vor `pg.connect`. In `golive-studio.sh` steht sie VOR der SU- und Argumentprüfung (heute ab Zeile 22).
+- Test: beide Einstiege mit vollständigen Argumenten und gefälschter `SUPERUSER_DATABASE_URL` (ungültiger Port) → Stilllegungsmeldung, Exit ≠ 0, kein Verbindungsfehler. `golive-studio.sh` wird NICHT ausgeführt, sondern statisch geprüft: Die Stilllegung ist die erste ausführbare Zeile nach dem Kopf.
+- `test_feature_audit2_batchA_static.js` und `test_feature_pin_generation_static.js` werden fachlich umgestellt: Sie sichern die Stilllegung zu. Ihre Zusicherungen über den toten Code entfallen, und im Bericht steht Zeile für Zeile, welche entfiel und warum.
+- Die Kommentar-Verweise (`ops/deploy.sh`, `docs/offene-befunde-31-08-2026.md`) nennen den Status „stillgelegt“.
+- Zusatz-Gegenproben: Stilllegung hinter die SU-Prüfung verschoben → ROT; hinter den ersten DB-Zugriff → ROT.
+
+**V09-1:**
+- Die Bedingung wird **blocklokal** ausgewertet. fail-closed gilt, wenn `journal.kaputteZeilen > 0` UND für den Block, aus dem vergeben würde, `lokalDb < lokalJournal` (auch `lokalDb == null` bei `lokalJournal != null`).
+- Der Vorfall `journal_kaputte_zeilen` bleibt VOR dem Wurf.
+- Der Fehlertext nennt den Auflöseweg: Journal gegen `qr_charge` abgleichen, kaputte Zeilen nach dem Abgleich reparieren.
+- Der Leiter-Kommentar benennt den RESTFALL ausdrücklich: Beide Quellen liegen unter dem echten Stand, die DB über dem lesbaren Journal. Das bleibt eine benannte Grenze. Wasserdicht wäre nur fail-closed bei jeder kaputten Zeile, und das hat der Betreiber abgelehnt.
+- Fixturen: lesbare Zeile über `dbMax` plus mindestens eine kaputte Zeile, dazu ein Beleg, dass der NEUE Zweig betreten wird. Ein Fall mit zwei Blöcken.
+- Journalpfad: `test/run.sh` setzt `QR_VERBRAUCH` suiteweit auf einen tmp-Pfad. Jeder neue Test setzt einen eigenen tmp-Pfad und prüft vor jedem Zugriff, dass der Pfad nicht der Standardpfad ist.
+- Aufrufer (drei): `tools/qr-charge.js` (Vorschau und Schreibweg), `core/qr-token.js#chargeAnlegen` und `core/qr-zuordnung.js` (Anzeige; bleibt 200 mit „nicht ermittelbar“). Je Aufrufer ein Test.
+
+**V15-2:**
+- Die Fundorte sind nummeriert, zehn Stück: d70, d223 (`routes/admin/dashboard.js`); b716, b1851, b1869, b1877, b1954, b2741 (`routes/belehrungen.js`); s927 (`server.js`); a194 (`routes/archiv.js`, zeilenweise).
+- Je Fundort ein Verhaltenstest, der zwischen „neueste“ und „MAX/zeilenweise“ unterscheidet. Zeilennummern misst du neu.
+- Die zentrale Definition liefert die neueste Zeile je (studio, mitarbeiter, belehrung), sortiert nach `datum DESC NULLS LAST, id DESC`. Sie fällt KEIN Urteil; jeder Fundort behält Stichtag, Operator und NULL-Verhalten. Ausnahme: Ist die neueste Unterschrift unbefristet (NULL), gibt es keine Ablaufwarnung. Die `IS NOT NULL`-Filter bei b1877/b1954 entfallen.
+- Bei einer Sicht: `CREATE OR REPLACE VIEW`, Spiegel in `core/db.js` SCHEMA, `studio_id`-Filter an jedem Verbraucher. Ob ein Index nötig ist, zeigt `EXPLAIN` auf der Test-DB, samt Bericht.
+- Wächter: JEDE Stelle mit `gueltig_bis` im Zusammenhang mit `unterschriften` (auch `ORDER BY … LIMIT 1`, JS-Reduktion, Gross-/Kleinschreibung, Zeilenumbruch) muss der Definition oder einem der zehn Fundorte zugeordnet sein. Die Zuordnungsliste steht im Test. Positivkontrolle je Musterklasse.
+- „Mail“ entfällt, einen Mail-Fundort gibt es nicht. Den Kommentar bei b716 („bereits abgelaufen“) berichtigst du: es ist das 14-Tage-Fenster.
+- Gegenprobe (c) wird für JEDEN der zehn Fundorte einzeln gefahren.
