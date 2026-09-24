@@ -57,3 +57,7 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V03-7 | Verbandbuch-Eingaben ohne Format-/Längenprüfung | offen |
 | V03-8 | negativer Stillstand | offen, Anmerkung |
 | V03-9 | Namenszuordnung nicht deterministisch | offen, Anmerkung |
+| V04-1 | Fachfirma-Prüfdatum nicht als Kalenderdatum geprüft | offen |
+| V04-2 | „Fehler beim Speichern“ nach Commit → Doppelprüfung | offen, mittel |
+| V04-3 | Dashboard verschluckt DB-Fehler bei Wochenfälligkeiten | offen, mittel |
+| V04-4..17 | Anmerkungen aus Bereich 04 (TZ-Randfälle, Leistung, Texte, Magicline-Randfälle) — Liste in `plaene/vollpruefung-befunde.md` | offen, gesammelt |

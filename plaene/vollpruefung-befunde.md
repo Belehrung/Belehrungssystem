@@ -119,3 +119,29 @@ Prozess-Zeitzone des Live-Servers; die steht nicht im Repo (unbelegt).
 | V03-9 | Mitarbeiter-Zuordnung über den Namen ohne `ORDER BY` — bei Namensgleichheit nicht deterministisch | gelesen `verbandbuch.js:577-579` | Anmerkung |
 
 9 Befunde, 9 getragen, 0 gefallen.
+
+## Bereich 04 — `routes/wartung.js`, `routes/webhooks.js`, `routes/admin/{audit,ausmusterung,dashboard,einrichtung,einstellungen,geraete-typen}.js`
+
+Lauf 24.09.2026 05:15–05:35 UTC, 18 Runden, 3,93 Mio. Token ein, geschätzt 5,50 $. Befunde 1, 2, 3, 7, 13 an den
+genannten Zeilen selbst gelesen; die übrigen sind Anmerkungen, am Code plausibel, nicht einzeln gemessen.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V04-1 | Fachfirma-Prüfdatum nur per Regex geprüft — `2026-02-30`/`0000-01-01` gespeichert, Fälligkeit rollt still | gelesen `routes/wartung.js:1103-1104` | gering |
+| V04-2 | Nach erfolgreichem Commit wirft die PDF-Erzeugung → „Fehler beim Speichern“; Wiederholung erzeugt eine zweite Prüfzeile und doppelten Sperrgrund | gelesen `:1524-1531` (Meldung unabhängig von `gespeichert`) | **mittel** |
+| V04-3 | Dashboard: `getDieseWocheFaellig()` in `catch (e) {}` — DB-Fehler wird „Alles im grünen Bereich“ | gelesen `routes/admin/dashboard.js:206` | mittel |
+| V04-4 | Fälligkeitsrechnung am Monatsersten falsch bei Prozess-TZ WESTLICH von UTC | Mechanismus plausibel; für unseren Betrieb (UTC oder Berlin) ohne Wirkung | Anmerkung |
+| V04-5/6 | DST-Randstunde bei `vor7` bzw. `bald` (±1 Tag in einer Stunde je Jahr) | gelesen | Anmerkung |
+| V04-7 | Module-Einstellungen: Seil-Prüfung nach den übrigen Schreibvorgängen; `catch` meldet jede Ausnahme als „Seil-Bestätigung fehlt“ | gelesen `routes/admin/einstellungen.js:581-594` | gering |
+| V04-8 | aktive Sperre im GET ohne `ORDER BY … LIMIT 1` | nicht gemessen | Anmerkung |
+| V04-9 | `ensureWartungHashSpalte()` sichert nichts (Name verspricht es) | nicht gemessen | Anmerkung |
+| V04-10 | `auditVerify` bei jedem Aufruf der Audit-Seite | nicht gemessen | Anmerkung (Leistung) |
+| V04-11 | ZIP-Export: `tmpDir` im Fehlerweg nicht geräumt | nicht gemessen | Anmerkung |
+| V04-12 | `pdf_download_bestaetigt` vor `res.download()` gesetzt (im Code selbst eingeräumt) | — | Anmerkung |
+| V04-13 | Kommentar „max 5 Versuche“, Code macht 6 Anfragen | gelesen `routes/webhooks.js:78-86` | Text |
+| V04-14 | `confirmActivation`: `https.request` ohne Zeitlimit, Antwort nicht verbraucht | nicht gemessen | Anmerkung |
+| V04-15 | Magicline-Upsert ohne ID und E-Mail legt je Ereignis einen neuen Mitarbeiter an | Weg im Code; ob Magicline so sendet: unbelegt | Anmerkung |
+| V04-16 | `resetMagiclineConfig` schluckt DELETE-Fehler | nicht gemessen | Anmerkung |
+| V04-17 | Bericht-Spalten von `wartung_pruefungen` nur per Migration, nicht selbstheilend im SCHEMA | nicht gemessen; praktisch unerreichbar | Anmerkung |
+
+17 Befunde, 17 getragen (5 gelesen, 12 als Anmerkung ohne Einzelmessung), 0 gefallen.
