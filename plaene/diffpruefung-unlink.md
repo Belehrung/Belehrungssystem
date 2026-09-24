@@ -208,3 +208,11 @@ verschränkter Reaper während der Deprovisionierung unschädlich.
 
 **Nacharbeit 10** (`plaene/auftrag-unlink-loeschauftrag.md`): R7-1, R7-2, R7-3, R7-5, R7-6, R7-7. Ohne Planprüfung:
 sechs eng umrissene Stellen, zu R7-1 und R7-3 hat C die Lösung schon gemessen.
+
+## Nacharbeit 10 (`5aa0fb9..8f20cfe`) — gelesen, Runde 8 läuft
+
+Executer: Suite `SUITE_EXIT=0`, 519 s, Dateizahl 367 = 367 (`diff` EXIT 0), Lint 0; Szenarien 188/0; 9 Gegenproben
+(p1–p7b), alle ROT → GRÜN. Zweig nicht hinter master. Diff selbst gelesen (Produktivcode und Tests vollständig).
+Übernommene Anmerkungen: Zähler bei gleichem Zeitstempel (defensiv); die neue `melde(new Error(…))` fällt in die
+Drosselklasse `Error:- -` (R7-9, Bestand) — die warn-Zeile bleibt in jedem Fall; neues Rückgabefeld `tmpEntfernt`.
+Runde 8 (Verhaltensänderung, eng): Claude ausführend + DeepSeek mit Repo.
