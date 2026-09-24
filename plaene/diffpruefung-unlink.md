@@ -300,3 +300,16 @@ klein, und die Frage war nur, ob sie wieder einen Rückschritt einführt. Selbst
 | R10-6 | 503-Körper der Route trägt `queue_fehlt` nicht | gelesen `server.js:245-247`; Vertrag mit dem Hauptserver unbelegt → Sammelliste R7-8 | Fundort |
 
 **Nacharbeit 13**: R10-1 bis R10-5.
+
+## Nacharbeit 13 (`6654c9d..ff7026a`) — gelesen, Abschluss
+
+Executer: ein Commit; Suite `SUITE_EXIT=0` (540 s), Dateizahl selbst nachgezählt 368 = 368, `diff` EXIT 0; Lint 0;
+Szenarien 220/0, Route-Test 12/0. Diff selbst gelesen (Produktivcode und beide Testdateien vollständig).
+Gegenproben (Kette selbst gesichtet): t1 rename-Ziel ohne `.json` — neuer Test 4/2, alter Test 4/1 mit GRÜNER
+Reihenfolge-Zusicherung (Lücke belegt; rot war dort nur S35b über einen Folgezustand); t2 lstat-Prüfung weg → S40 rot;
+t3i `.env` mit Telegram-Token — alter Route-Test 11/1 („Variablen leer“ rot OHNE Versand = Fehlalarm am Deploy-Gate),
+neuer 12/0; t3ii `fetch` nach dem Laden ersetzt → rot; t4 `31b` aus dem Muster → rot, gefunden über das
+Laufzeit-Register (der Quelltext-Scan sieht die Schleife in S31 nicht — vom Executer gemessen und ergänzt); t5n
+`queueDateiLesbar` nur Parsbarkeit → S34c rot.
+Keine weitere Lesespur: Runde 10 brachte nur niedrige Befunde, die Nacharbeit ist klein, jede Stelle hat eine Gegenprobe
+in beide Richtungen. Offene Punkte: `plaene/offene-befunde-unlink.md`.

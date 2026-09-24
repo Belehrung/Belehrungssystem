@@ -4,7 +4,7 @@ Stand: 23.09.2026, 09:45 UTC.
 
 ## Was gerade LÄUFT
 
-Stand 24.09.2026, 02:50 UTC.
+Stand 24.09.2026, 03:55 UTC.
 
 * **Pentest P1 gemergt** (#470, Squash `221a7b2`, CI 4/4 grün auf `7e2f8dd`, kein Bot-Kommentar). **Deploy 437
   ZWEIMAL gescheitert** (22:27 und 22:33 UTC), beide Male schon beim SSH-Handshake: `ssh: handshake failed: read:
@@ -13,14 +13,14 @@ Stand 24.09.2026, 02:50 UTC.
   (sshd/Firewall/fail2ban), von hier nicht erreichbar → Betreiber gefragt. Nicht weiter neu anstossen, bis er
   Bescheid gibt (weitere Versuche können eine Sperre verlängern). Sammelliste `plaene/offene-befunde-pentest-p1.md` für die Extrarunde. **P2** ist
   eigener Beitrag.
-* **Nachweis-unlink**: Nacharbeit 11 (`81e74f4`) gebaut, Runde 9 ausgewertet (12 kleine Befunde, 1 gefallen).
-  **Nacharbeit 12 im Abschluss** (Suite `SUITE_EXIT=0`, Bericht steht aus). Plan danach: EINE abschliessende
-  Lesespur; nichts Schweres → PR mit Sammelliste (`plaene/offene-befunde-unlink.md`).
+* **Nachweis-unlink**: Runde 10 (abschliessende Lesespur) → Nacharbeit 13 (`ff7026a`), Suite 368 = 368 grün,
+  Lint 0, Gegenproben gesichtet. **PR wird angelegt** (Zweig `fix-nachweis-unlink`), danach CI, Bot, Merge; Deploy
+  hängt am SSH-Problem wie bei P1. Sammelliste `plaene/offene-befunde-unlink.md`.
 * **Umgebung, gemessen 23.09. abends:** der Container wird im LEERLAUF abgeräumt (Neustarts 22:1x, 22:40, 23:40,
   jeweils kurz nach Ende eines Zuges). Hintergrundprozesse sterben dabei; ein laufender Agent hält die Sitzung
   wach, ein Hintergrund-`node` nicht. Lange Gegenlesungen deshalb im Vordergrund abwarten (`timeout 570 bash -c
   "until …"`, Werkzeug-Zeitlimit 600000) oder während ein Agent läuft.
-* **Routing-Messung**: `plaene/routing-messung.md`, 16 Zeilen, noch keine Empfehlung.
+* **Routing-Messung**: `plaene/routing-messung.md`, 17 Zeilen, noch keine Empfehlung.
 * Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
 
 ### Vorgeschichte des Tages (gekürzt)
