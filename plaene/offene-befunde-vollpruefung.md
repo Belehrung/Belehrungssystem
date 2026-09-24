@@ -101,3 +101,4 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V20-2..4 | Zeitzonenfalle `vorTagen`, Test-Abfragen ohne `studio_id`, globale Gegenprüfung | offen, gering |
 | N-1 | `test_feature_keine_neuen_rohwerte.js` scannt auch IGNORIERTE Dateien: ein lokaler `playwright-report/index.html` machte die Suite rot (gemessen 24.09.2026 im H2-Baum). Auf dem Server nur, falls dort je ein Bericht entsteht | offen, gering |
 | T1-K4 | Einzelaufruf ohne `run.sh`: nur `PDF_ROOT` statisch gesichert, `EINWEISUNG_NACHWEIS_DIR` & Co. nicht (`plaene/diffpruefung-t1.md`) | offen, mittel |
+| P3-S1 | Felder ohne `.trim()` (`req.body.X || 'Standard'`) speichern ein Array ungeprüft; `passwort` als Array an `bcrypt.compare` (unbelegt) — `plaene/diffpruefung-p3.md` | offen, gering |
