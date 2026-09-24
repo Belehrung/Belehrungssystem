@@ -93,3 +93,33 @@ Massgeblich; wo sie Fassung 1 widerspricht, gilt sie.
 
 Gegenproben (a)–(d) wie Fassung 1, dazu (e) Deckungsgrad-Regel aus → Rechteck-Fixtur rot; (f) Deckel vor
 `doc.image` entfernt → Test mit übergrossem Alt-PNG rot.
+
+# FASSUNG 3 (24.09.2026) — nach der Messung Phase 1 (`fix-p4-unterschrift` `528b6e1`)
+
+Gemessen (Bericht Phase 1): 13 Eintrittspunkte; (i) Deckung und (ii) Länge trennen mit ≥ 20 %; **(iii) Verhältnis
+trennt NICHT** (556 von 2444 Messungen falsch, „!“ 104/104 als Strich) — für einen geraden Strich ist
+σ_quer/σ_lang = Dicke/Länge, also längenabhängig. Browser- und Server-Urteil identisch (0 Abweichungen in 2756).
+Der Betreiber hat die Erkennung meiner Empfehlung überlassen; daraus diese Entscheidungen:
+
+1. **(iii) entfällt als Urteilsmass.** Neue Reihenfolge: leer → Fläche (Deckung, (i)) → Komponenten (8er-Zusammenhang):
+   jede Komponente, deren eigene Ausdehnung unter der Punktschwelle liegt, ist ein Punkt; **bestehen ALLE Komponenten
+   aus Punkten → „punkt“** (auch zwei Punkte); **≥ 2 Komponenten, davon mindestens eine kein Punkt → ok** („!“, „=“,
+   Namenszüge); **genau 1 Komponente → „strich“, wenn `geradheit` (σ_quer / Strichdicke) unter der Schwelle liegt**, sonst ok.
+2. **Bezugsgrösse ist die Strichdicke** (`tinte/laenge`), nicht die Bildhöhe (E1 ist 444/220 hoch, E3 hat ein
+   verzerrtes Raster). Für die Punktschwelle werden beide Bezüge gemessen; genommen wird der, der mit ≥ 20 % trennt.
+3. **Klassen:** ablehnen = Punkte (auch mehrere), glatte und ±1-px-zittrige gerade Striche; **Grenze (keine Vorgabe)** =
+   ±2-px-zittrige Striche, flache Paraphe 6 CSS-px, Bögen; annehmen = alles andere wie gehabt. Begründung der
+   Asymmetrie: eine fälschlich abgelehnte echte Unterschrift hält die Arbeit auf, ein angenommener Zitterstrich ist der
+   heutige Zustand. Die 20-%-Grenze gilt zwischen ablehnen und annehmen; Grenzfiguren werden nur berichtet.
+4. **E3-Raster** (Pad wird bei verborgenem Dialog auf 400×200 initialisiert, danach anisotrop skaliert) und
+   **E11/E12 `signed=true` beim blossen Tippen** sind vorbestehende Fehler der Zeichenfelder; beide werden in Phase 2
+   mitbehoben (das Pad wird ohnehin angefasst), mit Browser-Test.
+5. **13 Eintrittspunkte**: alle im Umfang, eine gemeinsame Serverprüfung. E12 bettet nicht ins PDF ein — dort entfällt
+   der `doc.image`-Deckel.
+6. **Hershey-Daten**: nicht gemeinfrei, sondern frei mit Namensnennung (Hershey/NBS, Hurt); Nennung im Dateikopf genügt,
+   es sind Testdaten.
+7. **Fixturen** auf das beschränken, was Tests benutzen (je Klasse die grenznahen Figuren, dPR 1 und 2, jede Feldart);
+   die Rohtabelle bleibt.
+
+Phase 1b: Regel nach 1–3 umbauen, neu messen, STOPP-Bedingungen wie Fassung 2 mit den Klassen aus 3. Danach
+Planprüfung dieser Fassung mit den Messdaten, dann Phase 2 (Einhängen).
