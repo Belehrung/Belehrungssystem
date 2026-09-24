@@ -60,7 +60,10 @@ Stand 24.09.2026, 07:20 UTC.
   danach PR. P3 Nacharbeit 1 läuft (neun Routen mit eigenem catch, berechnete Zugriffe, /einstellungen).
   SSH: Betreiber hatte sich ausgesperrt (Schlüssel war nie übertragen), über KVM-Konsole zurück, Schlüssel jetzt
   eingetragen und getestet; Härtung wieder aktiv (`sshd -T`: passwordauthentication no, permitrootlogin without-password). **T1 gemergt** (#473, `34a83fa`), Deploy 441 success (erster Deploy nach der SSH-Härtung — Schlüsselweg trägt), live-check grün.
-* **Routing-Messung**: `plaene/routing-messung.md`, 17 Zeilen, noch keine Empfehlung.
+* **Routing-Messung**: Schwelle erreicht (17 Runden), Empfehlung steht in `plaene/routing-messung.md` (Paarungen
+  beibehalten; Kimi mit Repo-Zugriff wäre der nächste Hebel).
+* **Stand 24.09.2026 12:45 UTC:** P3 Nacharbeit 1 fertig (`da06de0`), master hereingemergt (`62eb5f7`, gepusht), Lint
+  EXIT 0; volle Suite und DeepSeek-Diffprüfung Runde 2 laufen. Danach PR.
 * Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
 
 ### Vorgeschichte des Tages (gekürzt)
