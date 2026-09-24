@@ -47,3 +47,22 @@ für einen Lauf, den das Werkzeug auf 3,90 $ schätzt. Die Schätzung ist eine o
 | V01-11 | `/admin/archiv/mail/:monat` ungeprüft und unescaped ins Mail-HTML — `core/eingabe-pruefung.js:137` nennt es selbst „benannte Lücke“ | gelesen | gering |
 
 11 Befunde, 9 getragen, 2 gefallen.
+
+## Bereich 02 — `routes/betriebszeiten.js` … `routes/pdf-waechter.js` (15 Dateien)
+
+Lauf 24.09.2026 04:45–05:05 UTC, 11 Runden, 3,25 Mio. Token ein, geschätzt 4,52 $.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V02-1 | `/pdf`-Wächter dekodiert einmal; doppelt kodiertes `..` (`%252e%252e`) komme durch, `express.static` dekodiere ein zweites Mal → fremdes Studio-PDF (Modell: blockierend) | **gefallen, gemessen** (`scratchpad/vollpruefung/probe_doppelt.js`, echte Kette `pdfWaechter` + `express.static` aus dem Bestand): `/pdf/7/%252e%252e/5/geheim.pdf` → **404**, ebenso `..%252f` und `%252e%252e%252f`; einfach kodiert → 400; fremd → 403; eigenes → 200. Positivkontrolle: ein Ordner mit dem WÖRTLICHEN Namen `%2e%2e` wird über `%252e%252e` ausgeliefert (200) — `send` dekodiert also genau einmal, wie der Wächter. Rest: der Test kennt diesen Eingang nicht | — (Rest: Testfall ergänzen, gering) |
+| V02-2 | Getränkeanlage löschen: hartes `DELETE`, `getraenkeanlage_reinigungen` hängt mit `ON DELETE CASCADE` daran — unterschriebene Reinigungsnachweise verschwinden ohne Audit; die Oberfläche sagt „Reinigungsnachweise bleiben erhalten“ | gelesen `routes/getraenkeanlage.js:517, 595-602`, `core/db.js:1950/1967`; keine Migration ändert die FK (anders als 0056 für die Wartung) | **mittel** (Unwiderrufliches, falsche Zusage) |
+| V02-3 | `konfigNeueste()`/`konfigFuerTag()` schlucken DB-Fehler und liefern `DEFAULT_CONFIG` — Betriebstage „alle offen“ im Monats-PDF, stilles Editor-Formular; der Kommentar behauptet das Gegenteil | gelesen `routes/betriebszeiten.js:107-120`; im Repo schon als offen geführt (`docs/offene-befunde-31-08-2026.md`) | mittel (bekannt) |
+| V02-4 | Doppelter Reinigungs-POST (`ON CONFLICT DO NOTHING`) meldet trotzdem „gespeichert“ | gelesen `getraenkeanlage.js:401-420` | gering |
+| V02-5 | Lageplan-Positionen: `parseFloat` ohne `isFinite` — `NaN` geht in INSERT/UPDATE (je nach Spaltentyp 500 oder gespeichertes `NaN`) | gelesen `routes/lageplan.js:824-827, 844-847` | gering |
+| V02-6 | negatives `intervall_tage` wird gespeichert → Aufgabe dauerhaft überfällig | gelesen `getraenkeanlage.js:620-621` | gering |
+| V02-7 | `?ids=` ohne Obergrenze → 22003, still verschluckt | gelesen (nicht gemessen) | Anmerkung |
+| V02-8 | `execFileSync("pdftoppm")` blockiert den Prozess bis 15 s je Upload | gelesen | Anmerkung |
+| V02-9 | Health: jeder Teilausfall meldet `db:false` | gelesen `health-intern.js:241-243` | Anmerkung |
+| V02-10 | Ferien-/Ausnahmedaten nur formal geprüft (`2026-99-99` wird gespeichert) | gelesen | Anmerkung |
+
+10 Befunde, 9 getragen, 1 gefallen (der als blockierend eingestufte).

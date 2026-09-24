@@ -23,3 +23,13 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V01-9 | S20-Overlap-Guard nur bei Offset > 0 | offen, Anmerkung |
 | V01-10 | S20 importiert unter eine fremde, schon belegte Studio-ID | offen |
 | V01-11 | `/admin/archiv/mail/:monat` ungeprüft/unescaped (im Code als benannte Lücke) | offen |
+| V02-1t | Testfall „doppelt kodiertes `..`“ in `test_feature_mandantengrenze_dateiwege.js` fehlt (heute 404, gemessen) | offen, gering |
+| V02-2 | Getränkeanlage löschen reisst Reinigungsnachweise per CASCADE mit, Oberfläche sagt das Gegenteil | offen, **mittel** — Muster Migration 0056 (RESTRICT) oder Deaktivieren statt Löschen |
+| V02-3 | Betriebszeiten: DB-Fehler → stille Standardkonfiguration (auch im Repo offen geführt) | offen, mittel |
+| V02-4 | doppelter Reinigungs-POST meldet „gespeichert“ | offen |
+| V02-5 | Lageplan `parseFloat` ohne `isFinite` | offen |
+| V02-6 | negatives Reinigungsintervall | offen |
+| V02-7 | `?ids=` ohne Obergrenze, still verschluckt | offen, Anmerkung |
+| V02-8 | `pdftoppm` synchron | offen, Anmerkung |
+| V02-9 | Health meldet `db:false` bei jedem Teilausfall | offen, Anmerkung |
+| V02-10 | Datumswerte der Betriebszeiten nur formal geprüft | offen, Anmerkung |
