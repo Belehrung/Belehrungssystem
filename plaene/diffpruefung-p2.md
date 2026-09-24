@@ -54,3 +54,25 @@ gelesen (Commit `6713eaf`, Konfliktauflösung per `--remerge-diff`, `c501b67..55
 16 Befunde aus zwei Spuren + zwei eigene. Überschneidung: R2-1 und R2-5 (beide Spuren), R2-14/R2-16 teilweise. Nur
 Claude: R2-2, -3, -4, -6..-12. Nur DeepSeek: R2-13, R2-15 (Schwere fällt). Keiner widerlegt. Nacharbeit 2 ändert
 wieder Verhalten (R2-1, R2-3, R2-14) → Runde 3 als ausführende Spur über den Nacharbeit-2-Diff.
+
+## Runde 3 — Nacharbeit 2 (Kopf `da0fce2`, 25.09.2026)
+
+Eine Spur (ausführend, eigener Baum), weil die Behebungen Verhalten ändern. Alle Runde-2-Mutationen jetzt ROT
+(M11, M12, M29–M36, MA), ausser M37 (benannte Grenze P2-S4). Offline-Warteschlange Ende-zu-Ende mit echtem
+`public/offline-queue.js`: 409 `validierung` → `konflikt`, nächster Eintrag läuft (Positivkontrolle `zustand` → blockiert).
+Suite der Nacharbeit 2 war rot (43 statt 42 leere `catch`-Blöcke, ein Rest ohne Kommentar) → vom Executer in
+`de21c04` behoben, Suite läuft. Kein blockierender Befund.
+
+| Nr. | Befund | Nachgemessen (Spur) | Entscheidung |
+|---|---|---|---|
+| P2-R3-1 | `jFehler(code, msg, status)`: der neue dritte Parameter ist ungeprüft — `module.js:2674` mit 200 → Wächter 109/0 | gemessen | Nacharbeit 3: jede Aufrufstelle, Argument 2 fehlt oder Literal ≥ 400 |
+| P2-R3-2 | K1 für die Mail-Seite nicht erfüllt: die `aufgeloest`-Ausnahme blendet BEIDE Zweige aus; `else res.status(500)` → 200 bleibt überall grün; Kommentar `wartung.js:1746-1749` behauptet eine Prüfung | gemessen | Nacharbeit 3: aufgelöste Funde mit Zahlenstatus aufnehmen, nur `status=null` ausnehmen; Verhaltenstest Mailer-Attrappe `false` → 500 |
+| P2-R3-3 | K2 halb: rückwärts nur `${ident[.prop] ?`; `${!ok ?`/`${x === 'f' ?` nach einer `req.query`-Ternary → freigesprochen (A10/A11) | gemessen; Bestand korrekt | Sammelliste P2-S5 |
+| P2-R3-4 | R2-3 auf der Admin-Route ungeprüft (`geraete.js:5102`: falscher Filtertext bzw. `return true` → 88/0) | gemessen | Nacharbeit 3: txt → 400 und Abbruch → 500 auch für `/admin/geraetewartung/bericht/:id` zusichern |
+| P2-R3-5 | Keiner der fünf neuen `melde()`-Aufrufe ist zugesichert | gemessen | Nacharbeit 3: am Brandschutz-500 `meldeAufrufe.length === 1`; übrige vier → P2-S6 |
+| P2-R3-6 | `brandschutz_schreibplan_anker` (1×) und `ladebestand_streng` (2×) versuchen mit gesetzten Zugangsdaten echte Telegram-Sendungen, nur die Netzsperre hält sie auf | fetch-Spion gemessen | Nacharbeit 3: `melde` in beiden Tests stubben |
+| P2-R3-7 | Abgebrochene Uploads (`Request aborted`, `Unexpected end of form`) landen jetzt im globalen Handler: 500 + Alarm; body-parsers `request.aborted` gilt dort als alarmfreier Eingabefehler | Probe gemessen | Nacharbeit 3: diese multer-Abbrüche wie `request.aborted` behandeln (400, kein Alarm), mit Probe |
+| P2-R3-8 | gering: Template-Literal als Code umgeht R2-5b; K1-Grenzen (`let`, verschachtelte Funktion, Closure, Parameter, Destrukturierung, zwei Ebenen); typWache spricht `typeof req.query.X === … ? pruefe() :` frei; R2-15 ungetestet; Kommentar `module.js:3890` „stündlich“ (tatsächlich täglich 04:30, `server.js:1592`, auch selbst gefunden); P2-S4 nennt neun `status:`-Zweige, gezählt zehn; `docs/p2-fehlerstatus-tabelle.md:211` ohne Übersteuerung; R2-6 prüft den Wert der Variable `status` nicht (Verhaltenstest fängt es) | gemessen | Kommentar, Zahl und Tabelle in Nacharbeit 3 berichtigen; Rest → P2-S5/S7 |
+
+Nach Nacharbeit 3 keine weitere Prüfrunde (die Änderungen sind Zusicherungen, Stubs, Text und EIN Statuszweig mit
+Probe); Diff selbst lesen, Suite, CI, Review-Bot.

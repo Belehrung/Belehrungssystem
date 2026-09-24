@@ -15,3 +15,10 @@
   diese Stelle bleibt UNGEPRÜFT. Von Hand nachgesehen (25.09.2026): alle neun `status:`-Zweige tragen 200, 400 oder
   409, keiner darunter. Bleibt bei jeder künftigen Änderung an dieser Route von Hand zu prüfen, bis eine
   allgemeinere Scanner-Form dafür existiert.
+- **P2-S5** (aus P2-R3-3, -8): Scanner-Grenzen — K2 nur für `${ident[.prop] ?`, andere Ternary-Formen nach einer
+  `req.query`-Ternary werden freigesprochen; K1 löst nur `const` auf derselben Funktionsebene auf (nicht `let` mit
+  Neuzuweisung, innere Funktion, Closure, Parameter, Destrukturierung, zwei Ebenen); typWache spricht
+  `typeof req.query.X === … ? pruefe() :` frei; Template-Literal als jFehler-Code. Im Bestand heute kein Fall.
+- **P2-S6** (aus P2-R3-5): `melde()`-Aufrufe an Verbandbuch-catch, Seil-Freigabe-catch, „Vorlagen-Datei fehlt“,
+  „PDFs fehlen“ ohne Zusicherung (die beiden letzten erreicht überhaupt kein Test).
+- **P2-S7** (aus P2-R3-8): R2-15 (`res.status(500)` vor `echtesSend` in `sichtpruefung.js`) ohne Test.
