@@ -243,6 +243,7 @@ sondern falsch.
 | 24.09.2026 | Planprüfung C3a Datenintegrität (deepseek-v4-pro) | Diff 77 Zeilen, Suchen 19, Lesungen 27, Token rein 613850, Token raus 42345, Runden 10 | — | — | — | 0,98 $ |
 | 24.09.2026 | Diffprüfung P4 Runde 2 Nacharbeit (deepseek-v4-pro) | Diff 551 Zeilen, Suchen 11, Lesungen 37, Token rein 2505270, Token raus 37017, Runden 28 | — | — | — | 3,45 $ |
 | 24.09.2026 | Planprüfung T2 Zusicherungen (deepseek-v4-pro) | Diff 85 Zeilen, Suchen 26, Lesungen 79, Token rein 3245215, Token raus 42248, Runden 26 | — | — | — | 4,45 $ |
+| 24.09.2026 | Planpruefung C3a Datenintegritaet Spur B (kimi-k3, Buendel 136 KB) — **abgebrochen** | Strom nach ~16 min ohne Ende abgerissen; das Skript `frage.js` (Scratchpad, NICHT `tools/gegenleser-repo.js`, das `aborted`/`close` schon abfängt) endete mit EXIT 0 OHNE Ergebnis. Behoben: `aborted`/`error`/`close` am Antwortstrom + `beforeExit`-Wache (Gegenprobe mit Attrappe: Abbruch → EXIT 1, stilles Ende → EXIT 3, normal → EXIT 0). Neu gestartet | — | — | — | angefallen, ohne Preisangabe |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
