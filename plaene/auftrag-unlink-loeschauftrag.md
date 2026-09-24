@@ -449,3 +449,39 @@ Befunde: `plaene/diffpruefung-unlink.md`, Abschnitt „Runde 8“. Proben der Pr
 
 **Gegenproben** je Punkt (ROT/GRÜN wörtlich), **Abschluss** wie gehabt (volle Suite mit `SUITE_EXIT`, Ritual, Lint,
 Marker-Scan, Commit, Push, master-Stand prüfen). Widersprüche gemessen melden.
+
+---
+
+# NACHARBEIT 12 (Diffprüfung Runde 9)
+
+Einordnung: normaler Auftrag, viele kleine Stellen. Weiter derselbe Executer. Befunde: `plaene/diffpruefung-unlink.md`,
+Abschnitt „Runde 9“. Proben: `scratchpad/dpu9/probe_*.js`. Ort: `/workspace/gymdocu-unlink`, HEAD `81e74f4`.
+
+1. **R9-1** — Lesefehler `ENOENT` (Eintrag inzwischen weg): still weiter, KEIN `offen++`, KEIN `melde()` (wie die
+   tmp-Schleife). Szenario: Eintrag wird während des Laufs entfernt (Probe `probe_enoent.js` als Anschauung) → keine
+   Meldung, `offen` unverändert.
+2. **R9-2** — je KENNUNG eine eigene Drosselgruppe: `name` aus der Kennung ableiten (z. B.
+   `OffboardingQueueFehler:offboarding_rest_unlesbar`), ebenso für `LoeschauftragReaperFehler` (zwei Kennungen).
+   `core/error-tracker.js` NICHT ändern. Zusicherung: in EINEM Reaper-Lauf ein unlesbarer UND ein verworfener
+   Eintrag → BEIDE `senden:true` (echter error-tracker, Versand gestubbt, wie S36).
+3. **R9-3** — Deskriptor vor dem Schliessen auf `null` setzen (`const f = fd; fd = null; fs.closeSync(f);`), ebenso
+   `dirFd`. Test: `closeSync` schliesst und wirft danach → derselbe Deskriptor wird NICHT ein zweites Mal geschlossen.
+4. **R9-4** — Zusicherung, dass im Fehlerweg jeder geöffnete Queue-Deskriptor geschlossen wird (über die vorhandene
+   Attrappe: offen ↔ geschlossen je Nummer), in den Fehlerfällen write/fsync-Datei/fsync-Verzeichnis. Gegenprobe:
+   Aufräumen entfernt → rot.
+5. **R9-5** — S36: `/\nverursacht durch: [^\n]*\n\s+at /` zusichern (der ORT). Gegenprobe `.message` statt `.stack` → rot.
+6. **R9-6** — S32: die Zusicherung „keine tmp-Meldung“ entweder so bauen, dass sie rot werden kann (Zählung der
+   unlink-Versuche auf den tmp-Pfad = 0), oder streichen und im Kommentar auf den Route-Test verweisen.
+7. **R9-7** — `queue_fehlt: false` in ALLEN Rückgaben von `deprovisionStudio`, Route-Test sichert es für 404 zu.
+8. **R9-8** — Logzeile nach gescheitertem Neuschreiben neutral: „es liegt eine lesbare Queue-Datei unter dem
+   Zielnamen“ (und nur, wenn sie existiert).
+9. **R9-9/R9-10/R9-11** — die zwei nie fallenden Teilklauseln in S35 streichen; die Route-Zusicherung „kein
+   Queue-Verzeichnis entstanden“ ehrlich benennen oder streichen; Route-Test: fehlende `DATABASE_URL` →
+   Sicherheitsmeldung statt `new URL("")`-Wurf.
+10. **R9-12** — Route-Test: VOR dem Laden von `server.js` `GYMDOCU_TG_BOT_TOKEN` und `GYMDOCU_TG_CHAT_ID` löschen
+    (die Prozess-Handler aus `core/error-tracker.js` rufen das modul-interne `melde`, die Attrappe greift dort nicht).
+    Zusicherung am Ende: beide Variablen sind leer. Prüfe, ob weitere Zugangsdaten (Mail) beim Laden von `server.js`
+    einen echten Versand ermöglichen, und behandle sie ebenso.
+
+**Gegenproben** je Punkt (ROT/GRÜN wörtlich), **Abschluss** wie gehabt (volle Suite, Ritual, Lint, Marker-Scan, Commit,
+Push, master-Stand). Widersprüche gemessen melden.
