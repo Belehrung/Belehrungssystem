@@ -235,3 +235,16 @@ C = Claude ausführend (eigener Cluster, Proben `scratchpad/dpu8/probe_*`), D = 
 | R8-10 | Kein `fsync` vor `rename`/COMMIT: nach Stromausfall kann die Queue-Datei fehlen, „atomar“ gilt nur gegen Prozessabsturz | C | Bestand, nicht gemessen | mittel (Bestand) |
 
 **Nacharbeit 11**: R8-1 bis R8-8 und R8-10.
+
+## Nacharbeit 11 (`8f20cfe..81e74f4`) — gelesen, Runde 9 läuft
+
+Executer: Suite `SUITE_EXIT=0`, 530 s, Dateizahl 368 = 368 (neue `test_feature_deprovision_route_queue.js`), Lint 0;
+Szenarien 204/0, Route-Test 11/0; 14 Gegenproben ROT/GRÜN (q2c nur gegen echtes ENOTDIR rot — die S32-Zusicherung
+dazu ist aus dem falschen Grund grün, die tragende steht im Route-Test; q5 erst im zweiten, syntaktisch gültigen
+Anlauf gemessen). Diff selbst gelesen (Produktivcode vollständig, Route-Test vollständig). Übernommene Widersprüche:
+„echt als nobody“ nicht gebaut (Suite läuft als root, CI ohne sudo) — stattdessen ein echter dauerhafter Lesefehler
+über EISDIR; der deterministische Dateiname lässt den catch eine schon umbenannte Datei als eigene erkennen, wenn
+erst der Verzeichnis-fsync scheitert. Eigene Anmerkung: alle fünf provisioning-Meldungen teilen EINEN Namen und damit
+eine Drosselgruppe — an die Prüfspur gegeben.
+Runde 9: Claude ausführend + DeepSeek mit Repo; ausdrücklich nach einem Rückschritt durch Nacharbeit 11 gefragt (die
+letzten drei Runden fanden je einen durch die jeweils letzte Nacharbeit).
