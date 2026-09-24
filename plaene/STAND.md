@@ -32,6 +32,13 @@ Stand 24.09.2026, 07:20 UTC.
   jeweils kurz nach Ende eines Zuges). Hintergrundprozesse sterben dabei; ein laufender Agent hält die Sitzung
   wach, ein Hintergrund-`node` nicht. Lange Gegenlesungen deshalb im Vordergrund abwarten (`timeout 570 bash -c
   "until …"`, Werkzeug-Zeitlimit 600000) oder während ein Agent läuft.
+* **T1 (Test-PDF-Aufräumen)**: Riegel `test/helfer/datei-sperre.js` gebaut (`4a5d9e3`, Zweig
+  `fix-t1-test-pdf-aufraeumen`). Vorbedingungsmessung: 24 statt 8 Dateien rot — 23 aus einer Ursache
+  (`run.sh` leitet `EINWEISUNG_NACHWEIS_DIR` u. a. nicht um, `routes/belehrungen.js:1121` legt beim require an);
+  sechs der sieben benannten Dateien schlucken den Wurf. Kimi-Planprüfung Fassung 2: 10 Befunde, 8 getragen.
+  Nacharbeit 1 läuft (alle Datenwurzeln umleiten, Verstösse am Prozessende rot, ganze Repo-Wurzel schützen).
+  Ohne eigene dritte Planprüfung, weil die Nacharbeit genau die Befunde der gerade gelaufenen Planprüfung umsetzt; die
+  Diffprüfung wird die Tauschrunde (Kimi statt DeepSeek) für die Routing-Messung.
 * **Routing-Messung**: `plaene/routing-messung.md`, 17 Zeilen, noch keine Empfehlung.
 * Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
 
