@@ -6,7 +6,7 @@ Architektur über den Auftrag hinaus. Befundtexte: `plaene/vollpruefung-befunde.
 `plaene/offene-befunde-p4.md` (PP4b-22). **Fassung 2** nach der Planprüfung (`plaene/planpruefung-c2.md`, 14 Zeilen);
 Änderungen mit PC2-Nummern markiert, neue Punkte 9 und 10.
 
-**Gemeinsame Regel für alle zehn:** ein Fehler, der heute als „leer“ oder „Erfolg“ weiterläuft, wird entweder
+**Gemeinsame Regel für alle elf:** ein Fehler, der heute als „leer“ oder „Erfolg“ weiterläuft, wird entweder
 SICHTBAR (Oberfläche/PDF zeigt „konnte nicht geladen werden“) oder LAUT (Wurf an einen Aufrufer, der ihn
 nachweislich sichtbar macht) — und landet im Server-Log. `melde()` (`core/error-tracker.js:258`, Telegram mit
 Drossel je Signatur) nur dort, wo unten ausdrücklich verlangt. Nichts wird still „repariert“.
@@ -115,6 +115,14 @@ aus den übrigen gebaut — und erbt künftig die `finalize`-Ablehnung aus Punkt
 (Quelle `generateMonthlyPDFs:<typ>`, Studio-ID) und in der Archiv-Mail eine Zeile „<Modul>: konnte nicht erzeugt werden
 — bitte der Leitung melden“. Der Lauf bricht NICHT ab (die übrigen Module bleiben). Test: ein Modul-Stub wirft → Mail-
 Stub enthält die Zeile, `melde`-Stub gerufen; Positivkontrolle ohne Wurf.
+
+## 11. Hub-Kachel Belehrungen — `server.js:957` (aus der C1-Diffprüfung, C1-D16)
+
+Die Abfrage der Belehrungs-Kachel auf der Startseite (`server.js:923-937`, seit C1 über die Sicht
+`unterschriften_neueste`) steht in einem leeren `catch(e) {}` — bei einem DB-Fehler erscheint die Kachel in der
+Grundfarbe ohne Hinweis, also als „alles in Ordnung“. Neu: `console.error` mit Präfix und ein sichtbarer Zustand der
+Kachel („Stand nicht ermittelbar“), Farbe über ein vorhandenes Token (Rohwert-Wächter). Zeilen nach dem Merge von C1
+neu messen.
 
 ## Tests (je Stelle)
 
