@@ -36,3 +36,9 @@ Lokal vorher: Lint EXIT 0; volle Suite auf `62eb5f7` läuft.
 | P3-R2-7 | Verschärfungen: `geraetName`/`standort` immer gelesen, `/setup` 403 vor 400, `/einstellungen` 400 statt Redirect | beabsichtigt, im Diff kommentiert | kein Defekt |
 
 7 Befunde, 5 getragen (davon 1 vorbestehend), 1 mit falscher Prämisse (Substanz getragen), 2 kein Defekt.
+
+**Nacharbeit 2 (`ea5e2db`)**: Diff vollständig gelesen. Alle fünf Punkte umgesetzt, jede Gegenprobe ROT → GRÜN (Bericht);
+Suite des Executers 372 = 372, Lint 0. Eigene Lesung: zwei Reste → Nacharbeit 3 (Kommentar behauptet eine Race, die es
+nicht gab; Wächter: `return`/`throw` auf oberster Ebene VOR dem `if` macht es unerreichbar). **Keine dritte
+DeepSeek-Runde:** die Behebungen sind klein, jede hat eine gemessene Gegenprobe, und den einen Rest der Klasse habe
+ich bei der eigenen Lesung gefunden.
