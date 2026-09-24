@@ -123,3 +123,36 @@ Wegwerf-DB und nur über `sid`.
    Anfragen) gegenmessen; wo sie fehlt, ergänzen.
 2. Überwachung: eine Studio-Subdomain ohne Cookies sieht künftig 400 statt einer Schleife;
    sitzungsfreier 200-Endpunkt ist `/login`.
+
+# NACHARBEIT 1 (Diffprüfung Runde 1, `plaene/diffpruefung-h2.md`)
+
+Einordnung: normaler Auftrag, derselbe Executer. Ort `/workspace/gymdocu-h2`, HEAD `e7dfc41`.
+
+1. **H2-C1 — offene Weiterleitung.** `erlaubtesTabletZiel()` lässt `/\evil.com` durch; `Location: /\evil.com` löst der
+   Browser als `https://evil.com/` auf (gemessen). Ablehnen: jeder Backslash und jedes Steuerzeichen
+   (`/[\\\x00-\x1f\x7f]/`), dazu als zweiter Riegel: `new URL(pfad, 'http://ziel.invalid')` muss denselben Origin
+   behalten. Dieselben zwei Riegel in `sicheresReturnTo()`. Zusicherungen je einzeln, mit Positivkontrolle:
+   `/\evil.com`, `/\\evil.com/x`, `/%5Cevil.com` als Query-Wert (kommt dekodiert an), Tab, Zeilenumbruch — plus die
+   GANZE Kette `GET /login/tablet?weiter=%2F%5Cevil.com` → Schritt 1 → Marker → letzte `Location` bleibt auf dem Host.
+   Gegenprobe: Backslash-Riegel entfernt → rot.
+2. **H2-D2 — Marker-Antwort ohne neues Cookie (blockierend).** Nur `cookie.maxAge` zu ändern macht die Sitzung für
+   express-session nicht „geändert“ (Hash ohne `cookie`, `rolling` aus) → kein `Set-Cookie`, der Browser behält das
+   5-Minuten-Cookie. Gemessen: `scratchpad/h2probe_marker_cookie.js`. Behebung: der Marker-Schritt ändert den
+   SITZUNGSINHALT (z. B. Schritt 1 setzt ein Merkmal „Cookie unbestätigt“, der Marker entfernt es), sodass
+   express-session ein neues Cookie mit 8 h ausstellt. Kein `rolling` für die ganze Anwendung. Zusicherung: die
+   Marker-Antwort trägt `Set-Cookie` für DIESELBE sid mit `Expires` ≈ jetzt + 8 h (Toleranz 2 min) — der Rückfall
+   `|| sidNachSchritt1` (`:220`) entfällt. Gegenprobe: Inhaltsänderung entfernt → rot. Prüfe zusätzlich: bleibt die
+   DB-Zeile nach Schritt 1 bei ≤ 5 min (1i)?
+3. **H2-C2 — 5c–5e aus falschem Grund grün.** Das Cookie `s:<sid>.stub` hat eine falsche Signatur, die
+   `pending2fa`-Sitzung wird nie geladen (gemessen: `scratchpad/h2probe_stubcookie.js`). Richtig signieren
+   (`cookie-signature` mit dem Test-Geheimnis) UND Positivkontrolle, dass der Server genau diese Sitzung lädt.
+   Gegenprobe: im 400-Zweig des Markers `pending2fa` löschen → 5e rot.
+4. **H2-D5 — 3a kann nicht fallen.** Ersetzen durch den echten Zwei-Tab-Fall mit GEMEINSAMEM Cookie: der zweite Tab
+   erreicht sein Ziel direkt, ohne neue sid.
+5. **H2-D7 — 8e umgeht das Formular.** Das Formular aus der HTML-Antwort von `GET /login?weiter=…` lesen und mit allen
+   seinen Feldern absenden (versteckt + E-Mail + Passwort), dann 2FA → Landung auf dem Ziel. Gegenprobe: verstecktes
+   Feld aus `routes/auth.js` entfernt → rot.
+
+**Gegenproben** je Punkt ROT/GRÜN wörtlich; **Abschluss** wie gehabt (volle Suite mit `SUITE_EXIT`, Dateizahl-Ritual,
+Lint, E2E, Marker-Scan, Commit, Push). Die Umgebungsänderungen aus dem Bau (Rolle `gymdocu_h2test`, `/etc/hosts`)
+dürfen bleiben; kein erneutes `playwright install`.
