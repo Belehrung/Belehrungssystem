@@ -195,6 +195,8 @@ sondern falsch.
 | 24.09.2026 | Diffpruefung unlink Runde 9 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 801 Zeilen, Suchen 17, Lesungen 29, Token rein 831519, Token raus 76466, Runden 8 | 8 | 7 (einzig: `queue_fehlt` fehlt in ok:false-Rückgaben; falsche Logzeile nach Verzeichnis-fsync; zwei nie fallende Teilklauseln; `new URL("")`). Einzelheiten `plaene/diffpruefung-unlink.md` Runde 9 | 1 (Merker-Zusicherung im Route-Test sei nicht falsifizierbar — dort rot gemessen) | 1,40 $ |
 | 24.09.2026 | Diffpruefung unlink Runde 10 (deepseek-v4-pro), abschliessend, eine Spur | Diff 458 Zeilen, Suchen 25, Lesungen 28, Token rein 2910032, Token raus 66199, Runden 26 | 6 | 5 (zwei Rückschritte durch Nacharbeit 12: gestrichene S35-Klauseln — Ursache MEIN Auftrag nach ungemessenem R9-9 —, ENOENT verdeckt hängenden Symlink; `s31b` fehlt im Aufräummuster; `queueDateiLesbar` prüft nur Parsbarkeit; 503 ohne `queue_fehlt`). Einzelheiten `plaene/diffpruefung-unlink.md` Runde 10 | 1 (TG-Zusicherung tautologisch — `dotenv` in `server.js:3` füllt nach; daraus ein neuer Punkt) | 4,10 $ |
 | 24.09.2026 | Diffpruefung unlink Runde 10 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 458 Zeilen, Suchen 25, Lesungen 28, Token rein 2910032, Token raus 66199, Runden 26 | — | — | — | 4,10 $ |
+| 24.09.2026 | Vollpruefung GymDocu Bereich 06 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 9271 Zeilen, Suchen 23, Lesungen 16, Token rein 3724484, Token raus 63560, Runden 15 | — | — | — | 5,17 $ |
+| 24.09.2026 | Vollpruefung GymDocu Bereich 01 (deepseek-v4-pro) (deepseek-v4-pro) | **abgebrochen** (Geheimnis-Riegel auf dem Eingabediff): Diff 10848 Zeilen, Suchen 0, Lesungen 0, Token rein 0, Token raus 0, Runden 0 | — | — | — | 0,00 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -3254,3 +3256,9 @@ in einem Wächter kostet mehr als der Fehlalarm, den er verhindert.
 Stattdessen: die Grenze wird benannt.
 | 23.09.2026 | Planpruefung unlink Loeschauftrag Spur B (kimi-k3, Buendel 95 KB, effort high) | Bündel 31.203 Token ein, 36.570 aus, 1059 s | 9 | **8** (blockierend: `DELETE … RETURNING` statt SELECT→löschen→DELETE, einzig von dieser Spur). Einzelheiten `plaene/planpruefung-unlink-loeschauftrag.md` | **1** (Studio-Pfadkollision: Mitarbeiter-ID macht den Ordner eindeutig) | — (keine Preisgrundlage im Repo; Verbrauch s. Material-Spalte) |
 | 23.09.2026 | Planpruefung unlink Loeschauftrag Runde 2 Spur B (kimi-k3, Buendel 98 KB, effort high) | Bündel 31.938 Token ein, 34.134 aus, 894 s | 6 | **6** (blockierend, einzig von dieser Spur: Reaper löscht die Datei vor dem Auftrag, Worker committet dazwischen → `succeeded` auf gelöschter Datei; Root-Wechsel lässt Löschpflicht fallen). Einzelheiten `plaene/planpruefung-unlink-loeschauftrag.md` Runde 2 | 0 | — (keine Preisgrundlage im Repo) |
+
+## 24.09.2026 — DeepSeek-Vollprüfung GymDocu (Bestand, master `221a7b2`), je Bereich eine Lesespur
+
+| Datum | Zweck | Material | Befunde | davon getragen | gefallen | Kosten |
+|---|---|---|---|---|---|---|
+| 24.09.2026 | Vollpruefung Bereich 06 von 27 (Pilot, deepseek-v4-pro) | 27 Dateien ~151k Token; Runden 15, Token rein 3724484, Token raus 63560 | 9 | 8 (alle gering/Anmerkung; `plaene/vollpruefung-befunde.md`) | 1 (Modulo-Verzerrung — Alphabet hat 32 Zeichen) | 5,17 $ geschätzt (obere Schranke); Guthaben danach 39,84 $ |
