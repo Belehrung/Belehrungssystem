@@ -100,3 +100,22 @@ Lauf 24.09.2026 05:03–05:15 UTC, 11 Runden, 2,95 Mio. Token ein, geschätzt 4,
 | V09-9 | Detailabfrage in der Chunk×Sitzungs-Schleife | gelesen, nicht gemessen | Anmerkung (Leistung) |
 
 9 Befunde, 9 getragen (V09-1 herabgestuft), 0 gefallen.
+
+## Bereich 03 — `routes/qr-scan.js`, `sichtpruefung.js`, `spuelplan.js`, `tablet-sperre.js`, `verbandbuch*.js`, `verify.js` …
+
+Lauf 24.09.2026 05:00–05:13 UTC, 10 Runden, 2,77 Mio. Token ein, geschätzt 3,87 $. Mehrere Befunde hängen an der
+Prozess-Zeitzone des Live-Servers; die steht nicht im Repo (unbelegt).
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V03-1 | Weitergabe-Protokoll für Gesundheitsdaten (Verbandbuch, Art. 9 DSGVO): `INSERT INTO verbandbuch_weitergaben` in `catch (x) {}` — scheitert es, Erfolg angezeigt, kein Protokoll, kein Log | gelesen `routes/verbandbuch-admin.js:610-614, 646-650` | **mittel** |
+| V03-2 | `ladeFotos()` liefert bei DB-Fehler `[]` — Defekt ohne Fotos, ohne Hinweis | gelesen `routes/sichtpruefung.js:1512-1516` | gering |
+| V03-3 | Spülprotokoll ohne Doppelsende-Schutz: Doppelklick → zwei unterschriebene Protokolle, zwei Audit-Glieder, zwei PDFs | gelesen `routes/spuelplan.js:255-347` (kein `client_uuid`, anders als Verbandbuch/Sichtprüfung) | gering |
+| V03-4 | Tablet-Zeiten ohne Zonenangabe mit `new Date("…T…")` in Prozesszeit geparst — Nachgetragen-Schwellen um den Berlin-Versatz verschoben, falls der Prozess auf UTC läuft | gelesen `sichtpruefung.js:2321`, `verbandbuch.js:568-573` | gering (Server-TZ unbelegt) |
+| V03-5 | Eskalationsstunde aus `new Date().getHours()` (Prozesszeit) | gelesen `tablet-sperre.js:237`, `sichtpruefung.js:3658` | gering (Server-TZ unbelegt) |
+| V03-6 | `/tablet/sperre` (ohne Anmeldung erreichbar): `(req.body.pin \|\| '').trim()` und `name` — `pin[]=…` liefert ein Array → TypeError → 500 und Alarmmeldung; dieselbe Klasse ist in `auth.js` (K1) und `qr-scan.js` schon behoben | gelesen `routes/tablet-sperre.js:551, 593` (kein eigenes try/catch); JS-Semantik eindeutig | gering, **Pentest-relevant** |
+| V03-7 | Verbandbuch: `unfall_zeit` ohne Formatprüfung, Freitexte ohne Längengrenze | gelesen `verbandbuch.js:564` | gering |
+| V03-8 | `stillstand_tage` negativ speicherbar | gelesen `spuelplan.js:267` | Anmerkung |
+| V03-9 | Mitarbeiter-Zuordnung über den Namen ohne `ORDER BY` — bei Namensgleichheit nicht deterministisch | gelesen `verbandbuch.js:577-579` | Anmerkung |
+
+9 Befunde, 9 getragen, 0 gefallen.

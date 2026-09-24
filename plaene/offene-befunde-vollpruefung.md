@@ -48,3 +48,12 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V09-7 | `core/` importiert `routes/betriebszeiten` | offen, Anmerkung |
 | V09-8 | PDF ohne Seitenzahlen/QR bei Fehler in `addPageNumbers`, still | offen |
 | V09-9 | Detailabfrage in Doppelschleife | offen, Anmerkung |
+| V03-1 | Verbandbuch-Weitergabe-Protokoll scheitert still (`catch (x) {}`) | offen, **mittel** |
+| V03-2 | `ladeFotos()` verschweigt DB-Fehler | offen |
+| V03-3 | Spülprotokoll ohne Doppelsende-Schutz | offen |
+| V03-4 | Tablet-Zeiten in Prozesszeit geparst (Server-TZ unbelegt) | offen — zuerst die TZ des Live-Servers messen |
+| V03-5 | Eskalationsstunde aus Prozesszeit | offen — wie V03-4 |
+| V03-6 | `/tablet/sperre`: Array-Body → 500 + Alarm, ohne Anmeldung | offen, **vor dem Pentest** |
+| V03-7 | Verbandbuch-Eingaben ohne Format-/Längenprüfung | offen |
+| V03-8 | negativer Stillstand | offen, Anmerkung |
+| V03-9 | Namenszuordnung nicht deterministisch | offen, Anmerkung |
