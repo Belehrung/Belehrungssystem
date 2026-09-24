@@ -227,3 +227,25 @@ bei 16 MP liegt im Worst Case bei **615 ms** (volle Fläche) bzw. 461 ms (Schach
    gerundet und höchstens 16 MP. Danach den Worst Case neu messen: > 250 ms → STOPP.
 3. JSON-Wege (E1, E3, E4, E10, E11) fangen den Unterschriftsfehler selbst in ihrem Antwortformat ab — ohne Alarm. Die
    übrigen Routen prüfen vor dem `try`. Das ist in Ordnung.
+
+## Nachtrag 4b (24.09.2026) — nach Phase 1d (`93e0cb1`)
+
+Gemessen: Das Punktmass `umfangGlobal` (Länge / (2·Tinte/Umfang)) trennt: Schwelle 7,4485, Marge 23,4 % zur Annehmen-Seite
+und 19,0 % zur Ablehnen-Seite. Über alle drei Mengen gibt es 0 Fehlurteile beim Punkt. Deckel 4 MP (grösstes Raster:
+E1 1992×996 bei dPR 2), Worst Case ≤ 191 ms.
+Neuer STOPP: `w_initialen_12_ohne_punkte` („AB“, 12 px, dPR 1, E11/E12). Die zwei Buchstaben verschmelzen dort zu EINER
+Komponente mit geradheit 0,439, gegen die Schwelle 0,4837. Geradheit allein trennt kleine Buchstabengruppen nicht von
+±1-px-Zitterstrichen (max. 0,41–0,44).
+
+1. **Strich nur, wenn BEIDES gilt:** geradheit < `GERADHEIT_MIN` UND verhaeltnis (σ_quer/σ_lang) < `VERHAELTNIS_MAX`.
+   Die Zusatzbedingung kann ein Urteil nur von `strich` auf ok ändern, nie umgekehrt. Neue Fehlablehnungen sind damit
+   ausgeschlossen; zu prüfen ist allein, ob ein Strich durchrutscht. Einen Strich, der die Punktregel übersteht, begrenzt
+   die Rechnung auf verhaeltnis ≈ Breite/Länge ≤ 1/7,45 plus Zittern. `VERHAELTNIS_MAX` wird aus allen drei Mengen
+   hergeleitet: Annehmen ≥ 20 %, Ablehnen ≥ 10 %.
+   Dazu eine GEZIELTE Prüfmenge für die beiden Ränder: kurze Striche knapp über der Punktschwelle mit ±1 px Zittern in
+   vier Winkeln (Strich-Seite) sowie einteilige kleine Buchstabengruppen in 10/12/14 px, z. B. „AB“, „MN“, „W“, „ll“
+   (Annehmen-Seite). Die Schwellen sind dabei eingefroren; eine Fehlbeurteilung → STOPP.
+2. **Pads begrenzen dPR auf 2** (`Math.min(devicePixelRatio, 2)`, in Phase 2 Schritt 5 an allen sieben Pads). So bleibt
+   das Raster auf allen Geräten unter dem 4-MP-Deckel, auch auf Laptops mit 300 % Skalierung, und die Pads bleiben im
+   gemessenen Bereich (dPR 1/2).
+3. Ohne STOPP geht es direkt mit Phase 2, Schritt 2 weiter.
