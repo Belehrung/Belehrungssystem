@@ -69,3 +69,6 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V11-5 | `staging-smoke.sh` meldet PDF_ROOT-Trennung ungeprüft als PASS | offen |
 | V11-7 | `syntax-check.sh` grün bei null gefundenen Dateien (`xargs` ohne `-r`, keine Mindestzahl) | offen |
 | V11-2..9 | übrige Anmerkungen aus Bereich 11 (Seed-Format, Meldetexte, Worker-Neustart, Gegenproben-Auswertung) | offen, gesammelt |
+| V05-2 | Mitarbeiter-Löschung: Audit ausserhalb der Transaktion, ohne Absicherung | offen, **mittel** |
+| V05-3 | CSV-Import ohne Kalendertag-Prüfung | offen |
+| V05-4..7 | Import-Fehler still, Freischaltungs-Aufräumen still, Import-Rennen, Z2-Sollwert | offen, gesammelt |

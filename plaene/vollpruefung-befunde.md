@@ -179,3 +179,19 @@ Lauf 24.09.2026 05:30–05:45 UTC, 15 Runden, 3,88 Mio. Token ein, geschätzt 5,
 | V11-9 | `befehlAnlegen`: Studio-Lookup ausserhalb des try — Kopfkommentar verspricht „keine rohe Exception“ | nicht gemessen | Anmerkung |
 
 9 Befunde, 8 getragen (2 gemessen, 1 gelesen, 5 Anmerkungen ohne Einzelmessung), 1 gefallen.
+
+## Bereich 05 — `routes/admin/geraete.js`, `lexikon.js`, `mitarbeiter.js`
+
+Lauf 24.09.2026 05:35–05:50 UTC, 7 Runden, 1,76 Mio. Token ein, geschätzt 2,56 $.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V05-1 | ID-Wache fehle an den harten Lösch-Routen und am Spülstellen-Toggle (`0x10` → Gerät 16) | **gefallen:** `routes/admin/geraete.js` registriert seine Routen auf DEMSELBEN Router, an dem `routes/admin.js:11` die zentrale Wache (`wacheIdParameter`, #470) für `:id` setzt; gemessen `istGueltigeId`: `0x10`/`1e3`/`2abc` → false, `16` → true | — |
+| V05-2 | Mitarbeiter hart löschen: DELETE in `db.tx`, `auditAppend` danach AUSSERHALB und ohne try — scheitert das Protokoll, ist die Person gelöscht ohne Glied in der Audit-Kette; die Wartungs-Löschwege machen es in einer Transaktion | gelesen `routes/admin/mitarbeiter.js:1068-1082` | **mittel** (append-only) |
+| V05-3 | CSV-Import: `norm2Date` prüft keinen Kalendertag — `31.02.2026` landet als `2026-02-31` in `naechste_faelligkeit` | gelesen `geraete.js:5916-5927` | gering |
+| V05-4 | Import-Schreibdurchlauf zählt DB-Fehler nur (`nFehler++`), ohne Log/`melde()` | nicht gemessen | gering |
+| V05-5 | Freischaltungs-Aufräumen beim Mitarbeiter-Löschen in leerem `catch` | nicht gemessen | gering |
+| V05-6 | CSV-Import: Rennen zwischen Vorzählung und Schreiben kann ein Gerät ohne `durchfuehrung` anlegen | nicht gemessen; enges Fenster | gering |
+| V05-7 | Z2-Sollwert in `test_feature_ladebestand_streng.js` aus derselben Quelle wie der geprüfte Weg (im Test als bewusst benannt) | nicht gemessen | Anmerkung |
+
+7 Befunde, 6 getragen, 1 gefallen (durch #470 schon geschlossen).
