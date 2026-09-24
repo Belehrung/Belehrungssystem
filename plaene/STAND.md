@@ -39,6 +39,13 @@ Stand 24.09.2026, 07:20 UTC.
   Nacharbeit 1 läuft (alle Datenwurzeln umleiten, Verstösse am Prozessende rot, ganze Repo-Wurzel schützen).
   Ohne eigene dritte Planprüfung, weil die Nacharbeit genau die Befunde der gerade gelaufenen Planprüfung umsetzt; die
   Diffprüfung wird die Tauschrunde (Kimi statt DeepSeek) für die Routing-Messung.
+* **P3 (Pentest-Vorzug V03-6, Formularfelder mit falschem Typ)**: Papier `plaene/auftrag-p3-eingabetypen.md`
+  Fassung 2, Planprüfung als Tauschrunde (gleiches Bündel für DeepSeek und Kimi, `plaene/planpruefung-p3.md`):
+  14 Befunde, 13 getragen; wichtigster: nur 29 statt 68 Stellen werfen (38 sind in `String()` gehüllt). Bau läuft
+  in `/workspace/gymdocu-p3` (Zweig `fix-p3-eingabetypen`).
+* **V10-2 (Unterschrift aus einem Pixel)**: offen, **Betreiber-Entscheidung** — was gilt als Unterschrift? Der
+  Client nimmt heute ebenfalls einen einzelnen Punkt an (`routes/belehrungen.js:645`); eine Untergrenze muss an
+  BEIDEN Stellen gleich gelten.
 * **Routing-Messung**: `plaene/routing-messung.md`, 17 Zeilen, noch keine Empfehlung.
 * Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
 
