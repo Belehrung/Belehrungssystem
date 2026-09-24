@@ -238,6 +238,7 @@ sondern falsch.
 | 24.09.2026 | Diffpruefung P4 Unterschrift (Produktion, effort high) (deepseek-v4-pro) | Diff 1928 Zeilen, Suchen 15, Lesungen 36, Token rein 3628087, Token raus 57880, Runden 28 | — | — | — | 5,02 $ |
 | 24.09.2026 | Planpruefung H1a CSP Enforce (deepseek-v4-pro) | Diff 47 Zeilen, Suchen 49, Lesungen 23, Token rein 2247783, Token raus 22858, Runden 29 | 8 | **8** (blockierend, einzig von dieser Spur: Crawler ohne Status-200-Zusicherung). Einzelheiten `plaene/planpruefung-h1a.md` | 0 | 3,06 $ |
 | 24.09.2026 | Planpruefung H1a CSP Enforce Spur B (kimi-k3, Buendel 83 KB, effort high) | Bündel 27.211 Token ein, 20.235 aus, 512 s | 8 | 6½ (einzig von dieser Spur: WebKit ungemessen, Doku↔Konstante↔Live, Landingpage) | 1½ (`blob:` unbelegt — Fundstelle nicht im Bündel; Vorschau als `blob:`-URL vermutet) | — (keine Preisangabe) |
+| 24.09.2026 | Planprüfung C2 stille Fehler (deepseek-v4-pro) | Diff 108 Zeilen, Suchen 28, Lesungen 44, Token rein 2193058, Token raus 22210, Runden 29 | — | — | — | 2,98 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
