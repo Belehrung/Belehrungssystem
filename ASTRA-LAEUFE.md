@@ -215,6 +215,8 @@ sondern falsch.
 | 24.09.2026 | Diffpruefung H2 Runde 2, zweiter Versuch (deepseek-v4-pro) (deepseek-v4-pro) | Diff 447 Zeilen, Suchen 13, Lesungen 19, Token rein 652351, Token raus 55931, Runden 11 | 4 | 4 (keiner blockierend: Marker ohne Merkmal, Riegel auch im Query, `cookie-signature` transitiv, Test-DDL) | 0 | 1,08 $ |
 | 24.09.2026 | Vollpruefung GymDocu Bereich 22 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 9480 Zeilen, Suchen 23, Lesungen 24, Token rein 4366867, Token raus 80715, Runden 14 | 4 | 4 (gering/Anmerkung; Wächter deckt zwei Lösch-Wurzeln von deprovisionStudio nicht) | 0 | 6,08 $ |
 | 24.09.2026 | Vollpruefung GymDocu Bereich 15 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 9612 Zeilen, Suchen 27, Lesungen 31, Token rein 7731981, Token raus 77329, Runden 24 | 4 | 3 (gering; Gültigkeitsregel MAX vs. neueste als Entscheidung) | 1 (Sekundenauflösung des Generationstokens — gemessen Mikrosekunden) | 10,51 $ |
+| 24.09.2026 | Vollpruefung GymDocu Bereich 23 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 7449 Zeilen, Suchen 23, Lesungen 23, Token rein 4483517, Token raus 64367, Runden 18 | 6 | 6 (gering/Anmerkung; zwei Zusicherungen grün aus falschem Grund) | 0 | 6,17 $ |
+| 24.09.2026 | Vollpruefung GymDocu Bereich 16 (deepseek-v4-pro) (deepseek-v4-pro) | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 10189 Zeilen, Suchen 0, Lesungen 0, Token rein 236174, Token raus 24000, Runden 1 | — | — | — | mind. 0,41 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht

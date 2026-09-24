@@ -85,3 +85,4 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V15-1a | Rennen-Test Neue-Version erkennt die vertauschte Reihenfolge nicht (im Test benannte Grenze) | offen, gering |
 | V15-1r | `belehrung_freischaltung.freigeschaltet_am`: zwei Formate in einer TEXT-Spalte | offen, Anmerkung |
 | V15-2 | Gültigkeitsregel der Belehrungsübersicht: `MAX(gueltig_bis)` oder neueste Unterschrift? Test unterscheidet nicht | offen, **Entscheidung Betreiber** |
+| V23-1..6 | Rechtsaussagen-Wächter schluckt Datei-Lesefehler; `>=`-Zusicherung; wandernder Sollwert NUMMER_START; Gegenprobe ohne Rücknahme; Studio nicht entsperrt; Satztrenner-Grenze | offen, gering |

@@ -302,3 +302,18 @@ Lauf 24.09.2026 07:03–07:24 UTC, 24 Runden, 7,73 Mio. Token ein, geschätzt 10
 | V15-3 | `test_feature_dashboard.js:63` UTC-Vortag, hier folgenlos | — | Anmerkung |
 
 4 Befunde, 3 getragen, 1 gefallen.
+
+## Bereich 23 — Testdateien `test_feature_qr_mitglied_meldung.js` … `test_feature_rechtsaussagen.js` (8 Dateien)
+
+Lauf 24.09.2026 07:09–07:33 UTC, 18 Runden, 4,48 Mio. Token ein, geschätzt 6,17 $.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V23-1 | Rechtsaussagen-Wächter: Lesefehler einer einzelnen Datei → `continue`, die Datei bleibt gezählt, der Lauf grün (auf Verzeichnisebene ist dieselbe Lücke schon geschlossen) | gelesen `test_feature_rechtsaussagen.js:309-315` | gering (grün aus falschem Grund) |
+| V23-2 | „letzte_meldung_am wurde fortgeschrieben“ prüft `>=` gegen `erstellt_am`, das beim Anlegen denselben Wert erhält — Wegfall der Fortschreibung bliebe grün | gelesen `test_feature_qr_mitglied_meldung.js:459` | gering |
+| V23-3 | QR-Nummernstart „achtstellig“ nur gegen `qrToken.NUMMER_START` geprüft (Sollwert wandert mit) | nicht gemessen | Anmerkung |
+| V23-4 | eingebaute Gegenprobe (Freeze-Prüfung) ohne Rücknahme, Kopfkommentar sagt das Gegenteil | nicht gemessen | Anmerkung |
+| V23-5 | gesperrtes Test-Studio wird nicht wieder entsperrt | — | Anmerkung |
+| V23-6 | Satztrenner schützt jeden Einzelbuchstaben vor dem Punkt — ein Satzende nach „Anlage B.“ verschmilzt mit dem Folgesatz, eine Verneinung verdeckt dann einen echten Verstoss | nicht gemessen; im Bestand kein Beleg | Anmerkung (Grenze benennen) |
+
+6 Befunde, 6 getragen (2 gelesen), 0 gefallen.
