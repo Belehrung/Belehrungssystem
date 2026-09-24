@@ -178,3 +178,30 @@ Server = Browser 2964/2964. Schwellen: `PUNKT_MIN` 4,69 (Bezug eigene Strichdick
    Zusicherungen, die ein einzelnes Pixel als Unterschrift benutzen, werden fachlich umgestellt (vorher auflisten).
 7. Gegenproben (a)–(f) aus Fassung 1/2, dazu (g) Luminanz → Kanal 0 zurück → Rot-Fixtur ROT und (h) quadratischer
    Abgleich zurück → Laufzeit-Zusicherung ROT.
+
+# FASSUNG 4 (24.09.2026) — Phase 2 nach der Planprüfung (`plaene/planpruefung-p4-phase2.md`)
+
+Massgeblich zusammen mit „PHASE 2“ oben; wo sie widerspricht, gilt diese Fassung.
+
+A. **Tinte** = Luminanz über Weiss zusammengesetzt (Alpha berücksichtigt; 1/2/3/4 Kanäle). Das Regelmodul exportiert
+   diese Funktion, `core/signaturbild.js` benutzt sie für Sichtbarkeit (250) und Echtheit (128). Beide Prüfungen
+   BLEIBEN. `breite`/`hoehe` müssen ganze Zahlen sein.
+B. **Laufzeit**: linearer Abgleich; `masse.vergleiche` zählt die Abgleichschritte; der Test sichert
+   `vergleiche ≤ c · laeufe` an einem kleinen Worst-Case-Bild zu, NICHT die Wandzeit. Einmalig gemessen und
+   berichtet werden die Wandzeit bei 16 MP (realistisch und Worst Case). Liegt eine über 250 ms → STOPP.
+C. **Server-Helper**: Er läuft VOR dem route-eigenen `try` (P3-Muster) und wirft eine Fehlerklasse der Positivliste
+   (400, kein Alarm, Meldung aus Fassung 2 Punkt 6). Auch ein Wurf aus `bewerteUnterschrift` wird so behandelt
+   („konnte nicht gelesen werden“). **Zuerst kanonisieren, dann `signatur_hash` über den gespeicherten Wert bilden**,
+   an allen Stellen der Tabelle.
+D. **Offline-Nachzügler (E4, E11)**: Die neue Seite schickt ein Markerfeld. Fehlt es auf diesen beiden Routen, gelten
+   nur Format und Deckel, dazu eine Protokollzeile `[unterschrift-altgeraet]` (Vorbild `sichtpruefung.js:2415-2432`).
+   Die Ausnahme läuft von selbst aus.
+E. **PDF**: ein synchroner Kopfleser (PNG-IHDR, JPEG-SOF) vor jedem `doc.image` einer Unterschrift; andere Formate
+   und alles über dem Deckel → EIN gemeinsamer Platzhaltertext. Übergrosse Altbilder erscheinen dadurch nicht mehr —
+   gewollt.
+F. **Zusagen**: Der Server garantiert „keine Zeile, klare Meldung, 400“. Das Formular bleibt nur im Browser-Pfad
+   erhalten.
+G. **Tests**: je Fixturdatei der EXAKTE Grund als Literal; Schwellen als Literale; der Strich-Verhaltenstest benutzt
+   einen diagonalen Strich; Farbfiguren (rot, blau, dunkelgrün) in Validierung und Fixturen; die Liste aus DS 1a
+   (`test_feature_signatur_verbrauch.js`) wird fachlich umgestellt. „Server = Browser“ ist eine Transportprüfung,
+   kein Abdeckungsbeleg.
