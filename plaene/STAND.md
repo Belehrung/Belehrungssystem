@@ -59,7 +59,7 @@ Stand 24.09.2026, 07:20 UTC.
 * **Stand 24.09.2026 11:45 UTC:** T1 Nacharbeit 2 (`9c74d38`, alle 8 Diffprüfungs-Befunde behoben) — eigene Suite läuft,
   danach PR. P3 Nacharbeit 1 läuft (neun Routen mit eigenem catch, berechnete Zugriffe, /einstellungen).
   SSH: Betreiber hatte sich ausgesperrt (Schlüssel war nie übertragen), über KVM-Konsole zurück, Schlüssel jetzt
-  eingetragen und getestet; Härtung wieder aktiv (`sshd -T`: passwordauthentication no, permitrootlogin without-password). T1 als PR offen, CI läuft.
+  eingetragen und getestet; Härtung wieder aktiv (`sshd -T`: passwordauthentication no, permitrootlogin without-password). **T1 gemergt** (#473, `34a83fa`), Deploy folgt.
 * **Routing-Messung**: `plaene/routing-messung.md`, 17 Zeilen, noch keine Empfehlung.
 * Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
 
