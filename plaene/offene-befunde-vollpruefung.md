@@ -90,3 +90,7 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V24-1..4 | UTC-Tag im Retention-Test, Text-Anker ohne Positivkontrolle, Test-Abfragen ohne `studio_id`, Unverwechselbarkeit nur ein Paar | offen, gering |
 | V16-1 | DGUV-Test: „deaktiviert, nie gelöscht“ leer wahr bei Löschung | offen, mittel |
 | V16-2,3,5..7 | Design-Token-Wächter-Erfassung, implizierte Zusicherung, leere Arrays, UTC-Fixture, Funktionsende per indexOf | offen, gering |
+| V25-1 | **Tests löschen per `path.join(__dirname, pfad)` im echten PDF-Archiv des Live-Servers (10 Stellen, 4 Dateien)** | **offen, hoch — eigener Beitrag T1, vor dem nächsten Hand-Deploy** |
+| V25-2 | `test_feature_spuelplan.js` löscht rekursiv unter einem beim `require` fixierten `PDF_ROOT` (Einzelaufruf) | offen, mittel — mit T1 |
+| V21-1/2 | dieselbe Klasse (Aufräumen über `__dirname`) in `nutzungsentscheidung`/`nutzung_nachtrag` | → T1 |
+| V25-3..6, V18-1..6 | übrige Testbefunde der Bereiche 18 und 25 | offen, gering |

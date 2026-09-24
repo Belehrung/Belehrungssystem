@@ -361,3 +361,34 @@ Erster Lauf an `max_output_tokens` abgebrochen (1 Runde, nichts geliefert, proto
 | V16-7 | Funktionsende per `indexOf('\n}')` | — | Anmerkung |
 
 7 Befunde, 6 getragen, 1 gefallen.
+
+## Bereich 25 — Testdateien `test_feature_seilkontrolle_mittlere_stufe.js` … `test_feature_studio_kollision.js` (27 Dateien)
+
+Lauf 24.09.2026 07:48–08:05 UTC, 8 Runden, 2,02 Mio. Token ein, geschätzt 2,87 $. Im Material geschwärzt: vier
+Test-Verbindungszeichenfolgen.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V25-1 | **Tests löschen im echten PDF-Archiv des Live-Servers.** `test_feature_seilkontrolle_pdf_unterschrift.js:111, 156` räumt mit `fs.rmSync(path.join(__dirname, pfad), { force: true })` auf; `pfad` ist der öffentliche Pfad `/pdf/<sid>/<Typ>/<datei>`. Die Suite erzeugt das PDF unter dem umgelenkten `PDF_ROOT` (mktemp, `test/run.sh:420`), gelöscht wird aber `<repo>/pdf/<sid>/…` — auf dem Server ist `<repo>/pdf` = `/var/www/gymdocu/pdf`, das echte Archiv (`core/pdf-root.js:18-26`). Die Test-DB ist frisch (`createdb gymdocu_test`), niedrige Studio-IDs treffen echte Studio-Ordner; `test_feature_nutzungsentscheidung.js` erzeugt dabei den GANZEN laufenden Monat → Dateiname `Cardio-Check_<Monat>_<Jahr>.pdf`, derselbe wie ein echtes Monats-PDF. Läuft über den Handweg `gymdocu-deploy`, der die Suite auf dem Server als Pflicht-Gate fährt | gelesen: dasselbe Muster an **10 Stellen in 4 Dateien** (`grep 'join(__dirname, p'` → `seilkontrolle_pdf_unterschrift.js:111,156`, `mangel_nachtrag_kopfzeile.js:122,159,199,215,254`, `nutzungsentscheidung.js:314,443`, `nutzung_nachtrag.js:234`); `pdfDateiname()` `core/pdf-engine.js:130-139` | **hoch** (unverhandelbare Regel, Datenverlust im Echtbestand möglich) |
+| V25-2 | `test_feature_spuelplan.js`: `PDF_ROOT` beim `require` fixiert, rekursives Löschen `PDF_ROOT/<sid>` — im Einzelaufruf ohne Umleitung das echte Archiv | gelesen `:18, :190` | mittel (nur Einzelaufruf) |
+| V25-3 | `test_feature_sichtpruefung_tablet_ux.js:40-44`: „keine Alert-Unterbrechungen“ prüft nur einen Ausschnitt; `alert(` steht davor (`routes/sichtpruefung.js:1043, 1049`) | nicht gemessen | gering |
+| V25-4 | `test_feature_staging_role_static.js:27`: `indexOf(init) < indexOf(migrations)` bleibt wahr, wenn `init` fehlt (-1) | nicht gemessen | gering |
+| V25-5 | `test_feature_start_bestandsdatenbank.js`: echte Prozesse (`psql`, `sudo`) und eine zusätzliche Wegwerf-DB auf der echten Instanz | nicht gemessen; `_test`-Name, aufgeräumt | gering (Regelabweichung, dokumentiert?) |
+| V25-6 | `test_feature_session.js:162-164`: Tabellen-Umbenennung ohne `try/finally` | nicht gemessen | Anmerkung |
+
+6 Befunde, 6 getragen (2 gelesen), 0 gefallen.
+
+## Bereich 18 — Testdateien `test_feature_geraeteseite_typen.js` … `test_feature_korrekturen_static.js` (29 Dateien)
+
+Lauf 24.09.2026 07:33–07:50 UTC, 13 Runden, 3,67 Mio. Token ein, geschätzt 5,16 $. Befunde nicht einzeln gemessen.
+
+| Nr. | Befund | Einstufung |
+|---|---|---|
+| V18-1 | Datums-Fixtures über `Date.now() ± n·86400000` statt Kalenderarithmetik: um die Zeitumstellung verschiebt sich „gestern“/„+14 Tage“ um einen Tag — auf einem Server mit Prozesszeit Berlin kann das Gate in diesen Stunden fälschlich rot werden (`test_feature_getraenke_jetzt_faellig.js:32-33`, `test_feature_gueltigkeit_stichtag.js:86-88`) | gering (Server-TZ unbelegt) |
+| V18-2 | `[\s\S]*` ohne Grenze in statischen Zusicherungen (`test_feature_korrektur_dokumente_static.js`, `test_feature_korrekturen_static.js:172`) kann nicht rot werden, wenn die Eigenschaft nur verrutscht | gering |
+| V18-3 | fester `EXPORT_DIR`, Fehlerpfad räumt nicht ab | Anmerkung |
+| V18-4 | Aufräumen im Health-Gate-Test verschluckt Fehler | Anmerkung |
+| V18-5 | „KEIN Audit-Eintrag entstanden“ misst nur Studio A | gering |
+| V18-6 | `test_feature_getmutation.js` ohne `_test`-Sicherheitsstopp, obwohl es mutiert | gering |
+
+6 Befunde, 6 getragen (ungemessen), 0 gefallen.
