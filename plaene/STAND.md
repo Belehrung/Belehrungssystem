@@ -66,6 +66,8 @@ Stand 24.09.2026, 07:20 UTC.
   immer). Review-Bot hat an #473 und #474 NICHT kommentiert (0 Kommentare, 0 Reviews) — beobachten.
   P4: Messung abgeschlossen (Phase 1c `f917c1d`, kein STOPP, E3-Raster behoben); Phase-2-Auftrag im Papier;
   Planprüfung (DeepSeek mit Repo + Kimi mit Bündel) läuft.
+* **Stand 24.09.2026 15:00 UTC:** P4 Planprüfung Phase 2 durch (22 Befunde, alle getragen, `plaene/planpruefung-p4-phase2.md`),
+  Fassung 4 im Papier; **Phase 2 (Einhängen) läuft** in `/workspace/gymdocu-p4`. Sammelliste `plaene/offene-befunde-p4.md`.
 * Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
 
 ### Vorgeschichte des Tages (gekürzt)
