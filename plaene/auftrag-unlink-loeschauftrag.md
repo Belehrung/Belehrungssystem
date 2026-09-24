@@ -406,3 +406,46 @@ Befunde: `plaene/diffpruefung-unlink.md`, Abschnitt „Runde 7“. Proben der Pr
 
 **Gegenproben** je Punkt (ROT/GRÜN wörtlich), **Abschluss** wie gehabt: volle Suite mit `SUITE_EXIT`, Dateizahl-
 Ritual, Lint, Marker-Scan, Commit, Push. Zweig nicht hinter master? prüfen und ggf. hereinmergen. Widersprüche gemessen melden.
+
+---
+
+# NACHARBEIT 11 (Diffprüfung Runde 8)
+
+Einordnung: normaler Auftrag, eine heikle Stelle (dauerhaftes Schreiben mit `fsync`). Weiter derselbe Executer.
+Befunde: `plaene/diffpruefung-unlink.md`, Abschnitt „Runde 8“. Proben der Prüfspur: `scratchpad/dpu8/probe_*.js`
+(u. a. echtes EACCES als `nobody`, echter HTTP-Aufruf mit ENOTDIR). Ort: `/workspace/gymdocu-unlink`, HEAD `8f20cfe`.
+
+1. **R8-1 (blockierend) — Lesefehler sichtbar machen, ohne Quarantäne.** Ein Lesefehler bleibt `offen` (kein
+   Umbenennen — ist die Ursache behoben, arbeitet der nächste Lauf den Eintrag ab), aber JEDER Lesefehler geht an
+   `melde()` mit eigener Kennung `provisioning:offboarding_rest_unlesbar` (Dateiname + Code im Text). Der Reaper läuft
+   täglich, mehr als eine Meldung am Tag entsteht also nicht. Szenario: dauerhaftes EACCES (Attrappe; zusätzlich,
+   wenn machbar, echt als `nobody` wie in der Probe) → jeder Lauf `offen:1` UND eine Meldung; S33 (einmaliger
+   EMFILE) bleibt: erster Lauf `offen:1` + Meldung, zweiter `erledigt:1`.
+2. **R8-2 — Abbruch benennen.** Vor dem Wurf `offboarding_queue_nicht_schreibbar` ein `melde()` mit gleichnamiger
+   Kennung. Die Route `/intern/deprovision` (`server.js`) antwortet bei genau diesem Code **503** mit
+   `{ ok:false, error:'offboarding_queue_nicht_schreibbar', wiederholbar:true }` statt des generischen 500ers (andere
+   Fehler unverändert). `schreibeOffboardingRest` entfernt die tmp-Datei nur, wenn sie ANGELEGT wurde (Merker nach
+   dem Öffnen), sonst keine irreführende Meldung. Die Logzeile im `catch` von `deprovisionStudio` sagt nur dann
+   „entfernt“, wenn es eine eigene Datei gab. Tests: Route-Antwort (Harness), Meldung, keine „tmp entfernen“-Meldung
+   bei ENOTDIR/EACCES vor dem Anlegen.
+3. **R8-3 — eigene Drosselgruppe.** Die in DIESEM Beitrag neu gemeldeten Fehler bekommen je einen eigenen `name`
+   (z. B. `LoeschauftragAnlegenFehler`, `OffboardingQueueFehler`) — die Drossel in `core/error-tracker.js` bildet die
+   Signatur aus dem Namen; dort NICHTS ändern (R7-9 ist eigener Beitrag). Beim Löschauftrag den Stack des zweiten
+   Fehlers an die Meldung anhängen (`meldung.stack += '\nverursacht durch: ' + …`). Zusicherung: zwei verschiedene
+   Kennungen direkt hintereinander → beide werden gesendet (echter `error-tracker`, Versand gestubbt).
+4. **R8-4** — S31: zusätzlich eine tmp-Datei mit 50 min Alter, die BLEIBEN muss.
+5. **R8-5** — Scheitert das Neuschreiben nach dem COMMIT, prüfen, ob die Datei aus der Transaktion noch existiert;
+   fehlt sie, `melde()` (`provisioning:offboarding_queue_fehlt`) und `cleanup_pending` NICHT auf eine fehlende Datei
+   zeigen lassen (null + Feld `queue_fehlt: true` im Ergebnis). Kommentar an der Stelle berichtigen.
+6. **R8-6** — Kommentar: tmp-Torsi werden beim nächsten Reaper-Lauf (Cron 03:20) geräumt, sobald älter als 1 h.
+7. **R8-7** — S30: die Beweisdatei trägt den Zeitstempel (Muster prüfen), nicht nur „beginnt mit Name, endet auf
+   .ungueltig“.
+8. **R8-8** — S31: das Szenario bekommt eine echte Replica-Zeile, und die Zusicherung prüft, dass `replicaRefs` GENAU
+   deren Referenz enthält.
+9. **R8-10 — dauerhaft schreiben.** In `schreibeOffboardingRest`: tmp über `openSync`/`writeSync`, `fsyncSync` auf die
+   Datei, `closeSync`, `renameSync`, danach `fsyncSync` auf das Verzeichnis (Verzeichnis-Deskriptor, `O_RDONLY`).
+   Scheitert der Verzeichnis-fsync, zählt das als Schreibfehler (`null`). Test: die Reihenfolge der Aufrufe über
+   Attrappen belegen (fsync der Datei VOR rename, fsync des Verzeichnisses NACH rename); Gegenprobe je fsync entfernt → rot.
+
+**Gegenproben** je Punkt (ROT/GRÜN wörtlich), **Abschluss** wie gehabt (volle Suite mit `SUITE_EXIT`, Ritual, Lint,
+Marker-Scan, Commit, Push, master-Stand prüfen). Widersprüche gemessen melden.
