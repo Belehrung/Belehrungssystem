@@ -169,3 +169,16 @@ Spur C liegen als Proben vor. Keiner gefallen.
 
 **Folgerung:** R6-1, R6-2, R6-3 und R6-10 haben eine gemeinsame Wurzel — der Fehlerweg RÄT, ob committet wurde,
 obwohl `db.tx` es weiss (vorgeschlagen von K). Nacharbeit 9 gibt diese Information weiter, statt sie nachzumessen.
+
+## Nacharbeit 9 (`27f5f24..5aa0fb9`, davor master-Merge #470) — gelesen, Runde 7 läuft
+
+Executer (sehr komplex): Suite `SUITE_EXIT=0`, Dateizahl 367 = 367 (`diff` EXIT 0), Lint 0; Szenarien 170/0, neuer
+`test_feature_db_tx_commit_ungewiss.js` 15/0; 18 Gegenproben, alle ROT → GRÜN (k1–k14 samt Varianten). Diff selbst
+gelesen (Produktivcode vollständig, Tests vollständig). Übernommene Anmerkungen des Executers: (b) der Pfad-Guard in
+`loescheStudioDateien` überspringt einen Pfad ausserhalb `PDF_ROOT` STILL (`ok:true`, der Reaper zählt ihn als
+erledigt, kein `melde()`) — Bestand, auf die Sammelliste; (c) wirft das Status-UPDATE, bleibt die Zeile bis
+`requeueStale` 'running' — gewollt. Eigene Anmerkung beim Lesen: `zweiterFehler.cause = ersterFehler` ohne Schutz
+gegen dasselbe Objekt (Kreisbezug) — an die Prüfspur gegeben.
+Runde 7 (Verhaltensänderung → zweite Runde nach Regel; drei Spuren, Anlass unwiderrufliche Löschung): Claude
+ausführend (eigener Cluster), **DeepSeek UND Kimi mit DEMSELBEN Bündel** (Tauschrunde der Routing-Messung: gleiche
+Rechte, gleiches Material, nur das Modell verschieden).
