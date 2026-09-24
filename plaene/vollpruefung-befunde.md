@@ -317,3 +317,16 @@ Lauf 24.09.2026 07:09–07:33 UTC, 18 Runden, 4,48 Mio. Token ein, geschätzt 6,
 | V23-6 | Satztrenner schützt jeden Einzelbuchstaben vor dem Punkt — ein Satzende nach „Anlage B.“ verschmilzt mit dem Folgesatz, eine Verneinung verdeckt dann einen echten Verstoss | nicht gemessen; im Bestand kein Beleg | Anmerkung (Grenze benennen) |
 
 6 Befunde, 6 getragen (2 gelesen), 0 gefallen.
+
+## Bereich 17 — Testdateien `test_feature_employee_feedback.js` … `test_feature_geraetefreigabe_begriff.js` (26 Dateien)
+
+Lauf 24.09.2026 07:25–07:45 UTC, 30 Runden, 9,62 Mio. Token ein, geschätzt 12,88 $. Befunde nicht einzeln gemessen.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V17-1 | `test_feature_error_tracking.js` ruft `melde()` mit neuen Signaturen ohne eigene Versand-Attrappe — nur die Netzsperre aus `test/run.sh` verhindert echten Telegram-Versand (`ladeCreds()` fällt auf `/etc/environment` zurück); im Einzelaufruf auf dem Server ginge er raus | Mechanik bekannt (s. `offene-befunde-unlink.md` R9-12b) | gering |
+| V17-2 | Datumsfallen-Test berechnet den Sollwert mit denselben Funktionen wie die Produktion — Rückfall auf die alte Falle bliebe ausserhalb 00–02 Uhr grün (im Test eingeräumt) | nicht gemessen | gering |
+| V17-3 | Szenario G im Geistersperren-Rennen: zwei PASS-Zeilen, die keine Produktionsänderung rot macht | nicht gemessen | Anmerkung |
+| V17-4 | `test_feature_filters.js:37`: `indexOf === -1` lässt die Zusicherung leer grün | nicht gemessen | Anmerkung |
+
+4 Befunde, 4 getragen (ungemessen), 0 gefallen.
