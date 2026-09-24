@@ -43,3 +43,17 @@ entfernt → 74/4 (Set-Cookie fehlt); `pending2fa` im 400-Zweig gelöscht → 77
 `core/auth.js` (zwei Riegel in beiden Filtern), `routes/auth.js` (`cookieUnbestaetigt` gesetzt/gelöscht). Die neue
 Route `/_debug/sitzung` steht nur in der Test-App (`test_feature_h2_cookie_schleife.js:167`), nicht im Produktivcode.
 Runde 2: eine Lesespur (DeepSeek) über die Nacharbeit, weil sie Verhalten ändert.
+
+## Runde 2 — eine Lesespur (DeepSeek) über Nacharbeit 1 (`e7dfc41..6d537a5`)
+
+Erster Versuch an `max_output_tokens` abgebrochen (nach 2 Runden, nichts geliefert — als Strichzeile protokolliert);
+zweiter Versuch 11 Runden, 1,08 $ geschätzt. Selbst nachgesehen.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| H2-R2-1 | Marker auf eine Tablet-Sitzung OHNE Merkmal (nach dem ersten Marker, nach PIN-/Geräte-Freischaltung) ändert nichts → kein Set-Cookie, DB-Zeile trotzdem verlängert | gelesen; diese Sitzungen tragen bereits ein 8-h-Cookie — Browser verfällt früher als die DB-Zeile, der Nutzer meldet sich neu an. Kein Rückschritt (vorher genauso) | Anmerkung |
+| H2-R2-2 | Zeichen-Riegel prüft auch den Query-Teil: ein legitimes Ziel mit `\` im Query-Wert fällt auf `/` bzw. `/admin` zurück | gelesen; bewusst streng (im Test so festgelegt), kein heutiger Aufrufer gefunden | Anmerkung |
+| H2-R2-3 | `cookie-signature` wird im Test benutzt, steht aber nicht in `package.json` (nur transitiv über express-session) | gelesen `test_feature_h2_cookie_schleife.js:53`; mit npm-Hoisting heute lauffähig | gering |
+| H2-R2-4 | Test-DDL der `session`-Tabelle (`timestamptz`, kein Index) weicht vom connect-pg-simple-Schema ab — im Repo ohnehin uneinheitlich | gelesen | Anmerkung |
+
+Nichts Blockierendes. Der Beitrag geht mit der Sammelliste `plaene/offene-befunde-h2.md` in den PR.
