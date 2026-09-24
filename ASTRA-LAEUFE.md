@@ -197,6 +197,7 @@ sondern falsch.
 | 24.09.2026 | Diffpruefung unlink Runde 10 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 458 Zeilen, Suchen 25, Lesungen 28, Token rein 2910032, Token raus 66199, Runden 26 | — | — | — | 4,10 $ |
 | 24.09.2026 | Vollpruefung GymDocu Bereich 06 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 9271 Zeilen, Suchen 23, Lesungen 16, Token rein 3724484, Token raus 63560, Runden 15 | — | — | — | 5,17 $ |
 | 24.09.2026 | Vollpruefung GymDocu Bereich 01 (deepseek-v4-pro) (deepseek-v4-pro) | **abgebrochen** (Geheimnis-Riegel auf dem Eingabediff): Diff 10848 Zeilen, Suchen 0, Lesungen 0, Token rein 0, Token raus 0, Runden 0 | — | — | — | 0,00 $ |
+| 24.09.2026 | Vollpruefung GymDocu Bereich 01 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 10848 Zeilen, Suchen 9, Lesungen 11, Token rein 2768178, Token raus 61237, Runden 10 | — | — | — | 3,90 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
@@ -3262,3 +3263,4 @@ Stattdessen: die Grenze wird benannt.
 | Datum | Zweck | Material | Befunde | davon getragen | gefallen | Kosten |
 |---|---|---|---|---|---|---|
 | 24.09.2026 | Vollpruefung Bereich 06 von 27 (Pilot, deepseek-v4-pro) | 27 Dateien ~151k Token; Runden 15, Token rein 3724484, Token raus 63560 | 9 | 8 (alle gering/Anmerkung; `plaene/vollpruefung-befunde.md`) | 1 (Modulo-Verzerrung — Alphabet hat 32 Zeichen) | 5,17 $ geschätzt (obere Schranke); Guthaben danach 39,84 $ |
+| 24.09.2026 | Vollpruefung Bereich 01 von 27 (deepseek-v4-pro) | 20 Dateien ~176k Token; Runden 10, Token rein 2768178, Token raus 61237 | 11 | 9 (zwei mittel: S20-REPLACE löscht zentrale Tabellen; Archiv-Eintrag nicht atomar ersetzt) | 2 (`setval` wirft nicht bei NULL — strikt, gemessen; Datumsaddition richtig) | geschätzt 3,90 $; **gemessen 0,34 $** (Guthaben 39,84 → 39,50) |

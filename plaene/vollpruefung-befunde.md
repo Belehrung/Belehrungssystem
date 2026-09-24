@@ -23,3 +23,27 @@ Abdeckung ungleich: der Bericht arbeitet sich an `qr-bestellung.js` ab; `core/au
 | V06-9 | „keine Token“/„unbekanntes Format“ antworten 500, obwohl der Kommentar sagt „kein Datenbankfehler“ | gelesen `qr-druckdaten.js:361-366` | Anmerkung |
 
 9 Befunde, 8 getragen, 1 gefallen; nichts Blockierendes, nichts zur Mandantentrennung mit Leck.
+
+## Bereich 01 — Wurzeldateien (`S20-migrate.js`, `server.js`, `golive-studio.sh` …), `routes/admin.js` … `routes/belehrungen.js`
+
+Lauf 24.09.2026 04:27–04:41 UTC, 10 Runden, 2,77 Mio. Token ein, 61.237 aus, geschätzt 3,90 $. Erster Versuch vom
+Geheimnis-Riegel abgebrochen (nichts gesendet): Platzhalter `postgresql://postgres:PW@…` in einem Kommentar von
+`S20-migrate.js:81` — im Material geschwärzt, Repo unverändert.
+**Kosten GEMESSEN über das Guthaben:** 39,84 $ (04:24, nach Bereich 06) → 39,50 $ (04:42, nach Bereich 01) = **0,34 $**
+für einen Lauf, den das Werkzeug auf 3,90 $ schätzt. Die Schätzung ist eine obere Schranke ohne Cache-Rabatt.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V01-1 | `S20-migrate.js` REPLACE löscht für das Studio aus JEDER Tabelle mit `studio_id` — auch aus zentral entstandenen (QR-Nummernbuch, Bestellungen, Audit, PDF-Jobs), die der Import nie zurückbringt; `golive-studio.sh` setzt `REPLACE=1` bei jedem Lauf, ein zweiter Go-Live-Versuch nach committetem ersten träfe sie | gelesen `S20-migrate.js:289-297`, `golive-studio.sh:61` | mittel — hängt daran, ob noch Studios umziehen (Modell: blockierend) |
+| V01-2 | `setval` ist nicht transaktional: nach PROBELAUF oder zurückgerollter Kettenprüfung bleiben hochgezogene Sequenzen; „Ziel-DB byteidentisch“/„NICHTS geschrieben“ (`S20:87/108/460`, `golive-studio.sh:69-71`) stimmt nicht. Folge u. a.: zentral danach vergebene IDs können im Offset-Fenster eines später wirklich importierten Studios landen | gelesen `:400-404`; PostgreSQL-Verhalten bekannt | gering |
+| V01-3 | leeres `catch` um `setval` verschlucke Fehler bei Tabellen ohne Sequenz | **gefallen:** `setval` ist strikt, `setval(NULL, …)` liefert NULL ohne Fehler (gemessen, `proisstrict = t`); ein echter Fehler bricht die Transaktion ab, die Kettenprüfung danach scheitert → ROLLBACK, exit 1 (nur mit irreführender Meldung) | — |
+| V01-4 | `/admin/archiv/neu-single`: DELETE und INSERT in `pdf_archiv` als zwei Autocommits — scheitert der INSERT, ist der Archiv-Eintrag samt Download-Token und `pdf_hash` weg | gelesen `routes/archiv.js:1043-1054`; der Monatslauf macht es in einer Transaktion | mittel |
+| V01-5 | 413-Meldung nennt „25 MB“, die Parser-Grenzen sind 1 MB bzw. 4 MB | gelesen `server.js:1471-1481`, `upload-limit-waechter.js:66` | gering (Text) |
+| V01-6 | `dbDatum` der Unterschrift (geht in `signatur_hash`), Dateiname und PDF-Text aus prozess-lokaler Zeit — auf einem UTC-Prozess UTC statt Berlin | gelesen `routes/belehrungen.js:859-860, 911-912, 925-928`; Prozess-Zeitzone des Servers unbelegt | gering |
+| V01-7 | `datumPlusTage()` rechne auf dem falschen Tag (22–24 UTC) | **gefallen wie behauptet:** addiert wird auf einem absoluten Zeitpunkt, gelesen in Berlin — richtig. Rest: nur wenn die Addition eine Zeitumstellung überquert UND der Prozess auf UTC läuft, in einer Stunde Fenster | — (Rest: Anmerkung) |
+| V01-8 | Monatsmail markiert `mail_gesendet` für ALLE Zeilen des Monats, auch nicht enthaltene Typen | gelesen `generateMonthlyPDFs.js:342-345` | gering |
+| V01-9 | Overlap-Guard nur für `OFFSET > 0` | gelesen `S20:224` | Anmerkung |
+| V01-10 | `INSERT INTO studios … ON CONFLICT DO NOTHING`: eine falsch übergebene, schon belegte `STUDIO_ID` importiert unter das fremde Studio | gelesen `S20:302-304` | gering (Fehlbedienung, Folge Mandantenvermischung) |
+| V01-11 | `/admin/archiv/mail/:monat` ungeprüft und unescaped ins Mail-HTML — `core/eingabe-pruefung.js:137` nennt es selbst „benannte Lücke“ | gelesen | gering |
+
+11 Befunde, 9 getragen, 2 gefallen.
