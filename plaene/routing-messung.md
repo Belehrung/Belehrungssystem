@@ -92,7 +92,8 @@ Kosten: siehe `ASTRA-LAEUFE.md`; Claude-Spur ohne Kosten, Kimi ohne Preisgrundla
 | 24.09. | Plan H1a | Kimi, Bündel | 8 | 3 | 0 | 1½ |
 | 24.09. | Plan C2 | DeepSeek, Repo | 8 | 7 | 0 | ½ |
 | 24.09. | Plan C2 | Kimi, Bündel | 5 | 4 | 0 | 0 |
-| 24.09. | Diff P4 R2 (eine Spur) | DeepSeek, Repo | 4 | — | — | 1 |
+| 24.09. | Diff P4 R2 | DeepSeek, Repo | 4 | 3 | 0 | 1 |
+| 24.09. | Diff P4 R2 | Claude ausführend | 10 | 10 | 0 | 0 |
 | 24.09. | Plan T2 | DeepSeek, Repo | 12 | 10 | 0 | 0 |
 | 24.09. | Plan T2 | Kimi, Bündel | 9 | 7 | 2 | 0 |
 | 24.09. | Plan C3a | DeepSeek, Repo | 13 | 9 | 1 | 0 |
