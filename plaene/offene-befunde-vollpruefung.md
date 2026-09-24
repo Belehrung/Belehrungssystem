@@ -99,3 +99,4 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V27-1..7 | Kommentar- und Schrankenbefunde aus Bereich 27 | offen, Anmerkung |
 | V20-1 | Wächter „mangel_darstellung_einheitlich“ Teil 3 grün über Kommentare — auf maskierten Text umstellen | offen, mittel |
 | V20-2..4 | Zeitzonenfalle `vorTagen`, Test-Abfragen ohne `studio_id`, globale Gegenprüfung | offen, gering |
+| N-1 | `test_feature_keine_neuen_rohwerte.js` scannt auch IGNORIERTE Dateien: ein lokaler `playwright-report/index.html` machte die Suite rot (gemessen 24.09.2026 im H2-Baum). Auf dem Server nur, falls dort je ein Bericht entsteht | offen, gering |
