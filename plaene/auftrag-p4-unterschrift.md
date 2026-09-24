@@ -141,3 +141,40 @@ ohne diese Figur: Punkt 29,2 %, geradheit 18,7 %. Entscheidungen:
    ANNEHMEN-Seite 20 % und die Ablehnen-Seite den Rest. Liegt der Rest unter 10 %, gilt STOPP. Begründung wie
    Fassung 3 Punkt 3.
 5. `unbestimmt` (Laufdeckel erreicht, gemessen Faktor 85 über dem grössten Namenszug) bleibt fail-closed.
+
+## Messung abgeschlossen (Phase 1c, `f917c1d`)
+
+E3 behoben (Raster = CSS × dPR, `getPos` isotrop: 32,1 px = 32,1 px). Kein STOPP: 0 von 2340 falsch, 0 falsche Gründe,
+Server = Browser 2964/2964. Schwellen: `PUNKT_MIN` 4,69 (Bezug eigene Strichdicke, je Seite ≥ 22,6 %), `GERADHEIT_MIN`
+0,4837 (asymmetrisch: annehmen 20 %, ablehnen 14,8 %), `DECKUNG_MAX` 0,7846 (≥ 21 %). Grenzfiguren: ±2-px-Striche
+überwiegend ok, Bögen mit Stich 2 abgelehnt, `name_winzig_8_flach` als Punkt abgelehnt.
+
+# PHASE 2 — Einhängen (Auftrag, nach Planprüfung)
+
+0. **master hereinmergen** (P3 `946647a` ändert `routes/belehrungen.js`), dann weiter.
+1. **Regelmodul härten** (eigene Lesung von `core/unterschrift-regel.js`):
+   (a) Tinte über die LUMINANZ (0,299 R + 0,587 G + 0,114 B, bei 1/2 Kanälen der Grauwert), nicht nur Kanal 0. Heute gilt
+   eine rein rote Linie als leer und eine blaue als Tinte. Browser und Server rechnen dieselbe Formel.
+   (b) Der Abgleich der Läufe mit der Vorzeile läuft LINEAR über zwei Zeiger (beide Listen sind nach x sortiert). Heute
+   ist er quadratisch je Zeile. Beleg: synthetisches Worst-Case-Bild in Deckelgrösse (Schachbrett, maximale Laufzahl)
+   → Laufzeit gemessen, vorher und nachher, mit einer Obergrenze als Zusicherung.
+   (c) Die Schwellen bleiben eingefroren.
+2. **Validierung, bevor irgendetwas eingehängt wird:** neue Figuren mit anderem Seed, anderen Namen und anderen Grössen
+   (nicht aus der Herleitungsmenge), Schwellen eingefroren. Eine Fehlbeurteilung ausserhalb der Grenzklasse → STOPP.
+3. **Server, alle 13 Eintrittspunkte** über einen gemeinsamen Helfer. Reihenfolge: Format → Pixel-Deckel (Kopf per
+   `sharp().metadata()`) → dekodieren mit `flatten` auf Weiss → `bewerteUnterschrift`. Gespeichert und eingebettet
+   wird der kanonische Puffer. Fehler → dieselbe Meldung wie im Browser, Formular bleibt erhalten, keine Zeile
+   geschrieben, 400 ohne Alarm. Protokollzeile `[unterschrift-masse]` mit den drei Massen und dem Grund, ohne
+   Personen-ID.
+4. **PDF:** vor jedem `doc.image` einer Unterschrift (Tabelle der Eintrittspunkte, Spalte „PDF-Einbettung“) wird der
+   Kopf per `sharp().metadata()` gegen denselben Deckel gehalten, sonst „(nicht darstellbar)“. Altdaten werden nicht
+   neu bewertet.
+5. **Browser:** Alle sieben Pad-Implementierungen benutzen das Modul vor dem Absenden. E11/E12 setzen `signed` nicht
+   mehr beim blossen Tippen. Browser-Test: Bei Punkt oder Strich geht KEIN POST ab (`page.route`), bei einer
+   Unterschrift schon.
+6. **Tests:** Regel-Test über die Fixturen mit beiden Kanalzahlen und identischem Urteil. Verhaltenstest je
+   Eintrittspunkt über den echten Router: Punkt, Strich, 1×1, Nicht-PNG und übergrosses PNG werden abgelehnt, der Grund
+   liegt in der erlaubten Menge, nichts wird geschrieben; eine Unterschrift wird angenommen. Bestehende
+   Zusicherungen, die ein einzelnes Pixel als Unterschrift benutzen, werden fachlich umgestellt (vorher auflisten).
+7. Gegenproben (a)–(f) aus Fassung 1/2, dazu (g) Luminanz → Kanal 0 zurück → Rot-Fixtur ROT und (h) quadratischer
+   Abgleich zurück → Laufzeit-Zusicherung ROT.
