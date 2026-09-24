@@ -320,3 +320,8 @@ Stand 25.09.2026 00:10 UTC: P2 Runde 2 durch (16 Befunde + 2 eigene, keiner wide
 JSON-Code legt die Offline-Warteschlange lahm, P4-Test erwartet alten Status) → Nacharbeit 2 an denselben Executer,
 danach Runde 3 (ausführende Spur). T2 gebaut, Diffprüfung läuft (DeepSeek + ausführende Spur), Schluss-Suite in der
 Warteschlange. C1-Nacharbeit wartet auf ihren Suite-Lauf. QR-J Fassung 2 fertig, Bau nach C1-Merge.
+
+Stand 25.09.2026 01:10 UTC: T2 Diffprüfung durch → Nacharbeit 1 an denselben Executer. Wichtigster Fund, vorbestehend
+und selbst nachgemessen: `ops/syntax-check.sh` (CI + Deploy-Gate) prüft je 50er-Stapel nur die ERSTE Datei
+(`node --check a b` prüft nur a) — seit Jahren nur ≈13 von 646 Dateien. C1 Runde 2: DeepSeek ohne blockierenden
+Befund; Kimi und die ausführende Spur laufen. P2 Nacharbeit 2 läuft.
