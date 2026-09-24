@@ -21,4 +21,24 @@ Repo-Lesezugriff (effort high, 26 Runden, ~4,45 $, 11 Lesungen vom Geheimnis-Dec
 | PT2-11 | V21-3/V21-4: Gegenprobe am Bestand nicht messbar (Fixture koppelt `id`/`erstellt_am`; IDs nie gleich) — erst die neue Fixture macht sie messbar | Papier | Fixture zuerst, dann Gegenprobe |
 | PT2-12 | Teil C: `test_feature_retention_sperr_sichtkontrollen.js:32-37` (`setFullYear`/`setDate` + `toISOString`) ist die gesuchte Falle; beide Seiten der Vergleiche stammen aus derselben Funktion — Fixture-Risiko, kein Fehlalarm | Angabe übernommen | V24-1 wie geplant |
 
-Kimi-Spur: folgt.
+## Kimi
+
+| Nr. | Befund | Nachgemessen | Einstufung | Folge |
+|---|---|---|---|---|
+| PT2-13 | N-1: „nur `git ls-files`“ (Index) verlöre neue, noch nicht gestagte Dateien — ausgerechnet „keine NEUEN Rohwerte“; dazu cwd-Abhängigkeit und fehlende Mindestzahl | gelesen `test/helfer/quelltext-scan.js:485-495`: der Helfer läuft mit `cwd: repoRoot` und `--cached --others`; der richtige Griff ist `--exclude-standard` (DeepSeek PT2-8), NICHT „nur Index“ | mittel (mein Papiertext war falsch) | `--exclude-standard`; Gegenprobe 3: neue, nicht gestagte Datei mit Rohwert → ROT |
+| PT2-14 | Teil C: „Uhr auf den Tag nach der Zeitumstellung“ kann für die ±n·86400000-Fixtures nicht rot werden; das Fehlerfenster für `+14 Tage` liegt ZWEI WOCHEN VOR der Umstellung, für `−1 Tag` im März. `TZ=` wirkt bei `toLocaleDateString(…, {timeZone})` und `toISOString()` nicht | **gemessen**: Lauf 12.10.2026 00:30 CEST, `+14·86400000` → `2026-10-25` (kalendarisch 26.10.); Lauf 26.10. 00:30 CET → `2026-11-09` (richtig); Lauf 30.03. 00:30 CEST, `−86400000` → `2026-03-28` (richtig 29.03.) | **mittel** — das nächste Fenster ist der 12.10.2026, dann wird das Deploy-Gate eine Stunde lang rot | Gegenprobe je Mechanismus: eingefrorene Uhr (Preload, der `Date.now`/`new Date()` überklebt) auf 12.10.2026 00:30 CEST bzw. 30.03. 00:30 CEST; `TZ=` nur bei V20-2/V24-1 |
+| PT2-15 | V12-3: `:187-191` zeigt einen anderen Test | = PT2-1 | — | berichtigt |
+| PT2-16 | V20-1 überzeichnet: für `routes/module.js` war die berichtete Gegenprobe valide, nur `sichtpruefung.js` hat den Kommentar | Angabe übernommen | gering | Schärfung für beide Dateien, Befundtext präzisiert |
+| PT2-17 | V19-1 hat zwei Hälften; Zufallsslug behebt nur den geerbten Altzustand, nicht den echten Magicline-Abruf im Einzelaufruf | Angabe übernommen | gering | Netz-Attrappe wie bei V17-1; Gegenprobe: Einzelaufruf ohne Netzsperre → 0 ausgehende Verbindungen |
+| PT2-18 | T1-K4: Literal-Liste driftet, sobald `run.sh` eine neue Wegwerf-Variable bekommt | Papier | gering | zusätzlich Abgleich in BEIDE Richtungen gegen die `_DIR`/`_ROOT`-Zeilen in `run.sh` |
+| PT2-19 | V25-3: `alert(` in `sichtpruefung.js:1046, 1052` ist dort BEGRÜNDET (Kommentar `:1025-1032`); ein erweiterter Ausschnitt risse sie als Verstoss | Angabe übernommen | gering | die beiden als benannte Ausnahme im Testkopf, nicht als Verstoss |
+| PT2-20 | V13-3 steht als „schärfen“ in Teil B, ist aber eine benannte Grenze wie V15-1a | = PT2-4 | — | aus Teil B genommen, nur melden |
+| PT2-21 | V23-2: `>` statt `>=` wäre bei einer Uhr-Rückkorrektur flackeranfällig | Papier | gering | `erstellt_am` in der Fixture zurückdatieren, dann `>` — uhrenstabil |
+
+## Zahlen
+
+21 Zeilen: DeepSeek 12 (alles Berichtigungen/Präzisierungen der Befundtexte), Kimi 9 (2 Überschneidungen: V12-3,
+V13-3). Nur Kimi: der Denkfehler im Papier zu N-1, die falsch kalibrierte Zeitumstellungs-Gegenprobe (mit einem
+echten Fehlerfenster am 12.10.2026), Drift der T1-K4-Liste, begründete `alert(`-Stellen, NTP-Flackern. Nur DeepSeek:
+die Fundstellen und Zählungen (V20-2-Datei, vier statt drei Magicline-Tests, V16-6 unbelegt), der gemeinsame
+Scan-Helfer als Ort der N-1-Behebung, V11-5 als eigene Stufe.
