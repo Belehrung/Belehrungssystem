@@ -82,3 +82,21 @@ Lauf 24.09.2026 04:45–05:02 UTC, 28 Runden, 6,98 Mio. Token ein, geschätzt 9,
 | V08-6 | `ladeMonatliche()` lädt Protokolle auch für Nicht-Pflichteinträge | gelesen, nicht gemessen | Anmerkung (Leistung) |
 
 6 Befunde, 6 getragen, 0 gefallen.
+
+## Bereich 09 — `core/pdf-engine.js` … `core/sichtpruef-anweisungen.js` (21 Dateien)
+
+Lauf 24.09.2026 05:03–05:15 UTC, 11 Runden, 2,95 Mio. Token ein, geschätzt 4,07 $.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V09-1 | QR-Vergabe: kaputte Zeilen im Verbrauchsjournal lösen nur einen Alarm aus; fail-closed greift erst, wenn das Journal GAR NICHTS Brauchbares liefert. Ist genau die höchste Zeile des Studios kaputt UND die Datenbank zurückgespielt, vergibt `chargeAnlegen()` Nummern, die schon verklebt sind (Modell: blockierend) | gelesen `core/qr-token.js:391-455` — Weg belegt: `kaputteZeilen > 0` → nur `vorfall()`, `hoechste = max(dbMax, journal.hoechste)`. Doppelter Fehlerfall (Journalschaden + Rückspielen). Abwägung: `kaputteZeilen` zählt über die GANZE Datei — fail-closed bei jeder kaputten Zeile sperrte jede Vergabe aller Studios, schon nach einer beim Absturz abgeschnittenen letzten Zeile | **mittel, Entscheidung** (Unwiderrufliches gegen Verfügbarkeit) |
+| V09-2 | Sperr-Sichtkontrollen im Monats-PDF: Ladefehler → Abschnitt fehlt still (`catch (e) { … = []; }`), während dieselbe Datei für Betriebstage einen sichtbaren Fehlerkasten zeichnet | gelesen `core/pdf-engine.js:1218, 2308` | mittel |
+| V09-3 | Echtheits-Registrierung: scheitert der INSERT in `verify_dokumente`, nur `console.error` — das PDF trägt einen Prüfcode, den `/v/<code>` nicht findet | gelesen `core/pdf-engine.js:76-84, 402-405` | mittel |
+| V09-4 | `/bezirk-archiv/datei/:id` gibt das Ergebnis von `resolvePdfPfad()` ohne Wurzelprüfung an `sendFile` — ein manipulierter `dateipfad` in der DB liefert beliebige lesbare Dateien | gelesen `routes/bezirk-archiv.js:148-156`, `core/pdf-pfad.js:100-117`; setzt Schreibzugriff auf die DB voraus | gering (Tiefenstaffelung) |
+| V09-5 | `validateStorageReplicate(null)` → TypeError statt ValidationError | gelesen `core/pdf-jobs.js:56-57` | gering |
+| V09-6 | `pausenzeiten.pause_von/bis` dürfen NULL sein, `generatePausenPDF` ruft `.split` → ganze PDF scheitert | gelesen `core/pdf-engine.js:1260-1261`, `core/db.js:727-728` | gering |
+| V09-7 | `core/pdf-engine.js` importiert aus `routes/` (Richtung core → routes, sonst im Haus ausgeschlossen) | gelesen `:442` | Anmerkung |
+| V09-8 | `addPageNumbers` wirft → PDF ohne Seitenzahlen und ohne Echtheits-QR, Erfolg gemeldet | gelesen `:400-401` | gering |
+| V09-9 | Detailabfrage in der Chunk×Sitzungs-Schleife | gelesen, nicht gemessen | Anmerkung (Leistung) |
+
+9 Befunde, 9 getragen (V09-1 herabgestuft), 0 gefallen.

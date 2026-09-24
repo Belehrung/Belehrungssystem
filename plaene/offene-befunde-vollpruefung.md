@@ -39,3 +39,12 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V08-4 | verlorenes Korrekturblatt wird nie neu erzeugt, still | offen |
 | V08-5 | `hilfeButton` ignoriert `position` | offen, Anmerkung |
 | V08-6 | `ladeMonatliche()` lädt zu viel | offen, Anmerkung |
+| V09-1 | QR-Vergabe läuft bei kaputten Journalzeilen weiter (nur Alarm); mit zurückgespielter DB Doppelvergabe möglich | offen, **mittel, Entscheidung Betreiber**: fail-closed nur, wenn die DB hinter dem lesbaren Journal liegt? oder bei jeder kaputten Zeile (sperrt alle Studios)? |
+| V09-2 | Monats-PDF: Sperr-Sichtkontrollen fehlen bei Ladefehler still | offen, mittel |
+| V09-3 | Echtheits-Registrierung scheitert still, PDF trägt toten Prüfcode | offen, mittel |
+| V09-4 | Bezirk-Archiv: `sendFile` ohne Wurzelprüfung | offen |
+| V09-5 | `validateStorageReplicate(null)` TypeError | offen |
+| V09-6 | Pausen-PDF scheitert an NULL-Zeit | offen |
+| V09-7 | `core/` importiert `routes/betriebszeiten` | offen, Anmerkung |
+| V09-8 | PDF ohne Seitenzahlen/QR bei Fehler in `addPageNumbers`, still | offen |
+| V09-9 | Detailabfrage in Doppelschleife | offen, Anmerkung |
