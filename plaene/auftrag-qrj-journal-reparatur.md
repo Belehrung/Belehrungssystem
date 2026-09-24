@@ -50,6 +50,7 @@ Grenze nicht belegbar ist, wird nach OBEN entschieden oder gesperrt — nie nach
    gehört oder keinem zuordenbar ist → `QrLageUngeklaertFehler`, unabhängig von lesbaren Spuren im Block. Der bisherige
    Alarm `journal_kaputte_zeilen` bleibt (zählt dann die unerledigten). Die C1-S1-Bedingung geht darin auf; ihre Tests
    bleiben grün oder werden mit Begründung angepasst.
+   Hinweis aus C1 Runde 2 (C1-R2-8): die Ausnahme „Erstdruck bleibt frei“ im C1-D3-Zweig ist heute toter Code, weil die Leiter davor bei jeder kaputten Zeile wirft. Wer die Leiter hier umbaut, braucht für den Erstdruck (Studio ohne jede Spur, fremde kaputte Zeile) einen eigenen Test.
 5. **Fehlertexte (PQJ-6).** Jede Meldung der Leiter, die heute zum Entfernen der Journal-Datei rät
    (`core/qr-token.js:447-450`), und die neue Sperre nennen stattdessen `node tools/qr-journal.js zeigen`. Kein Text rät
    mehr zum Entfernen oder Editieren der Datei.

@@ -28,3 +28,32 @@ Journal), `deepseek-v4-pro` mit Repo (effort high, 19 Runden, ~2,29 $), `kimi-k3
 17 Befunde, alle getragen; einer (C1-D3) braucht eine Betreiber-Entscheidung. Überschneidung: C1-D1 alle drei Spuren;
 C1-D6/D7/D8/D10/D11 je zwei. Nur Claude: D2, D4, D5, D9, D12, D13, D14. Nur DeepSeek: D16, D17. Nur Kimi: D15.
 Nacharbeit läuft.
+
+## Runde 2 — Nacharbeit 1 (Kopf `2948f77`, 25.09.2026)
+
+Executer: volle Suite `SUITE_EXIT=0` (Log nach dem letzten Commit), 379 = 379 (`diff` EXIT 0, selbst nachgezählt),
+Lint 0. Diff selbst gelesen (fünf Commits, Merge ohne Konflikt). Drei Spuren (unwiderruflich): Claude ausführend
+(eigener Baum, Fuzzer 25.000 Szenarien, Mutationen, Sperrmessungen), `deepseek-v4-pro` mit Repo (29 Runden, ~4,73 $;
+erster Start am Riegel abgebrochen, s. `ASTRA-LAEUFE.md`), `kimi-k3` mit QR-Bündel (972 s).
+
+**Frage 2 (Doppelvergabe ausserhalb V09-1): von ALLEN DREI Spuren verneint** — Claude mit Fuzzer (259 Doppelvergaben,
+alle V09-1; Positivkontrolle: fünf Mutationen erzeugen je 1–2 neue), DeepSeek und Kimi mit vollständiger
+Fallaufzählung (fünf Kombinationen, eine unerreichbar). Einziger mengenloser Aufrufer ist die Anzeige.
+
+| Nr. | Spur | Befund | Nachgemessen | Entscheidung (= Auftrag Nacharbeit 2) |
+|---|---|---|---|---|
+| C1-R2-1 | Claude B1 | **Verklemmung beim Start:** das Sicht-DDL steht im SCHEMA-Block, der als EINE Transaktion läuft; wartet `DROP VIEW` auf einen Leser der Sicht, hält `db.init()` schon 23 Relationssperren — fremde INSERTs warten 3–5 s, mit gleichzeitigem `INSERT unterschriften` **`deadlock detected` in 5 von 5 Läufen**. Trifft die Ladeprobe 5/8 gegen die Produktions-DB und jeden Neustart, während der alte Prozess bedient. Ohne Sicht-DDL im SCHEMA: 0 Verklemmungen. Master hat die Sicht noch nicht — C1 würde es einführen | Messskript der Spur (`sperre.js`), PG-Log | **blockierend** — Sicht-DDL aus dem SCHEMA heraus, eigener `pool.query`, nur wenn die Sicht fehlt oder ihre Definition abweicht (Vergleich über `pg_get_viewdef`); dann DROP+CREATE. Migration 0061 entsprechend (noch nicht ausgeliefert). Messung der Spur wiederholen: 0 Verklemmungen |
+| C1-R2-2 | Claude B3 | Archiv: `EXISTS` über ALLE Zeilen zählt „1/1 gültig“, wenn die neueste Zeile gültig, aber `pending` ist und nur eine ÄLTERE, ABGELAUFENE ein PDF hat (vor C1 und in Runde 1: 0) | Probe `a194probe.js` | `EXISTS` zusätzlich `AND (u2.gueltig_bis IS NULL OR u2.gueltig_bis >= $2)`; Test mit genau diesem Fall |
+| C1-R2-3 | Claude B2 | `server.js:949` `LEFT JOIN` → `JOIN` bleibt grün (63/0): kein Test hat einen positiven „nochNie“-Fall | Mutation gemessen | Fixtur Mitarbeiter ohne Unterschrift → `nochNie = 1` |
+| C1-R2-4 | Kimi 2, DeepSeek 2 | Fehlertext: im globalen Zweig nennt „Auflösung: … (Block X)“ den PRÜFblock, der Rückstand liegt in einem anderen Block (6b: nennt 601–700, Rückstand in 801–900); sind global UND „ohne eigene Spur“ wahr, entfällt der Hinweis auf `aufkleber_bestellung` | Kimi an den Test-Fixturen, Code gelesen | im globalen Zweig die Blöcke mit Rückstand nennen (aus `kandidaten`); D3-Hinweis immer, wenn „ohne eigene Spur“ zutrifft; Test je Fall |
+| C1-R2-5 | Kimi 1 | Aufräum-Abfragen `test_feature_qr_lage_blocklokal.js:631, :635` ohne `studio_id`, obwohl der D15-Kommentar das Gegenteil behauptet | gelesen | `studio_id` ergänzen (qr_token über qr_charge) |
+| C1-R2-6 | Kimi 3 | Test (10) findet mit `indexOf` den Anker im KOMMENTAR (`core/qr-token.js:603`), nicht im Wurf (`:610`) | `grep` gemessen | im Wurf-Ausdruck suchen (z. B. `` `Auflösung: Verbrauchsjournal``) |
+| C1-R2-7 | Claude B5 | `tools/qr-charge.js:305` `{ menge }` → `{}` bleibt grün (53/0): Test (8) nutzt `menge 1` | Mutation gemessen | Test (8) mit einer Menge über dem Rest des ersten Blocks |
+| C1-R2-8 | Claude B4, DeepSeek | Die Klammer `(dbMax != null \|\| journal.hoechste != null)` ist an dieser Stelle immer wahr (die Leiter davor wirft) — „Erstdruck bleibt frei“ ist toter Code | M7/M8 je 53/0, Fuzzer bitgleich | Kommentar ehrlich machen („hier immer wahr, weil …“); an QR-J weitergereicht (dort wird die Leiter umgebaut, eigener Test nötig) |
+| C1-R2-9 | Claude B6, B7 | DROP+CREATE nur über einen Textanker bewacht (OR REPLACE mit stehendem Anker → 63/0); Index `NULLS LAST` ohne Zusicherung; `CREATE INDEX IF NOT EXISTS` zieht einen alten Index nicht nach | gemessen | mit R2-1: Verhaltensprobe (gleiche Definition → Sicht unberührt, OID gleich; abweichende → neu angelegt); `pg_indexes.indexdef` enthält `NULLS LAST` |
+| C1-R2-10 | Claude B8 | Zuordnungsliste blind bei mehr als 400 Zeichen Abstand zwischen Tabellenname und `gueltig_bis`; die Behauptung „JEDE Stelle“ ist zu stark | gemessen (63/0 vs. Positivkontrolle 62/1) | Behauptung auf „innerhalb von 400 Zeichen“ berichtigen |
+
+Nur Claude: R2-1 (blockierend), R2-2, R2-3, R2-7, R2-9, R2-10. Nur Kimi: R2-5, R2-6. Kimi und DeepSeek: R2-4.
+Claude und DeepSeek: R2-8. DeepSeeks „DROP bei jedem Start“ (Lock/Eigentümer) fällt in der Schwere (s.
+`ASTRA-LAEUFE.md`), die Verklemmung dahinter fand nur die ausführende Spur. Keiner widerlegt. Nacharbeit 2 ändert
+`db.init()` → Runde 3 als ausführende Spur (Sperrmessung wiederholen, Fuzzer erneut).
