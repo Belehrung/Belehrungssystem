@@ -315,3 +315,8 @@ und ein BESTEHENDER Fehler, selbst gemessen: eine abgebrochene Schreibung versch
 (Wegwerf-Journal: `hoechste` 199 statt 399). Dazu: die Sperre greift künftig bei JEDER unerledigten kaputten Zeile des
 Studios (Kimi: lesbare Spur + spätere kaputte Zeile war fail-open), und kein Fehlertext rät mehr zum Entfernen der
 Datei. Bau nach dem C1-Merge.
+
+Stand 25.09.2026 00:10 UTC: P2 Runde 2 durch (16 Befunde + 2 eigene, keiner widerlegt; zwei blockierend: neuer
+JSON-Code legt die Offline-Warteschlange lahm, P4-Test erwartet alten Status) → Nacharbeit 2 an denselben Executer,
+danach Runde 3 (ausführende Spur). T2 gebaut, Diffprüfung läuft (DeepSeek + ausführende Spur), Schluss-Suite in der
+Warteschlange. C1-Nacharbeit wartet auf ihren Suite-Lauf. QR-J Fassung 2 fertig, Bau nach C1-Merge.
