@@ -161,3 +161,21 @@ Kommentar-Beispiel `https://md001.gymdocu.de:1@evil.com` (Geheimnis-Riegel), der
 | V10-6 | Steckbrief-Ladefunktionen verschlucken DB-Fehler (im Code als offen benannt); Kommentar „alle Aufrufer in try/catch“ stimmt für zwei Admin-Aufrufer nicht | nicht gemessen | Anmerkung |
 
 6 Befunde, 5 getragen, 1 gefallen (der als blockierend eingestufte).
+
+## Bereich 11 — `ops/schluessel-rotieren.js` … `tools/*`, `workers/*`, `migrations/*` (71 Dateien)
+
+Lauf 24.09.2026 05:30–05:45 UTC, 15 Runden, 3,88 Mio. Token ein, geschätzt 5,35 $.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V11-1 | `qr-charge.js liste` ende bei null Chargen mit Exit 1, weil `[]` falsy sei | **gefallen:** `[]` ist in JavaScript truthy (`[] ? 0 : 1` → 0, gemessen) | — |
+| V11-2 | Performance-Seed schreibt `pdf_archiv.monat` als `MM/YYYY` statt `YYYY-MM` | gelesen (Entwicklerwerkzeug) | gering |
+| V11-3 | Fehlermeldung „+15% Aufschlag“, gerechnet wird ×1,30 | gelesen `tools/aufkleber.js:2097-2099` | Text |
+| V11-4 | `schluessel-rotieren.js --wirklich` meldet bei leerer `studios`-Tabelle „COMMIT abgeschlossen“ | nicht gemessen | Anmerkung |
+| V11-5 | `staging-smoke.sh`: Produktions-`.env` ohne `PDF_ROOT` → „getrennte PDF_ROOT-Pfade“ PASS ungeprüft | nicht gemessen | gering (grün aus falschem Grund) |
+| V11-6 | PDF-Worker: DB-Fehler in `claim`/`retry`/`deadLetter` beendet den Prozess (nur pm2 holt ihn zurück) | nicht gemessen | Anmerkung |
+| V11-7 | `syntax-check.sh`: `xargs` ohne `-r` — findet `find` nichts, läuft `node --check` einmal auf leerer Eingabe und meldet Erfolg | **gemessen:** leere Eingabe → `xargs -0 -n50 node --check` Exit 0 | gering (grün aus falschem Grund) |
+| V11-8 | `ausmusterung-gegenproben.js`: nicht auswertbare Zählzeile (`fail === null`) wird als „NICHT GEFANGEN“ gemeldet statt als „nicht auswertbar“ | nicht gemessen | Anmerkung |
+| V11-9 | `befehlAnlegen`: Studio-Lookup ausserhalb des try — Kopfkommentar verspricht „keine rohe Exception“ | nicht gemessen | Anmerkung |
+
+9 Befunde, 8 getragen (2 gemessen, 1 gelesen, 5 Anmerkungen ohne Einzelmessung), 1 gefallen.

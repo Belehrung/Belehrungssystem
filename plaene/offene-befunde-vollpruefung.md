@@ -66,3 +66,6 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V10-4 | fehlender Restore-Bericht zählt als ok | offen |
 | V10-5 | DGUV-V3-Zuständigkeit bei Mischlage | offen, Anmerkung |
 | V10-6 | Steckbrief-Ladefehler still; Kommentar zu Aufrufern ungenau | offen, Anmerkung |
+| V11-5 | `staging-smoke.sh` meldet PDF_ROOT-Trennung ungeprüft als PASS | offen |
+| V11-7 | `syntax-check.sh` grün bei null gefundenen Dateien (`xargs` ohne `-r`, keine Mindestzahl) | offen |
+| V11-2..9 | übrige Anmerkungen aus Bereich 11 (Seed-Format, Meldetexte, Worker-Neustart, Gegenproben-Auswertung) | offen, gesammelt |
