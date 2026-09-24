@@ -114,3 +114,42 @@ Die Liste ist ein Hinweis, kein Befund: selbst suchen und das Ergebnis mit der S
 * Abschnitt 5: Umleitung hinter ein frühes `require('./core/pdf-pfad')` geschoben → ROT.
 * Jede geänderte Datei einzeln grün, volle Suite, Dateizahl-Ritual, Lint, Marker-Scan. Melden: welche Dateien der Riegel
   im ersten vollen Lauf traf.
+
+## NACHARBEIT 1 (24.09.2026) — Entscheidung nach der Vorbedingungsmessung
+
+Messung des Executers (`4a5d9e3`): 24 statt 8 Dateien rot. 23 davon haben EINE Ursache: `routes/belehrungen.js:1121`
+legt beim `require` `EINWEISUNG_NACHWEIS_DIR` an, und `test/run.sh` leitet diese Variable nicht um (ebenso wenig
+`PRUEFBERICHT_DIR`, `DEFECT_PHOTO_DIR`, `EXPORT_DIR`, `OFFBOARDING_QUEUE_DIR`). Sechs der sieben benannten Dateien
+schlucken den Wurf des Riegels in `catch (e) {}` und bleiben dadurch grün. Dazu die nachgemessenen Befunde der
+Kimi-Spur (`plaene/planpruefung-t1.md`, Abschnitt Fassung 2).
+
+Entscheidungen:
+
+1. **`test/run.sh` leitet ALLE Datenwurzel-Variablen suite-weit um** (Richtung 2), nach dem vorhandenen Muster
+   (mktemp mit eigener Erfolgsprüfung, Aufräumen wie bei den vorhandenen). Produktivcode bleibt unverändert —
+   das `mkdirSync` beim `require` ist im Betrieb richtig.
+2. **Der Riegel sammelt jeden Verstoss zusätzlich und macht den Prozess am Ende rot** (`process.on('exit')`:
+   Zusammenfassung auf stderr, `process.exitCode = 1`, wenn er 0 wäre). Gemessen in Node 22: das greift auch nach
+   ausdrücklichem `process.exit(0)`. Damit hilft ein schluckendes `catch` nicht mehr. Der Selbsttest bekommt dafür eine
+   ausdrückliche Quittierung seiner eigenen erwarteten Verstösse (exportierte Funktion, kein env-Schalter).
+3. **Die ganze Repo-Wurzel wird geschützt**, die neun benannten Wurzeln bleiben nur für die Fundstelle in der
+   Meldung. Grund: auf dem Server liegt das Repo unter `/var/www` — lokal muss dieselbe Wirkung entstehen, und eine
+   neue Datenwurzel darf nicht still aus dem Schutz fallen (K-B2, K-B6). Ausnahme bleibt `os.tmpdir()`.
+   Vorher ein Messlauf im ZÄHLMODUS (Konstante im Riegel, committed immer `false`, vom Selbsttest zugesichert):
+   alle Treffer je Datei, nicht nur der erste (K-B10). Treffer nur in Testdateien, die sich auf ein eigenes
+   `mkdtemp` umstellen lassen → umstellen. Treffer in Produktivcode oder `node_modules` → STOPP und melden.
+4. **Weitere Formen sperren** (K-B4): `truncate`, `open` mit Schreib-/Anhängeflag, `cp`, `symlink` und `link`
+   (Zielseite), `utimes` — sync, Callback und `fs.promises`. **Buffer- und `file:`-URL-Pfade normalisieren**
+   statt durchzulassen (K-B7).
+5. **Selbsttest**: jede benannte Wurzel, die Repo-Wurzel und `/var/www` einzeln geprobt; die Menge der Wurzeln
+   gegen eine im Test hingeschriebene Erwartung (Menge, nicht Anzahl).
+6. **Benannte Grenzen im Riegel-Kopf** (Muster `netz-sperre.js`): e2e (`playwright test` bekommt kein
+   `NODE_OPTIONS`; heute schreibt e2e nur unter `e2e/tmp`), Shell-Befehle aus Tests, Kindprozess mit verengter
+   Umgebung, Symlink-Ketten (keine realpath-Auflösung), Einzelaufruf ohne `run.sh`, Vorgänge über Dateideskriptor,
+   `createWriteStream` wirft synchron (gewollt laut).
+7. Die ursprünglichen T1-Reparaturen und Abschnitt 5 wie in Fassung 2.
+
+Gegenproben (je einzeln, ROT und zurück GRÜN, wörtlich melden): (a) Umleitung von `EINWEISUNG_NACHWEIS_DIR` in
+`run.sh` entfernt → die Belehrungs-Dateien rot; (b) in einer reparierten Datei die alte Zeile
+`path.join(__dirname, pfad)` im `try/catch` zurück → Datei ROT trotz `catch`; (c) Exit-Handler entfernt → (b) wird
+grün (zeigt, dass (b) am Handler hängt); (d) Buffer-Pfad unter `<repo>/pdf` → gesperrt.
