@@ -6,7 +6,7 @@ Nachmessen; jeder Beitrag durchläuft das volle Ritual (Planprüfung → Bau →
 
 | # | Beitrag | Inhalt | Stand |
 |---|---|---|---|
-| A | P4 | Unterschrift: Punkt/Strich/zu klein ablehnen, 13 Eintrittspunkte | R1 (8) und R2 (4) durch, Nacharbeit 3 (klein) läuft |
+| A | P4 | Unterschrift: Punkt/Strich/zu klein ablehnen, 13 Eintrittspunkte | **gemergt #475** (a36f5ab), Deploy-Prüfung läuft |
 | B1 | P2 | Fehlerseiten mit korrektem HTTP-Status (`auftrag-p2-fehlerstatus.md`) | Planprüfung durch (20), Bau läuft |
 | B2 | H1a/H1b | H1a: CSP mit Bericht, dann Enforce (`auftrag-h1a-csp-enforce.md`); H1b: Nonces + Inline-Handler ablösen | H1a Fassung 2 bereit (Planprüfung 16) |
 | B3 | Doku | `ops/SECURITY-HEADER.md`: `server_tokens off`, `http2`, CSP-Stand | offen |
@@ -17,5 +17,6 @@ Nachmessen; jeder Beitrag durchläuft das volle Ritual (Planprüfung → Bau →
 | C4 | Test-Wächter | T2 (`auftrag-t2-zusicherungen.md`): C4 + „grün aus falschem Grund“ + Zeitzonen-Fixtures, **Frist 11.10.2026** | Fassung 2 bereit (Planprüfung 21) |
 | C5 | Sammellisten Extrarunden | unlink (U-REAP1, U-LOE1..3, R6-13, R7-9, R9-12b, W-1), sperrordnung (1–3), h2 (R2-1..4), pentest-p1 (B1, A3, F1, V1, R2-N), s6 (1), ladebestand (1–21), P3-S1 | offen |
 | C6 | Gering/Anmerkungen | V01..V27 „gering/Anmerkung“ in Themenbündeln (Texte/Kommentare, Test-Qualität, TZ-Randfälle) | offen |
+| QR-J | QR-Journal | Reparaturweg für kaputte Journalzeilen (Betreiber „ja beides“ 24.09.): Korrekturzeilen statt Löschen, Werkzeug `tools/qr-journal.js`, Zuordnung kaputter Zeilen je Studio (`auftrag-qrj-journal-reparatur.md`) | Papier Fassung 1, Bau nach C1 |
 | D | Deploy | SSH-Schritt mit Wiederholung | offen |
 | E | Doku | IT-PDFs (`plaene/it-dokumentation-auftrag.md`) | offen |
