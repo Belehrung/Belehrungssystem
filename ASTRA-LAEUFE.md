@@ -247,6 +247,7 @@ sondern falsch.
 | 24.09.2026 | Planpruefung T2 Zusicherungen Spur B (kimi-k3, Buendel 110 KB, effort high) | Bündel 36.975 Token ein, 34.868 aus, 880 s | 9 | 9 (einzig von dieser Spur: Denkfehler im Papier zu N-1; Zeitumstellungs-Gegenprobe falsch kalibriert, echtes Fehlerfenster 12.10.2026 gemessen; Drift der T1-K4-Liste; NTP-Flackern) | 0 | — (keine Preisangabe) |
 | 24.09.2026 | Planpruefung C3a Datenintegritaet Spur B, zweiter Lauf (kimi-k3, Buendel 136 KB, effort high) | Bündel 43.482 Token ein (43.264 aus dem Cache), 27.877 aus, 783 s | 7 | 7 (blockierend, einzig von dieser Spur: Endzustands-Beweis der Migration fehlte; dazu die zwei JOIN-Stellen, Gegenprobe über drei Artefakte). Einzelheiten `plaene/planpruefung-c3a.md` | 0 | — (keine Preisangabe) |
 | 24.09.2026 | Diffprüfung C1 entschiedene Befunde (deepseek-v4-pro) | Diff 563 Zeilen, Suchen 19, Lesungen 29, Token rein 1632433, Token raus 33678, Runden 19 | — | — | — | 2,29 $ |
+| 24.09.2026 | Diffprüfung P2 Fehlerstatus (deepseek-v4-pro) | Diff 2997 Zeilen, Suchen 13, Lesungen 28, Token rein 3459760, Token raus 28563, Runden 30 | — | — | — | 4,68 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
