@@ -232,6 +232,8 @@ sondern falsch.
 | 24.09.2026 | Diffpruefung P3 Eingabetypen (deepseek-v4-pro) | Diff 1619 Zeilen, Suchen 6, Lesungen 61, Token rein 1113979, Token raus 66730, Runden 9 | 14 | 14 (sollte: eigene catches schlucken den Eingabefehler an 9 Routen, halbe Speicherung Einstellungen, berechnete Zugriffe übersehen) | 0 | 1,73 $ geschätzt |
 | 24.09.2026 | Diffpruefung P3 Runde 2 (deepseek-v4-pro) | Diff 854 Zeilen, Suchen 13, Lesungen 34, Token rein 581199, Token raus 58850, Runden 7 | 7 | 5 (1 vorbestehend; 1 mit falscher Prämisse, Substanz getragen) | 2 kein Defekt | 1,00 $ |
 | 24.09.2026 | Planpruefung P4 Phase 2 (deepseek-v4-pro) | Diff 180 Zeilen, Suchen 12, Lesungen 27, Token rein 766506, Token raus 68872, Runden 10 | 20 | 20 (Kimi-Zweitspur: 8, alle getragen; eine Prämisse falsch) | 0 | 1,28 $ |
+| 24.09.2026 | Planpruefung P2 Fehlerstatus (deepseek-v4-pro) | Diff 56 Zeilen, Suchen 20, Lesungen 27, Token rein 719225, Token raus 47115, Runden 13 | — | — | — | 1,14 $ |
+| 24.09.2026 | Planpruefung C1 entschiedene Befunde (deepseek-v4-pro) | Diff 51 Zeilen, Suchen 30, Lesungen 32, Token rein 2119607, Token raus 50886, Runden 26 | — | — | — | 3,00 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
