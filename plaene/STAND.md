@@ -56,6 +56,10 @@ Stand 24.09.2026, 07:20 UTC.
   Papier `plaene/auftrag-p4-unterschrift.md`: alle SIEBEN Unterschriftsfelder (sechs davon heute serverseitig
   ungeprüft), eine gemeinsame Regel für Browser und Server, Schwelle gemessen. Planprüfung läuft (Tauschrunde).
   Bau nach P3.
+* **Stand 24.09.2026 11:45 UTC:** T1 Nacharbeit 2 (`9c74d38`, alle 8 Diffprüfungs-Befunde behoben) — eigene Suite läuft,
+  danach PR. P3 Nacharbeit 1 läuft (neun Routen mit eigenem catch, berechnete Zugriffe, /einstellungen).
+  SSH: Betreiber hatte sich ausgesperrt (Schlüssel war nie übertragen), über KVM-Konsole zurück, Schlüssel jetzt
+  eingetragen und getestet; Härtung wird neu eingespielt.
 * **Routing-Messung**: `plaene/routing-messung.md`, 17 Zeilen, noch keine Empfehlung.
 * Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
 

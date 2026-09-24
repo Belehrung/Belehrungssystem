@@ -135,6 +135,8 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
    noch im Log, und „kein FAIL gefunden" ist nicht dasselbe wie EXIT 0 (ein
    Abbruch VOR der ersten Zusicherung schreibt gar keine Zeile). Wer auf ein
    Signal wartet, das er nie angefordert hat, wartet endlos.
+   **Die Sperrdatei `/tmp/gymdocu-suite.lock` NIE löschen** (gemessen 24.09.2026: ein Executer löschte sie vor dem
+   Start, während eine zweite Suite lief — beide fuhren gegeneinander, `gymdocu_test` verschwand mitten im Lauf).
    **Sie NICHT in ein äußeres `flock` einpacken — sie sperrt selbst**
    (`/tmp/gymdocu-suite.lock`, s. Kopf von `test/run.sh`). Gemessen am
    14.09.2026: `flock /tmp/gymdocu-suite.lock bash test/run.sh` legt den
