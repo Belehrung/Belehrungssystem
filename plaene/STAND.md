@@ -73,6 +73,10 @@ Stand 24.09.2026, 07:20 UTC.
   Cloud-Sitzungen läuft). Reihenfolge in `plaene/arbeitsplan-offen.md`. Laufend: P4-Bau; Planprüfungen P2
   (`plaene/auftrag-p2-fehlerstatus.md`, Baum `/workspace/gymdocu-p2`) und C1 (`plaene/auftrag-c1-entschiedene.md`,
   Baum `/workspace/gymdocu-c1`).
+* **Stand 24.09.2026 18:45 UTC:** Container-Neustart gegen 17:40 überstanden (Marker-Scan überall 0, Kimi-Läufe neu).
+  P4: Diffprüfung R1 durch (8 Befunde, `plaene/diffpruefung-p4.md`), Nacharbeit 2 läuft (Feldtyp an der Routengrenze,
+  P3-Wächter-Sollzahl). P2 und C1: Bau läuft (`/workspace/gymdocu-p2`, `/workspace/gymdocu-c1`). H1a: Papier
+  `plaene/auftrag-h1a-csp-enforce.md`, Planprüfung läuft (Baum `/workspace/gymdocu-h1`).
 * Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
 
 ### Vorgeschichte des Tages (gekürzt)
