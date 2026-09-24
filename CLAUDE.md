@@ -26,6 +26,8 @@ das nötige minimum."
   Meldungen, keine Lehren im Chat (die gehören in die Dateien).
 - Zwischenstände nur, wenn sich etwas geändert hat. Ein Satz genügt.
 - Ausführliches bleibt in den Repo-Dateien (Befunde, Aufträge, STAND.md).
+- Wiederholt 24.09.2026: „Die Token möchte ich gerne für die echte Arbeit sparen." Zwischenstände
+  höchstens ein Satz, Schlussmeldungen wenige Zeilen.
 
 ## Eine benannte Grenze ist kein Endzustand
 
