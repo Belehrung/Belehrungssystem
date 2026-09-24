@@ -15,8 +15,17 @@ Worker, `melde`). Jeder Befund selbst nachgemessen.
 | PC2-7 | DeepSeek 7 | `melde(err, req, …)` liest die Studio-ID aus `req`; `parseConfig` hat kein `req`. | gelesen `core/error-tracker.js:246` | gering | `melde(e, { studioId }, 'betriebszeiten:parseConfig')` |
 | PC2-8 | DeepSeek 8 | Alle `publicPath`-Erzeuger treffen die Regex von `registriereVerify`. | Angabe übernommen, im Bau zu messen | — | bestätigt die Planannahme |
 | PC2-9 | eigene | V04-2 (`routes/wartung.js:1544-1553`): nach dem Commit (`gespeichert = true`, `:1381`) meldet jeder spätere Fehler „Fehler beim Speichern“ → Wiederholung erzeugt eine zweite Prüfung. Dieselbe Klasse wie PP4b-22. | gelesen | mittel | als Punkt 9 in Fassung 2; der Zweig `gespeichert` kommt NACH der `EingabeFehler`-Weiterleitung (P3-Wächter verbietet ein `return` davor) |
+| PC2-10 | Kimi 1 | Die Aufrufer-Tabelle stimmt für beide Spülplan-Wege nicht: `ladeStatus()` fängt den Wurf SELBST (`core/spuelplan.js:112`, `catch (e) { wib = null; }`). Folge nach der Änderung: bei kaputten Betriebszeiten verschwindet die Wiederinbetriebnahme-Karte (Trinkwasser/Legionellen) still — neu still, ohne Log. | gelesen `core/spuelplan.js:100-112` | **mittel** (eigener Tabellenfehler; DeepSeek sah es nicht) | `ladeStatus` liefert `wibFehler: true` + `console.error`; Tablet-Spülplanseite zeigt „Wiederinbetriebnahme konnte nicht geprüft werden — bitte der Leitung melden“ |
+| PC2-11 | Kimi 2 | Test für den geschützten Export braucht einen `execFile`-Stub (sonst echter qpdf-Prozess im Deploy-Gate oder AUSGANG 1), und die Zusicherung nur auf 500 wäre über den äusseren `catch` falsch grün. | gelesen `verbandbuch-admin.js:611-645` | mittel | Stub qpdf-Erfolg; `db.run` nur für den INSERT scheitern lassen; Status + exakter Text + zwei Aufräum-Spione |
+| PC2-12 | Kimi 3 | Die Laufzeitmessung der `publicPath`-Regex beweist nur, was die Suite fährt. | Papier §5 | mittel | statisch (DeepSeek PC2-8) UND zur Laufzeit je `finalize`-Aufrufstelle ein belegter Pfad; fehlt einer → Rückfrage statt Wurf |
+| PC2-13 | Kimi 4 | Keiner der fünf `ladeFotos`-Aufrufer nutzt die Fotos für eine Entscheidung/Löschung; ein Wurf blockierte Reparatur/Nachliefern. | Angabe übernommen (fünf Stellen bestätigt) | gering | alle fünf: Hinweis; Wurf nur mit gezeigtem Entscheidungsweg |
+| PC2-14 | Kimi 5 | `melde(e, null, …)`: Telegram ohne Studio-ID, Drossel fasst Studios zusammen. | = PC2-7 | gering | `melde(e, { studioId }, …)`; Drossel über Studios hinweg als Grenze benannt (die Signatur ist per Konstruktion wertfrei) |
 
 DeepSeek-Prüfgrenze behauptet, `server.js` habe keine eigene Fehler-Middleware — **fällt**: `server.js:1479`
 (`baueFehlerbehandler`).
 
-Kimi-Spur: folgt.
+## Zahlen
+
+14 Zeilen: DeepSeek 8 (1 Nebenbehauptung gefallen: „keine Fehler-Middleware“), Kimi 5, eigene 1. Überschneidung: nur
+`melde` ohne `req` (PC2-7/14). Nur DeepSeek: `server.js`-Log, Monatslauf-Verschlucker, `saved=1`-catch, Weitergabe-Wege,
+Nachholweg. Nur Kimi: Spülplan fängt selbst (mein Tabellenfehler), qpdf-Stub, Abdeckung der Regex-Messung.
