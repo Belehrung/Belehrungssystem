@@ -275,3 +275,20 @@ Entscheidung (die Erkennung ist vom Betreiber an meine Empfehlung delegiert, 24.
    bei 20/30/40 px, dazu 5 Namenszüge bei 30–40 px. Schwellen eingefroren. Danach ist die Regel ENDGÜLTIG eingefroren.
    Kalibriert wird im Betrieb über `[unterschrift-masse]` (Sammelliste PP4b-20), nicht über weitere synthetische Runden.
 5. `zu_klein` gehört in die erlaubte Grund-Menge von Punkten und Strichen; Tests sichern je Fixtur den exakten Grund zu.
+
+## Nachtrag 4d (24.09.2026) — Mindestgrösse festgelegt
+
+Gemessen (Phase 1f): Bei einer Annehmen-Grenze von 30 CSS-px lässt sich keine Mindestgrösse finden. Kleine
+Buchstabengruppen haben durch überlappende Züge eine 2–3-fach dickere Strichdicke und liegen deshalb im selben Band wie
+12-px-Zitterstriche (9,8–12,7 gegen 8,3–12,1 Dicken). Erfüllbar ist es ab einer Grenze von 45 CSS-px: `MIN_GROESSE` =
+**15,0**, symmetrisch, Marge 24 % zur Annehmen-Seite und 19 % zur Ablehnen-Seite; `VERHAELTNIS_MAX` 0,1866 bleibt.
+
+**Entscheidung: Variante (a).** Eine Unterschrift oder ein Handzeichen muss entlang der Hauptachse mindestens
+~45 CSS-px lang sein, auf dem Tablet etwa 1 cm. Kleinere Figuren (Kreuz 30 px, „!“ 22 px, Initialen 10–14 px) bekommen
+„Bitte grösser unterschreiben“. Das ist die neue, bewusste Grenze. Sie wird dem Betreiber gemeldet und kann von ihm
+geändert werden.
+Danach die letzte gezielte Prüfung mit eingefrorenen Schwellen:
+- Striche ±1 px mit 20/30/45/60 px;
+- AB, MN, X, „!“, „=“, Haken in 40/50/60 px;
+- fünf Namenszüge in 45–70 px.
+Eine Fehlbeurteilung ausserhalb von „< 45 CSS-px → zu_klein“ bedeutet STOPP. Danach ist die Regel eingefroren.
