@@ -78,3 +78,4 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V07-1 | Mailversand ohne Doppelversand-Schutz, wenn der Claim scheitert; `mail_gesendet_am` ohne Nachzug für Alttabellen | offen, **mittel** — zuerst Live-Schema prüfen lassen |
 | V07-2..9 | übrige Befunde aus Bereich 07 (Demo-Daten, Reaper, Export-Hinweis, Feiertags-Historie, Claim-Verwaisung, Speicher) | offen, gesammelt |
 | V13-1..3 | Test-Stub `DESIGN_TOKENS_CSS`; falsche Begründung in der Ausnahmeliste `keine_systemeingriffe`; Zusicherung ohne Prüfung zählt als PASS | offen, gering |
+| V21-1..6 | Test-PDFs ohne Umleitung, Aufräumpfad, Vorzustand erzwingt Sortierung, Mandantenfilter der Session-Entwertung ungeprüft, stilles Überspringen, ungeschütztes `git ls-files` | offen, gering |

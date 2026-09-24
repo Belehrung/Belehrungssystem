@@ -209,6 +209,8 @@ sondern falsch.
 | 24.09.2026 | Vollpruefung GymDocu Bereich 12 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 8108 Zeilen, Suchen 10, Lesungen 7, Token rein 2176754, Token raus 67617, Runden 10 | 8 | 8 (mittel: Offline-Warteschlange wiederholt Endzustände endlos; E2E-Datensparsamkeit grün bei 500) | 0 | 3,14 $ |
 | 24.09.2026 | Vollpruefung GymDocu Bereich 07 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 8047 Zeilen, Suchen 11, Lesungen 16, Token rein 1920748, Token raus 61404, Runden 9 | 9 | 9 (mittel: Mailversand ohne Schutz bei gescheitertem Claim, Spalte ohne Nachzug) | 0 | 2,78 $ |
 | 24.09.2026 | Vollpruefung GymDocu Bereich 13 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 10599 Zeilen, Suchen 54, Lesungen 33, Token rein 10279679, Token raus 61855, Runden 32 | 3 | 3 (alle gering) | 0 | 13,81 $ |
+| 24.09.2026 | Vollpruefung GymDocu Bereich 21 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 10036 Zeilen, Suchen 12, Lesungen 12, Token rein 2676267, Token raus 55836, Runden 10 | 6 | 6 (alle gering; Mandantenfilter der Session-Entwertung ungeprüft) | 0 | 3,75 $ |
+| 24.09.2026 | Diffpruefung H2 Runde 2 (deepseek-v4-pro) (deepseek-v4-pro) | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 447 Zeilen, Suchen 0, Lesungen 2, Token rein 28600, Token raus 24481, Runden 2 | — | — | — | mind. 0,13 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht

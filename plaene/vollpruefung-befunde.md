@@ -244,3 +244,19 @@ Lauf 24.09.2026 06:25–06:45 UTC, 32 Runden, 10,28 Mio. Token ein, geschätzt 1
 | V13-3 | `test_feature_audit_csv.js:163`: Zusicherung zählt ausserhalb 00–02 Uhr Berliner Zeit als PASS, ohne etwas zu prüfen (im Namen benannt) | gelesen | gering |
 
 3 Befunde, 3 getragen, 0 gefallen.
+
+## Bereich 21 — Testdateien `test_feature_nutzung_nachtrag.js` … `test_feature_pin_generation_migration.js` (26 Dateien)
+
+Lauf 24.09.2026 06:28–06:44 UTC, 10 Runden, 2,68 Mio. Token ein, geschätzt 3,75 $. Mutationen NICHT selbst gefahren;
+die Mechanismen an den genannten Zeilen gelesen.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V21-1 | `test_feature_nutzungsentscheidung.js` erzeugt echte PDFs ohne eigene `PDF_ROOT`-Umleitung; Aufräumen über `__dirname` statt `PDF_ROOT` — im Einzelaufruf landen Dateien im echten PDF-Baum (im Gate deckt `run.sh` es ab) | nicht gemessen | gering |
+| V21-2 | derselbe Aufräum-Pfadfehler in `test_feature_nutzung_nachtrag.js:226, 234` | nicht gemessen | gering |
+| V21-3 | „die ÄLTESTEN drei werden gefragt“: Alter und `id` fallen in den Testdaten zusammen — `ORDER BY id` statt `erstellt_am` bliebe grün | gelesen | gering (Vorzustand erzwingt Ergebnis) |
+| V21-4 | `test_feature_offboarding.js`: „gleiche Benutzer-ID in Studio B“ — `benutzer.id` ist global, die IDs sind nie gleich; der `studio_id`-Teil von `entwerteBenutzerSessions()` ist damit ungeprüft | gelesen `test_feature_offboarding.js:96-101`, `routes/auth.js:681-682` | gering (Mandantenfilter ohne Test; im Bestand heute nicht auslösbar) |
+| V21-5 | `test_feature_owasp_haertung_static.js`: fällt Abschnitt 3 aus, endet der Lauf trotzdem mit 0 (kein Zähler, keine Sollzahl) | nicht gemessen; im Gate nicht auslösbar | gering |
+| V21-6 | `test_feature_pdf_root_lesezugriff_static.js:203`: `git ls-files` ungeschützt auf Modulebene | nicht gemessen | gering |
+
+6 Befunde, 6 getragen (2 gelesen), 0 gefallen.
