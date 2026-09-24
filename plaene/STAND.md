@@ -66,7 +66,7 @@ Stand 24.09.2026, 07:20 UTC.
   immer). Review-Bot hat an #473 und #474 NICHT kommentiert (0 Kommentare, 0 Reviews) — beobachten.
   P4: Messung abgeschlossen (Phase 1c `f917c1d`, kein STOPP, E3-Raster behoben); Phase-2-Auftrag im Papier;
   Planprüfung (DeepSeek mit Repo + Kimi mit Bündel) läuft.
-* **Stand 24.09.2026 16:30 UTC:** P4 Regel in drei Runden nachgeschärft (Nachträge 4a–4c im Papier). Jede neue Figurenmenge fand
+* **Stand 24.09.2026 15:45 UTC:** P4 Regel in drei Runden nachgeschärft (Nachträge 4a–4c im Papier). Jede neue Figurenmenge fand
   einen Rand bei Figuren von nur wenigen Strichdicken → Entscheidung 4c: Grund `zu_klein` („Bitte grösser unterschreiben“),
   danach wird die Regel eingefroren, Kalibrierung im Betrieb. Phase 1f + Phase 2 laufen in `/workspace/gymdocu-p4`.
 * Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
