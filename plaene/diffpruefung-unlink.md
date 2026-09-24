@@ -248,3 +248,26 @@ erst der Verzeichnis-fsync scheitert. Eigene Anmerkung: alle fünf provisioning-
 eine Drosselgruppe — an die Prüfspur gegeben.
 Runde 9: Claude ausführend + DeepSeek mit Repo; ausdrücklich nach einem Rückschritt durch Nacharbeit 11 gefragt (die
 letzten drei Runden fanden je einen durch die jeweils letzte Nacharbeit).
+
+## Runde 9 — zwei Spuren über Nacharbeit 11 (`8f20cfe..81e74f4`)
+
+C = Claude ausführend (Proben `scratchpad/dpu9/probe_*`), D = DeepSeek mit Repo. Selbst nachgesehen.
+
+| Nr. | Befund | Spuren | Nachgemessen | Einstufung |
+|---|---|---|---|---|
+| R9-1 | ENOENT beim Lesen (Eintrag während des Laufs rechtmässig entfernt) → Fehlmeldung „nicht lesbar … bleibt offen“ + `offen++` | C | Probe: N11 meldet, 8f20cfe nicht. **Rückschritt durch N11** | niedrig |
+| R9-2 | Alle fünf provisioning-Kennungen teilen EINEN Namen → EINE Drosselgruppe; der täglich feuernde `unlesbar` verdrängt `studio_lebt`/`ungueltig` desselben Laufs (Log bleibt vollständig) | C, D | C: echter error-tracker, Tag 2: `studio_lebt senden:false` (8f20cfe: `true`). **Rückschritt durch N11** | mittel |
+| R9-3 | `closeSync(fd); fd = null;` — wirft `close`, schliesst `schliesseStill` dieselbe Nummer ein zweites Mal (evtl. schon neu vergeben) | C | Probe: fremder fd 22 geschlossen (EBADF). **Rückschritt durch N11** | niedrig |
+| R9-4 | Schliessen der Deskriptoren im Fehlerweg ist durch keinen Test bewacht | C | Mutation M1 (Aufräumen entfernt): 204/0, Route 11/0; Probe +1 fd je Fehlerfall | niedrig |
+| R9-5 | S36 „trägt den Stack“: das Muster trifft schon die erste Stack-Zeile (= Meldungstext), der ORT wird nicht geprüft | C | Mutation M2 (`.message` statt `.stack`): 3/0 | niedrig |
+| R9-6 | S32 „keine tmp-Meldung“ kann über den Merker nicht rot werden (ENOENT still) | D (+ Executer q2c) | für S32 zutreffend; für den Route-Test **gefallen** — dort (echtes ENOTDIR) hat der Executer die Mutation rot gemessen | niedrig |
+| R9-7 | `queue_fehlt` fehlt in den `ok:false`-Rückgaben (`subdomain_fehlt`, `not_found`, `ungueltiger_pfad`), obwohl „immer vorhanden“ | D | gelesen | niedrig |
+| R9-8 | Logzeile „Datei aus der Transaktion bleibt der Rückhalt“ ist falsch, wenn erst der Verzeichnis-fsync nach dem rename scheiterte (Datei schon ersetzt) | D | gelesen | Text |
+| R9-9 | Zwei Teilklauseln der Reihenfolge-Zusicherung (S35) können konstruktionsbedingt nie fallen | D | gelesen | Anmerkung |
+| R9-10 | Route-Test „kein Queue-Verzeichnis entstanden“ ist durch den Vorzustand erzwungen | C, D | gelesen | Anmerkung |
+| R9-11 | `new URL(process.env.DATABASE_URL || "")` wirft statt der Sicherheitsmeldung | D | gelesen | Anmerkung |
+| R9-12 | Der Route-Test lädt `server.js`; dessen Prozess-Handler (`installProcessHandlers`) rufen das MODUL-interne `melde` — die Attrappe am Export greift dort nicht. Auf dem Live-Server (Suite als Deploy-Gate, `GYMDOCU_TG_*` gesetzt) löste eine unbehandelte Ablehnung in diesem Test einen ECHTEN Telegram-Alarm aus | C | gelesen `core/error-tracker.js:280-292`; Auslöser nicht gefunden | mittel (Regel „Tests fassen keine echten Dienste an“) |
+| R9-13 | Hauptserver und der neue 503 / `queue_fehlt` | C, D | unbelegt (Nachbarrepo) → Sammelliste R7-8 | Fundort |
+
+**Nacharbeit 12**: R9-1 bis R9-12. Danach eine abschliessende Lesespur; bringt sie nichts Schweres, geht der Beitrag
+mit der Sammelliste in den PR.
