@@ -272,7 +272,7 @@ C = Claude ausführend (Proben `scratchpad/dpu9/probe_*`), D = DeepSeek mit Repo
 **Nacharbeit 12**: R9-1 bis R9-12. Danach eine abschliessende Lesespur; bringt sie nichts Schweres, geht der Beitrag
 mit der Sammelliste in den PR.
 
-## Nacharbeit 12 (`81e74f4..6654c9d`) — gelesen, abschliessende Lesespur läuft
+## Nacharbeit 12 (`81e74f4..6654c9d`) — gelesen, abschliessende Lesespur gefahren
 
 Executer: vier Commits; Suite `SUITE_EXIT=0` auf dem End-HEAD, Dateizahl 368 = 368, Lint 0; zwölf Gegenproben
 ROT/GRÜN. Diff selbst gelesen (`core/provisioning.js`, `core/storage-replica.js`, Route-Test, Szenarien-Test S36/S37).
@@ -284,3 +284,19 @@ Rückgaben (R9-7); Logzeile berichtigt (R9-8); Route-Test mit `DATABASE_URL`-Rie
 gesperrtem `fetch` und Mail-Transport sowie Zähler `fremderVersand` (R9-11, R9-12).
 Vom Executer benannt: `ladeCreds()` fällt auf `/etc/environment` zurück — das Löschen der `GYMDOCU_TG_*` im Prozess
 allein genügt auf dem Live-Server nicht; der gesperrte `fetch` trägt. → Sammelliste R9-12b ergänzt.
+
+## Runde 10 — abschliessende Lesespur über Nacharbeit 12 (`81e74f4..6654c9d`)
+
+Eine Spur: D = DeepSeek mit Repo (Diff 458 Zeilen, 26 Runden, 4,10 $). Keine ausführende Spur — die Nacharbeit war
+klein, und die Frage war nur, ob sie wieder einen Rückschritt einführt. Selbst nachgesehen.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| R10-1 | S35: die zwei Teilklauseln (Ziel des rename endet auf `.json`, ist kein tmp-Name) wurden gestrichen — ein falsches rename-Ziel liesse S35 jetzt grün | gelesen: Streichung stammt aus MEINEM Auftrag (R9-9 „kann nie fallen“, damals nur gelesen, nicht gemessen). Mit falschem Ziel bleibt `r.ok`, `dateien_geloescht` und „2 rename“ wahr — die Klauseln waren nicht unfallbar, nur anderswo mitgedeckt. **Rückschritt durch N12, Ursache falsche Prämisse im Auftrag** | niedrig |
+| R10-2 | ENOENT beim Lesen ist jetzt still — auch für einen hängenden Symlink im Queue-Verzeichnis (readdir listet ihn, read folgt ihm ins Leere): ein dauerhafter Fehlzustand ohne jedes Signal; der Kopfkommentar sagt weiter „JEDER Lesefehler geht an melde()“ | gelesen `core/provisioning.js:834` und `:775-779`. **Rückschritt durch N12** (vorher täglich gemeldet) | niedrig |
+| R10-3 | Route-Test „`GYMDOCU_TG_*` bis zum Ende leer“ sei tautologisch | **gefallen wie behauptet:** `server.js:3` lädt `dotenv` NACH der Löschschleife und kann die Variablen aus einer `.env` wieder füllen. Daraus aber ein anderer Punkt: steht Telegram in der `.env` des Live-Servers, wird dieser Test dort ROT, ohne dass etwas versendet wurde — ein falscher Alarm am Deploy-Gate. Die tragende Sperre ist der Versandzähler | niedrig |
+| R10-4 | `raeumeStudios`: `s31b` ist provisioniert, fehlt aber im Muster — Rest eines abgebrochenen Vorlaufs lässt den nächsten Start mit einem FK-Fehler scheitern | gelesen Z. 184 und 1278 (seit 8f20cfe) | niedrig |
+| R10-5 | `queueDateiLesbar` prüft nur Parsbarkeit; gültiges JSON mit falschem Inhalt gälte als Rückhalt, der Reaper stellte es als ungültig beiseite | gelesen; unter dem eindeutigen Laufnamen nur durch fremdes Schreiben erreichbar | Anmerkung |
+| R10-6 | 503-Körper der Route trägt `queue_fehlt` nicht | gelesen `server.js:245-247`; Vertrag mit dem Hauptserver unbelegt → Sammelliste R7-8 | Fundort |
+
+**Nacharbeit 13**: R10-1 bis R10-5.

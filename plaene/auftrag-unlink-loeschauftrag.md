@@ -485,3 +485,37 @@ Abschnitt „Runde 9“. Proben: `scratchpad/dpu9/probe_*.js`. Ort: `/workspace/
 
 **Gegenproben** je Punkt (ROT/GRÜN wörtlich), **Abschluss** wie gehabt (volle Suite, Ritual, Lint, Marker-Scan, Commit,
 Push, master-Stand). Widersprüche gemessen melden.
+
+# NACHARBEIT 13 (Diffprüfung Runde 10)
+
+Einordnung: normaler Auftrag, fünf kleine Stellen. Weiter derselbe Executer. Befunde: `plaene/diffpruefung-unlink.md`,
+Abschnitt „Runde 10“. Ort: `/workspace/gymdocu-unlink`, HEAD `6654c9d`.
+
+1. **R10-1** — S35: die zwei in Nacharbeit 12 gestrichenen Teilklauseln wiederherstellen
+   (`ereignisse[rn].b.endsWith(".json") && !TMP_MUSTER.test(ereignisse[rn].b)`). Mein Auftrag R9-9 beruhte auf einer
+   ungemessenen Behauptung („kann nie fallen“). Gegenprobe: das rename-Ziel in `schreibeOffboardingRest` so ändern,
+   dass es nicht auf `.json` endet → S35 ROT; dieselbe Mutation auf dem Stand 6654c9d → S35 GRÜN (belegt die Lücke).
+2. **R10-2** — ENOENT beim Lesen eines Queue-Eintrags nur dann still, wenn der Verzeichniseintrag WIRKLICH weg ist:
+   `fs.lstatSync(dateiPfad)` — wirft es ENOENT, still weiter; sonst (z. B. hängender Symlink) wie jeder andere
+   Lesefehler `offen++` + `melde()`. Kopfkommentar (`core/provisioning.js` um Z. 775) an die Ausnahme anpassen.
+   Szenario: hängender Symlink mit gültigem Queue-Namen → `offen === 1`, genau eine Meldung `offboarding_rest_unlesbar`,
+   Symlink bleibt liegen; das bestehende S38 (wirklich weg) bleibt still. Gegenprobe: lstat-Prüfung entfernt → ROT.
+3. **R10-3** — Route-Test: `server.js:3` lädt `dotenv` NACH der Löschschleife und kann `GYMDOCU_TG_*` aus einer
+   `.env` wieder füllen. (a) Die Löschschleife NACH `require("./server.js")` wiederholen. (b) Die Schluss-Zusicherung
+   „TG-Variablen leer“ ersetzen durch: die Attrappen sind am Ende noch eingesetzt (`globalThis.fetch` ist der Stub,
+   `require("nodemailer").createTransport` ist der Stub) — kein geladenes Modul hat sie ersetzt; `fremderVersand === 0`
+   bleibt. Gegenproben: (i) Stand 6654c9d mit einer `.env`, die `GYMDOCU_TG_BOT_TOKEN=gegenprobe` enthält → die alte
+   Zusicherung wird ROT (belegt R10-3), neuer Stand damit GRÜN. Liegt im Arbeitsbaum schon eine `.env`: vorher per `cp`
+   sichern und danach mit `diff` EXIT 0 zurückstellen; sonst danach löschen. (ii) Nach dem Laden im Test
+   `globalThis.fetch` durch eine andere Funktion ersetzen → neue Zusicherung ROT.
+4. **R10-4** — `raeumeStudios`: `31b` ins Muster. Dazu eine Selbstprüfung im Test: jeder Name aus
+   `studio("…", { ueberProvisioning: true })` im EIGENEN Quelltext (`fs.readFileSync(__filename)`) muss vom Muster
+   getroffen werden; mindestens 18 Namen gefunden (Untergrenze gegen ein leeres Ergebnis). Gegenprobe: `31b` wieder
+   heraus → ROT.
+5. **R10-5** — eine Prüffunktion für den INHALT eines Queue-Eintrags (studio_id positive Ganzzahl, `erstellt`
+   parsbar), benutzt vom Reaper UND von `queueDateiLesbar` (eine Quelle). Szenario: Neuschreiben nach dem COMMIT
+   scheitert, unter dem Zielnamen liegt gültiges JSON ohne gültigen Inhalt (`{}`) → `queue_fehlt: true` + Meldung.
+   Gegenprobe: `queueDateiLesbar` wieder nur Parsbarkeit → ROT.
+
+`core/error-tracker.js` NICHT ändern. **Gegenproben** je Punkt (ROT/GRÜN wörtlich), **Abschluss** wie gehabt (volle
+Suite, Dateizahl-Ritual, Lint, Marker-Scan, Commit, Push, master-Stand). Widersprüche gemessen melden.
