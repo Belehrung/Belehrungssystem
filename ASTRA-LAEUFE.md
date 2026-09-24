@@ -227,6 +227,7 @@ sondern falsch.
 | 24.09.2026 | Planpruefung T1 Spur D (deepseek-v4-pro) (deepseek-v4-pro) | Diff 60 Zeilen, Suchen 50, Lesungen 27, Token rein 1324269, Token raus 63422, Runden 20 | 9 | 8 (Zählung falsch und unvollständig; frühe requires fixieren PDF_ROOT; Wächter-Fehlalarme; 6 Dateien schon umgeleitet) | 0 (1 als korrekt bestätigende Zeile ohne Befund) | 2,00 $ |
 | 24.09.2026 | Planpruefung T1 Spur B (deepseek-v4-pro, Bündel 98 KB, effort high, /v1/chat/completions) | Bündel ~26.000 Token | 6+ | 6 (einzig von dieser Spur: `process.exit` überspringt `finally`; Abschnitt 5 nur Wurzelverzeichnis) | 0 | nicht gemessen |
 | 24.09.2026 | Planpruefung T1 Spur K (kimi-k3) | **abgebrochen**: HTTP 429 `exceeded_current_quota_error` (Konto wegen fehlenden Guthabens gesperrt) | — | — | — | 0 |
+| 24.09.2026 | Vollpruefung GymDocu Bereich 27 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 4321 Zeilen, Suchen 30, Lesungen 32, Token rein 5741251, Token raus 69788, Runden 30 | 7 | 7 (ungemessen, fast nur Anmerkungen) | 0 | 7,85 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht

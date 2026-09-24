@@ -419,3 +419,18 @@ Test-Verbindungszeichenfolgen.
 | V26-5 | Test-Abfragen ohne `studio_id` | — | Anmerkung |
 
 5 + 5 Befunde, alle getragen (1 gelesen), 0 gefallen.
+
+## Bereich 27 — Testdateien `test_feature_wartung_pruefungen_integritaet.js` … `test_isolation_reads.js` (12 Dateien)
+
+Lauf 24.09.2026 08:22–08:47 UTC, 30 Runden, 5,74 Mio. Token ein, geschätzt 7,85 $. Befunde nicht einzeln gemessen;
+bis auf einen alles Anmerkungen zu Kommentaren und Schranken.
+
+| Nr. | Befund | Einstufung |
+|---|---|---|
+| V27-1 | `test_feature_wiederherstellung_phase_b.js:36-39`: Kopfkommentar-Behauptung hält nicht | Anmerkung |
+| V27-2 | `test_feature_wartung_pruefungen_integritaet.js:181-182`: Zusicherungsname behauptet eine Meldung, die nie gemessen wird | gering |
+| V27-3 | `test_feature_wartungsfaelligkeit_dst.js:5-7`: Kommentar zur Zeitzonen-Mechanik falsch (Messung selbst wirksam) | Anmerkung |
+| V27-4 | `test_feature_wiederholung.js:110`: Schranke kann aus eigener Kraft nicht rot werden | Anmerkung |
+| V27-5 | `test_feature_zustaendigkeit_static.js:223-230`: „STRIKT“ versprochen, nur Untergrenze geprüft | Anmerkung |
+| V27-6 | `test_feature_wiederherstellung_static.js:285`: Sollzahl zählt Kommentare mit | Anmerkung |
+| V27-7 | `test_feature_zip_download.js:54-56`: echte Prozesse, bewusst ausgenommen | Anmerkung |

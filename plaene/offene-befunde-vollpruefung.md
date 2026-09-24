@@ -96,3 +96,4 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V25-3..6, V18-1..6 | übrige Testbefunde der Bereiche 18 und 25 | offen, gering |
 | V26-2 | `test_feature_verbandbuch_meldepflicht.js` löscht über `__dirname` (Zwischenvariable) | → T1 |
 | V19-1..5, V26-1,3..5 | übrige Testbefunde der Bereiche 19 und 26 | offen, gering |
+| V27-1..7 | Kommentar- und Schrankenbefunde aus Bereich 27 | offen, Anmerkung |
