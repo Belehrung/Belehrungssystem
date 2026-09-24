@@ -1,4 +1,4 @@
-# Bauauftrag T1: Tests räumen nie im echten PDF-Baum auf (Fassung 1, 24.09.2026)
+# Bauauftrag T1: Tests räumen nie im echten PDF-Baum auf (Fassung 2, 24.09.2026)
 
 **Zielrepo:** GymDocu, Zweig `fix-t1-test-pdf-aufraeumen` ab `origin/master` (`221a7b2`).
 **Herkunft:** DeepSeek-Vollprüfung, Befund V25-1 (hoch), dazu V25-2, V21-1, V21-2 — `plaene/vollpruefung-befunde.md`.
@@ -58,3 +58,59 @@
 
 * Die Requirer-Liste von `core/retention.js` (Abschnitt 4, 9 Dateien, weitere Wurzeln DOKUMENTE_DIR usw.) — eigene
   Runde, auf der Sammelliste.
+
+
+---
+
+# FASSUNG 2 (nach der Planprüfung, `plaene/planpruefung-t1.md`) — sie ERSETZT Entwurf und Nachweis oben
+
+## Umfang
+
+Nicht „19 Stellen in 4 Dateien“, sondern: JEDE Stelle in Testdateien (`test*.js`, `test/**/*.js`, `e2e/**/*.js`), an der
+ein Lösch- oder Schreibziel aus `__dirname`/`__filename`/`process.cwd()` gebildet wird und auf eine Datenwurzel zeigt —
+direkt, über eine Zwischenvariable (`const abs = path.join(__dirname, pfad)`), über `require('node:path')`. Bekannt:
+`test_feature_mangel_nachtrag_kopfzeile.js` (13), `test_feature_seilkontrolle_pdf_unterschrift.js` (2),
+`test_feature_nutzungsentscheidung.js` (2), `test_feature_nutzung_nachtrag.js` (1), `test_feature_mangel_nachtrag.js`
+(2), `test_feature_geraete_defekte_erfassungsweg.js` (1), `test_feature_verbandbuch_meldepflicht.js` (über `abs`).
+Die Liste ist ein Hinweis, kein Befund: selbst suchen und das Ergebnis mit der Such-Zeile melden.
+
+## Entwurf
+
+1. **Laufzeit-Riegel `test/helfer/datei-sperre.js`** (Hauptriegel, Muster und Begründung wie
+   `test/helfer/netz-sperre.js`, per `NODE_OPTIONS=--require` aus `test/run.sh` in JEDEN Testprozess geladen, auch
+   Kindprozesse; KEIN Abschalt-Schalter über eine Umgebungsvariable):
+   - Geschützte Wurzeln = die Standard-Datenwurzeln des Produktivcodes relativ zum Repo, aus dem Bestand abgeleitet
+     (heute u. a. `pdf`, `Dokumente`, `belehrungen-uploads`, `defekt-fotos`, `pruefberichte`, `lageplan-uploads`,
+     `einweisung-nachweise`, `offboarding…`) — die Liste per Suche über `core/`/`routes/` ermitteln
+     (`path.join(__dirname, '..', '<name>')`) und im Riegel mit Fundstelle kommentieren. Dazu `/var/www`.
+   - Gesperrt, wenn das AUFGELÖSTE Ziel (`path.resolve`, Symlinks nicht nötig) in einer geschützten Wurzel liegt:
+     `rmSync/rm/unlinkSync/unlink/rmdirSync/rmdir` (auch `fs.promises`), `renameSync/rename` (Quelle ODER Ziel),
+     `writeFileSync/writeFile/appendFile*`, `createWriteStream`, `copyFileSync/copyFile` (Ziel), `mkdirSync/mkdir`.
+     Ausnahme: Pfade unter `os.tmpdir()`.
+   - Verstoss → Ausnahme mit Klartext (Pfad, Vorgang, „Test fasst eine echte Datenwurzel an“), damit der Test ROT wird.
+   - Selbsttest in einer eigenen Testdatei: je Vorgang ein Sperrfall auf einen NICHT existierenden Pfad unter
+     `<repo>/pdf/__dateisperre_probe__/…` (nichts Echtes wird berührt) → Ausnahme; je Vorgang ein Durchlass unter
+     `os.tmpdir()`; ein Kindprozess mit demselben `NODE_OPTIONS` sperrt ebenfalls. Positivkontrolle, dass der Riegel
+     überhaupt geladen ist (sonst „nicht geprüft“ statt grün).
+   - **Vorbedingung:** zuerst messen, welche Testdateien der Riegel in einem vollen Lauf trifft. Sind es mehr als die
+     sieben oben plus `test_feature_spuelplan.js`, die Liste melden, BEVOR sie repariert wird.
+2. **Die betroffenen Testdateien** lenken `PDF_ROOT` (und jede weitere benutzte Datenwurzel) VOR dem ERSTEN
+   projekteigenen `require` (`./core`, `./routes`, `./server`, `./tools`, `./workers`) auf ein eigenes
+   `fs.mkdtempSync(path.join(os.tmpdir(), '<name>-'))` um, Sicherheitsnetz `echterPdfRootAusEnv()` wie
+   `test_feature_pdf_crlf_saeuberung.js`. Aufräumen in `process.on('exit', () => fs.rmSync(TMP, { recursive: true,
+   force: true }))` (läuft auch bei `process.exit`). Die Einzel-Löschungen über `__dirname` entfallen; wo gezielt
+   gelöscht werden muss, unter dem eigenen Temp-Verzeichnis.
+3. **Abschnitt 5 des Wächters** (`test_feature_provisioning_pdf_root_static.js`): `BEKANNTE_LUECKE` löst sich auf in
+   `GEPRUEFT` (Umleitung vor dem ersten projekteigenen `require` — nicht nur vor pdf-engine) und eine kurze Liste
+   „ohne Dateizugriff“ mit je einer Begründung (heute `test_feature_security_minis.js`). Für
+   `test_feature_spuelplan.js` dieselbe Zusicherung.
+4. Kein neuer statischer Text-Wächter (Planprüfung PT1-6: Fehlalarme und Lücken); der Laufzeit-Riegel deckt alle Formen.
+
+## Nachweis
+
+* Riegel: Selbsttest-Datei grün; Gegenprobe: Riegel aus `NODE_OPTIONS` genommen → Selbsttest ROT („nicht geladen“),
+  Rücknahme → grün. Gegenprobe 2: eine der alten `__dirname`-Löschzeilen wieder einsetzen → der betroffene Test ROT
+  durch den Riegel.
+* Abschnitt 5: Umleitung hinter ein frühes `require('./core/pdf-pfad')` geschoben → ROT.
+* Jede geänderte Datei einzeln grün, volle Suite, Dateizahl-Ritual, Lint, Marker-Scan. Melden: welche Dateien der Riegel
+  im ersten vollen Lauf traf.
