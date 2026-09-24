@@ -344,3 +344,20 @@ Test-Verbindungszeichenfolgen. Befunde nicht einzeln gemessen.
 | V24-4 | `test_feature_rechtsstand.js`: Unverwechselbarkeit nur für ein Paar der drei Lagen geprüft | Anmerkung |
 
 4 Befunde, 4 getragen (ungemessen), 0 gefallen.
+
+## Bereich 16 — Testdateien `test_feature_datum_zeitzonenfalle.js` … `test_feature_einweisung_nachweis.js` (20 Dateien)
+
+Erster Lauf an `max_output_tokens` abgebrochen (1 Runde, nichts geliefert, protokolliert); zweiter Lauf 07:49–08:05 UTC,
+20 Runden, 6,52 Mio. Token ein, geschätzt 8,90 $.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V16-1 | `test_feature_dguv3.js:98-100`: „Beide Termine werden deaktiviert, nie gelöscht“ prüft `every()` ohne Länge — würden die Zeilen GELÖSCHT, ist `[].every(...)` wahr und der Test grün (Hausregel „Deaktivieren statt Löschen“ unbewacht) | gelesen | **mittel** (grün aus falschem Grund) |
+| V16-2 | Design-Token-Wächter: die DOCTYPE-Regel für Ausgaben von `${DESIGN_CSS}` sieht nur Dateien mit `var(--gd-…)` | nicht gemessen | gering |
+| V16-3 | `test_feature_dguv3.js:211-212`: Zusicherung logisch durch die vorige impliziert | nicht gemessen | Anmerkung |
+| V16-4 | Meldung „13 Monate alte Einweisung gilt weiter als frisch“ behaupte das Gegenteil des Geprüften | **gefallen:** es ist die FEHLERmeldung von `assert.strictEqual(…, true, msg)` — sie erscheint genau dann, wenn die alte Einweisung fälschlich als frisch gilt, und beschreibt diesen Fall richtig | — |
+| V16-5 | `deepStrictEqual` zweier leerer Arrays wäre leer wahr (Vorzustand verhindert es heute) | nicht gemessen | Anmerkung |
+| V16-6 | Fixture schreibt UTC-Tag als Datum (heute folgenlos) | — | Anmerkung |
+| V16-7 | Funktionsende per `indexOf('\n}')` | — | Anmerkung |
+
+7 Befunde, 6 getragen, 1 gefallen.

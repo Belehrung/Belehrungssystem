@@ -88,3 +88,5 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V23-1..6 | Rechtsaussagen-Wächter schluckt Datei-Lesefehler; `>=`-Zusicherung; wandernder Sollwert NUMMER_START; Gegenprobe ohne Rücknahme; Studio nicht entsperrt; Satztrenner-Grenze | offen, gering |
 | V17-1..4 | Error-Tracking-Test ohne eigene Versandsperre; Sollwert aus derselben Funktion; dekorative PASS-Zeilen; `indexOf`-Rückfall | offen, gering |
 | V24-1..4 | UTC-Tag im Retention-Test, Text-Anker ohne Positivkontrolle, Test-Abfragen ohne `studio_id`, Unverwechselbarkeit nur ein Paar | offen, gering |
+| V16-1 | DGUV-Test: „deaktiviert, nie gelöscht“ leer wahr bei Löschung | offen, mittel |
+| V16-2,3,5..7 | Design-Token-Wächter-Erfassung, implizierte Zusicherung, leere Arrays, UTC-Fixture, Funktionsende per indexOf | offen, gering |

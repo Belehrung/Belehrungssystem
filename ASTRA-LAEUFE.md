@@ -219,6 +219,8 @@ sondern falsch.
 | 24.09.2026 | Vollpruefung GymDocu Bereich 16 (deepseek-v4-pro) (deepseek-v4-pro) | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 10189 Zeilen, Suchen 0, Lesungen 0, Token rein 236174, Token raus 24000, Runden 1 | — | — | — | mind. 0,41 $ |
 | 24.09.2026 | Vollpruefung GymDocu Bereich 17 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 9684 Zeilen, Suchen 26, Lesungen 33, Token rein 9618260, Token raus 47102, Runden 30 | 4 | 4 (ungemessen, gering) | 0 | 12,88 $ |
 | 24.09.2026 | Vollpruefung GymDocu Bereich 24 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 10061 Zeilen, Suchen 23, Lesungen 25, Token rein 9939072, Token raus 59337, Runden 30 | 4 | 4 (ungemessen, gering) | 0 | 13,35 $ |
+| 24.09.2026 | Vollpruefung GymDocu Bereich 16 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 10189 Zeilen, Suchen 13, Lesungen 25, Token rein 6522569, Token raus 73358, Runden 20 | 7 | 6 (mittel: „deaktiviert, nie gelöscht“ leer wahr) | 1 (Fehlermeldung sei falsch herum — sie beschreibt den Fehlerfall richtig) | 8,90 $ |
+| 24.09.2026 | Vollpruefung GymDocu Bereich 25 (deepseek-v4-pro) (deepseek-v4-pro) | Diff 9070 Zeilen, Suchen 14, Lesungen 9, Token rein 2017738, Token raus 51533, Runden 8 | — | — | — | 2,87 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
