@@ -43,9 +43,10 @@ Stand 24.09.2026, 07:20 UTC.
   Fassung 2, Planprüfung als Tauschrunde (gleiches Bündel für DeepSeek und Kimi, `plaene/planpruefung-p3.md`):
   14 Befunde, 13 getragen; wichtigster: nur 29 statt 68 Stellen werfen (38 sind in `String()` gehüllt). Bau läuft
   in `/workspace/gymdocu-p3` (Zweig `fix-p3-eingabetypen`).
-* **V10-2 (Unterschrift aus einem Pixel)**: offen, **Betreiber-Entscheidung** — was gilt als Unterschrift? Der
-  Client nimmt heute ebenfalls einen einzelnen Punkt an (`routes/belehrungen.js:645`); eine Untergrenze muss an
-  BEIDEN Stellen gleich gelten.
+* **P4 (V10-2, Unterschrift)**: Betreiber-Entscheidung 24.09.2026 „einzelne Punkte oder Striche ablehnen“.
+  Papier `plaene/auftrag-p4-unterschrift.md`: alle SIEBEN Unterschriftsfelder (sechs davon heute serverseitig
+  ungeprüft), eine gemeinsame Regel für Browser und Server, Schwelle gemessen. Planprüfung läuft (Tauschrunde).
+  Bau nach P3.
 * **Routing-Messung**: `plaene/routing-messung.md`, 17 Zeilen, noch keine Empfehlung.
 * Danach: DeepSeek-Vollprüfung, H2, H1, SECURITY-HEADER, IT-PDFs.
 
