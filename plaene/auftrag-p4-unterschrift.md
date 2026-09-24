@@ -59,3 +59,37 @@ gerade Striche durch).
 * Was wird durch die Behebung schlechter?
 * Kann die Regel grün sein aus dem falschen Grund (Fixturen, die nur die eigene Figurenmenge abbilden)?
 * Welche Eintrittspunkte fehlen in der Liste?
+
+# FASSUNG 2 (24.09.2026) — nach der Planprüfung (`plaene/planpruefung-p4.md`)
+
+Massgeblich; wo sie Fassung 1 widerspricht, gilt sie.
+
+1. **Eintrittspunkte vor dem Bau als Tabelle** (Route, Methode, DB-Spalte, Zeichenfeld, PDF-Einbettung), per Suche
+   über `toDataURL`, `isSigned_`, `saveSig_`, `unterschrift`, `freigegeben_unterschrift` und alle `doc.image`-Stellen
+   in `core/`. Gegenprobe (c) und Verhaltenstests je Eintrittspunkt dieser Tabelle, nicht je Datei. Zeigt die
+   Tabelle mehr als 10 Eintrittspunkte → melden, bevor gebaut wird.
+2. **Mass vorher festlegen**, dann messen: (i) Deckungsgrad der Tinte an der Tintenbox (gefüllte Fläche, dicker
+   Balken → abgelehnt); (ii) Länge entlang der Hauptachse, bezogen auf die Bildhöhe (Punkt); (iii) Verhältnis
+   Querstreuung zu Längsstreuung (gerader Strich, jede Richtung). Momente laufend summieren, keine Koordinatenliste.
+   Kanalzahl aus `pixel.length / (breite·hoehe)`.
+3. **Messmenge erweitert:** Punkt als Mikro-Zug (down, ≤ 2 CSS-px Bewegung, up) — eine Figur mit 0 Tinte ist ein
+   Messfehler und bricht ab. Dazu flache Bögen (Stich 2/4/8 CSS-px), flache Welle, „✓“, „X“, „=“, „!“, gefülltes
+   Rechteck, dicker Balken, sehr kleine und sehr flache Namenszüge. Ergebnis-Tabelle je Figur mit Tintenmenge, den drei
+   Massen und dem Urteil. Die Einordnung von „=“, „!“, „✓“, „X“ lege ich dem Betreiber vor, bevor sie Fixtur wird.
+   Die 20-%-Grenze gilt in BEIDE Richtungen (echte Figur nahe an „ablehnen“ UND Strich/Punkt nahe an „annehmen“).
+4. **Unabhängige zweite Quelle:** jede serverseitig geprüfte Unterschrift schreibt die drei Masse (nur Zahlen, kein
+   Bild) als eine Protokollzeile `[unterschrift-masse]`. Damit lässt sich die Schwelle später an echten Unterschriften
+   kalibrieren. Das ist KEINE Personenangabe; trotzdem keine Mitarbeiter-ID in der Zeile.
+5. **Gespeichert UND eingebettet wird nur der kanonische Puffer** (als Daten-URL). Altdaten bleiben gültig und werden
+   nicht neu bewertet; vor JEDEM `doc.image` einer Unterschrift liest `sharp(buf).metadata()` den Kopf und hält ihn
+   gegen denselben Deckel (Fehler → „(nicht darstellbar)“ wie heute).
+6. **Meldung** nennt, was gilt: „Bitte mit Namenszug oder Handzeichen unterschreiben — ein Punkt oder ein gerader
+   Strich genügt nicht.“ Gleicher Text im Browser und vom Server.
+7. **Tests:** Verhaltenstests sichern den GRUND der Ablehnung zu, nicht nur „abgelehnt“; ein Browser-Test sichert
+   zu, dass bei Punkt/Strich KEIN POST abgeht (`page.route`), und dass eine Unterschriftsfigur abgeht; Regel-Test mit
+   beiden Kanalzahlen, identisches Urteil.
+8. **Benannte Grenzen:** Messung nur in Chromium (kein WebKit in dieser Umgebung); Kalibrierung an echten
+   Unterschriften erst über Punkt 4.
+
+Gegenproben (a)–(d) wie Fassung 1, dazu (e) Deckungsgrad-Regel aus → Rechteck-Fixtur rot; (f) Deckel vor
+`doc.image` entfernt → Test mit übergrossem Alt-PNG rot.
