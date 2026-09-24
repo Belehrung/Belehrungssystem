@@ -249,3 +249,29 @@ Komponente mit geradheit 0,439, gegen die Schwelle 0,4837. Geradheit allein tren
    das Raster auf allen Geräten unter dem 4-MP-Deckel, auch auf Laptops mit 300 % Skalierung, und die Pads bleiben im
    gemessenen Bereich (dPR 1/2).
 3. Ohne STOPP geht es direkt mit Phase 2, Schritt 2 weiter.
+
+## Nachtrag 4c (24.09.2026) — nach Phase 1e (`ab3f5cc`): Mindestgrösse statt weiterer Feinschwellen
+
+Gemessen: Kurze ±1-px-Zitterstriche (12 px, 0°/90°) erreichen verhaeltnis 0,225 und rutschen durch. `ll`/`AB`/`W` in 10 px
+fallen als Punkt; ihr Punktmass 5,07–7,07 überlappt die Punktfiguren (≤ 6,03). **Beide Fehler liegen im selben Bereich:
+Figuren, die nur wenige Strichdicken gross sind.** Dort sind Klecks, kurzer Strich und winzige Buchstaben geometrisch
+kaum unterscheidbar. Jede weitere Schwelle verschiebt diesen Bereich nur. Seit 1c hat jede neue Figurenmenge genau dort
+einen neuen Rand gefunden.
+
+Entscheidung (die Erkennung ist vom Betreiber an meine Empfehlung delegiert, 24.09.2026):
+
+1. **Neuer Ablehnungsgrund `zu_klein`**. Er greift, wenn die GESAMTausdehnung der Figur (Hauptachsenlänge über alle Tinte)
+   geteilt durch die globale Strichdicke (2·Tinte/Umfang) unter `MIN_GROESSE` liegt. Meldung: „Bitte grösser
+   unterschreiben.“ Das Mass hängt nicht von dPR und Pad ab, weil es sich auf die Strichdicke bezieht.
+   Reihenfolge: leer → Fläche → unbestimmt → punkt (alle Komponenten Punkte) → `zu_klein` → ≥ 2 Komponenten ok →
+   strich (geradheit UND verhaeltnis) → ok.
+2. **`MIN_GROESSE` wird so gelegt**, dass alle Striche, die die Strichregel nicht sicher fängt, mit ≥ 10 % darunter
+   liegen. Zusätzlich müssen alle Annehmen-Figuren mit einer Gesamtausdehnung ab 30 CSS-px mit ≥ 20 % darüber liegen.
+   Kleinere Annehmen-Figuren (10–14-px-Buchstabengruppen, „!“ in 15 px u. ä.) werden bewusst `zu_klein`. Das ist die
+   neue Grenze, und die Meldung sagt, was zu tun ist.
+3. `VERHAELTNIS_MAX` bleibt 0,1866, wenn alle Striche über `MIN_GROESSE` mit ≥ 10 % darunter liegen; sonst neu herleiten,
+   nur aus Strichen über `MIN_GROESSE`.
+4. Letzte gezielte Prüfung um `MIN_GROESSE` herum: Striche mit ±1 px bei 20/24/30 px, Buchstabengruppen und „!“, „X“, „=“
+   bei 20/30/40 px, dazu 5 Namenszüge bei 30–40 px. Schwellen eingefroren. Danach ist die Regel ENDGÜLTIG eingefroren.
+   Kalibriert wird im Betrieb über `[unterschrift-masse]` (Sammelliste PP4b-20), nicht über weitere synthetische Runden.
+5. `zu_klein` gehört in die erlaubte Grund-Menge von Punkten und Strichen; Tests sichern je Fixtur den exakten Grund zu.
