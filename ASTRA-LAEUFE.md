@@ -241,6 +241,8 @@ sondern falsch.
 | 24.09.2026 | Planprüfung C2 stille Fehler (deepseek-v4-pro) | Diff 108 Zeilen, Suchen 28, Lesungen 44, Token rein 2193058, Token raus 22210, Runden 29 | 8 | 7½ (einzig von dieser Spur: Monatslauf verschluckt Modulfehler, `saved=1`-catch, `server.js` ohne Log). Einzelheiten `plaene/planpruefung-c2.md` | ½ (Nebenbehauptung „keine Fehler-Middleware“) | 2,98 $ |
 | 24.09.2026 | Planpruefung C2 stille Fehler Spur B (kimi-k3, Buendel 130 KB, effort high) | Bündel 40.090 Token ein, 29.378 aus, 799 s | 5 | 5 (einzig von dieser Spur: `ladeStatus` fängt selbst — Tabellenfehler im Papier; qpdf-Stub; Abdeckung der Regex-Messung) | 0 | — (keine Preisangabe) |
 | 24.09.2026 | Planprüfung C3a Datenintegrität (deepseek-v4-pro) | Diff 77 Zeilen, Suchen 19, Lesungen 27, Token rein 613850, Token raus 42345, Runden 10 | — | — | — | 0,98 $ |
+| 24.09.2026 | Diffprüfung P4 Runde 2 Nacharbeit (deepseek-v4-pro) | Diff 551 Zeilen, Suchen 11, Lesungen 37, Token rein 2505270, Token raus 37017, Runden 28 | — | — | — | 3,45 $ |
+| 24.09.2026 | Planprüfung T2 Zusicherungen (deepseek-v4-pro) | Diff 85 Zeilen, Suchen 26, Lesungen 79, Token rein 3245215, Token raus 42248, Runden 26 | — | — | — | 4,45 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
