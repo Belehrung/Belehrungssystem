@@ -73,6 +73,7 @@ Stand 24.09.2026, 07:20 UTC.
   Cloud-Sitzungen läuft). Reihenfolge in `plaene/arbeitsplan-offen.md`. Laufend: P4-Bau; Planprüfungen P2
   (`plaene/auftrag-p2-fehlerstatus.md`, Baum `/workspace/gymdocu-p2`) und C1 (`plaene/auftrag-c1-entschiedene.md`,
   Baum `/workspace/gymdocu-c1`).
+* **Stand 24.09.2026 20:45 UTC:** P4: ausführende Prüfspur R2 (10 Befunde) → Nacharbeit 4 läuft. P2: gebaut, Suite 374/374; Diffprüfung: DeepSeek fertig (6), Claude-Spur läuft. C1: gebaut, Suite 374/374; Diffprüfung mit drei Spuren (17 Befunde, einer blockierend: QR-Sperre prüfte den falschen Block, von allen drei Spuren gefunden) → Nacharbeit 1 läuft; **offene Betreiber-Frage C1-S1** (QR-Sperre auch für aktiven Block ohne eigene Journalspur). T2: Bau läuft (Frist 11.10.). Baureif: H1a, C2 (jetzt 11 Punkte), C3a.
 * **Stand 24.09.2026 19:40 UTC:** P4: Nacharbeit 1–3 fertig (Suite 376/376 grün je Runde), Diffprüfung R2 (DeepSeek) ausgewertet, ausführende Claude-Prüfspur läuft; danach PR. P2: gebaut (265 Stellen, Wächter + Verhaltensproben), zweiter Suite-Lauf läuft noch. C1: Bau läuft. Baureif mit Planprüfung: H1a (16), C2 (14), C3a (20), T2 (21, **Frist 11.10.2026** wegen Zeitumstellungs-Fixtures). C3b: Messpapier. Werkzeug: Scratch-`frage.js` endete bei abgerissenem Strom mit EXIT 0 ohne Ergebnis — behoben.
 * **Stand 24.09.2026 18:45 UTC:** Container-Neustart gegen 17:40 überstanden (Marker-Scan überall 0, Kimi-Läufe neu).
   P4: Diffprüfung R1 durch (8 Befunde, `plaene/diffpruefung-p4.md`), Nacharbeit 2 läuft (Feldtyp an der Routengrenze,
