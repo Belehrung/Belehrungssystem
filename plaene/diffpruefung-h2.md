@@ -33,3 +33,13 @@ ergänzt. Rohwert-Fund der Suite über zwei Konstanten in `routes/tablet-sperre.
 | H2-D8 (F8) | `/login/tablet` ohne Cookie legt weiter je Anfrage eine Zeile an (5 min statt 8 h) — Restfläche | im Auftrag so gewollt; Ratenbegrenzung ist Betreiber-Teil nach dem Merge | Anmerkung |
 
 **Nacharbeit 1**: H2-C1/D4, H2-D2, H2-C2/D3, H2-D5, H2-D7.
+
+## Nacharbeit 1 (`e7dfc41..6d537a5`) — gelesen, Runde 2 läuft
+
+Executer: ein Commit; volle Suite `SUITE_EXIT=0`, Dateizahl 363 = 363, Lint 0, E2E 12/12, H2-Test 78/0. Gegenproben:
+Zeichen-Riegel entfernt → 77/1 (nur der Fall `/module\x?nr=1` fällt — die vier Beispiele aus dem Auftrag fängt schon
+der Origin-Riegel; der Executer hat den unterscheidenden Fall selbst gesucht und ergänzt); Merkmal-`delete` im Marker
+entfernt → 74/4 (Set-Cookie fehlt); `pending2fa` im 400-Zweig gelöscht → 77/1 (5g). Produktivdiff selbst gelesen:
+`core/auth.js` (zwei Riegel in beiden Filtern), `routes/auth.js` (`cookieUnbestaetigt` gesetzt/gelöscht). Die neue
+Route `/_debug/sitzung` steht nur in der Test-App (`test_feature_h2_cookie_schleife.js:167`), nicht im Produktivcode.
+Runde 2: eine Lesespur (DeepSeek) über die Nacharbeit, weil sie Verhalten ändert.
