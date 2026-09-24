@@ -392,3 +392,30 @@ Lauf 24.09.2026 07:33–07:50 UTC, 13 Runden, 3,67 Mio. Token ein, geschätzt 5,
 | V18-6 | `test_feature_getmutation.js` ohne `_test`-Sicherheitsstopp, obwohl es mutiert | gering |
 
 6 Befunde, 6 getragen (ungemessen), 0 gefallen.
+
+## Bereich 19 — Testdateien `test_feature_ladebestand_streng.js` … `test_feature_mandantengrenze_dateiwege.js` (20 Dateien)
+
+Lauf 24.09.2026 08:05–08:29 UTC, 23 Runden, 6,60 Mio. Token ein, geschätzt 8,99 $. Befunde nicht einzeln gemessen.
+
+| Nr. | Befund | Einstufung |
+|---|---|---|
+| V19-1 | drei Magicline-Tests mit Slug aus `process.pid` — `createStudio` ist über den Slug idempotent, ein Zweitlauf gegen dieselbe DB erbt den Altzustand (im Einzelaufruf ohne Netzsperre sogar ein echter Abruf) | gering |
+| V19-2 | `test_feature_ladestand_dbfehler.js:202`: UTC-Tag als Fixture-Datum | Anmerkung |
+| V19-3 | Z3-Zählung nennt „Dashboard“ als achten milden Aufrufer, gemeint ist der Brandschutz-GET | Text |
+| V19-4 | „Fenster nach erstem Key geschlossen“ unterscheidet nicht „geschlossen“ von „nie geschrieben“ | Anmerkung |
+| V19-5 | Klammerzählung behauptet Kommentar-/String-Bewusstsein, zählt roh | Anmerkung |
+
+## Bereich 26 — Testdateien `test_feature_suite_laufsperre.js` … `test_feature_wartung_pdfname.js` (29 Dateien)
+
+Lauf 24.09.2026 08:05–08:22 UTC, 12 Runden, 3,31 Mio. Token ein, geschätzt 4,61 $. Im Material geschwärzt: vier
+Test-Verbindungszeichenfolgen.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V26-1 | `test_feature_suite_laufsperre.js`: vererbt ein gesetztes `GYMDOCU_SUITE_LOCK` an die Wegwerf-Kopien — Fall F kann dann an der echten Sperre hängen | nicht gemessen | gering |
+| V26-2 | `test_feature_verbandbuch_meldepflicht.js:98, 180`: Aufräumen über `path.join(__dirname, pfad)` (Zwischenvariable `abs`), ohne eigene `PDF_ROOT`-Umleitung — dieselbe Klasse wie V25-1 | gelesen `:98, :180` | → T1 |
+| V26-3 | `test_feature_ui_feedback.js:40-41`: prüft nur „nicht unescaped“, nicht „nicht ausgegeben“ | nicht gemessen | Anmerkung |
+| V26-4 | Pfade relativ zum Arbeitsverzeichnis statt `__dirname` | nicht gemessen | Anmerkung |
+| V26-5 | Test-Abfragen ohne `studio_id` | — | Anmerkung |
+
+5 + 5 Befunde, alle getragen (1 gelesen), 0 gefallen.
