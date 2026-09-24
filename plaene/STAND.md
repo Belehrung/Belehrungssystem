@@ -323,5 +323,5 @@ Warteschlange. C1-Nacharbeit wartet auf ihren Suite-Lauf. QR-J Fassung 2 fertig,
 
 Stand 25.09.2026 01:10 UTC: T2 Diffprüfung durch → Nacharbeit 1 an denselben Executer. Wichtigster Fund, vorbestehend
 und selbst nachgemessen: `ops/syntax-check.sh` (CI + Deploy-Gate) prüft je 50er-Stapel nur die ERSTE Datei
-(`node --check a b` prüft nur a) — seit Jahren nur ≈13 von 646 Dateien. C1 Runde 2: DeepSeek ohne blockierenden
+(`node --check a b` prüft nur a) — seit Commit `cab4d5c` (12.09.2026) nur ≈13 von 646 Dateien. C1 Runde 2: DeepSeek ohne blockierenden
 Befund; Kimi und die ausführende Spur laufen. P2 Nacharbeit 2 läuft.
