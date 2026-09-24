@@ -260,3 +260,19 @@ die Mechanismen an den genannten Zeilen gelesen.
 | V21-6 | `test_feature_pdf_root_lesezugriff_static.js:203`: `git ls-files` ungeschützt auf Modulebene | nicht gemessen | gering |
 
 6 Befunde, 6 getragen (2 gelesen), 0 gefallen.
+
+## Bereich 14 — Testdateien `test_feature_auditlock_ordnung_static.js` … `test_feature_belehrung_identitaet.js` (22 Dateien)
+
+Lauf 24.09.2026 06:45–07:03 UTC, 16 Runden, 4,86 Mio. Token ein, geschätzt 6,72 $.
+
+| Nr. | Befund | Nachgemessen | Einstufung |
+|---|---|---|---|
+| V14-1 | `test_feature_aufkleber_bestellung.js:360-361`: „PDF weiterhin ohne 500er/leer“ prüft nur `status !== 200` — ein 500 hält sie grün | gelesen | gering (grün aus falschem Grund) |
+| V14-2 | `test_feature_belehrung_auditappend_bindung.js:101`: `AUDIT_RE` schliesst Member-Aufrufe (`x.auditAppend(`) per Lookbehind aus — solche Aufrufe in einem Tx-Block sieht der Wächter nie; die Grenze ist nicht benannt | gelesen; Member-Form kommt im Bestand vor (`core/retention.js:987`) | gering |
+| V14-3 | `test_feature_ausstattung.js:188`: zweiter Oder-Zweig macht die Zusicherung fast tautologisch | nicht gemessen | Anmerkung |
+| V14-4 | Spaltenwächter maskiert keine SQL-Kommentare (`--`) — Fehlalarm möglich, Behauptung „ausserhalb von Kommentaren“ hält nicht | nicht gemessen | Anmerkung |
+| V14-5 | Test-Helfer lesen ohne `studio_id` | — | Anmerkung |
+| V14-6 | `test_feature_belehrung_identitaet.js`: festes Studio-Kürzel statt `kuerzel()` | nicht gemessen | Anmerkung |
+| V14-7 | zwei Dateien ohne Sollzahl-Bremse; `test_feature_ausstattung.js` druckt „0 FAIL“ als festen Text | nicht gemessen | gering |
+
+7 Befunde, 7 getragen (2 gelesen), 0 gefallen.

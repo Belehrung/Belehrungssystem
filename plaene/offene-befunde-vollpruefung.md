@@ -79,3 +79,4 @@ Verweist auf `plaene/vollpruefung-befunde.md` (Nachmessung dort).
 | V07-2..9 | übrige Befunde aus Bereich 07 (Demo-Daten, Reaper, Export-Hinweis, Feiertags-Historie, Claim-Verwaisung, Speicher) | offen, gesammelt |
 | V13-1..3 | Test-Stub `DESIGN_TOKENS_CSS`; falsche Begründung in der Ausnahmeliste `keine_systemeingriffe`; Zusicherung ohne Prüfung zählt als PASS | offen, gering |
 | V21-1..6 | Test-PDFs ohne Umleitung, Aufräumpfad, Vorzustand erzwingt Sortierung, Mandantenfilter der Session-Entwertung ungeprüft, stilles Überspringen, ungeschütztes `git ls-files` | offen, gering |
+| V14-1..7 | Testfragen: `status !== 200` akzeptiert 500, Wächter blind für Member-Aufrufe, tautologische Oder-Zweige, SQL-Kommentare, Helfer ohne `studio_id`, festes Kürzel, fehlende Sollzahl | offen, gering |
