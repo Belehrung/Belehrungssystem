@@ -75,7 +75,7 @@ Massgeblich; wo sie Fassung 1 widerspricht, gilt sie.
 3. **Messmenge erweitert:** Punkt als Mikro-Zug (down, ≤ 2 CSS-px Bewegung, up) — eine Figur mit 0 Tinte ist ein
    Messfehler und bricht ab. Dazu flache Bögen (Stich 2/4/8 CSS-px), flache Welle, „✓“, „X“, „=“, „!“, gefülltes
    Rechteck, dicker Balken, sehr kleine und sehr flache Namenszüge. Ergebnis-Tabelle je Figur mit Tintenmenge, den drei
-   Massen und dem Urteil. Die Einordnung von „=“, „!“, „✓“, „X“ lege ich dem Betreiber vor, bevor sie Fixtur wird.
+   Massen und dem Urteil. Betreiber-Entscheidung 24.09.2026: abgelehnt werden nur einzelne Punkte und einzelne gerade Striche; Handzeichen („X“, „✓“) und Kombinationen („=“, „!“) gelten als Unterschrift und kommen als ANGENOMMEN-Fixturen hinein.
    Die 20-%-Grenze gilt in BEIDE Richtungen (echte Figur nahe an „ablehnen“ UND Strich/Punkt nahe an „annehmen“).
 4. **Unabhängige zweite Quelle:** jede serverseitig geprüfte Unterschrift schreibt die drei Masse (nur Zahlen, kein
    Bild) als eine Protokollzeile `[unterschrift-masse]`. Damit lässt sich die Schwelle später an echten Unterschriften
