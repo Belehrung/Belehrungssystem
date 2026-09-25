@@ -16,3 +16,6 @@ Verweist auf `plaene/planpruefung-c2.md` (Nachmessung dort).
   bei gescheitertem `rename` nach `registriereVerify` (C2R2-6, `plaene/diffpruefung-c2.md`).
 - **C2-S9:** `core/korrektur-pdf.js:54` schreibt Korrekturblätter direkt unter dem öffentlichen Namen (`wx`); ein
   Absturz hinterlässt eine halbe öffentliche PDF (C2R2-9). Kein Rückschritt, eigener Erzeuger.
+- **C2-S10:** Renderfehler in der Zeichenroutine VOR `finalize()` (10 von 11 `generate*`) lassen `.tmp-` und einen
+  offenen Dateideskriptor liegen; der Deskriptor bleibt bis zum Neustart offen (C2R3-9, gemessen; vorbestehend).
+  Vorschlag: Abbruchfunktion aus `createDocument`/`schreibStrom` (`stream.destroy()` plus Aufräumen), Aufrufe in `try`.

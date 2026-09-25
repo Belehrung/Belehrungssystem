@@ -73,3 +73,22 @@ Ablehnung ganz ab (vorher Typ ausgelassen) und die Zeile „Keine PDFs erzeugt�
 ganzen PDF_ROOT im App-Prozess und löscht jedes `.tmp-*` > 24 h — gehört jedes davon der Engine?
 Spuren (Verhalten ändert sich → Runde 3): Claude ausführend (`gymdocu-c2-cc`, `scratchpad/c2cc3/`), DeepSeek mit
 Repo-Lesezugriff.
+
+| Nr | Quelle | Befund | Nachmessung | Schwere | Behebung |
+|---|---|---|---|---|---|
+| C2R3-1 | CC | Neue tägliche Löschung (`ops/gymdocu-pdf-reste-ernte.js`) ohne Verhaltenstest: Schwellen 0, `wirklich` immer, PDF_ROOT-Riegel weg, Filter umgedreht (löscht dann veröffentlichte PDFs eines lebenden Studios), `melde` weg, Aufruf in `server.js` weg — alle grün; der Verdrahtungs-Wächter trifft den Verbandbuch-Aufruf | CC gemessen (N14–N22, N18: `5/Wartung/Wartung_alt_2019.pdf` gelöscht) | blockierend | Verhaltenstest (Alter per `utimes`, Grenzfälle 29/31 Tage, 23/25 h, veröffentlichte PDF bleibt, Symlink, Probelauf, Riegel, gezählte Meldungen); Wächter auf `pdfResteErnte.ernteInProcess(` |
+| C2R3-2 | CC, DS F5 | Studio in der Signatur: ein mandantenweiter Fehler meldet je Studio — 6 Studios 48 Pings (alt 8), 50 Studios × 8 Module 400 | CC gemessen (m15, m10) | mittel | zweite Drosselstufe je Quelle mit Anzahl und Studioliste; Test „50 Studios → höchstens k“ |
+| C2R3-3 | CC | Ernte-Meldung ohne Anzahl/Studio/Pfad, gedrosselt auf eine je Lauf, erst nach dem Löschen | CC gemessen (m17) | gering-mittel | eine Meldung je Lauf und Studio mit Zahlen |
+| C2R3-4 | CC, DS B3 | Wurzel-Symlink (`_quarantaene` oder PDF_ROOT) wird verfolgt — Löschung ausserhalb von PDF_ROOT | CC gemessen (m17b: 90 Tage alte Datei ausserhalb gelöscht) | gering (Fehlkonfiguration nötig) | Wurzel per `lstat` prüfen, Abbruch |
+| C2R3-5 | CC | Vollscan im App-Prozess: 200.000 Dateien → Event-Loop 0,9–1 s blockiert, Heap +208 MB | CC gemessen | gering | beim Durchlaufen filtern, asynchron (`opendir`) |
+| C2R3-6 | DS B2 | `statSync`-Fehler ausser ENOENT (EACCES, EMFILE, EIO) werden still übersprungen — „0 gefunden“, Exit 0 | gelesen (`:148`, `:172`) | gering-mittel | nur ENOENT überspringen, sonst Fehler zählen |
+| C2R3-7 | CC | `stream._fehler`-Zweig in `finalize()` ungetestet, erreichbar (ENOSPC ab dem ersten Schreiben) | CC gemessen (N5a grün, m20) | gering | Testfall |
+| C2R3-8 | CC, DS B5 | `core/provisioning.js` und die Ernte laden die ganze PDF-Engine für eine Konstante (Ladezeit 30 → 136 ms, pdfkit) | CC gemessen | gering | Blattmodul für `QUARANTAENE_ORDNER`/`FLUECHTIGE_TYPEN` |
+| C2R3-9 | CC, DS B6 | Renderfehler vor `finalize()`: 10 von 11 Erzeugern lassen `.tmp-` UND einen offenen Dateideskriptor liegen, der bis zum Neustart offen bleibt (vorbestehend) | CC gemessen (m16: Deskriptoren 10 → 15) | gering | → Sammelliste C2-S10 |
+| C2R3-10 | DS B4, CC N24 | Hub-/Kachel-Zusicherungen sind reine Textsuchen (Verdrahtung ungeprüft) | gelesen | gering | → vorhandene Sammelliste C2-S4 (Hub testbar machen) |
+| — | DS B1 | flüchtige Datei trotz Registerzeile gelöscht | die Zeile nennt den ÖFFENTLICHEN Namen (`registriereVerify`, `core/pdf-engine.js:112`), nie die Temp-Datei; die Zeile ohne Datei ist C2-S7 | gefallen | — |
+
+Zahlen: CC 9 Befunde + 15 überlebende Mutationen, DS 6; 10 Zeilen, einer gefallen. Nur CC: C2R3-1 (blockierend), -2,
+-3, -5, -7. Nur DS: C2R3-6. Grün: Deprovisionierung 0 Dateien (auch bei EBUSY über die Rückstands-Queue, fremdes Studio
+unberührt), Export 0 `.tmp-`, ENOSPC-Reste 0, alte Mutationen M1–M14 alle rot, keine Kreis-Importe; kein anderer
+`.tmp-`-Erzeuger unter PDF_ROOT im Repo. Nacharbeit 3: `plaene/auftrag-c2-nacharbeit3.md`.
