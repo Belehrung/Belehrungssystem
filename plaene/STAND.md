@@ -408,6 +408,8 @@ Stand 25.09.2026 11:41 UTC (Stundentakt): Im Bau: C2 N2 (Suite läuft), QR-J N4 
 Planprüfungen). C3b gebaut (`1d9b08d`, Suite 394 = 394), Diffprüfung Runde 1 läuft (CC + zwei DeepSeek-Spuren; Kimi
 ohne Guthaben — Betreiber gefragt). C3a Runde 2 ausgewertet, Nacharbeit 2 wartet auf Bauplatz. Warteschlange Bau:
 C3a N2.
+Stand 25.09.2026 15:40 UTC (Stundentakt): Im Bau: QR-J N5, C3a N2 (Bericht steht aus). Danach C3b N2. Sparmodus aktiv.
+
 **BETREIBER-ENTSCHEIDUNG 25.09.2026 (Kontingent bei 91 %): „deepseak und gpt 6 primär ansprechen und sparmodus“.**
 Heisst bis zum Reset: laufende Bauten (QR-J N5, C3a N2) zu Ende; neu gebaut nur, was einen Merge freimacht (C3b N2);
 C2 N4 und alles Weitere erst nach dem Reset. Diffprüfungen ohne ausführende Claude-Spur, stattdessen zwei Lesespuren
