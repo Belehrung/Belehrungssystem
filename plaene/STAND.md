@@ -350,3 +350,6 @@ Stand 25.09.2026 02:46 UTC: T2 eigener Suite-Lauf auf `4073fb2`: SUITE_EXIT=0, 3
 PR #478 angelegt, CI läuft, Prüfung 03:10. QR-J-Bau läuft (seit 02:35), H1a-Bau läuft.
 Stand 25.09.2026 02:57 UTC: **T2 gemergt** (#478, Squash `00bd9c9`, CI 4/4 grün auf `4073fb2`, kein Bot-Kommentar,
 Botschaft zurückgelesen). Deploy-Prüfung 03:20 (Schritt 4/8 muss jetzt „(N Dateien)“ melden).
+Stand 25.09.2026 03:21 UTC: **T2 ausgeliefert** — Deploy 446 (`00bd9c9`) success, Schritt 4/8 meldet jetzt „659 Dateien“
+(neuer Syntax-Check läuft als Unterprozess nach dem pull, also schon beim eigenen Deploy), Health Versuch 1, live-check
+unauffällig. Laufend: H1a-Bau, QR-J-Bau.
