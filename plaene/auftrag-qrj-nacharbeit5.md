@@ -1,6 +1,7 @@
-# Auftrag QR-J Nacharbeit 5 (25.09.2026, Fassung 1)
+# Auftrag QR-J Nacharbeit 5 (25.09.2026, Fassung 2)
 
-Grundlage: `plaene/diffpruefung-qrj.md`, Abschnitt „Runde 5“ (QJ5-1..QJ5-11). Baum `/workspace/gymdocu-qrj`, Zweig
+Grundlage: `plaene/diffpruefung-qrj.md`, Abschnitt „Runde 5“ (QJ5-1..QJ5-11); Fassung 2 nach der Planprüfung
+`plaene/planpruefung-qrj-n5.md` (PQ5-1..13). Baum `/workspace/gymdocu-qrj`, Zweig
 `fix-qrj-journal-reparatur`, Kopf `24b9be8`. Reproduktionen und Werkzeuge der Prüfspur: `scratchpad/qrjcc5/` (`e6.js`
 Szenarien r1_retro, r1_kontroll, r3, r4, r5, r6, r9, r10, r11, r12_meta_rest, r12_freitext, r13; `rf.js` Referenzmodell
 aus dem Papier gegen den Leser; `tf.js` Werkzeug-Zufallssuche gegen dasselbe Modell; `mutationen5.js` mit M02, M06, M08,
@@ -17,10 +18,25 @@ EHRLICHEN Werkzeugweg (keiner, der eine Spanne oder einen Eigentümer erfindet),
 Fünf Runden lang hat eine Behebung einen Weg genannt, den das Werkzeug ablehnt. Deshalb neu als dauerhafter Test (in
 `test_feature_qr_journal.js` oder einer eigenen registrierten Datei, Laufzeit ≤ 60 s, feste Startwerte): für eine Menge
 von Journal-Zuständen (die Fixturen dieses Auftrags plus eine deterministische Zufallsmenge nach dem Muster von
-`tf.js`) wird für jedes gesperrte Studio und jeden offenen Abschnitt jeder Befehl, den `wegFuer` nennt, als TROCKENLAUF
-ausgeführt; er muss angenommen werden. Ein Weg, der nur mit einem Platzhalter (`<Beleg>`, `<subdomain>`, `<id>`)
-gangbar ist, wird mit einem passenden Wert ausgeführt; welcher Platzhalter welchen Wert bekommt, steht im Test. Dazu
-die Umkehrung: kein Zustand „gesperrt, aber kein Weg genannt“. Positivkontrolle: `wegFuer` auf den Stand `24b9be8`
+`tf.js`) wird für jedes gesperrte Studio und jeden offenen Abschnitt jeder Befehl, den `wegFuer` nennt, über die
+`befehl…`-Funktionen OHNE `--ja` ausgeführt (dieselbe Schalter- und Pflichtargumentprüfung wie die Kommandozeile,
+nicht `pruefe…` direkt — PQ5-3); er muss angenommen werden. Zusätzlich je WEGART (Korrektur, Freigabe ohne Korrektur,
+Eigentümer, keine Aufkleber, benannte Freigabe, Verwerfen, Korrektur eines gedeckten Studios aus §4) mindestens ein
+ECHTER Schreiblauf mit `--ja` in der Test-DB, der die Metazeile schreibt (PQ5-9: der Schreibweg prüft frisch unter den
+Locks mehr als der Trockenlauf).
+- `wegFuer` nennt JEDES Pflichtargument selbst (`--grund`, `--studio`, `--abschnitt`, Schalter); offen bleiben nur
+  Platzhalter und bei `korrigieren` die belegte Spanne (PQ5-2, PQ5-10). Ersetzungsregel im Test, als Tabelle: `<Beleg>`
+  → fester Text; `<subdomain>` → Subdomain des gesperrten Studios bzw. eines Kandidaten des Abschnitts; `<id>` → die im
+  Journal bekannte, heute fehlende Studio-ID der Fixtur; `korrigieren … ...` → `--von/--bis/--quelle` aus der
+  belegten Spanne der Fixtur (je Fixtur eingetragen, nie aus dem Leser berechnet) (PQ5-4).
+- Mindestmenge der Zustände (PQ5-4, DSB Frage 2): je `wegFuer`-Ast einer — „genau S“ mit belegter Spanne; alle/Präfix
+  mit Korrektur im Abschnitt und weiterem Kandidaten; alle/Präfix ohne Korrektur OHNE Chargenschlüssel; alle/Präfix ohne
+  Korrektur MIT Chargenschlüssel in drei Ausprägungen (existierender Kandidat, im Journal bekanntes fehlendes Studio,
+  keine Aufkleber); ein Studio in A(idx) mit tragender Deckung (eigene Korrektur und benannte Freigabe) und ohne
+  tragende Deckung; reines Metazeilen-Bruchstück; reine Freitextzeile; global erledigte Zeile (§4); `keine_aufkleber`
+  mit späterer Korrektur desselben Abschnitts (§4); dazu `r12_meta_rest`, G6, `r1_retro`, `r1_kontroll`, `r3`, `r4`,
+  `r6`, `r9`.
+- Die Umkehrung: kein Zustand „gesperrt, aber kein Weg genannt“. Positivkontrolle: `wegFuer` auf den Stand `24b9be8`
 zurückgedreht → ROT mit Zahl (Erwartung: `r12_meta_rest`, G6).
 Das Referenzmodell `rf.js` und die Invariante I1 (keine Doppelvergabe) aus `tf.js` gehen ebenso als deterministischer
 Test in die Suite, auf die Regeln dieses Auftrags nachgezogen. Das Modell wird aus dem PAPIER geschrieben (§1–§4 dieses
@@ -29,10 +45,16 @@ und des vorigen Auftrags), nicht aus dem Leser; im Test steht, woher jede Regel 
 ## 1. Abschnitt ohne Chargenschlüssel (QJ5-1 blockierend)
 
 - `uebrige-freigeben --abschnitt=i` für einen Abschnitt OHNE Chargenschlüssel wird auch ohne jede Korrektur der Zeile
-  angenommen (wie der Leser, `core/qr-verbrauch.js:425`); Audit-Studio dann über `--studio` (Pflicht). Ohne
-  `--abschnitt` gilt dasselbe, wenn ALLE Abschnitte der Zeile ohne Chargenschlüssel sind.
-- `wegFuer` nennt je Fall nur den gangbaren Weg: bei einer Zeile, die Verwerfen annimmt (reines Metazeilen-Bruchstück,
-  reine Freitextzeile), das Verwerfen; sonst die Freigabe dieses Abschnitts.
+  angenommen (wie der Leser, `core/qr-verbrauch.js:425`). Audit-Studio dann über `--studio` (Pflicht, sonst Abbruch
+  wie heute `tools/qr-journal.js:1224`); die (b)-Prüfung `:1215-1217` („`--studio` muss ein Korrektur-Studio sein“)
+  entfällt für eine Freigabe, deren gedeckte Abschnitte ALLE ohne Chargenschlüssel sind — dort muss `--studio` ein
+  existierender Kandidat des Abschnitts sein (PQ5-1). Ohne `--abschnitt` gilt dasselbe, wenn ALLE Abschnitte der Zeile
+  ohne Chargenschlüssel sind.
+- `wegFuer` nennt je Fall nur den gangbaren Weg, mit allen Pflichtargumenten: bei einer Zeile, die Verwerfen annimmt
+  (reines Metazeilen-Bruchstück, reine Freitextzeile), `verwerfen --zeile=N --grund="<Beleg>" --studio=<subdomain>`
+  (PQ5-2); sonst `uebrige-freigeben --zeile=N --abschnitt=i --grund="<Beleg>" --studio=<subdomain>`.
+- Geltungsbereich (PQ5-6): ein Abschnitt ohne Chargenschlüssel hat den Kandidaten „alle“ (vor dem Bau am Leser messen
+  und im Bericht wörtlich nennen); trifft das nicht zu, bleibt bei „genau S“ die Korrektur der genannte Weg.
 - Pflichttests: `r12_meta_rest` (Bruchstück + Chargen-Rest „Präfix 7“, Rest per `--keine-aufkleber` geklärt → Abschnitt
   0 per Freigabe gedeckt, `erledigt_durch` literal, 6/7/61 vergeben literal); G6 (Korrektur in Abschnitt 1, Abschnitt 0
   per genanntem Weg); `r12_freitext` (Verwerfen genannt und gangbar).
@@ -40,8 +62,11 @@ und des vorigen Auftrags), nicht aus dem Leser; im Test steht, woher jede Regel 
 ## 2. Keine rückwirkende Deckung (QJ5-2)
 
 Eine Freigabe ohne Eigentümer trägt einen Abschnitt MIT Chargenschlüssel nur, wenn eine Korrektur desselben Abschnitts
-VOR ihr steht (`k.zeile < e.zeile`). Werkzeug-Simulation und Leser gleich (die Simulation des Werkzeugs zeigt heute
-schon „nicht freigegeben, offen [1]“ — der Leser muss dazu passen). Pflichttests `r1_retro` (64 bleibt gesperrt, 61 bleibt
+VOR ihr steht (`k.zeile < e.zeile`) — eingebaut NUR in diesem Ast von `tragendeDeckungen` (`core/qr-verbrauch.js:425`);
+Eigentümer- und `keine_aufkleber`-Freigaben brauchen keine Korrektur und bleiben unberührt. Die zweite Formel im
+Werkzeug (`gedeckteAbschnitte`, `tools/qr-journal.js:1229-1230`) wird aus derselben Regel abgeleitet, nicht daneben
+gepflegt (PQ5-13). Werkzeug-Simulation und Leser gleich (die Simulation zeigt heute schon „nicht freigegeben, offen
+[1]“ — der Leser muss dazu passen). Pflichttests `r1_retro` (64 bleibt gesperrt, 61 bleibt
 gesperrt, bis eine Freigabe NACH der Korrektur geschrieben ist; Audit-Kette nennt die Freigabe von 61 dann) und
 `r1_kontroll`. Zusicherung, dass eine spätere Korrektur OHNE `--uebrige-nicht-betroffen` kein anderes Studio frei gibt
 (`uebrige_studios: []` UND frischer Leser sperrt die übrigen).
@@ -54,13 +79,24 @@ Pflichttest `r3`: `erledigt_durch` literal gesetzt, `zeigen` ohne „offen für:
 
 ## 4. Widerruf und falsche Eigentümer-Erklärung (QJ5-5)
 
-- Wortlaut von Log, Warnung und Audit-Feld nach der Wirkung: die benannte Freigabe mit `--eigentuemer-widerrufen` gibt
-  das benannte Studio frei; die Erklärung aus Zeile N bleibt als Deckung der übrigen Kandidaten stehen. Feldname
-  entsprechend (der Zweig ist nicht ausgeliefert, es gibt keine Altzeilen).
-- `korrigieren` für ein Studio, dessen Abschnitt schon gedeckt ist, wird angenommen (eine Korrektur hebt nur an und
-  gibt niemanden frei); `--uebrige-nicht-betroffen` ist dabei ausgeschlossen. Das ist der ehrliche Weg, wenn sich eine
-  Eigentümer-Erklärung als falsch herausstellt. Die Zeilenangabe in der heutigen Meldung („bereits erledigt durch Zeile
-  6“, gedeckt aber durch Zeile 5) wird richtig.
+- Wortlaut von Log, Warnung und Audit nach der Wirkung (PQ5-8, festgelegt): Schalter `--eigentuemer-widerrufen` heisst
+  `--eigentuemer-freigeben`; Audit-Felder `widerrufen` → `eigentuemer_freigegeben`, `widerrufene_zeilen` →
+  `eigentuemer_zeilen`; Log: „Studio S (Eigentümer laut Zeile N) wird freigegeben; die Erklärung aus Zeile N deckt die
+  übrigen Kandidaten weiter.“ Der Zweig ist nicht ausgeliefert, es gibt keine Altzeilen; Leser, Werkzeug, Sperrtext,
+  Tests und Kopfkommentare ziehen mit (`grep` auf die alten Namen muss 0 ergeben).
+- `korrigieren --abschnitt=i` für ein Studio S, dessen Abschnitt i schon gedeckt ist, wird angenommen — auch wenn die
+  Zeile global erledigt ist (`tools/qr-journal.js:647` gilt dann nicht) (PQ5-11). Grund: eine Korrektur hebt nur an und
+  gibt niemanden frei; sie ist der ehrliche Weg, wenn sich eine Eigentümer- oder `keine_aufkleber`-Erklärung als falsch
+  herausstellt. Regeln: `--abschnitt` ist dann Pflicht; `--uebrige-nicht-betroffen` wird mit eigenem (k)-Abbruch
+  abgelehnt; eine zweite Korrektur DESSELBEN Studios im selben Abschnitt bleibt abgelehnt; alle Untergrenzen
+  ((d), (d'), `qr_charge`, `nr_bis`) gelten unverändert. Die Frischprüfung unter den Locks (`:971-974`) prüft in diesem
+  Fall „Zeile unverändert UND keine eigene Korrektur von S in i“ statt „nicht gedeckt“ (PQ5-9).
+- Der Payload einer solchen Korrektur nennt die Erklärungen, denen sie widerspricht (`widerspricht_zeilen`: Eigentümer-
+  und `keine_aufkleber`-Zeilen desselben Abschnitts) (PQ5-12). `erledigt_durch` darf danach auf die Korrekturzeile
+  wandern (Test hält den Wert literal fest); dass eine spätere Spanne als Nachbar die Obergrenze einer früheren,
+  unerledigten Zeile senken kann, kostet nur Nummern — im Kopfkommentar benennen.
+- Die Zeilenangabe der heutigen Meldung („bereits erledigt durch Zeile 6“, gedeckt aber durch Zeile 5) wird richtig:
+  genannt wird die Zeile der tragenden Deckung für S in i.
 - Pflichttests: `r4`-Folge mit falschem Eigentümer, danach Korrektur des wahren Trägers → dessen Spanne zählt, literale
   Vergabe dahinter.
 
@@ -78,8 +114,9 @@ Korrektur“ (T04).
 - `tragendeDeckungen`: `keine_aufkleber` nur mit Chargenschlüssel (QJ5-8), Handzeilentest.
 - `test_feature_qr_journal.js:2098`: Mindestmenge bzw. literale Erwartung statt `every` über eine womöglich leere Liste
   (QJ5-9); Nachweis, dass die Liste im Fall nicht leer ist, oder Umbau der Fixtur.
-- Weg-Teil des Sperrtexts auf höchstens drei Zeilen begrenzen, Rest „… und N weitere: node tools/qr-journal.js
-  zeigen“ (QJ5-10), literal getestet.
+- Weg-Teil des Sperrtexts auf höchstens drei KAPUTTE JOURNALZEILEN begrenzen (je Zeile alle offenen Abschnitte), Rest
+  „… und N weitere Zeilen: node tools/qr-journal.js zeigen“ (QJ5-10, PQ5-7); literal getestet; die bestehenden
+  wörtlichen Weg-Tests (u. a. `test_feature_qr_journal.js:1050`) werden nachgezogen, nicht gestrichen.
 
 Nicht in diesem Auftrag: QJ5-11 (Sammelliste `plaene/offene-befunde-qrj.md`, QJ-S1).
 

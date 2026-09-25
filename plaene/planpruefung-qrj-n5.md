@@ -14,3 +14,11 @@ Material: `plaene/auftrag-qrj-nacharbeit5.md` Fassung 1. Spuren (Kimi ohne Gutha
 | PQ5-6 | DS B6 | §1 „sonst die Freigabe“ vs. `wegFuer` „genau S“ nennt die Korrektur | gelesen | gering | Geltungsbereich genannt |
 | PQ5-7 | DS B7 | „drei Zeilen“ mehrdeutig, der Weg-Teil hat keine Umbrüche; bestehende wörtliche Tests (`test_feature_qr_journal.js:1050`) | gelesen | gering | „drei kaputte Journalzeilen“, Tests genannt |
 | PQ5-8 | DS B8 | Feldname offen | gelesen | gering | Feldnamen festgelegt |
+| PQ5-9 | DSB 1 | §4 bricht im echten Lauf: `befehlKorrigieren` prüft frisch unter den Locks `abschnittGedecktFuer` (`tools/qr-journal.js:971-974`) — für ein gedecktes Studio immer wahr; §0 prüft nur Trockenläufe und sähe es nicht | gelesen | blockierend | Frischprüfung für den Fall angepasst; §0 mit echten Schreibläufen je Wegart |
+| PQ5-10 | DSB 2 | `wegFuer`-Texte ohne `--grund`/`--studio` (Eigentümer-, keine-aufkleber-Weg) | gelesen (`core/qr-verbrauch.js:503-506`) | blockierend (mit PQ5-1/2) | jeder Weg-Text trägt alle Pflichtargumente ausser der belegten Spanne |
+| PQ5-11 | DSB 3 | §4 scheitert an `:647` (Zeile global erledigt → Abbruch vor jeder Abschnittslogik) | gelesen | mittel | §4 gilt auch dort |
+| PQ5-12 | DSB 1c, Frage 4 | Korrektur nach `keine_aufkleber`/Eigentümer-Erklärung: widersprüchliche Audit-Kette ohne Bezug; `erledigt_durch` kann auf die spätere Korrektur wandern; eine spätere Spanne kann als Nachbar die Obergrenze einer früheren Zeile senken (kostet Nummern) | gelesen (`vollErledigtDurch`) | gering | Payload nennt die widersprochenen Zeilen; `erledigt_durch` und Obergrenze benannt |
+| PQ5-13 | DSB 6.3 | §2 nennt die zweite Formel `gedeckteAbschnitte` (`tools/qr-journal.js:1229-1230`) nicht | gelesen | gering | aus derselben Regel |
+
+Zahlen: DS 8 (B1–B8), DSB 3 + Antworten; 13 Zeilen, keiner gefallen. Nur DS: PQ5-1/2 (Verwerfen- und (b)-Abbruch), PQ5-3..8.
+Nur DSB: PQ5-9 (Schreibweg), PQ5-11, PQ5-12, PQ5-13. Beide: der Kern „genannter Weg ohne Pflichtargumente“.

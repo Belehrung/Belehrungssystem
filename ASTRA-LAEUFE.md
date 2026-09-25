@@ -287,6 +287,8 @@ sondern falsch.
 | 25.09.2026 | QR-J Diffprüfung Runde 5, dritte Spur (deepseek-v4-pro Einzelaufruf, Endstand-Bündel 275 KB, effort high; Ersatz für Kimi ohne Guthaben) | 87.324 Token ein, 46.002 aus | 4 | 2 (einzig in seinem Aufbau: Neuzustellung des Blocks nach ausserhalb-Korrektur → Sammelliste) | 2 (geteilte Simulation — durch literale Vergaben abgedeckt; Abfragen ohne `studio_id` — vorbestehend, begründet) | ~0,30 $ |
 | 25.09.2026 | C3b Diffprüfung Runde 2 (deepseek-v4-pro) | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 651 Zeilen, Suchen 9, Lesungen 15, Token rein 702149, Token raus 47755, Runden 9 | — | — | — | mind. 1,12 $ |
 | 25.09.2026 | Planprüfung QR-J Nacharbeit 5 (deepseek-v4-pro) | Diff 137 Zeilen, Suchen 21, Lesungen 15, Token rein 1083333, Token raus 49803, Runden 17 | 8 | 8 (Einzelheiten `plaene/planpruefung-qrj-n5.md`) | 0 | 1,63 $ |
+| 25.09.2026 | C3b Diffprüfung Runde 2 (zweiter Versuch) (deepseek-v4-pro) | Diff 651 Zeilen, Suchen 15, Lesungen 27, Token rein 2371033, Token raus 47337, Runden 29 | — | — | — | 3,32 $ |
+| 25.09.2026 | Planprüfung QR-J Nacharbeit 5, zweite Spur (deepseek-v4-pro Einzelaufruf, Bündel 192 KB: Papier, Auftrag N4, Leser und Werkzeug ganz; effort high) | 63.962 Token ein, 45.760 aus | 5 | 5 (einzig: Schreibweg-Frischprüfung `:972`, `:647`, zweite Formel `:1229`) | 0 | ~0,27 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
