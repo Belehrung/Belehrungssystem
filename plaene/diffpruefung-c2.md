@@ -59,3 +59,17 @@ Zahlen: CC 8 Befunde, DS 6 + 1 aus den Fragen; 9 Zeilen, einer gefallen. Nur DS:
 Korrekturblatt. Beide: Quarantäne/Offboarding, Temp im Export, Kommentar. Grün (CC): `/pdf/.tmp` 404,
 `/pdf/_quarantaene` 403, `rename` über registrierte Datei ohne neue Inkonsistenz, M1/M2/M13/M14 rot.
 Nacharbeit 2: `plaene/auftrag-c2-nacharbeit2.md` (Verhalten ändert sich → Runde 3).
+
+## Runde 3 (25.09.2026, Kopf `a1a41d7`, Nacharbeits-Diff `0848202..a1a41d7`)
+
+Nacharbeit 2 gebaut (Bericht): master gemergt (Konflikt nur `test/run.sh`), Suite 395 = 395 grün (dritter Lauf; die
+ersten beiden fanden vier Folgen der Nacharbeit an bestehenden Wächtern), Lint 0, fünf Gegenproben. Abweichung vom
+Auftrag benannt: die Messskripte der Vorrunde wurden nicht VORHER gegen den alten Stand gefahren. Selbst benannter Rest:
+Renderfehler in der Zeichenroutine vor `finalize()` lässt `.tmp-` liegen (Ernte nach 24 h).
+Eigene Lesung (Diff Datei für Datei): flüchtig-Zweig, Quarantäne im Offboarding mit eigener Pfadprüfung, Export-Filter,
+Temp-Aufräumen in `finalize`, Ernte-Skript mit Symlink-Ausschluss und `PDF_ROOT_EXPLIZIT_GESETZT`-Riegel. Fundorte:
+`core/provisioning.js` lädt jetzt `core/pdf-engine.js` (schwere Abhängigkeit, Kreis?); Bezirk-Export bricht bei EINER
+Ablehnung ganz ab (vorher Typ ausgelassen) und die Zeile „Keine PDFs erzeugt“ ist weg; die Ernte scannt täglich den
+ganzen PDF_ROOT im App-Prozess und löscht jedes `.tmp-*` > 24 h — gehört jedes davon der Engine?
+Spuren (Verhalten ändert sich → Runde 3): Claude ausführend (`gymdocu-c2-cc`, `scratchpad/c2cc3/`), DeepSeek mit
+Repo-Lesezugriff.
