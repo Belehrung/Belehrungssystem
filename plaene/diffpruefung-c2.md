@@ -32,3 +32,12 @@ Kopf `0182cf3` (Zweig `fix-c2-stille-fehler`, master `00bd9c9` enthalten). Zwei 
 Zahlen: 26 Befunde aus zwei Spuren, 20 Zeilen, keiner gefallen. Nur CC: die Auslieferung der Waise (C2-1), Upload-Formular,
 Hub, Mutationen, Kontrast, Health. Nur DS: Spülplan-Wiederholung, Verify-Rest. Beide: Aufräumer, Totalausfall-Mail,
 Drossel, `parseConfig`, statische server.js-Wächter.
+
+## Runde 2 (25.09.2026, Kopf `2f1c569`, Nacharbeits-Diff `0182cf3..2f1c569`)
+
+Nacharbeit 1 gebaut: Suite 390 = 390 grün (zweiter Lauf; der erste fand drei Folgen der Nacharbeit selbst, behoben),
+Lint 0. Eigene Lesung: atomares Veröffentlichen (`.tmp-` im Zielverzeichnis, `rename` nach Registrierung, Quarantäne
+unter `PDF_ROOT/_quarantaene`), Signatur mit Quelle nur bei `roh === '-'`, Totalausfall-Mail, `?err=`. Ordnernamen der
+Bezirk-Export-Tabelle stimmen mit der Engine überein (`createDocument`-Aufrufe gelesen) — stehen aber jetzt an zwei
+Orten. Anlass für Runde 2: Verhaltensänderung an JEDER PDF-Erzeugung. Spuren: Claude ausführend (`gymdocu-c2-cc`,
+`scratchpad/c2cc2/`), DeepSeek mit Repo-Lesezugriff.
