@@ -57,3 +57,35 @@ Nur Claude: R2-1 (blockierend), R2-2, R2-3, R2-7, R2-9, R2-10. Nur Kimi: R2-5, R
 Claude und DeepSeek: R2-8. DeepSeeks „DROP bei jedem Start“ (Lock/Eigentümer) fällt in der Schwere (s.
 `ASTRA-LAEUFE.md`), die Verklemmung dahinter fand nur die ausführende Spur. Keiner widerlegt. Nacharbeit 2 ändert
 `db.init()` → Runde 3 als ausführende Spur (Sperrmessung wiederholen, Fuzzer erneut).
+
+## Runde 3 — Nacharbeit 2 (Kopf `15b990c`, 25.09.2026)
+
+Eine Spur (ausführend, eigener Baum, PostgreSQL 16.13, 50.000 bzw. 500.000 Unterschriften). **C1-R2-1 behoben:**
+0 Verklemmungen in 25 Sperrläufen (Runde 2: 5/5), fremder INSERT 3 ms. Fuzzer: 27 bzw. 19 Doppelvergaben, alle
+V09-1, 0 neue (Positivkontrolle C1-D1 zurückgedreht → 1 neue). Runde-2-Mutationen jetzt ROT (LEFT JOIN, EXISTS-Filter,
+`{ menge }`, Fehlertext-Block, OR REPLACE). Kein blockierender Befund.
+
+| Nr. | Befund | Nachgemessen (Spur) | Entscheidung |
+|---|---|---|---|
+| C1-R3-1 | Sichtvergleich prüft nur Spaltenliste und ORDER BY — WHERE, DISTINCT ON, LIMIT, OFFSET werden ignoriert: `WHERE false`, `DISTINCT ON (studio_id, mitarbeiter)`, `LIMIT 10` u. a. bleiben als „stimmt überein“ stehen (OID gemessen). Folge auch für künftige Änderungen: eine neue Sichtdefinition, die nur WHERE ändert, würde NIE eingespielt | gemessen, Positivkontrollen korrekt | Nacharbeit 3: exakter Vergleich — Soll-Definition als TEMP-Sicht anlegen, `pg_get_viewdef` beider vergleichen |
+| C1-R3-2 | R2-9 unbewacht: `if (!idxPasst)` → `if (true)` (Index bei JEDEM Start neu, 4 s Blockade hinter einem Leser) → 73/0; Spaltenvergleich gestrichen → 73/0 | gemessen | Nacharbeit 3: OID-Stabilität des Index zusichern; Abweichungsfall mit anderer Spaltenliste |
+| C1-R3-3 | Drei gleichzeitige `db.init()` bei fehlender Sicht UND fehlendem Index: 20 von 30 scheitern (`duplicate key … pg_class_relname_nsp_index`); Runde 1: 30/0; der Kommentar „racesicher“ ist falsch. Im Deploy nicht erreichbar (nacheinander), laut | gemessen | Nacharbeit 3: Prüfung + DDL unter dem vorhandenen Advisory-Lock `gymdocu:schema-migrations`; Kommentar berichtigen |
+| C1-R3-4 | Indexabfrage nicht in try/catch (Sichtabfrage schon): 1 von 30 `cache lookup failed` bei gleichzeitiger DDL | gemessen | mit R3-3 erledigt; beide gleich behandeln |
+| C1-R3-5 | Sicht wird ohne Schema gesucht: eine gleichnamige korrekte Sicht in einem anderen Schema verhindert die public-Sicht | gemessen | `relnamespace = 'public'::regnamespace` |
+| C1-R3-6 | Indexprüfung per Teilstring: partieller Index (`WHERE false`), führende Zusatzspalte, Index auf anderer Tabelle gelten als passend | gemessen | über `pg_index` (`indrelid`, `indpred IS NULL`) bzw. exakten Abgleich |
+| C1-R3-7 | R2-4 zweite Hälfte (D3-Hinweis bei gleichzeitigem Globalfall) und Text „keinem bekannten Block…“ ohne Test (58/0) | gemessen | Zusicherung in Fixtur (13) |
+| C1-R3-8 | Kommentar Migration 0061 „strukturell nicht betroffen“ stimmt nicht: Transaktion „INSERT unterschriften → Sicht lesen“ gegen die Migration → 3/3 Verklemmung (heute nicht erreichbar) | gemessen | Kommentar abschwächen |
+| C1-R3-9 | Test (10) wird ROT, wenn der Anker nur aus einem Kommentar entfernt wird (Prosa) | gemessen | Kommentarabzug VOR dem Zählen |
+| C1-R3-10 | Kommentar zu Test (8) „GLOBAL greift nicht“ falsch (DB 100610 < Journal 100620) | gemessen | berichtigen |
+
+**Vorbestehend auf master, NICHT C1 — neuer Punkt DB-INIT-SPERREN (Sammelliste):** die SCHEMA-Transaktion von
+`db.init()` nimmt `ALTER TABLE mitarbeiter ADD COLUMN IF NOT EXISTS …` (exklusive Sperre auf `mitarbeiter`) und später
+ShareLock auf `unterschriften`; ein gleichzeitiger `INSERT unterschriften` (FK-Sperre auf `mitarbeiter`) bildet einen
+Kreis — master 3/3 `deadlock detected`, teils mit `db.init()` selbst als Opfer (Exit 1). Und
+`ALTER TABLE unterschriften ADD COLUMN IF NOT EXISTS aufbewahrung_hold` nimmt die exklusive Sperre auch ohne Arbeit
+(Leser/Schreiber warten ~4 s hinter einem Leser). Trifft die Ladeprobe 5/8 gegen die Produktions-DB und jeden
+Neustart. Eigener Beitrag.
+
+Nach Nacharbeit 3 keine vierte Prüfrunde; stattdessen fährt der Executer die Messskripte der Runde-3-Spur
+(`sperre3.js`, `zweiinit3.sh`, `vergleich.js`, `vergleich_idx.js`, `schema_probe.js`) gegen den neuen Stand und
+liefert die Zahlen; Diff lese ich selbst.
