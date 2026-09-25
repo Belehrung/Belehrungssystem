@@ -264,6 +264,7 @@ sondern falsch.
 | 25.09.2026 | C2 Diffprüfung Runde 1 (deepseek-v4-pro) | Diff 1639 Zeilen, Suchen 17, Lesungen 22, Token rein 2969958, Token raus 25053, Runden 32 | 6 | 6 (einzig von dieser Spur: C2-20 `verify_dokumente`-Rest; Einzelheiten `plaene/diffpruefung-c2.md`) | 0 | 4,02 $ |
 | 25.09.2026 | H1a Diffprüfung Runde 2 (deepseek-v4-pro) | Diff 1095 Zeilen, Suchen 21, Lesungen 33, Token rein 1948532, Token raus 48671, Runden 20 | 8 | 7 (einzig von dieser Spur: Token-Redaktion `/passwort-reset`, `/mitarbeiter/pin-setzen`; falsche Kommentare). Einzelheiten `plaene/diffpruefung-h1a.md` Runde 2 | 1 (Status-200-Zusicherung „bewacht blob: nicht“ — Folgezusicherungen bewachen es, C1 rot) | 2,76 $ |
 | 25.09.2026 | Planprüfung C3b Stufe 2 (deepseek-v4-pro) | Diff 91 Zeilen, Suchen 18, Lesungen 19, Token rein 946828, Token raus 51124, Runden 16 | — | — | — | 1,45 $ |
+| 25.09.2026 | QR-J Diffprüfung Runde 3 (deepseek-v4-pro) | Diff 2286 Zeilen, Suchen 6, Lesungen 16, Token rein 1296964, Token raus 50539, Runden 11 | — | — | — | 1,91 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
