@@ -283,6 +283,7 @@ sondern falsch.
 | 25.09.2026 | C3b Diffprüfung Runde 1 (deepseek-v4-pro) | Diff 1414 Zeilen, Suchen 11, Lesungen 17, Token rein 1671157, Token raus 48941, Runden 18 | 1 | 1 (keiner einzig von dieser Spur; Einzelheiten `plaene/diffpruefung-c3b.md`) | 0 | 2,40 $ |
 | 25.09.2026 | C3b Diffprüfung Runde 1, zweite Spur (deepseek-v4-pro Einzelaufruf, Endstand-Bündel 159 KB, effort high; Ersatz für Kimi ohne Guthaben) | 49.533 Token ein, 58.578 aus | 3 | 2 (einzig von dieser Spur: DB-Fehler im `requeue` ungetestet) | 1 (globale Reaper-Abfragen ohne `studio_id` — vorbestehend, begründet) | — |
 | 25.09.2026 | C2 Diffprüfung Runde 3 (deepseek-v4-pro) | Diff 1634 Zeilen, Suchen 34, Lesungen 30, Token rein 2926233, Token raus 43771, Runden 24 | 6 | 5 (einzig: `statSync`-Fehler verschluckt) | 1 (flüchtige Datei trotz Registerzeile — die Zeile nennt den öffentlichen Namen) | 4,04 $ |
+| 25.09.2026 | QR-J Diffprüfung Runde 5 (deepseek-v4-pro) | Diff 1705 Zeilen, Suchen 10, Lesungen 14, Token rein 2309888, Token raus 69341, Runden 14 | — | — | — | 3,32 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
