@@ -359,3 +359,5 @@ bleibt ohne Antwort (selbst bestätigt), Nacharbeit 1 läuft. C2-Bau läuft. **D
 gleichzeitig — gegen die Zwei-Regel des Arbeitsplans** (beide Nacharbeiten gingen an ihre Executer, bevor ich
 nachgezählt hatte). Folge: C3a startet erst, wenn höchstens einer läuft. Die ausführende H1a-Prüfspur hat entgegen der
 Vorgabe drei lesende GET an echte Hosts geschickt (selbst gemeldet, `plaene/diffpruefung-h1a.md`).
+Stand 25.09.2026 04:55 UTC: **Betreiber-Entscheidung H3: kein HSTS-Preload** (folgt der Empfehlung). In B3
+(`ops/SECURITY-HEADER.md`) als entschieden vermerken, nicht erneut fragen.
