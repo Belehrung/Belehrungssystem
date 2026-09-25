@@ -404,3 +404,7 @@ Stand 25.09.2026 10:35 UTC: QR-J Runde 4 ausgewertet (12 Zeilen, blockierend QJ4
 geschrieben, Planprüfung läuft (DeepSeek + Kimi). C3a Nacharbeit 1 fertig (`f40936b`, Suite 394 = 394), Diff gelesen
 (Fundorte: Aufgabe im Tablet-POST nicht erneut geprüft; 409 „deaktivieren statt löschen“ zeigt auf keinen Weg — mein
 eigener Auftragstext), Runde 2 läuft (CC + DeepSeek). Im Bau: C2 N2, C3b (Fable). Warteschlange: QR-J N4.
+Stand 25.09.2026 11:41 UTC (Stundentakt): Im Bau: C2 N2 (Suite läuft), QR-J N4 (Fassung 2.1 nach zwei
+Planprüfungen). C3b gebaut (`1d9b08d`, Suite 394 = 394), Diffprüfung Runde 1 läuft (CC + zwei DeepSeek-Spuren; Kimi
+ohne Guthaben — Betreiber gefragt). C3a Runde 2 ausgewertet, Nacharbeit 2 wartet auf Bauplatz. Warteschlange Bau:
+C3a N2.
