@@ -376,3 +376,7 @@ kein Marker), C3a-Abschlusssuite. Beide Agenten fortgesetzt mit Pflichtfrage „
 Kimi-Planprüfung C3b lief weiter (nohup). H1a Runde 2 ausgewertet (13 Befunde, keiner blockierend; `diffpruefung-h1a.md`),
 Nacharbeit 2 steht, wartet auf Bauplatz nach C2 Nacharbeit 1. C3b-Planprüfung DeepSeek: 8 Befunde, u. a. `requeueStale`
 täglich 03:15 statt 15 min, deklaratives Schema in `core/db.js` fehlt im Papier.
+Stand 25.09.2026 07:30 UTC: C3a gebaut (`f75cea1`, Suite 394 = 394, Lint 0) → Diffprüfung mit drei Spuren läuft (harte
+Löschung). QR-J Nacharbeit 2 gebaut (`153a7a4`, Suite 390 = 390, 31 Gegenproben) → Runde 3 mit drei Spuren läuft; die
+Präzisierung „Erledigung für alle reicht nicht in einen Abschnitt mit bestimmtem Studio ohne Korrektur“ angenommen.
+Bauplätze: C2 Nacharbeit 1, H1a Nacharbeit 2. C3b-Planprüfung: DeepSeek ausgewertet, Kimi läuft.
