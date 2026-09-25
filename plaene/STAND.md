@@ -339,3 +339,6 @@ Botschaft zurückgelesen). Deploy-Prüfung 02:20. QR-J-Bau wartet auf einen frei
 Stand 25.09.2026 02:23 UTC: **C1 ausgeliefert** — Deploy 445 (`a8543ac`) success, Ladeprobe mit `db.init()` grün (TEMP-Recht
 vorhanden), Health-Check Versuch 1, live-check unauffällig (2× ℹ). Beobachtet: master-`syntax-check.sh` braucht 0,3 s —
 der `-n50`-Fehler (T2-B1) ist erst mit T2 behoben. T2-Nacharbeit 2 fertig gebaut (Kopf `4073fb2`), Suite läuft.
+Stand 25.09.2026 02:32 UTC: T2-Suite (`4073fb2`) SUITE_EXIT=2 — beide FAIL (`geraete_alter`, `qr_token`: fremde
+`qr_charge`-Zeile) kamen vom H1a-Executer, der `gymdocu_test` für Einzelläufe neu anlegte (02:16–02:28, Transkript).
+Ritual 389 = 389, diff EXIT 0. H1a auf eigene DB umgestellt; Suite wird neu gefahren. Regel in CLAUDE.md ergänzt.

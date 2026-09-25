@@ -137,6 +137,10 @@ Reihenfolge nach jedem Executer-Auftrag, vor jedem Commit:
    Signal wartet, das er nie angefordert hat, wartet endlos.
    **Die Sperrdatei `/tmp/gymdocu-suite.lock` NIE löschen** (gemessen 24.09.2026: ein Executer löschte sie vor dem
    Start, während eine zweite Suite lief — beide fuhren gegeneinander, `gymdocu_test` verschwand mitten im Lauf).
+   **Einzeltests NIE gegen `gymdocu_test`, und diese DB nie von Hand droppen/anlegen** — sie gehört der vollen Suite,
+   und ein Einzeltest nimmt die Sperre nicht. Gemessen 25.09.2026: ein Executer baute `gymdocu_test` für seine
+   Einzelläufe neu, während in einem anderen Arbeitsbaum die Suite lief → fremde `qr_charge`-Zeile, 2 FAIL, Lauf
+   wertlos. Einzeltests bekommen eine eigene DB (`gymdocu_<kürzel>_test`); das gehört in jeden Bauauftrag.
    **Sie NICHT in ein äußeres `flock` einpacken — sie sperrt selbst**
    (`/tmp/gymdocu-suite.lock`, s. Kopf von `test/run.sh`). Gemessen am
    14.09.2026: `flock /tmp/gymdocu-suite.lock bash test/run.sh` legt den
