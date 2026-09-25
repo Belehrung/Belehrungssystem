@@ -18,3 +18,18 @@ Aufrufers (`core/pdf-jobs.js:150-166` gelesen: 0 Zeilen → `DedupeConflictError
 Spuren (unwiderruflich → drei; Kimi ohne Guthaben, deshalb zweite DeepSeek-Spur mit anderem Bündel): Claude
 ausführend (`gymdocu-c3b-cc`, `scratchpad/c3bcc/`), DeepSeek mit Repo-Lesezugriff (Diff), DeepSeek-Einzelaufruf
 (Endstand storage-replica, pdf-jobs, Worker, neuer Test).
+
+| Nr | Quelle | Befund | Nachmessung | Schwere | Behebung |
+|---|---|---|---|---|---|
+| C3b-1 | CC B1 | „offen“ heisst nicht „kommt wieder“: Upsert nach dem 1c-COMMIT, vor `queue.succeed` → Job `succeeded`, Zeile `pending/H2` ohne Job, Health ok (unsichtbar), Heilung erst nach Stillstand beim täglichen Reaper; ebenso Upsert zwischen `dead`-Riegel und `deadLetter` | CC gemessen (R1, R1b, mit Positivkontrolle) | mittel | nach 1c/1d Hash nachlesen → nicht-permanenter Wurf; im permanenten Zweig auch bei getroffenem Riegel nachlesen; Reaper stündlich; Kommentare |
+| C3b-2 | CC B2 | Ein-Puffer-Wache zählt nur `fsP.readFile`: die Vor-C3b-Form (`dateiHash` + zweites Lesen) und ein Chiffrat aus `fs.readFileSync` bleiben in allen vier Testdateien grün und erzeugen `succeeded/H1` mit Fernkopie H2 | CC gemessen (C1b, C2, R9) | mittel | alle Lese-Schnittstellen zählen, Summe 1; Variante mit Tausch vor dem ersten Lesen |
+| C3b-3 | CC B3, DS 1, DSB 1/2 | `planeReplikationsJob`: jede `DedupeConflictError` aus `requeue` gilt ohne Nachlesen als „offen“ (gelöschter Job → still); Verlierer-Rennen, Konflikt ohne Zeile und DB-Fehler im `requeue` ungetestet | CC gemessen (R4a–c, C3/C4), DS gelesen (`core/pdf-jobs.js:164`) | gering-mittel | nach dem Wurf nachlesen: offen → offen, fehlt → laut; Tests R4a/R4b, DB-Fehler im requeue |
+| C3b-4 | CC B4 | `TerminalDedupeError`-Zweig ungetestet (nur mit identischem `runAfter` erreichbar) | CC gemessen (C5) | gering | Test mit festem `runAfter` |
+| C3b-5 | CC B5 | Texte: S26 nennt noch `attempts`-Riegel; Veraltet-Log verspricht beim 5. Versuch „nächster Lauf“; „bis zu fünf Job-Versuche“ gemessen 2 | CC gemessen (R2, R7) | gering | berichtigen |
+| C3b-6 | CC B6 | `ALTER … ADD COLUMN IF NOT EXISTS` im Schema-Block nimmt bei jedem Start einen AccessExclusiveLock | CC gemessen (R6) | gering | → offener Punkt DB-INIT (Arbeitsplan) |
+| — | DSB 3 | globale Reaper-/Warteschlangen-Abfragen ohne `studio_id` | vorbestehend und begründet (systemweite Warteschlange, Mandant je Zeile) | gefallen | — |
+
+Zahlen: CC 6, DS 1, DSB 3; 6 Zeilen, einer gefallen. Nur CC: C3b-1, C3b-2 (die beiden mittleren), C3b-4..6. Alle drei:
+C3b-3. Zustandsfrage (CC, 7.440 Verschränkungen über die echten Wege, Positivkontrolle 66/140 bzw. 278/560 mit
+ausgeschaltetem Hashfilter): kein `succeeded` mit falschem Inhalt, keine richtige Fernkopie gelöscht, kein endloses
+Kreisen (Lauf 5 → `dead`, nächster Upload belebt). Nacharbeit 1: `plaene/auftrag-c3b-nacharbeit1.md`.
