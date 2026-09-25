@@ -22,3 +22,23 @@ Material: `plaene/auftrag-qrj-nacharbeit5.md` Fassung 1. Spuren (Kimi ohne Gutha
 
 Zahlen: DS 8 (B1–B8), DSB 3 + Antworten; 13 Zeilen, keiner gefallen. Nur DS: PQ5-1/2 (Verwerfen- und (b)-Abbruch), PQ5-3..8.
 Nur DSB: PQ5-9 (Schreibweg), PQ5-11, PQ5-12, PQ5-13. Beide: der Kern „genannter Weg ohne Pflichtargumente“.
+
+## Zweite Runde (Fassung 2)
+
+Spuren: DeepSeek mit Repo-Lesezugriff (Papier + Planprüfung) und DeepSeek-Einzelaufruf (Bündel wie Runde 1 mit Fassung 2).
+Eingearbeitet in Fassung 2.1.
+
+| Nr | Quelle | Befund | Nachgesehen | Schwere | In Fassung 2.1 |
+|---|---|---|---|---|---|
+| PQ5b-1 | DSB 1 | eine Korrektur, die einer `keine_aufkleber`- oder Eigentümer-Erklärung widerspricht, wird nur im Payload benannt — die widerlegte Erklärung bleibt tragende Deckung und hält die übrigen Kandidaten frei (Doppelvergabe für Dritte) | gelesen (`core/qr-verbrauch.js:426-427`, `:438-439`) | blockierend | Widerlegungsregel: eine spätere Korrektur eines von der Erklärung gedeckten Studios nimmt ihr die tragende Wirkung |
+| PQ5b-2 | DS B1 | §4 nennt die Stelle nicht, an der ein gedecktes Studio heute abgewiesen wird: `abschnittWaehlen` (`tools/qr-journal.js:669-683`, `offeneAbschnitteFuer` leer) | gelesen | blockierend | genannt |
+| PQ5b-3 | DS B2 | die verbleibende Ablehnung (zweite Korrektur desselben Studios) nennt „Zeile der tragenden Deckung“ — richtig ist die eigene Korrekturzeile | gelesen | gering | berichtigt |
+| PQ5b-4 | DS B4 | §1 nennt `:1207-1208` (`!korrekturen.length`) nicht | gelesen | gering | genannt |
+| PQ5b-5 | DS B5, DSB 2 | `erledigt_durch` wandert zwangsläufig (`vollErledigtDurch` = jüngste Metazeile); Texte „erledigt durch Zeile N“ (`:647`, `:1126`) werden dann schief | gelesen (`core/qr-verbrauch.js:467-472`) | gering | Texte „zuletzt durch Zeile N“ |
+| PQ5b-6 | DS B6 | leere-`every`-Klasse auch `test_feature_qr_journal.js:1223` (G5); `:1614` ist durch die literale Zusicherung `:1612` gedeckt | gelesen | gering (für `:1614` gefallen) | `:1223` mit aufgenommen |
+| PQ5b-7 | DS B3 | Geltungsbereich §1 ist am Code entschieden (`core/qr-verbrauch.js:307-313`, `:326-331`), keine Messung nötig | gelesen | gering | umformuliert |
+| PQ5b-8 | DS 8, DSB 6 | neues Feld `widerspricht_zeilen` ohne Typprüfung in `metaZeileVollstaendig`; „grep auf alte Namen“ unterbestimmt (Schalter UND Journal-/Payload-Felder `core/qr-verbrauch.js:257,297`, `tools/qr-journal.js:1202-1204,1323`) | gelesen | gering | festgelegt |
+| PQ5b-9 | DSB Frage 2 | echter Schreiblauf je Wegart reicht nicht: der Zustand „global erledigt, keine eigene Korrektur von S in i“ und der Widerlegungsfall brauchen je einen eigenen | Papier | mittel | aufgenommen |
+
+Zahlen: DS 6 + Tabelle zu PQ5-1..13 (PQ5-5 „nur teilweise“), DSB 2 + Antworten (PQ5-9, PQ5-12 „nicht wirklich geschlossen“);
+9 Zeilen, einer teilweise gefallen. Nur DSB: PQ5b-1 (der schwerste — eine Widerlegung, die nur dokumentiert statt wirkt).
