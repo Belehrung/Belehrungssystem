@@ -278,6 +278,7 @@ sondern falsch.
 | 25.09.2026 | Planprüfung QR-J Nacharbeit 4 (deepseek-v4-pro) | Diff 97 Zeilen, Suchen 13, Lesungen 15, Token rein 1174002, Token raus 44663, Runden 17 | 10 | 10 (einzig von dieser Spur: Ursache des Daueralarms `vergleicheQuellen` global; bestehende Tests mit altem Wortlaut; Listenschalter; Einzelheiten `plaene/planpruefung-qrj-n4.md`) | 0 | 1,73 $ |
 | 25.09.2026 | Planprüfung QR-J Nacharbeit 4 Spur K (kimi-k3, Bündel 81 KB, effort high) | 27.308 Token ein, 46.922 aus | 10 | 9 (einzig von dieser Spur: Leserregel für `freigegeben` in beiden Lesarten defekt; `abschnittVollGedeckt` fehlt → Daueralarm bei grünen Tests; Widerspruch im §1-Wortlaut; `bekannteStudios`-Bootstrap; Schalterkombination) | 1 (Eigentümer ohne Kandidatenbindung → Doppelvergabe: das Werkzeug prüft schon, `tools/qr-journal.js:1094`; Leser-Härtung getragen) | — |
 | 25.09.2026 | Planprüfung QR-J Nacharbeit 4 Fassung 2 Spur K (kimi-k3) | — ABGEBROCHEN: HTTP 429 `exceeded_current_quota_error` (Guthaben erschöpft), drei Versuche | — | — | — | 0 $ |
+| 25.09.2026 | Planprüfung QR-J Nacharbeit 4 Fassung 2 (deepseek-v4-pro) | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 135 Zeilen, Suchen 13, Lesungen 15, Token rein 1619895, Token raus 49405, Runden 17 | — | — | — | mind. 2,33 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
