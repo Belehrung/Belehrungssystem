@@ -70,3 +70,21 @@ Drei Spuren. Runde-1-Reproduktionen R1–R3 brechen jetzt ab (CC). Befunde:
 
 Executer-Widerspruch (zwei Korrekturen verschiedener Kandidaten legitim): alle drei Spuren geben ihm recht; meine
 Testvorgabe in Nacharbeit 1 §5 war falsch.
+
+## Runde 3 (25.09.2026, Kopf `153a7a4`, Nacharbeits-Diff `0213cd9..153a7a4`)
+
+Nacharbeit 2 gebaut (Suite 390 = 390 grün, Lint EXIT 0, 31 Gegenproben rot). Der Ausführende hat eine Präzisierung
+gegen den Wortlaut gebaut und begründet gemessen: eine Erledigung „für alle“ (Freigabe, `--uebrige-nicht-betroffen`)
+reicht NICHT in einen Abschnitt, der ein bestimmtes Studio nennt und keine eigene Korrektur hat — sonst entstünde
+`fd_einzigerweg` in zwei Schritten erneut (Korrektur Vorspann + Freigabe → Rest-Studio frei → 308100 doppelt).
+**Angenommen** (Leitregel: Überspringen ist sicher). Spuren (unwiderruflich → drei): Claude ausführend
+(`gymdocu-qrj-cc`, `scratchpad/qrjcc3/`), `deepseek-v4-pro` mit Repo-Lesezugriff auf den Diff, `kimi-k3` mit dem Endstand
+der drei Dateien als Bündel.
+
+### Eigene Lesung (vor den Spuren, als Fragen an sie weitergegeben)
+
+| # | Befund (Verdacht) | Fundstelle |
+|---|---|---|
+| QJ3-E1 | Ein Studio kann Kandidat MEHRERER Abschnitte sein (Vorspann „genau S“ + Rest „alle“/Präfix von S). `erledigtFuer` gibt bei einer eigenen Korrektur sofort `true`, `abschnittIndexFuer` prüft nur den ersten passenden Abschnitt — eine zweite verlorene Charge von S bliebe unerledigt, ohne zu sperren | `core/qr-verbrauch.js` `erledigtFuer`, `abschnittIndexFuer` |
+| QJ3-E2 | Präfix-Abschnitt, dessen Eigentümer nicht mehr existiert: übrige Präfix-Kandidaten gesperrt, Freigabe deckt einen Präfix-Abschnitt ohne Korrektur nicht, verwerfen verboten — Weg in den Endzustand? | `abschnittGedeckt`, `pruefeFreigabe` |
+| QJ3-E3 | `--uebrige-nicht-betroffen` deckt jeden „alle“-Abschnitt — auch eine zweite verlorene Charge desselben Studios? | `abschnittGedeckt` (Zweig `korrektur`) |
