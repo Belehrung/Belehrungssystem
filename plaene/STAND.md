@@ -364,3 +364,6 @@ Stand 25.09.2026 04:55 UTC: **Betreiber-Entscheidung H3: kein HSTS-Preload** (fo
 Stand 25.09.2026 05:25 UTC: QR-J Nacharbeit 1 fertig (`0213cd9`, R1–R3 brechen jetzt ab, Suite 390 = 390) → Runde 2
 mit drei Spuren läuft. C2 gebaut (`0182cf3`, Suite 390 = 390) → Diffprüfung (CC + DeepSeek) läuft. H1a-Nacharbeit läuft.
 C3a-Bau gestartet (zweiter Bauplatz frei, seit C2 und QR-J nur noch prüfen).
+Stand 25.09.2026 05:55 UTC: QR-J Runde 2 ausgewertet — Runde-1-Doppelvergaben geschlossen, dafür vier Sperren ohne
+Werkzeugweg und drei bedingte Doppelvergaben (CC), zwei Kimi-Befunde gemessen gefallen. Auftrag Nacharbeit 2 steht
+(`plaene/auftrag-qrj-nacharbeit2.md`), wartet auf einen freien Bauplatz (H1a-Nacharbeit und C3a bauen). C2-Prüfung läuft.
