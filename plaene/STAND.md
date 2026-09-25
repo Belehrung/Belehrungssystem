@@ -408,6 +408,18 @@ Stand 25.09.2026 11:41 UTC (Stundentakt): Im Bau: C2 N2 (Suite läuft), QR-J N4 
 Planprüfungen). C3b gebaut (`1d9b08d`, Suite 394 = 394), Diffprüfung Runde 1 läuft (CC + zwei DeepSeek-Spuren; Kimi
 ohne Guthaben — Betreiber gefragt). C3a Runde 2 ausgewertet, Nacharbeit 2 wartet auf Bauplatz. Warteschlange Bau:
 C3a N2.
+Stand 25.09.2026 nach Container-Neustart (Sparmodus, Routine pausiert):
+- QR-J N5 `59fa628`: volle Suite vom Haupt-Agenten gefahren — SUITE_EXIT=2, 395 = 395 (`diff` EXIT 0), Lint durch den
+  Neustart nicht zu Ende. Zwei rote Dateien, BEIDE am selben Testhelfer, nicht am Produktivcode:
+  `test_feature_qr_journal.js:2238` (J1) und `test_feature_qr_journal_wege.js:394` (B2) — `studioMitId(S*10+1)` mit
+  S ≈ 500.676.903 → `setval … 5006769030 out of bounds for sequence studios_id_seq`. Ursache: jede Sektion bildet
+  Geschwister als S*10+k und schiebt damit die Sequenz eine Stelle höher; in der vollen Suite (gemeinsame
+  `gymdocu_test`, Sequenz aus früheren Dateien) reisst die dritte Generation int4. In der eigenen DB des Bauenden
+  (kleine Start-IDs) unsichtbar. Behebung (Testhelfer, beide Dateien): Basis-Studios so wählen, dass Basis*10+9 in
+  int4 passt und frei ist — nicht aus der laufenden Sequenz. Danach Suite erneut, dann Gegenproben/Prüfrunde.
+- C3a N2 `ed5f6a5` (gepusht, Baum sauber, keine Marker): der Bauende ist mit dem Neustart weggefallen, sein Bericht
+  fehlt; Suite/Gegenproben des Bauenden unbekannt → nach dem Reset selbst fahren.
+
 QR-J N5 (25.09.2026 ~16:00): der Bauende brach am monatlichen Ausgabelimit seines Modells ab (HTTP 429, „monthly spend
 limit“). Gesichert und gepusht: fünf Commits `0814c63..59fa628` auf `fix-qrj-journal-reparatur` (§0–§6 laut Botschaften
 gebaut, neue Testdatei `test_feature_qr_journal_wege.js` registriert), Baum sauber, keine Marker, keine laufende Suite.
