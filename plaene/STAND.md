@@ -367,3 +367,7 @@ C3a-Bau gestartet (zweiter Bauplatz frei, seit C2 und QR-J nur noch prüfen).
 Stand 25.09.2026 05:55 UTC: QR-J Runde 2 ausgewertet — Runde-1-Doppelvergaben geschlossen, dafür vier Sperren ohne
 Werkzeugweg und drei bedingte Doppelvergaben (CC), zwei Kimi-Befunde gemessen gefallen. Auftrag Nacharbeit 2 steht
 (`plaene/auftrag-qrj-nacharbeit2.md`), wartet auf einen freien Bauplatz (H1a-Nacharbeit und C3a bauen). C2-Prüfung läuft.
+Stand 25.09.2026 07:10 UTC: H1a-Nacharbeit 1 fertig (`df2f500`, 19 Befunde, Suite grün 392 = 392; Studio-Wächter
+„NICHT GEPRÜFT“ ist Umgebung — keine DB `gymdocu` im Container, in allen 123 Läufen gleich). Runde 2 läuft (CC + DeepSeek),
+weil die Behebung Verhalten ändert. QR-J Nacharbeit 2 gestartet (Bauplatz frei). C3b Stufe 1 (Messen) gestartet.
+C2-Prüfergebnis, Nacharbeitsauftrag und Sammellisten C2/H1a abgelegt.
