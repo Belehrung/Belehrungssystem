@@ -394,3 +394,6 @@ Botschaft zurückgelesen). Deploy-Prüfung 09:40. C2 Runde 2 ausgewertet (9 Zeil
 Offboarding), Nacharbeit 2 steht. Laufend: QR-J N3, C3a N1 (Bau). Warteschlange Bau: C2 N2 → C3b.
 Stand 25.09.2026 09:43 UTC: H1a ausgeliefert (Deploy 447 success auf `22dc613`, live-check EXIT 0, 2× ℹ wie immer;
 `X-Powered-By` fehlt live). Live-Report-Only-Header trägt noch KEIN `report-uri` → Betreiber-Schritt offen.
+Stand 25.09.2026 10:00 UTC: Betreiber hat `/etc/nginx/snippets/security-headers.conf:22` auf Schnipsel A umgestellt
+(Sicherung `/root/security-headers.conf.vorher`, `nginx -t` ok). Live gemessen: `report-uri /csp-bericht` auf
+Haupt-, `verify.`- und `qr.`-Domain. H1a-S4 erledigt; Enforce-Entscheid frühestens 02.10.2026.
