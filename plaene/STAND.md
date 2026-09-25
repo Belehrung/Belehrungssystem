@@ -348,3 +348,5 @@ Stand 25.09.2026 02:45 UTC: T2-Executer schrieb die fremde `qr_charge`-Zeile (id
 Marker-Scan nur die 6 Doku-Zitate. Suite läuft noch.
 Stand 25.09.2026 02:46 UTC: T2 eigener Suite-Lauf auf `4073fb2`: SUITE_EXIT=0, 389 = 389 (`diff` EXIT 0), Lint EXIT 0 —
 PR #478 angelegt, CI läuft, Prüfung 03:10. QR-J-Bau läuft (seit 02:35), H1a-Bau läuft.
+Stand 25.09.2026 02:57 UTC: **T2 gemergt** (#478, Squash `00bd9c9`, CI 4/4 grün auf `4073fb2`, kein Bot-Kommentar,
+Botschaft zurückgelesen). Deploy-Prüfung 03:20 (Schritt 4/8 muss jetzt „(N Dateien)“ melden).
