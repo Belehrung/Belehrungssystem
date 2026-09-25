@@ -46,3 +46,34 @@ selbst offengelegt:** drei lesende GET-Anfragen an echte Hosts (`qr.`, `md001.`,
 Zahlen: 25 Befunde aus zwei Spuren plus drei eigene, 19 Aufträge, keiner gefallen. Nur CC: alle Messungen am echten
 Browser und an der echten Kette (1, 3–7, 12–14). Nur DS: Modul-Prüfung im Wächter, `/d/auth`. Beide: Map, Log-Flut,
 Präfix, Header-Zusicherung.
+
+## Runde 2 (25.09.2026, Kopf `df2f500`, Nacharbeits-Diff `9948f6b..df2f500`)
+
+Anlass: die Nacharbeit ändert Verhalten (Mount ganz vorne, CSRF-Segmentgrenze für ALLE Ausnahmen). Spuren: Claude
+ausführend (`gymdocu-h1-cc`, DB `gymdocu_h1cc_test`, Skripte `scratchpad/h1cc2/`), `deepseek-v4-pro` mit Repo-Lesezugriff
+auf den Nacharbeits-Diff. Alle Runde-1-Reproduktionen über die echte Kette grün (json/urlencoded 204 in 1–11 ms, alter
+Stand 3001–3005 ms hängend; M4c 403). **Kein bisher CSRF-freier echter Aufruf bekommt jetzt 403** (186 Schreibrouten
+aufgezählt, 0 mit alt ≠ neu; Aufrufer Hauptserver/Magicline/Offline-Warteschlange alle mit Segmentgrenze — beide Spuren
+unabhängig). 15 Gegenproben rot (Tabelle im CC-Bericht).
+
+| # | Spur | Befund | Messung | Schwere | Entscheidung |
+|---|---|---|---|---|---|
+| H1a2-1 | CC R2-1 | Der blockierende Befund H1a-1 ist gegen Rückfall ungeschützt: Mount zurück hinter die Parser UND `readableEnded`-Rückfall entfernt → echte Kette hängt (3005 ms), alle Tests grün (48/0, 120/0, 36/0). Jeder Riegel allein hält | CC gemessen | mittel | Test über die echte `server.js`-Kette (json + urlencoded, Zeitlimit, Soll 204); Gegenprobe genau diese Doppelmutation |
+| H1a2-2 | DS 5.2, CC R2-2 | H1a-8/1 „`req.destroy()`“ kann nicht rot werden (`'close'`/`'error'` lösen beide mit `true` auf); Wirkung ist messbar am Server-Socket | CC gemessen (48/0 ohne `destroy`), gelesen | gering–mittel | Server-Socket messen |
+| H1a2-3 | DS 3 | Token-Redaktion unvollständig: `/passwort-reset/:token` (`routes/auth.js:1377/1406`) und `/mitarbeiter/pin-setzen/:token` (`routes/mitarbeiter-auth.js:368/391`) bleiben im Klartext; `core/error-tracker.js:199-207` führt beide in seiner eigenen Liste | selbst nachgelesen | mittel | EINE Quelle: Liste/Schwärzung aus `core/error-tracker.js` wiederverwenden statt zweiter Regex |
+| H1a2-4 | CC R2-4 | `/csp-bericht` vor helmet → Antwort trägt `X-Powered-By: Express`, sonst nirgends im öffentlichen Bestand | CC gemessen | gering | `app.disable('x-powered-by')` global |
+| H1a2-5 | CC R2-5 | `ip=`/`ua=` am Zeilenende sind über ein frei wählbares Feld fälschbar | CC gemessen | gering | Absenderfelder vor die frei wählbaren setzen und/oder Felder ohne Leerzeichen |
+| H1a2-6 | CC R2-6, DS 5.2 | Sollwerte aus der bewachten Konstante: `GRENZE_BYTES` 8→9 KiB und `MAX_EINTRAEGE_JE_POST` 5→25 bleiben grün | CC gemessen (48/0) | gering | Literale 8192 und 5 |
+| H1a2-7 | CC R2-7 | Ausnahme an EINER Stelle weiter statt enger: `POST /d`, `/v` (auch mit Query) jetzt CSRF-frei (vorher 403); heute keine Route, Wächter fängt neue (119/1) | CC gemessen | gering | Einträge mit eigenem Schrägstrich (`/d/`, `/v/`) behalten `startsWith(a)` ohne nackten Pfad |
+| H1a2-8 | CC R2-3 | Feste 350 ms im Crawler verschieben die zeitliche Lücke nur (Verstoss nach 300 ms rot, nach 1000 ms grün), kosten ~36 s je Lauf | CC gemessen | gering–mittel | Verstösse über die Lebensdauer der Seite sammeln (vor der nächsten Navigation/beim Schliessen auswerten), feste Wartezeit weg |
+| H1a2-9 | DS 2, CC R2-8 | Kommentare falsch: `routes/csp-bericht.js:7-8` (alter Mount), `server.js` „VOR den globalen Body-Parsern (frühere Fassung)“ statt NACH; `'none'` endet auf `chrome-error://`, nicht `about:blank`; `skip(…, 2)` für eine Zusicherung; `mailto:`/`javascript:` werfen nicht | gelesen/gemessen | Anmerkung | berichtigen, Skip-Zahl 1 |
+| H1a2-10 | CC (ausserhalb) | Gesamt-Skip des Crawlers (`:570`) ohne CI-Zweig — fehlte in der CI die Headless-Shell, liefe der Crawler als SKIP mit EXIT 0 | gelesen | gering | derselbe CI→FAIL-Zweig wie beim Kanal |
+| H1a2-11 | CC R2-10, DS 3 | Slowloris: Route ohne eigenes Zeitlimit, Verbindungen 300,1 s offen bis `408` (beide Stände gleich). In Produktion puffert nginx den Rumpf vor dem Weiterreichen | CC gemessen | gering | → Sammelliste |
+| H1a2-12 | CC R2-10 | Aufräumen der Rate-Map bewusst ohne Test (B8 48/0), funktional gemessen | CC gemessen | Anmerkung | → Sammelliste |
+| H1a2-13 | DS 4 | `channel:'chromium'` fehlt ausserhalb der CI → sichtbares SKIP statt FAIL | CC gemessen (630/0/2 ohne CI, 630/1 mit CI) | Anmerkung | **Entscheidung:** CI ist die letzte Instanz (Prüf-Ritual 6) und installiert den Kanal; ausserhalb SKIP sichtbar. Bleibt so |
+| — | DS 5.3 | Status-200-Zusicherung allein bewacht `blob:` nicht | gelesen | — | **fällt:** die Folgezusicherungen bewachen es, C1 (`blob:` entfernt) wird rot (629/2) |
+| — | CC R2-9 | `'/csp-bericht'` in `AUSNAHME_PREFIX` wirkt nur noch auf durchfallende Pfade | gemessen | — | Wächter braucht ihn (W4 114/6); dokumentieren |
+
+Nacharbeit 2: `plaene/auftrag-h1a-nacharbeit2.md`. Danach eigene Nachmessung mit den `h1cc2`-Skripten (Doppelmutation
+M3+B2, B1, B9b, B3b, R2-5, R2-7); eine dritte volle Runde nur, wenn die Nacharbeit mehr als Tests, Kommentare und die
+genannten Einzeiler ändert.
