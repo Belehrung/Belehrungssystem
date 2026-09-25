@@ -408,6 +408,9 @@ Stand 25.09.2026 11:41 UTC (Stundentakt): Im Bau: C2 N2 (Suite läuft), QR-J N4 
 Planprüfungen). C3b gebaut (`1d9b08d`, Suite 394 = 394), Diffprüfung Runde 1 läuft (CC + zwei DeepSeek-Spuren; Kimi
 ohne Guthaben — Betreiber gefragt). C3a Runde 2 ausgewertet, Nacharbeit 2 wartet auf Bauplatz. Warteschlange Bau:
 C3a N2.
+Stand 25.09.2026 14:40 UTC (Stundentakt): Im Bau (Suiten laufen): C3a N2 (vier Teile, `ed5f6a5`), C2 N3. Bereit und
+wartend: QR-J N5 (Fassung 2.2 nach drei Planprüfungen, Vorrang), C3b N2 (Runde 2: nichts blockierend).
+
 Stand 25.09.2026 13:40 UTC (Stundentakt): Im Bau: C3a N2 (drei Teile committet, Suite läuft), C2 N3. C3b N1 gebaut
 (`9ef94f1`), Runde 2: Claude-Spur fertig (nichts blockierend), DeepSeek-Spur zweiter Versuch läuft (erster am
 Ausgabelimit abgebrochen, Grenze im Gegenleser auf 64000 gehoben). QR-J Runde 5 ausgewertet (blockierend QJ5-1,
