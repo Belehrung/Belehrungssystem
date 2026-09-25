@@ -392,3 +392,5 @@ Nacharbeit 2 (Bau). Warteschlange Bau: QR-J N3 → C3a N1 → C3b.
 Stand 25.09.2026 09:15 UTC: **H1a gemergt** (#479, Squash `22dc613`, CI 4/4 grün auf `c58f9d0`, kein Bot-Kommentar,
 Botschaft zurückgelesen). Deploy-Prüfung 09:40. C2 Runde 2 ausgewertet (9 Zeilen, 1 blockierend: Quarantäne überlebt
 Offboarding), Nacharbeit 2 steht. Laufend: QR-J N3, C3a N1 (Bau). Warteschlange Bau: C2 N2 → C3b.
+Stand 25.09.2026 09:43 UTC: H1a ausgeliefert (Deploy 447 success auf `22dc613`, live-check EXIT 0, 2× ℹ wie immer;
+`X-Powered-By` fehlt live). Live-Report-Only-Header trägt noch KEIN `report-uri` → Betreiber-Schritt offen.
