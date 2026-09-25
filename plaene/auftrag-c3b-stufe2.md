@@ -1,8 +1,8 @@
-# Auftrag C3b Stufe 2 — Replik-Upsert: Hash-Generation, Lease-Kennung, Budget, Wiederbelebung (Fassung 2, 25.09.2026)
+# Auftrag C3b Stufe 2 — Replik-Upsert: Hash-Generation, Lease-Kennung, Budget, Wiederbelebung (Fassung 3, 25.09.2026)
 
 Grundlage: Stufe 1 aus `plaene/auftrag-c3b-replik-upsert.md`, gemessen am 25.09.2026 auf master `00bd9c9` (Skripte
-`scratchpad/c3b/m1-…`, `m2-…`, `m3-…`). Planprüfung Fassung 1: `plaene/planpruefung-c3b.md` (DeepSeek 8 Befunde, Kimi 4
-Befunde — daraus diese Fassung). Zeilenangaben: `core/storage-replica.js` auf `00bd9c9`, vor dem Bau NEU messen.
+`scratchpad/c3b/m1-…`, `m2-…`, `m3-…`). Planprüfungen Fassung 1 und 2: `plaene/planpruefung-c3b.md` (daraus Fassung 2 bzw. 3; Fassung 3 präzisiert, gestaltet
+nicht um). Zeilenangaben: `core/storage-replica.js` auf `00bd9c9`, vor dem Bau NEU messen.
 Einordnung: **sehr komplex** — nebenläufige Zustände über zwei Leases (Zeile und Job), ein Ergebnis, das falsch grün
 aussieht (`succeeded` mit falschem Inhalt), und dieselbe Datei hatte im unlink-Beitrag zehn Prüfrunden.
 
@@ -55,7 +55,10 @@ Bestands und verschärft den offenen Punkt DB-INIT um eine Tabelle — im Berich
 
 Nach dem Claim gelten `running.sha256`, `running.local_path`, `running.backend` — nicht `replica.*`. Die Datei wird EINMAL
 gelesen, der Hash über genau diesen Puffer gebildet und gegen `running.sha256` gehalten, derselbe Puffer wird
-verschlüsselt.
+verschlüsselt. **Diese Ein-Puffer-Prämisse trägt Punkt 4** (der Abschluss vergleicht den Hash der hochgeladenen Bytes);
+deshalb ein eigener Test, der sie bewacht: ein Hook auf das Lesen liefert beim zweiten Aufruf andere Bytes bzw. zählt
+die Aufrufe (Soll: genau EIN Lesen je Upload) — ohne ihn bleibt die Gegenprobe „zweites Lesen statt Puffer“ grün
+(Planprüfung F2, Kimi 1).
 
 ## 3. Upsert: neuer Hash bekommt neues Budget; Status-Verhalten BLEIBT (M1)
 
@@ -68,8 +71,11 @@ Dauerzustand `running` mit totem Job erzeugt.
 ## 4. Abschluss nur für den Hash, der hochgeladen wurde (M2)
 
 1c liest `sha256` und `claim_nr` mit `FOR UPDATE`. Weicht `sha256` vom hochgeladenen Hash ab, ist der Upload veraltet:
-kein `succeeded`, kein Auftrag „ersetzt“, die EIGENE Datei wie in 1e (Anker `verwaist`, Datei weg). Ist die Lease noch
-die eigene (`status='running' AND claim_nr=<eigen>`), Zeile auf `pending`, `attempts=0`. Danach wirft der Worker einen
+kein `succeeded`, kein Auftrag „ersetzt“, die EIGENE Datei wie in 1e (Anker `verwaist`, Datei weg). Die Zeile wird
+NICHT angefasst: ein Hash-Wechsel entsteht nur über den Upsert, und der hat sie schon auf `pending`/`attempts=0` gesetzt
+(Planprüfung F2, Kimi 3 — ein Rücksetzen hier wäre unerreichbar; ohne Riegel gebaut, würde es ein `succeeded` eines
+anderen Workers zurückkippen). Die literalen `attempts`/`claim_nr`-Werte im M2-Test sind die Wache dagegen. Danach wirft
+der Worker einen
 EIGENEN, NICHT permanenten Fehler (Vorbild `LoeschauftragEntzogenError`, `:534ff`: kein Fehlversuch der Zeile), damit
 der Job über `queue.retry` wiederkommt und den neuen Inhalt lädt. Der neue Zweig hängt in der bestehenden
 `phase`/`commitUngewiss`-Maschinerie (R5-1/R6-10): bei ungewissem COMMIT keine Dateibehandlung über den Anker hinaus.
@@ -80,18 +86,30 @@ ist der Job `dead`, und es trägt Punkt 6.
 ## 5. Fehlerweg bei inzwischen geändertem Hash
 
 Scheitert ein Worker und steht in der Zeile inzwischen ein ANDERER Hash als `running.sha256` (Upsert während des Laufs),
-gilt der Fehlschlag dem alten Inhalt: nur mit eigener Lease `pending`, `attempts=0`, und `error.permanent` wird
-ENTFERNT (sonst `deadLetter` im Worker, `workers/pdf-job-worker.js:85-88`). Steht derselbe Hash (Datei ausgetauscht, der
+gilt der Fehlschlag dem alten Inhalt: die Zeile steht durch den Upsert schon auf `pending`/`attempts=0` (der Riegel mit
+eigenem `claim_nr` trifft 0 Zeilen — so lassen), und `error.permanent` wird ENTFERNT (sonst `deadLetter` im Worker,
+`workers/pdf-job-worker.js:85-88`). Benannte Folge: auch ein echter permanenter Fehler (`pdf_zusatz_pfad fehlt`,
+`Backend nicht aktiv`), der mit einem Upsert zusammenfällt, wird so zu bis zu fünf Job-Versuchen statt sofort `dead`. Steht derselbe Hash (Datei ausgetauscht, der
 Upsert kommt erst noch), bleibt es beim heutigen Verhalten (`SHA-256 stimmt nicht überein` permanent → `dead`); der
-spätere Upsert belebt die Zeile mit `attempts=0` — und den Job über Punkt 6.
+spätere Upsert belebt die Zeile mit `attempts=0` — und den Job über Punkt 6. Ausnahme (Planprüfung F2, DS Q1): kam der
+Upsert schon VOR dem Claim, sieht sein Enqueue einen offenen Job und belebt nichts; die Zeile endet ehrlich `dead`
+(Health „degraded“, blockiert den Deploy nicht — `ops/health-gate.sh` Stufe 2), bis die Datei erneut hochgeladen wird.
+Das ist gewollt und im Bericht zu benennen.
 
 ## 6. Terminaler Job blockiert keine Wiederbelebung (M4, nur wenn gemessen)
 
-`enqueueReplica` und `requeueStale`: liefert `enqueue` `DedupeConflictError` und ist der vorhandene Job mit diesem
-`dedupe_key` terminal (`succeeded`/`dead`), wird er über `pdfJobs.requeue` wiederbelebt; ist er offen, bleibt es beim
-Hinweis (der laufende Job kommt über Punkt 4/5 wieder). Die falschen Kommentare (`core/storage-replica.js:611`,
-`test_feature_storage_replica.js:129-131`) werden berichtigt. Mindestens ein Test fährt den ECHTEN Weg ohne händisches
-Löschen von `pdf_jobs`.
+`enqueueReplica` und `requeueStale`: liefert `enqueue` `DedupeConflictError` ODER `TerminalDedupeError` (bei gleichen
+Parametern, DS Q2a), wird der vorhandene Job nachgeschlagen — `DedupeConflictError` trägt KEINE `jobId` (Kimi F2-2), also
+über `WHERE studio_id=$1 AND job_type='storage_replicate' AND dedupe_key=$2` (alle drei Spalten des eindeutigen Index,
+nie `dedupe_key` allein). Ist er terminal (`succeeded`/`dead`), wird er über `pdfJobs.requeue` wiederbelebt — mit
+`priority` und `runAfter` wie beim normalen Enqueue (`requeue` setzt sonst Priorität 0, DS Q2b); ist er offen, bleibt es
+beim Hinweis (der laufende Job kommt über Punkt 4/5 wieder). Verliert ein Aufrufer das Rennen zweier Wiederbelebungen
+(`requeue` wirft `DedupeConflictError`, weil der Job inzwischen offen ist), gilt das als Erfolg. Ein DB-Fehler beim
+Nachschlagen oder Wiederbeleben ist LAUT (`fehler++` bzw. Wurf), nie der stille Zweig „offener Job existiert“ (DS Z3). Die falschen Kommentare werden berichtigt — im Produktivcode (`core/storage-replica.js:611`); im Test
+(`test_feature_storage_replica.js:129-131`) nur der Teil „requeueStale heilt täglich“, denn dort (festes `runAfter`)
+fliegt tatsächlich `TerminalDedupeError` (Kimi F2-4.3). Mindestens ein Test fährt den ECHTEN Weg ohne händisches
+Löschen von `pdf_jobs` und mit echtem `new Date()` (mit festem `runAfter` misst er den Produktivfehler nicht), und
+mindestens einer hat ZWEI Studios mit gleichem `dedupe_key` (sonst bleibt ein Nachschlagen ohne `studio_id` grün).
 
 ## Tests (Pflicht, Vorbild: Rennen-Tests aus dem unlink-Beitrag)
 
@@ -100,7 +118,9 @@ Setzen des Endzustands), je mit LITERALEN Sollwerten (Status, `attempts`, `claim
 `remote_ref`, Löschaufträge, Status des `pdf_jobs`-Jobs). Dazu der Lease-Kollisionsfall (Punkt 1), der Fehlerweg aus
 Punkt 5 (Job NICHT `dead`, kommt wieder), M4 über den echten Weg. Je Schutz eine Gegenprobe (Mutation → ROT, Rücknahme →
 GRÜN, Zahlen wörtlich, die ROT-Datei benennen): Claim ohne `claim_nr`-Erhöhung, Riegel zurück auf `attempts`,
-Hashvergleich gegen `replica.sha256`, zweites Lesen statt Puffer, 1c ohne Hashfilter, `permanent` nicht entfernt,
+Hashvergleich gegen `replica.sha256` (rot nur über literale
+`last_error`/`attempts`/`claim_nr` im M3-Test), zweites Lesen statt Puffer (rot nur im Ein-Puffer-Test), Nachschlagen ohne
+`studio_id` (rot nur im Zwei-Studio-Test), 1c ohne Hashfilter, `permanent` nicht entfernt,
 Upsert ohne `attempts=0`, Wiederbelebung terminaler Jobs entfernt. Bestehende Tests bleiben grün.
 
 ## Was NICHT gebaut wird

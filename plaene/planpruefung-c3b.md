@@ -21,3 +21,25 @@ Zwei Lesespuren, verschiedene Bündel: `deepseek-v4-pro` mit Repo-Lesezugriff (M
 | PC3b-12 | Kimi 1 (Frage 1) | `pdf_jobs.healthMetrics` zählt `dead` über alle Jobtypen — ob das ein Gate kippt, ist offen | nicht gemessen | Bau misst, Bericht nennt |
 
 Ergebnis: Fassung 2 ist eine Umgestaltung (Punkt 3 umgedreht, Punkt 6 neu) → zweite Planprüfung.
+
+## Fassung 2 (25.09.2026)
+
+Zwei Lesespuren, verschiedene Bündel (DeepSeek Repo-Lesezugriff; Kimi: Papier, Kernmodule, `test_feature_storage_replica.js`,
+Ausschnitte `routes/belehrungen.js`/`server.js`, Befundtabelle Fassung 1). Beide Spuren spielen alle Reihenfolgen A(H1)/
+B(H2) durch (DS 7, Kimi 14): **kein Weg zu `succeeded` mit falscher Datei, keiner zum Löschen der richtigen, kein
+Riegel auf eine fremde Lease** — unter der Ein-Puffer-Prämisse.
+
+| # | Spur | Befund | Nachmessung | Entscheidung (Fassung 3) |
+|---|---|---|---|---|
+| PC3b-13 | Kimi F2-1 | Ein-Puffer-Prämisse trägt Punkt 4, kein geplanter Test kann „zweites Lesen“ fangen | am Papier nachvollzogen | Ein-Puffer-Test Pflicht |
+| PC3b-14 | Kimi F2-2, DS Z4a | Nachschlagen des Jobs: `DedupeConflictError` ohne `jobId`; Abfrage muss `(studio_id, job_type, dedupe_key)` tragen; Ein-Studio-Tests sehen das nicht | `core/pdf-jobs.js:22-25` gelesen | Abfrage im Papier, Zwei-Studio-Test |
+| PC3b-15 | Kimi F2-3 | Rücksetzen in Punkt 4/5 ist unter Punkt 3 unerreichbar; ohne Riegel gebaut kippte es ein fremdes `succeeded` | am Papier nachvollzogen | gestrichen, M2-Literale als Wache benannt |
+| PC3b-16 | DS Q1 | M3 mit Upsert vor dem Claim endet `dead` ohne Wiederbelebung | nachvollzogen | gewollt, benannt (Health Stufe 2, kein Deploy-Stopp — `ops/health-gate.sh:195-205` gelesen) |
+| PC3b-17 | DS Q2a | `TerminalDedupeError` im neuen Zweig mitbehandeln | `core/pdf-jobs.js:146` | übernommen |
+| PC3b-18 | DS Q2b | `requeue` setzt Priorität 0 | `core/pdf-jobs.js:153` | übernommen |
+| PC3b-19 | DS Z3 | DB-Fehler im neuen Zweig laut | gelesen | übernommen |
+| PC3b-20 | Kimi F2-4.3 | Testkommentar `:129-131` ist im Test richtig (fester `runAfter`) | nachvollzogen | nur Produktivkommentar berichtigen |
+| PC3b-21 | Kimi F3.3 | `permanent` entfernen trifft auch echte Konfigurationsfehler bei gleichzeitigem Upsert | nachvollzogen | benannt |
+| PC3b-12 | — | Kippt ein toter Job ein Gate? | `routes/health-intern.js:233`, `ops/health-gate.sh:195` gelesen: `degraded` = Stufe 2, KEIN Abbruch | beantwortet |
+
+Fassung 3 ist eine Präzisierung (keine Umgestaltung) → keine dritte Planprüfung; Bau nach Warteschlange.
