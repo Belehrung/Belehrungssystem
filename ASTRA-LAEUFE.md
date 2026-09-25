@@ -280,6 +280,7 @@ sondern falsch.
 | 25.09.2026 | Planprüfung QR-J Nacharbeit 4 Fassung 2 Spur K (kimi-k3) | — ABGEBROCHEN: HTTP 429 `exceeded_current_quota_error` (Guthaben erschöpft), drei Versuche | — | — | — | 0 $ |
 | 25.09.2026 | Planprüfung QR-J Nacharbeit 4 Fassung 2 (deepseek-v4-pro) | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 135 Zeilen, Suchen 13, Lesungen 15, Token rein 1619895, Token raus 49405, Runden 17 | — | — | — | mind. 2,33 $ |
 | 25.09.2026 | Planprüfung QR-J Nacharbeit 4 Fassung 2, Ersatzspur (deepseek-v4-pro Einzelaufruf, Werkzeug-Bündel 112 KB, effort high) | 38.182 Token ein, 32.602 aus, 391 s | 4 | 2 (einzig von dieser Spur: Widerspruch §1/§8 bei „genau S“ mit Eigentümer; Vorbedingung nur umformuliert) | 2 (benannte Freigabe ohne DB-Prüfung und „Fassung 2 schlechter“ — beides die beabsichtigte Betreiber-Erklärung) | — |
+| 25.09.2026 | C3b Diffprüfung Runde 1 (deepseek-v4-pro) | Diff 1414 Zeilen, Suchen 11, Lesungen 17, Token rein 1671157, Token raus 48941, Runden 18 | — | — | — | 2,40 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
