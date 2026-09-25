@@ -28,3 +28,25 @@ NICHT GEPRÜFT als grün.
 11 Zeilen, Claude 10 eigene, DeepSeek 8 (5 Überschneidungen: B2, B3, B4, B6, B8). Nur Claude: der Syntax-Check
 (blockierend), V25-3-Tag mit Attribut, die Zeitzonenfälle, die Kleinigkeiten. Nur DeepSeek: `psql`-Fehler als PASS.
 Keiner gefallen. Die Nacharbeit ändert ein Deploy-Gate (Syntax-Check) → Runde 2 als ausführende Spur.
+
+## Runde 2 — Nacharbeit 1 (Kopf `6ae2bb4` + `06aff34`, 25.09.2026)
+
+Eine Spur (ausführend, eigener Baum). Syntax-Gate: Fehlerdatei an find-Position 1, 2, 205, 281, 410 → neu jeweils
+EXIT 123 (alt nur Position 1 rot); Laufzeit 0,43 s → 5,8–6,8 s (4 Kerne), 19,3 s (1 Kern). Runde-1-Mutationen
+überwiegend ROT (jahrescheck, `<script nonce>`, Seil-alert, Wegwerf-Formen, mangel, retention, syntax-check).
+
+| Nr. | Befund | Nachgemessen (Spur) | Entscheidung (= Auftrag Nacharbeit 2) |
+|---|---|---|---|
+| T2-R2-1 | **hoch — Rückschritt:** Exit 2 von `staging-smoke.sh` ist nicht eindeutig (bash-Abbruch durch `set -e`, z. B. Syntaxfehler in der Staging-`.env`, ein Hilfsprogramm mit Exit 2) → `final-verification` trägt `ok:null` ein und meldet insgesamt `ok=true`, EXIT 0; alter Stand: `ok=false`, EXIT 1. Auch ein echtes NICHT GEPRÜFT ergibt insgesamt `ok=true`, während die Liste „FAIL … nicht vollständig geprüft“ druckt | Ende-zu-Ende mit Attrappen (`fv_lauf.sh`) | `null` NUR bei Exit 2 UND letzter Zeile `NICHT VOLLSTÄNDIG GEPRÜFT:`, sonst `false`; Gesamtaussage dreiwertig (Zähler, `ok` nicht `true`, eigener Exit-Code); Liste druckt „NICHT GEPRÜFT“; Verhaltensprobe für `final-verification.sh` |
+| T2-R2-2 | Syntax-Check verschluckt `find`-Fehler (`mapfile … < <(find …)`): unlesbares Unterverzeichnis mit kaputter Datei → EXIT 0 „✅ (410 Dateien)“; alt EXIT 1 | als `nobody` gemessen | `wait $!` nach `mapfile` (auf bash 5.2 gemessen: 1 bei scheiterndem find, 0 sonst); Probe |
+| T2-R2-3 | Verhaltenstest des Syntax-Checks prüft EINE Position; `"${JS_DATEIEN[@]:1}"`, `[@]:0:JS_ANZAHL-1`, `[@]:0:300` bleiben 4/0 | gemessen | Baum, in dem ALLE Dateien kaputt sind; Menge der gemeldeten = Menge der angelegten (Referenz von aussen) |
+| T2-R2-4 | Wegwerf-Wächter: eingerückte Neuzuweisung, `unset -v`, `export -n`, überschriebene Zwischenvariable, unquotierter/zweistufiger/eingerückter Export eines neuen `_DIR` → 40/0; harmlose unquotierte Form falsch rot | gemessen | Laufzeitwache in `test/run.sh` vor der Testschleife (alle neun gesetzt, Präfix `/tmp/gymdocu-suite-`, exportiert per `declare -p`) + statische Zusicherung, dass diese Wache existiert; das statische Muster darf unquotiert akzeptieren |
+| T2-R2-5 | Zwei der vier Kindprozess-Tests bewachen eine Kopie: getraenke rechnet im Kind selbst nach (`vorTagenIso` alt → 6 ✓), gueltigkeit `GESTERN` alt → 23/0 | gemessen | die Helfer per `toString()` ins Kind geben wie bei mangel; Stichtage in EINER Funktion |
+| T2-R2-6 | V26-1 Fall F trägt nicht: `delete kindEnv…` entfernt → grün (der falsche Pfad ist nur eine andere Datei) | gemessen | Pfad in einem NICHT existierenden Verzeichnis; Kommentar berichtigen |
+| T2-R2-7 | Verweigerungserkennung: Shell-Zeile `…/psql: Permission denied` → PASS (Grossschreibung ignoriert); deutsche Meldung → NICHT GEPRÜFT; `no pg_hba.conf entry` → NICHT GEPRÜFT | mit Attrappen | nur Postgres-Meldungen (`FATAL:`/`ERROR:`/`FEHLER:` gefolgt von `permission denied`/`keine Berechtigung`, dazu `no pg_hba.conf entry`/`kein pg_hba.conf-Eintrag`) sind PASS; Probe je Form |
+| T2-R2-8 | Netz-Attrappe lässt durch: `https.request(url, {hostname:H})` (Node legt Optionen über die URL), `{hostname:''|null, host:H}` (Rückschritt gegenüber `hostname \|\| host`), `fetch({toString})` | Spion, ohne Netz | Node-Semantik nachbilden (Optionen über URL, `hostname \|\| host`), `String(url)` für fetch; Probe je Form |
+| T2-R2-9 | Ausnahmeliste `keine_systemeingriffe` 34 → 40 (ganze Dateien, künftige `child_process` dort unsichtbar); `rechneUnterEingefrorenerUhr` dreimal fast gleich; `execFileSync` ohne `timeout` (ein hängendes Kind blockiert das Deploy-Gate) | gelesen | EIN Helfer unter `test/helfer/` für Kindprozesse mit eingefrorener Uhr, mit `timeout`; nur er in der Ausnahmeliste |
+| T2-R2-10 | `GYMDOCU_STAGING_SMOKE_PROD_ROOT` taucht in keiner Ausgabe auf | gemessen | ist sie gesetzt, erste Ausgabezeile nennt sie |
+
+Nach Nacharbeit 2 fährt der Executer die Skripte der Spur (`fv_lauf.sh` u. a., `…/scratchpad/t2r2cc/`) gegen den
+neuen Stand und liefert die Zahlen; keine dritte Prüfrunde (Diff lese ich selbst).
