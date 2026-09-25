@@ -408,6 +408,15 @@ Stand 25.09.2026 11:41 UTC (Stundentakt): Im Bau: C2 N2 (Suite läuft), QR-J N4 
 Planprüfungen). C3b gebaut (`1d9b08d`, Suite 394 = 394), Diffprüfung Runde 1 läuft (CC + zwei DeepSeek-Spuren; Kimi
 ohne Guthaben — Betreiber gefragt). C3a Runde 2 ausgewertet, Nacharbeit 2 wartet auf Bauplatz. Warteschlange Bau:
 C3a N2.
+Stand 25.09.2026 abends (Sparmodus, Kontingent ~4 %, Routine pausiert) — QR-J N5 GRÜN:
+- Testhelfer-Behebung `1f1aa4b` (Basis-Studios der S*10+k-Geschwister aus einem geprüft freien Zehnerblock unter int4,
+  `test/helfer/studio-zehnerblock.js`; Gegenprobe ROT) und `33d35c3` (Sequenz nach `studioMitId` auf MAX(id) — sonst
+  Kollision in `test_feature_qr_block.js`, id 1990000105). Volle Suite auf `33d35c3`: SUITE_EXIT=0, 395 = 395
+  (`diff` EXIT 0), Lint EXIT 0, Marker 0. OFFEN für QR-J N5: Diff lesen, Gegenproben der Nacharbeit, Diffprüfung
+  Runde 6 (DeepSeek + gpt-6-sol).
+- C3a N2 `ed5f6a5`: Suite grün (399 = 399), Lint 0 — offen: Diff, Gegenproben, Runde 3.
+- Wartend: C3b N2 (Auftrag fertig), C2 N4 (Planprüfung roh, Fassung 2 offen).
+
 Stand 25.09.2026 nach Container-Neustart (Sparmodus, Routine pausiert):
 - QR-J N5 `59fa628`: volle Suite vom Haupt-Agenten gefahren — SUITE_EXIT=2, 395 = 395 (`diff` EXIT 0), Lint durch den
   Neustart nicht zu Ende. Zwei rote Dateien, BEIDE am selben Testhelfer, nicht am Produktivcode:
