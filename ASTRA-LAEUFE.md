@@ -279,6 +279,7 @@ sondern falsch.
 | 25.09.2026 | Planprüfung QR-J Nacharbeit 4 Spur K (kimi-k3, Bündel 81 KB, effort high) | 27.308 Token ein, 46.922 aus | 10 | 9 (einzig von dieser Spur: Leserregel für `freigegeben` in beiden Lesarten defekt; `abschnittVollGedeckt` fehlt → Daueralarm bei grünen Tests; Widerspruch im §1-Wortlaut; `bekannteStudios`-Bootstrap; Schalterkombination) | 1 (Eigentümer ohne Kandidatenbindung → Doppelvergabe: das Werkzeug prüft schon, `tools/qr-journal.js:1094`; Leser-Härtung getragen) | — |
 | 25.09.2026 | Planprüfung QR-J Nacharbeit 4 Fassung 2 Spur K (kimi-k3) | — ABGEBROCHEN: HTTP 429 `exceeded_current_quota_error` (Guthaben erschöpft), drei Versuche | — | — | — | 0 $ |
 | 25.09.2026 | Planprüfung QR-J Nacharbeit 4 Fassung 2 (deepseek-v4-pro) | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 135 Zeilen, Suchen 13, Lesungen 15, Token rein 1619895, Token raus 49405, Runden 17 | — | — | — | mind. 2,33 $ |
+| 25.09.2026 | Planprüfung QR-J Nacharbeit 4 Fassung 2, Ersatzspur (deepseek-v4-pro Einzelaufruf, Werkzeug-Bündel 112 KB, effort high) | 38.182 Token ein, 32.602 aus, 391 s | 4 | 2 (einzig von dieser Spur: Widerspruch §1/§8 bei „genau S“ mit Eigentümer; Vorbedingung nur umformuliert) | 2 (benannte Freigabe ohne DB-Prüfung und „Fassung 2 schlechter“ — beides die beabsichtigte Betreiber-Erklärung) | — |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
