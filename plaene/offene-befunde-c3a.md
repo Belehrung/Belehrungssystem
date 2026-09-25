@@ -14,3 +14,14 @@ Verweist auf `plaene/planpruefung-c3a.md` (Nachmessung dort).
   gehört, gelten nicht als Waisen (C3a2-9, gelesen).
 - **C3a-S-FK2:** kein Fremdschlüssel `getraenkeanlage_reinigungen.aufgabe_id` → `getraenkeanlage_aufgaben` (Rückfalllinie
   zu C3a2-1; Nacharbeit 2 schliesst es im Code, eine Migration kollidiert derzeit mit C3b 0063).
+- **C3a-S6:** `routes/admin/mitarbeiter.js`, Löschweg, `DELETE FROM belehrung_freischaltung` NACH dem Commit (C3a2-3):
+  steht in einem LEEREN `catch {}`, ohne `melde()` — anders als der direkt danebenstehende Token-Hausputz, der bei
+  einem Fehlschlag meldet. Ein Fehlschlag bleibt hier vollständig unsichtbar; die Zeile überlebt als Waise (der
+  Mitarbeiter ist zu diesem Zeitpunkt bereits gelöscht). Vorbestehend, NICHT durch Nacharbeit 2 eingeführt — nur
+  sichtbar geworden, weil ein Nachbau-Lauf der Prüfspur (m8.js, C3a2-3) genau diesen Fehlschlag auslöste: der Versuch
+  der Probe, eine "rennende" Unterschrift NACH dem bereits committeten harten Löschen einzuschieben, scheitert seit
+  der Reihenfolge-Behebung selbst an der `unterschriften_mitarbeiter_fkey`-Fremdschlüsselprüfung (23503, der
+  referenzierte Mitarbeiter existiert nicht mehr) — eine erfreuliche Nebenwirkung der Behebung, die aber den
+  bestehenden leeren `catch` erstmals sichtbar auslöste. Zwei getrennte Punkte: (a) der leere `catch` verdient
+  dieselbe `melde()`-Behandlung wie der Token-Hausputz daneben; (b) das ist eine Verhaltensänderung, keine
+  Zusicherungs-Ergänzung, gehört also NICHT beiläufig in diese Nacharbeit.

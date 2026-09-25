@@ -285,6 +285,8 @@ sondern falsch.
 | 25.09.2026 | C2 Diffprüfung Runde 3 (deepseek-v4-pro) | Diff 1634 Zeilen, Suchen 34, Lesungen 30, Token rein 2926233, Token raus 43771, Runden 24 | 6 | 5 (einzig: `statSync`-Fehler verschluckt) | 1 (flüchtige Datei trotz Registerzeile — die Zeile nennt den öffentlichen Namen) | 4,04 $ |
 | 25.09.2026 | QR-J Diffprüfung Runde 5 (deepseek-v4-pro) | Diff 1705 Zeilen, Suchen 10, Lesungen 14, Token rein 2309888, Token raus 69341, Runden 14 | 4 | 4 (einzig: `keine_aufkleber`-Handzeile ohne Chargenschlüssel, leere `every`-Zusicherung) | 0 | 3,32 $ |
 | 25.09.2026 | QR-J Diffprüfung Runde 5, dritte Spur (deepseek-v4-pro Einzelaufruf, Endstand-Bündel 275 KB, effort high; Ersatz für Kimi ohne Guthaben) | 87.324 Token ein, 46.002 aus | 4 | 2 (einzig in seinem Aufbau: Neuzustellung des Blocks nach ausserhalb-Korrektur → Sammelliste) | 2 (geteilte Simulation — durch literale Vergaben abgedeckt; Abfragen ohne `studio_id` — vorbestehend, begründet) | ~0,30 $ |
+| 25.09.2026 | C3b Diffprüfung Runde 2 (deepseek-v4-pro) | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 651 Zeilen, Suchen 9, Lesungen 15, Token rein 702149, Token raus 47755, Runden 9 | — | — | — | mind. 1,12 $ |
+| 25.09.2026 | Planprüfung QR-J Nacharbeit 5 (deepseek-v4-pro) | Diff 137 Zeilen, Suchen 21, Lesungen 15, Token rein 1083333, Token raus 49803, Runden 17 | — | — | — | 1,63 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht

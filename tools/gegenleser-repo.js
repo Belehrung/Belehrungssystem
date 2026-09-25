@@ -256,7 +256,11 @@ const VORGABE_MODELL = 'gpt-6-sol';
 // abbricht, hat NICHTS geliefert, nicht "keine Befunde" -- aber die Grenze war
 // zu eng gesetzt. Zusammen mit dem Buendel-Hinweis im Auftragstext unten.
 const VORGABE_MAX_RUNDEN = 40;
-const MAX_ANTWORT_TOKEN = 24000;
+// 24000 reichten NICHT (25.09.2026, drei deepseek-v4-pro-Läufe mit effort
+// high abgebrochen: status "incomplete", max_output_tokens -- das Denken EINER
+// Runde verbrauchte die ganze Ausgabe). Die Grenze gilt je Antwort; sie kostet
+// nur, was wirklich erzeugt wird.
+const MAX_ANTWORT_TOKEN = 64000;
 const MAX_SUCHE_ZEILEN = 80;
 const MAX_LIES_ZEILEN = 400;
 // Deckel fuer die SUMME aller Funktionsergebnisse (gelesene Ausschnitte).
