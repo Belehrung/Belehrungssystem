@@ -408,3 +408,6 @@ Stand 25.09.2026 11:41 UTC (Stundentakt): Im Bau: C2 N2 (Suite läuft), QR-J N4 
 Planprüfungen). C3b gebaut (`1d9b08d`, Suite 394 = 394), Diffprüfung Runde 1 läuft (CC + zwei DeepSeek-Spuren; Kimi
 ohne Guthaben — Betreiber gefragt). C3a Runde 2 ausgewertet, Nacharbeit 2 wartet auf Bauplatz. Warteschlange Bau:
 C3a N2.
+Stand 25.09.2026 12:41 UTC (Stundentakt): Im Bau: C3a N2, C3b N1. Prüfrunden laufen: QR-J Runde 5 (drei Spuren, nach
+Nacharbeit 4 `24b9be8`), C2 Runde 3 (nach Nacharbeit 2 `a1a41d7`). C3b Runde 1 ausgewertet (nichts blockierend).
+Kimi-Guthaben weiter offen (Betreiber gefragt).
