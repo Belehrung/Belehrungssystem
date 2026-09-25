@@ -50,3 +50,19 @@ EXIT 123 (alt nur Position 1 rot); Laufzeit 0,43 s → 5,8–6,8 s (4 Kerne), 19
 
 Nach Nacharbeit 2 fährt der Executer die Skripte der Spur (`fv_lauf.sh` u. a., `…/scratchpad/t2r2cc/`) gegen den
 neuen Stand und liefert die Zahlen; keine dritte Prüfrunde (Diff lese ich selbst).
+
+## Eigene Lesung Nacharbeit 2 (Commit `9cf820b`, 25.09.2026)
+
+Diff Datei für Datei gelesen (19 Dateien). R2-1 bis R2-10 umgesetzt wie entschieden; die Zahlen der Spur-Skripte
+(`fv_lauf2.sh`: grün → EXIT 0/`ok:true`; echtes NICHT GEPRÜFT → EXIT 2/`null`; Syntaxfehler-`.env` → EXIT 1/`false`)
+passen. Sechs Punkte bleiben, alle klein, alle gehen an denselben Executer:
+
+| Nr. | Befund | Nachgemessen | Auftrag |
+|---|---|---|---|
+| T2-N1 | Kommentar in `test_feature_run_sh_wegwerf_variablen_static.js` nennt `test_feature_run_sh_wegwerf_variablen_laufzeit.js` als Verhaltensprobe der Laufzeitwache — die Datei gibt es nicht | `git ls-tree` auf `9cf820b`: 0 Treffer | Kommentar berichtigen (Wache wurde von Hand rot gemessen, statisch nur ihre Form bewacht) |
+| T2-N2 | `test_feature_final_verification_verhalten.js` Fall 3 sichert nicht zu, dass `staging-smoke.sh` wirklich mit **2** endete; endet bash dort (andere Version) mit 1, ist der Fall auch mit der ALTEN Logik grün | gelesen: Zusicherungen nur auf `false`/EXIT 1/„FAIL“ | Detail enthält seit R2-1 `rc=$smoke_rc` → `rc=2` zusichern |
+| T2-N3 | Der neue Test startet das echte `final-verification.sh`, und das schreibt fest nach `/tmp/gymdocu-final-migrate-check.out` (`:135`) — die Suite läuft auf dem Server als Deploy-Gate und überschreibt dort die Datei eines echten Laufs; der Kopf des Tests behauptet „kein Pfad ausserhalb der Temp-Verzeichnisse“ | `:135` gelesen | im Skript `mktemp` statt festem Pfad, danach entfernen; Kopfsatz stimmt dann |
+| T2-N4 | `find` im Syntax-Check steigt trotz `-not -path` in `node_modules/`, `pdf/` usw. hinab; seit R2-2 bricht jeder `find`-Fehler den Check ab — ein beim Deploy verschwindendes oder unlesbares Verzeichnis dort stoppt Schritt 4/8 NACH dem `git pull` (neuer Code auf der Platte, alter Prozess) | gelesen; Deploy-Benutzer laut `ops/deploy-key-einrichten.md:49` root, Rechtefehler dort also unwahrscheinlich, Verschwinden nicht | ausgeschlossene Verzeichnisse per `-prune`; Dateiliste alt/neu am echten Repo sortiert vergleichen, `diff` EXIT 0 |
+| T2-N5 | R2-2-Probe (`sudo -u nobody`) ist grün aus falschem Grund, wenn `nobody` das Skript gar nicht ausführen kann (nicht durchquerbares `TMPDIR`, `sudo` verlangt Passwort) — jeder Exit ≠ 0 zählt | gelesen: einzige Zusicherung `code !== 0` | Positivkontrolle: derselbe Baum OHNE gesperrtes Verzeichnis als `nobody` → EXIT 0; im Fehlerfall die eigene Meldung „find scheiterte“ zusichern |
+| T2-N6 | fehlt `nobody`, wird die Probe still übersprungen (Datei endet EXIT 0) | gelesen | Hausregel: `CI=true` → FAIL, sonst sichtbares SKIP |
+| — | `test_feature_final_verification_verhalten.js` fehlt in `test/run.sh` (vom Executer selbst gemeldet, Registrierungswächter schlägt zu Recht an) | Executer-Bericht | eintragen |
