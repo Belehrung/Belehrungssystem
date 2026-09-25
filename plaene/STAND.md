@@ -385,3 +385,7 @@ Erledigung, Regress Belegprüfung); Nacharbeit 3 steht (`auftrag-qrj-nacharbeit3
 in zweiter Planprüfung (vorbestehender Fund: terminaler Job blockiert Wiederbelebung — im Bau zuerst messen). Laufend:
 C2 Nacharbeit 1 + H1a Nacharbeit 2 (Bau), C3a Diffprüfung (drei Spuren), C3b Planprüfung Fassung 2 (zwei Spuren).
 Warteschlange Bau: QR-J N3 → C3a-Nacharbeit → C3b.
+Stand 25.09.2026 08:45 UTC (Stundentakt): C3a Diffprüfung ausgewertet (13 Befunde, u. a. Aufgabe löschen entwertet
+Nachweise, Migrations-Waisen stoppen den Start), Nacharbeit 1 steht. C3b Fassung 3 steht (zwei Planprüfungen, 21
+Befunde eingearbeitet; Health „degraded“ blockiert den Deploy nicht). Laufend: C2 Nacharbeit 1 (Suite), H1a
+Nacharbeit 2 (Bau). Warteschlange Bau: QR-J N3 → C3a N1 → C3b.
