@@ -408,6 +408,12 @@ Stand 25.09.2026 11:41 UTC (Stundentakt): Im Bau: C2 N2 (Suite läuft), QR-J N4 
 Planprüfungen). C3b gebaut (`1d9b08d`, Suite 394 = 394), Diffprüfung Runde 1 läuft (CC + zwei DeepSeek-Spuren; Kimi
 ohne Guthaben — Betreiber gefragt). C3a Runde 2 ausgewertet, Nacharbeit 2 wartet auf Bauplatz. Warteschlange Bau:
 C3a N2.
+QR-J N5 (25.09.2026 ~16:00): der Bauende brach am monatlichen Ausgabelimit seines Modells ab (HTTP 429, „monthly spend
+limit“). Gesichert und gepusht: fünf Commits `0814c63..59fa628` auf `fix-qrj-journal-reparatur` (§0–§6 laut Botschaften
+gebaut, neue Testdatei `test_feature_qr_journal_wege.js` registriert), Baum sauber, keine Marker, keine laufende Suite.
+OFFEN: volle Suite, Gegenproben, Reproduktionen vorher/nachher, Bericht — alles als UNGEPRÜFT markiert. Fortsetzung nach
+dem Reset mit einem Modell, dessen Kontingent reicht (derselbe Agent lässt sich fortsetzen).
+
 Betreiber 25.09.2026 ~15:45: „ja wickel erst mal ab was ohne nachladen geht. danach werde ich sehen wie viel token noch
 übrig sind“ — Stundentakt-Routine `trig_01L73CiFLyL6e5pfvxhRnNUc` PAUSIERT (enabled false; nach dem Reset wieder
 einschalten). Abgewickelt werden nur die laufenden Bauten (QR-J N5, C3a N2): Bericht entgegennehmen, Stand sichern.
