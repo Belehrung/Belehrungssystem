@@ -371,3 +371,8 @@ Stand 25.09.2026 07:10 UTC: H1a-Nacharbeit 1 fertig (`df2f500`, 19 Befunde, Suit
 „NICHT GEPRÜFT“ ist Umgebung — keine DB `gymdocu` im Container, in allen 123 Läufen gleich). Runde 2 läuft (CC + DeepSeek),
 weil die Behebung Verhalten ändert. QR-J Nacharbeit 2 gestartet (Bauplatz frei). C3b Stufe 1 (Messen) gestartet.
 C2-Prüfergebnis, Nacharbeitsauftrag und Sammellisten C2/H1a abgelegt.
+Stand 25.09.2026 08:40 UTC: Container-Neustart. Verloren: QR-J-Nacharbeit-2-Lauf (Baum mit 6 uncommitteten Dateien,
+kein Marker), C3a-Abschlusssuite. Beide Agenten fortgesetzt mit Pflichtfrage „Gegenprobe halb zurückgenommen?“ zuerst.
+Kimi-Planprüfung C3b lief weiter (nohup). H1a Runde 2 ausgewertet (13 Befunde, keiner blockierend; `diffpruefung-h1a.md`),
+Nacharbeit 2 steht, wartet auf Bauplatz nach C2 Nacharbeit 1. C3b-Planprüfung DeepSeek: 8 Befunde, u. a. `requeueStale`
+täglich 03:15 statt 15 min, deklaratives Schema in `core/db.js` fehlt im Papier.
