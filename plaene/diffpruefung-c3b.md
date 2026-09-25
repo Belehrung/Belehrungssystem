@@ -33,3 +33,12 @@ Zahlen: CC 6, DS 1, DSB 3; 6 Zeilen, einer gefallen. Nur CC: C3b-1, C3b-2 (die b
 C3b-3. Zustandsfrage (CC, 7.440 Verschränkungen über die echten Wege, Positivkontrolle 66/140 bzw. 278/560 mit
 ausgeschaltetem Hashfilter): kein `succeeded` mit falschem Inhalt, keine richtige Fernkopie gelöscht, kein endloses
 Kreisen (Lauf 5 → `dead`, nächster Upload belebt). Nacharbeit 1: `plaene/auftrag-c3b-nacharbeit1.md`.
+
+## Runde 2 (Nacharbeit 1, `9ef94f1`)
+
+Gegenstand: Diff `1d9b08d..9ef94f1` (7 Dateien, +420/−63). Spuren: Claude (ausführend, Baum `gymdocu-c3b-cc`, eigene
+DB) und DeepSeek mit Repo-Lesezugriff (Baum `gymdocu-c3b-pruef`), Material der Diff der Nacharbeit. Zweite Runde, weil
+die Behebung Verhalten ändert: der permanente Fehlerweg entscheidet jetzt über den STATUS der Zeile (permanent nur bei
+fehlender oder `dead`-Zeile) — eine Entscheidung des Ausführenden über den Auftragswortlaut hinaus, begründet mit dem
+Planungs-Fuzz r3 (vorher 15 Pläne mit totem Job neben gesunder Zeile, nachher 0). Benannte Grenze des Ausführenden:
+Restfenster [Nachlesen … `queue.succeed`] nur über den jetzt stündlichen Reaper gedeckt.
