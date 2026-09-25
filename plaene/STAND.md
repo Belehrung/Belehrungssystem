@@ -380,3 +380,8 @@ Stand 25.09.2026 07:30 UTC: C3a gebaut (`f75cea1`, Suite 394 = 394, Lint 0) → 
 Löschung). QR-J Nacharbeit 2 gebaut (`153a7a4`, Suite 390 = 390, 31 Gegenproben) → Runde 3 mit drei Spuren läuft; die
 Präzisierung „Erledigung für alle reicht nicht in einen Abschnitt mit bestimmtem Studio ohne Korrektur“ angenommen.
 Bauplätze: C2 Nacharbeit 1, H1a Nacharbeit 2. C3b-Planprüfung: DeepSeek ausgewertet, Kimi läuft.
+Stand 25.09.2026 07:45 UTC (Stundentakt): QR-J Runde 3 ausgewertet (11 Befunde, zwei blockierend: Mehrabschnitt-
+Erledigung, Regress Belegprüfung); Nacharbeit 3 steht (`auftrag-qrj-nacharbeit3.md`), wartet auf Bauplatz. C3b Fassung 2
+in zweiter Planprüfung (vorbestehender Fund: terminaler Job blockiert Wiederbelebung — im Bau zuerst messen). Laufend:
+C2 Nacharbeit 1 + H1a Nacharbeit 2 (Bau), C3a Diffprüfung (drei Spuren), C3b Planprüfung Fassung 2 (zwei Spuren).
+Warteschlange Bau: QR-J N3 → C3a-Nacharbeit → C3b.
