@@ -342,3 +342,7 @@ der `-n50`-Fehler (T2-B1) ist erst mit T2 behoben. T2-Nacharbeit 2 fertig gebaut
 Stand 25.09.2026 02:32 UTC: T2-Suite (`4073fb2`) SUITE_EXIT=2 — beide FAIL (`geraete_alter`, `qr_token`: fremde
 `qr_charge`-Zeile) kamen vom H1a-Executer, der `gymdocu_test` für Einzelläufe neu anlegte (02:16–02:28, Transkript).
 Ritual 389 = 389, diff EXIT 0. H1a auf eigene DB umgestellt; Suite wird neu gefahren. Regel in CLAUDE.md ergänzt.
+Stand 25.09.2026 02:45 UTC: T2-Executer schrieb die fremde `qr_charge`-Zeile (id 1, Studio 1, Nummer 900001) C1 zu —
+**widerlegt**: CI auf master `a8543ac` grün (dieselben Tests), und im eigenen, ungestörten Lauf auf `4073fb2` ist
+`test_feature_geraete_alter.js` 151 PASS / 0 FAIL. Ursache bleibt der H1a-Einzellauf gegen `gymdocu_test`. Lint EXIT 0,
+Marker-Scan nur die 6 Doku-Zitate. Suite läuft noch.
