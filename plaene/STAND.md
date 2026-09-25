@@ -336,3 +336,6 @@ Stand 25.09.2026 01:45 UTC: **P2 ausgeliefert** — Deploy 444 (`8d4e2dc`) succe
 immer). C1 PR #477 (`fefda14`): CI 3/4 grün, Isolation läuft; kein Bot-Kommentar. H1a-Bau und T2-Nacharbeit 2 laufen.
 Stand 25.09.2026 01:52 UTC: **C1 gemergt** (#477, Squash `a8543ac`, CI 4/4 grün auf `fefda14`, kein Bot-Kommentar,
 Botschaft zurückgelesen). Deploy-Prüfung 02:20. QR-J-Bau wartet auf einen freien Bauplatz (T2-Nacharbeit 2, H1a laufen).
+Stand 25.09.2026 02:23 UTC: **C1 ausgeliefert** — Deploy 445 (`a8543ac`) success, Ladeprobe mit `db.init()` grün (TEMP-Recht
+vorhanden), Health-Check Versuch 1, live-check unauffällig (2× ℹ). Beobachtet: master-`syntax-check.sh` braucht 0,3 s —
+der `-n50`-Fehler (T2-B1) ist erst mit T2 behoben. T2-Nacharbeit 2 fertig gebaut (Kopf `4073fb2`), Suite läuft.
