@@ -42,3 +42,16 @@ Eingearbeitet in Fassung 2.1.
 
 Zahlen: DS 6 + Tabelle zu PQ5-1..13 (PQ5-5 „nur teilweise“), DSB 2 + Antworten (PQ5-9, PQ5-12 „nicht wirklich geschlossen“);
 9 Zeilen, einer teilweise gefallen. Nur DSB: PQ5b-1 (der schwerste — eine Widerlegung, die nur dokumentiert statt wirkt).
+
+## Dritte Prüfung, gezielt (Fassung 2.1, nur die Widerlegungsregel)
+
+Eine Spur: DeepSeek-Einzelaufruf (Papier Fassung 2.1, Leser und Werkzeug ganz). Eingearbeitet in Fassung 2.2.
+
+| Nr | Befund | Nachgesehen | Ergebnis |
+|---|---|---|---|
+| PQ5c-1 | Widerlegung und §2 „nicht umgesetzt“ | der Prüfer las den unveränderten Stand `24b9be8` — das Papier verlangt den Einbau erst | gefallen |
+| PQ5c-2 | „von e gedeckt“ über `e.ausgenommen` ist falsch: das Werkzeug schreibt nur NEUE Ausgenommene in die Zeile (`tools/qr-journal.js:1237-1243`); ein über eine frühere Erledigung ausgenommener Eigentümer würde e durch seine eigene Korrektur fälschlich widerlegen | gelesen | getragen (blockierend für den Bau) → Definition über A(i) bis einschliesslich e |
+| PQ5c-3 | nach einer Widerlegung ohne verbleibende tragende Deckung nennt `wegFuer` für einen Ausgenommenen die benannte Freigabe, die dann mit (k) abbricht (`:1200`) | gelesen | getragen → Weg „erst Freigabe durch das Korrektur-Studio, dann benannt“ |
+| PQ5c-4 | eine Freigabe ohne Abschnitt trägt EINE `ausgenommen`-Liste für alle Abschnitte → „nicht in e.ausgenommen“ ist nicht abschnittsweise | gelesen (`core/qr-verbrauch.js:292-298`) | getragen → abschnittsweise über A(i) |
+
+Zahlen: 4 Befunde, 3 getragen, 1 gefallen (Stand statt Papier gelesen).

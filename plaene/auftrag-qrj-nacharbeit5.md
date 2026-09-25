@@ -1,7 +1,8 @@
-# Auftrag QR-J Nacharbeit 5 (25.09.2026, Fassung 2.1)
+# Auftrag QR-J Nacharbeit 5 (25.09.2026, Fassung 2.2)
 
 Grundlage: `plaene/diffpruefung-qrj.md`, Abschnitt „Runde 5“ (QJ5-1..QJ5-11); Fassung 2 nach der Planprüfung
-`plaene/planpruefung-qrj-n5.md` (PQ5-1..13); Fassung 2.1 nach deren zweiter Runde (PQ5b-1..9). Baum `/workspace/gymdocu-qrj`, Zweig
+`plaene/planpruefung-qrj-n5.md` (PQ5-1..13); Fassung 2.1 nach deren zweiter Runde (PQ5b-1..9), Fassung 2.2 nach der gezielten dritten
+(PQ5c-2..4). Baum `/workspace/gymdocu-qrj`, Zweig
 `fix-qrj-journal-reparatur`, Kopf `24b9be8`. Reproduktionen und Werkzeuge der Prüfspur: `scratchpad/qrjcc5/` (`e6.js`
 Szenarien r1_retro, r1_kontroll, r3, r4, r5, r6, r9, r10, r11, r12_meta_rest, r12_freitext, r13; `rf.js` Referenzmodell
 aus dem Papier gegen den Leser; `tf.js` Werkzeug-Zufallssuche gegen dasselbe Modell; `mutationen5.js` mit M02, M06, M08,
@@ -101,11 +102,17 @@ Pflichttest `r3`: `erledigt_durch` literal gesetzt, `zeigen` ohne „offen für:
   Fall „Zeile unverändert UND keine eigene Korrektur von S in i“ statt „nicht gedeckt“ (PQ5-9).
 - **Widerlegung (PQ5b-1, blockierend):** eine tragende Deckung e in Abschnitt i — Korrektur mit
   `uebrige_nicht_betroffen`, Freigabe ohne Eigentümer, Eigentümer-Freigabe, `keine_aufkleber`-Freigabe — trägt NICHT
-  MEHR, sobald NACH ihr (`k.zeile > e.zeile`) eine Korrektur k in i steht, deren Studio von e gedeckt wurde (also nicht
-  in e's `ausgenommen`, nicht e's `eigentuemer`, und ohne eigene Korrektur in i VOR e). Grund: die Korrektur belegt
+  MEHR, sobald NACH ihr (`k.zeile > e.zeile`) eine Korrektur k in i steht, deren Studio S von e in i gedeckt wurde.
+  „Von e in i gedeckt“ heisst, ABSCHNITTSWEISE und über die Menge, nicht über e's eigene Liste (PQ5c-2, PQ5c-4): S ist
+  Kandidat von i, S steht NICHT in A(i) berechnet aus allen Erledigungen bis einschliesslich e (nach §3 nur Kandidaten;
+  das Werkzeug schreibt nur NEUE Ausgenommene in eine Zeile, `tools/qr-journal.js:1237-1243`, deshalb reicht
+  `e.ausgenommen` nicht), und S hat keine eigene Korrektur in i vor e. Grund: die Korrektur belegt
   Aufkleber bei einem Studio, für das e „trägt nichts“ erklärt hat; die Erklärung ist damit widerlegt, auch für die
   übrigen. Folge: die übrigen, bisher über e gedeckten Kandidaten sind wieder gesperrt, bis eine NEUE Deckung nach k
-  steht (Freigabe durch das Korrektur-Studio) oder sie selbst korrigieren; der Sperrtext nennt diesen Weg (§0). Leser
+  steht (Freigabe durch das Korrektur-Studio) oder sie selbst korrigieren; der Sperrtext nennt diesen Weg (§0). Für ein
+  Studio in A(i) nennt `wegFuer`, wenn i keine tragende Deckung mehr hat, zuerst diese neue Freigabe und erst danach die
+  benannte Freigabe (die ohne tragende Deckung mit (k) abbricht, `tools/qr-journal.js:1200`) (PQ5c-3); die Zustandsmenge
+  von §0 enthält „Ausgenommener nach einer Widerlegung“. Leser
   (`tragendeDeckungen`) und Werkzeug-Simulation gleich. Eine Korrektur des Eigentümers selbst widerlegt seine
   Eigentümer-Erklärung nicht.
 - Der Payload einer solchen Korrektur nennt die widerlegten Zeilen (`widerspricht_zeilen`), der Log sagt, welche

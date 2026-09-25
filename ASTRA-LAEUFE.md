@@ -291,6 +291,7 @@ sondern falsch.
 | 25.09.2026 | Planprüfung QR-J Nacharbeit 5, zweite Spur (deepseek-v4-pro Einzelaufruf, Bündel 192 KB: Papier, Auftrag N4, Leser und Werkzeug ganz; effort high) | 63.962 Token ein, 45.760 aus | 5 | 5 (einzig: Schreibweg-Frischprüfung `:972`, `:647`, zweite Formel `:1229`) | 0 | ~0,27 $ |
 | 25.09.2026 | Planprüfung QR-J N5 Fassung 2 (deepseek-v4-pro) | Diff 162 Zeilen, Suchen 18, Lesungen 18, Token rein 825427, Token raus 50954, Runden 13 | 6 | 5 (einzig: `abschnittWaehlen`, falsche Zeilenangabe, `:1207`) | 1 (`:1614` durch literale Zusicherung gedeckt) | 1,29 $ |
 | 25.09.2026 | Planprüfung QR-J N5 Fassung 2, zweite Spur (deepseek-v4-pro Einzelaufruf, Bündel 194 KB, effort high) | 64.514 Token ein, 59.555 aus | 2 | 2 (einzig: widerlegte Erklärung bleibt tragend — Doppelvergabe für Dritte) | 0 | ~0,32 $ |
+| 25.09.2026 | Planprüfung QR-J N5 Fassung 2.1, gezielt Widerlegungsregel (deepseek-v4-pro Einzelaufruf, Bündel 191 KB, effort high) | 63.629 Token ein, 38.269 aus | 4 | 3 (einzig: Definition über `e.ausgenommen` statt A(i), Weg nach Widerlegung, Abschnitt null) | 1 (unveränderten Stand statt Papier geprüft) | ~0,24 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
