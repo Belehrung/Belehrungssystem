@@ -92,3 +92,12 @@ Zahlen: CC 9 Befunde + 15 überlebende Mutationen, DS 6; 10 Zeilen, einer gefall
 -3, -5, -7. Nur DS: C2R3-6. Grün: Deprovisionierung 0 Dateien (auch bei EBUSY über die Rückstands-Queue, fremdes Studio
 unberührt), Export 0 `.tmp-`, ENOSPC-Reste 0, alte Mutationen M1–M14 alle rot, keine Kreis-Importe; kein anderer
 `.tmp-`-Erzeuger unter PDF_ROOT im Repo. Nacharbeit 3: `plaene/auftrag-c2-nacharbeit3.md`.
+
+## Runde 4 (Nacharbeit 3, `32822d9`)
+
+Gegenstand: Diff `a1a41d7..32822d9` (11 Dateien, +868/−100). Eigene Lesung des Produktivcodes: Reste-Ernte wie im Auftrag
+(Wurzel-Symlink-Abbruch, ENOENT getrennt, Meldung je Studio vor dem Löschen, Anomalie direkt unter `_quarantaene/`).
+Fundort an die Spuren: `pruefeTelegramSammlung` hat keinen Versand am Fensterende — bei einem Massenfehler in einem Rutsch
+nennt der einzige Ping nur das erste Studio, die übrigen erst beim nächsten gleichen Fehler (sonst nie); der
+Fensterwechsel nennt die Studios des vorigen Fensters, nicht das auslösende. Spuren: Claude ausführend
+(`gymdocu-c2-cc`), DeepSeek mit Repo-Lesezugriff (`gymdocu-c2-pruef`).
