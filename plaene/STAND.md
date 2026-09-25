@@ -400,3 +400,7 @@ Haupt-, `verify.`- und `qr.`-Domain. H1a-S4 erledigt; Enforce-Entscheid frühest
 Stand 25.09.2026 10:05 UTC: QR-J Nacharbeit 3 fertig (`e94c4bc`, Suite 394 = 394, 526/0, Lint 0, Diff gelesen, vier
 eigene Fundorte QJ4-E1..E4); Diffprüfung Runde 4 läuft (CC, DeepSeek, Kimi). C2 Nacharbeit 2 im Bau. C3a N1 wartet
 auf seinen Suite-Lauf. Warteschlange Bau: C3b.
+Stand 25.09.2026 10:35 UTC: QR-J Runde 4 ausgewertet (12 Zeilen, blockierend QJ4-1, alle drei Spuren), Nacharbeit 4
+geschrieben, Planprüfung läuft (DeepSeek + Kimi). C3a Nacharbeit 1 fertig (`f40936b`, Suite 394 = 394), Diff gelesen
+(Fundorte: Aufgabe im Tablet-POST nicht erneut geprüft; 409 „deaktivieren statt löschen“ zeigt auf keinen Weg — mein
+eigener Auftragstext), Runde 2 läuft (CC + DeepSeek). Im Bau: C2 N2, C3b (Fable). Warteschlange: QR-J N4.
