@@ -274,7 +274,8 @@ sondern falsch.
 | 25.09.2026 | C2 Diffprüfung Runde 2 (deepseek-v4-pro) | Diff 1255 Zeilen, Suchen 21, Lesungen 30, Token rein 3294226, Token raus 36398, Runden 29 | 7 | 6 (einzig von dieser Spur: Verify-Zeile vor gescheitertem `rename`; Korrekturblatt nicht atomar; Einzelheiten `plaene/diffpruefung-c2.md`) | 1 (`mail_gesendet` bei Totalausfall — Spalte hat keinen Leser) | 4,49 $ |
 | 25.09.2026 | QR-J Diffprüfung Runde 4 (deepseek-v4-pro) | Diff 2296 Zeilen, Suchen 10, Lesungen 14, Token rein 1927793, Token raus 44785, Runden 13 | 5 | 5 (einzig von dieser Spur: `--bis` darf bei `--ausserhalb-bloecke` in einen Block ragen; Einzelheiten `plaene/diffpruefung-qrj.md`) | 0 | 2,72 $ |
 | 25.09.2026 | QR-J Diffprüfung Runde 4 Spur K (kimi-k3, Bündel 233 KB, effort high) | 78.702 Token ein, 55.530 aus, 1438 s | 5 | 4 (keiner einzig von dieser Spur) | 1 („keine Sperre ohne Werkzeugweg“ — widerlegt durch CC-Messung QJ4-4; der Vorschlag hätte eine erfundene Angabe geschrieben) | — |
-| 25.09.2026 | C3a Diffprüfung Runde 2 (deepseek-v4-pro) | Diff 1370 Zeilen, Suchen 20, Lesungen 28, Token rein 1221309, Token raus 34429, Runden 11 | — | — | — | 1,75 $ |
+| 25.09.2026 | C3a Diffprüfung Runde 2 (deepseek-v4-pro) | Diff 1370 Zeilen, Suchen 20, Lesungen 28, Token rein 1221309, Token raus 34429, Runden 11 | 10 | 10 (einzig von dieser Spur: PDF-Zusicherung prüft eine Kopie der Abfrage; N+1-Regex zu eng; Waisenprüfung ohne `studio_id`; B3 als blockierend überschätzt) | 0 | 1,75 $ |
+| 25.09.2026 | Planprüfung QR-J Nacharbeit 4 (deepseek-v4-pro) | Diff 97 Zeilen, Suchen 13, Lesungen 15, Token rein 1174002, Token raus 44663, Runden 17 | — | — | — | 1,73 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht

@@ -40,3 +40,27 @@ frische DB gleich benannt), Lesestellen „jetzt fällig“/Tablet/POST Aufgabe,
 | C3a-12 | E2, DS | N+1-Zählung in der Admin-Liste | gelesen | Anmerkung | eine gruppierte Abfrage |
 | C3a-13 | CC B7, Kimi B5 | Claim-Fehler: Mail bleibt dauerhaft aus, einziger Ausgang ein Alarm, den die Drossel studioübergreifend zusammenfasst (Signatur ohne Quelle/Studio); scheitert `claimZurueck`, bleibt der Defekt stumm | CC gemessen | Anmerkung | → Sammelliste (C3a-S2 ergänzen, C2-S3) |
 | — | DS 1 | kein Leser behandelt die stillgelegte Anlage falsch | — | — | durch CC B1/B2 widerlegt (Monats-PDF, Widerspruchskarte) |
+
+## Runde 2 (25.09.2026, Kopf `f40936b`, Nacharbeits-Diff `f75cea1..f40936b`)
+
+Nacharbeit 1 gebaut: Suite 394 = 394 grün (zweiter Lauf), Lint 0. Diff gelesen. Eigene Lesung: Tablet-POST prüft in der
+Transaktion nur die Anlage, nicht die Aufgabe; die 409-Seite „deaktivieren statt löschen“ zeigt auf keinen Weg (der
+Wortlaut stammt aus MEINEM Auftrag, §6 — CLAUDE.md „Ein Verweis kann in eine Sackgasse zeigen“); Zählung ausserhalb
+der Transaktion; NOT VALID nur über `convalidated` sichtbar. Spuren: Claude ausführend (`gymdocu-c3a-cc`,
+`scratchpad/c3acc2/`), DeepSeek mit Repo-Lesezugriff.
+
+| Nr | Quelle | Befund | Nachmessung | Schwere | Behebung |
+|---|---|---|---|---|---|
+| C3a2-1 | CC B1, DS B1, E | Tablet-POST: Aufgabe weder vorab auf `aktiv` noch in der Transaktion geprüft — stillgelegte Aufgabe nimmt Reinigungen an; Rennen mit hartem Löschen erzeugt den „–“-Nachweis | CC gemessen: (i) 1 → 2 Reinigungen, (ii) PDF-Zeile „- Trainer II -“, ohne Einschub 2/13/8 Waisen je 30 Versuche | blockierend | Vorab `aktiv=1`, in der Transaktion erneut lesen |
+| C3a2-2 | CC B2, DS B2/B4, E | 409 „deaktivieren statt löschen“: kein Deaktivieren in der Oberfläche; Bestätigungsdialog verspricht weiter Löschen; ausgeschiedener MA behält PIN, Links, Freischaltung | CC gemessen (m3, Seite ohne Formular) | mittel | Deaktivieren/Reaktivieren für Mitarbeiter, Dialog und Knopf nach `sigCount` |
+| C3a2-3 | CC B3, DS B3 | Unterschrift zwischen Zählung und DELETE → 500, Freischaltung/Token weg, MA bleibt | CC gemessen (m8) | mittel | Reihenfolge so, dass ein gescheitertes DELETE nichts entzieht; 23503 → 409 |
+| C3a2-4 | CC B4, DS B6/B9 | NOT VALID praktisch unsichtbar: WARNING nur `console.log` (Log wird beim Deploy geleert), kein `melde`, `checkMigrations` ok, niemand liest `convalidated`; Kommentar nennt `server.js` statt `core/migrate.js`; Migrationspfad-Test prüft `convalidated` nicht (Mutation „immer NOT VALID“ grün) | CC gemessen (m9, MIG1) | mittel | WARNING → `melde`; Test `convalidated=true` ohne Waisen; Kommentar |
+| C3a2-5 | CC B4 | Erzwungenes Monats-PDF zählt Waisen (ohne JOIN), das PDF (INNER JOIN) ist dann leer | CC gemessen | gering | dieselbe Verknüpfung wie das PDF |
+| C3a2-6 | CC B5, DS B7/B8 | Mutationen grün: Knopf/Abzeichen an stillgelegter Aufgabe, Zählung je Aufgabe, Monatsgrenze der Erzwingung, Escaping der 409-Seite, zweiter `melde`-try; PDF-Zusicherung prüft eine KOPIE der Abfrage; N+1-Regex zu eng | CC gemessen, DS gelesen | gering | je ein Test gegen den echten Weg |
+| C3a2-7 | CC B6, DS B10 | stillgelegte Aufgabe ohne Rückweg; Tablet meldet „stillgelegt“ auch für eine im Rennen GELÖSCHTE Anlage; Tablet sagt „keine Aufgaben angelegt“, wenn nur stillgelegte da sind | CC gemessen | gering | Reaktivieren für Aufgaben; Texte |
+| C3a2-8 | CC B6 | `vormonatNachholen` zählt keine Reinigungen (vorbestehend) — „stehen im PDF/Archiv“ hält beim Ausfall des Monatslaufs nicht | CC gemessen | gering | → Sammelliste C3a-S4 |
+| C3a2-9 | DS B5 | Waisenprüfung in 0062 ohne `studio_id` (Reinigung, deren `anlage_id` einem fremden Studio gehört, gilt nicht als Waise) | gelesen | Anmerkung | → Sammelliste C3a-S5 |
+
+Zahlen: CC 6 Befundgruppen + Mutationsliste, DS 10; 9 Zeilen, keiner gefallen (DS B3 von „blockierend“ auf mittel:
+enges Fenster, Folge ohne Nachweisverlust). Nur DS: Test prüft Kopie der PDF-Abfrage, Regex, Waisen ohne `studio_id`.
+Nur CC: Nachholweg, leeres PDF bei Waisen, Tablet-Texte. Nacharbeit 2: `plaene/auftrag-c3a-nacharbeit2.md`.
