@@ -147,3 +147,18 @@ Zahlen: CC 11 Befunde + Mutationsliste, DS 5, Kimi 4 (+1 gefallene Behauptung); 
 QJ4-4, QJ4-7, QJ4-8, Mutationen. Alle drei: QJ4-1, QJ4-9, QJ4-11. Trockenlauf gegen Leser: Zufallssuche 0 Abweichungen
 bei 1221 Studio-Fällen (Positivkontrolle unter Mutation: 36 bzw. 11). Grün: Reproduktionen der Runde 3.
 Nacharbeit 4: `plaene/auftrag-qrj-nacharbeit4.md` (Verhalten ändert sich → Runde 5).
+
+## Runde 5 (25.09.2026, Kopf `24b9be8`, Nacharbeits-Diff `e94c4bc..24b9be8`)
+
+Nacharbeit 4 gebaut (Bericht): Suite 394 = 394, `test_feature_qr_journal.js` 687/0, Lint 0, 21 eigene Mutationen ROT,
+Reproduktionen der Runde 4 ohne Fehlvergabe. Zwei Messungen widersprachen dem Papier und wurden gemeldet: §5 wörtlich
+(„jede Spanne in keinem Block“) bricht `test_feature_qr_lage_blocklokal.js` 13b (Chargenzeile ausserhalb = Zurückspiel-
+Signal) → gebaut enger über `ausserhalb_bloecke` der Korrekturzeile; die Zufallssuche findet Leser-Mutationen nicht mehr,
+weil das Werkzeug seine Listen aus dem Leser simuliert (vom Papier verlangt, §6) — nur Werkzeug-Mutationen (109 Funde).
+Eigene Lesung (Leser- und Token-Diff ganz, Werkzeug-Prüfungen der neuen Schalter): A/F/tragende Deckung wie im Papier;
+Eigentümer-Freigabe nur mit Kandidatur tragend; `--keine-aufkleber` nicht für „genau S“; benannte Freigabe prüft
+tragende Deckung, Listenwert, Widerruf; Quellenvergleich nimmt `ausserhalb`-Spannen nur aus, wenn die DB Chargen kennt.
+Fundorte an die Spuren: Selbstnachweis Leser↔Werkzeug (unabhängige Erwartung nötig); „nur NEUE Ausgenommene“ in neuen
+Metazeilen; echtes Zurückspielen hinter einer ausserhalb-Korrektur.
+Spuren (unwiderruflich → drei; Kimi ohne Guthaben): Claude ausführend (`gymdocu-qrj-cc`, `scratchpad/qrjcc5/`, mit
+Referenzmodell für die Zufallssuche), DeepSeek mit Repo-Lesezugriff (Diff), DeepSeek-Einzelaufruf (Endstand ganz).
