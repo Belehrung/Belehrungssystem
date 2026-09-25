@@ -12,8 +12,9 @@
   stammt aus mehreren `return { status: N, … }`-Zweigen der umschliessenden `db.tx()`-Transaktion (POST
   `/intern/qr-block`). Der P2-Wächter (`test/helfer/fehlerstatus-scan.js`) kennt nur Funktionsaufrufe mit
   Statusparameter und Lookup-Tabellen, keine über eine Transaktionsfunktion verstreuten Objektliteral-Rückgaben —
-  diese Stelle bleibt UNGEPRÜFT. Von Hand nachgesehen (25.09.2026): alle neun `status:`-Zweige tragen 200, 400 oder
-  409, keiner darunter. Bleibt bei jeder künftigen Änderung an dieser Route von Hand zu prüfen, bis eine
+  diese Stelle bleibt UNGEPRÜFT. Von Hand nachgesehen (25.09.2026, nachgezählt in Nacharbeit 3/R3-8: es sind ZEHN,
+  nicht neun — Zeilen 429, 450, 461, 494, 514, 543, 574, 581, 588, 602): alle zehn `status:`-Zweige tragen 200, 400
+  oder 409, keiner darunter. Bleibt bei jeder künftigen Änderung an dieser Route von Hand zu prüfen, bis eine
   allgemeinere Scanner-Form dafür existiert.
 - **P2-S5** (aus P2-R3-3, -8): Scanner-Grenzen — K2 nur für `${ident[.prop] ?`, andere Ternary-Formen nach einer
   `req.query`-Ternary werden freigesprochen; K1 löst nur `const` auf derselben Funktionsebene auf (nicht `let` mit
