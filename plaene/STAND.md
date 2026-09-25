@@ -346,3 +346,5 @@ Stand 25.09.2026 02:45 UTC: T2-Executer schrieb die fremde `qr_charge`-Zeile (id
 **widerlegt**: CI auf master `a8543ac` grün (dieselben Tests), und im eigenen, ungestörten Lauf auf `4073fb2` ist
 `test_feature_geraete_alter.js` 151 PASS / 0 FAIL. Ursache bleibt der H1a-Einzellauf gegen `gymdocu_test`. Lint EXIT 0,
 Marker-Scan nur die 6 Doku-Zitate. Suite läuft noch.
+Stand 25.09.2026 02:46 UTC: T2 eigener Suite-Lauf auf `4073fb2`: SUITE_EXIT=0, 389 = 389 (`diff` EXIT 0), Lint EXIT 0 —
+PR #478 angelegt, CI läuft, Prüfung 03:10. QR-J-Bau läuft (seit 02:35), H1a-Bau läuft.
