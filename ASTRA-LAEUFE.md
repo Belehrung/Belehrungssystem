@@ -271,7 +271,7 @@ sondern falsch.
 | 25.09.2026 | Planprüfung C3b Stufe 2 Fassung 2 (deepseek-v4-pro) | Diff 117 Zeilen, Suchen 17, Lesungen 21, Token rein 1090976, Token raus 66055, Runden 16 | 7 | 7 (einzig von dieser Spur: M3-Endzustand `dead`, `TerminalDedupeError`, Priorität bei `requeue`). Einzelheiten `plaene/planpruefung-c3b.md` | 0 | 1,70 $ |
 | 25.09.2026 | C3a Diffprüfung Runde 1 Spur B (kimi-k3, Bündel 203 KB, effort high) | — | 6 | 5 (einzig von dieser Spur: Aufgabe löschen entwertet Nachweise — schwerster Befund; melde ungeschützt) | 1 (B7 „db.js-Deklaration nicht prüfbar“ — gelesen: stimmt) | — (keine Preisangabe) |
 | 25.09.2026 | Planprüfung C3b Stufe 2 Fassung 2 Spur B (kimi-k3, Bündel 122 KB, effort high) | — | 3 (+ 14 Reihenfolgen) | 3 (einzig von dieser Spur: Ein-Puffer-Prämisse unbewacht; `DedupeConflictError` ohne `jobId`; Rücksetzen unerreichbar) | 0 | — (keine Preisangabe) |
-| 25.09.2026 | C2 Diffprüfung Runde 2 (deepseek-v4-pro) | Diff 1255 Zeilen, Suchen 21, Lesungen 30, Token rein 3294226, Token raus 36398, Runden 29 | — | — | — | 4,49 $ |
+| 25.09.2026 | C2 Diffprüfung Runde 2 (deepseek-v4-pro) | Diff 1255 Zeilen, Suchen 21, Lesungen 30, Token rein 3294226, Token raus 36398, Runden 29 | 7 | 6 (einzig von dieser Spur: Verify-Zeile vor gescheitertem `rename`; Korrekturblatt nicht atomar; Einzelheiten `plaene/diffpruefung-c2.md`) | 1 (`mail_gesendet` bei Totalausfall — Spalte hat keinen Leser) | 4,49 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht

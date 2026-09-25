@@ -12,3 +12,7 @@ Verweist auf `plaene/planpruefung-c2.md` (Nachmessung dort).
 | C2-S6 | Nach Ablehnung nach dem Commit entfallen Admin-Protokollmail und Servicetechniker-Frage (C2-19) | offen |
 | C2-S7 | Verbandbuch fail-closed: `verify_dokumente`-Zeile bleibt für ein nie ausgeliefertes, gelöschtes Dokument (C2-20) — Zurückziehen berührt append-only | offen, Entscheidung nötig |
 | C2-S8 | Monats-PDF bei kaputter Konfiguration ohne Hinweis (geschlossene Sonntage erscheinen als fehlende Kontrollen; Teil von C2-7) | offen |
+- **C2-S7 (erweitert, Runde 2):** Verify-Zeile ohne veröffentlichte Datei entsteht auch bei Prozesstod vor `rename` und
+  bei gescheitertem `rename` nach `registriereVerify` (C2R2-6, `plaene/diffpruefung-c2.md`).
+- **C2-S9:** `core/korrektur-pdf.js:54` schreibt Korrekturblätter direkt unter dem öffentlichen Namen (`wx`); ein
+  Absturz hinterlässt eine halbe öffentliche PDF (C2R2-9). Kein Rückschritt, eigener Erzeuger.

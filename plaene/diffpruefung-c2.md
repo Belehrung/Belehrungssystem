@@ -41,3 +41,21 @@ unter `PDF_ROOT/_quarantaene`), Signatur mit Quelle nur bei `roh === '-'`, Total
 Bezirk-Export-Tabelle stimmen mit der Engine überein (`createDocument`-Aufrufe gelesen) — stehen aber jetzt an zwei
 Orten. Anlass für Runde 2: Verhaltensänderung an JEDER PDF-Erzeugung. Spuren: Claude ausführend (`gymdocu-c2-cc`,
 `scratchpad/c2cc2/`), DeepSeek mit Repo-Lesezugriff.
+
+| Nr | Quelle | Befund | Nachmessung | Schwere | Behebung |
+|---|---|---|---|---|---|
+| C2R2-1 | CC R2-1, DS 1 | Rückschritt: abgelehnte PDFs liegen unter `_quarantaene/<Studio>/<Typ>/` und überleben Offboarding (`core/provisioning.js:712` löscht nur `PDF_ROOT/<id>`), Verbandbuch-Ernter und Export; Verbandbuch = Gesundheitsdaten. Alt: 0 Reste | CC gemessen (4 Dateien nach Deprovision), DS gelesen | blockierend | flüchtige Typen (Verbandbuch) löschen statt Quarantäne; Deprovision und Export decken `_quarantaene/<id>`; Altersernte mit Meldung |
+| C2R2-2 | CC R2-2, DS 4 | `.tmp-`-Reste bei ENOSPC/Renderfehler/Prozesstod; Ernter findet 0, DSGVO-Export kopiert sie mit (m13: 3→6→7 Dateien, alt 1→1→1) | CC gemessen | mittel-hoch | Temp bei Strom-/Renderfehler entfernen; Altersernte; Export filtert `.tmp-*` |
+| C2R2-3 | CC R2-3 | bezirk-export: `aufraeumPfade` trifft keinen erreichbaren Rest (M6 äquivalent); zweite Quelle `ordner` (M6c `Fundsache` → falsche Ausgabe, Tests grün) | CC gemessen | mittel | Temp-/Quarantänepfad aus dem Engine-Ergebnis bzw. -Fehler; `existsSync → null` als Fehler; `ordner` streichen |
+| C2R2-4 | CC R2-4 | Testlücken: Totalausfall-Mail, archiv `?ok` bei Teilfehlschlag, `intern`-Argument, Spülplan-Text, Entdoppelung, Spülplan-Kachel/-Rahmen, Signatur-Quelle — Mutationen M3–M12 grün | CC gemessen | mittel | je ein Fall mit Gegenprobe |
+| C2R2-5 | CC R2-5 | C2-9(2) nie ausgelöst: `parseConfig` wirft nicht, `_konfigUnlesbar` erreicht den Hub nicht | CC gemessen | gering | durchreichen oder Zweig streichen |
+| C2R2-6 | CC R2-6, DS 2 | Verify-Zeile ohne veröffentlichte Datei: Prozesstod vor `rename` (CC) bzw. `rename` scheitert nach `registriereVerify` (DS, `core/pdf-engine.js:480-481` gelesen) → `/v/<code>` meldet ein Original | CC gemessen, DS gelesen | gering | → Sammelliste C2-S7 (Registerzeile zurückziehen = Entscheidung append-only) |
+| C2R2-7 | CC R2-7, DS F4 | Signatur ohne Studio: gleicher Modulfehler in zwei Studios wird weiter gedrosselt (Kommentar in `core/error-tracker.js` verspricht Trennung) | CC gemessen, DS gelesen | gering | Studio in die Signatur, wenn `studioId` im Kontext; Kommentar |
+| C2R2-8 | CC R2-8, DS 5, DS 6 | Kommentar nennt `<Typ>/<Studio>`, echt `<Studio>/<Typ>`; Ernter zählt `_quarantaene` als Studio-Ordner (umgeht den Riegel „keinen einzigen Studio-Ordner“) | gelesen | gering | Kommentar; Ernter überspringt `_`-Ordner mit Test |
+| C2R2-9 | DS 3 | `core/korrektur-pdf.js:54` schreibt weiter direkt unter dem öffentlichen Namen (`wx`) — Absturz hinterlässt halbe öffentliche PDF | gelesen | gering | → Sammelliste (kein Rückschritt; eigener Erzeuger) |
+| — | DS F6 | `mail_gesendet = 1` auch bei Totalausfall | `mail_gesendet` hat keinen Leser (grep) | gefallen | — |
+
+Zahlen: CC 8 Befunde, DS 6 + 1 aus den Fragen; 9 Zeilen, einer gefallen. Nur DS: `rename` nach Registrierung,
+Korrekturblatt. Beide: Quarantäne/Offboarding, Temp im Export, Kommentar. Grün (CC): `/pdf/.tmp` 404,
+`/pdf/_quarantaene` 403, `rename` über registrierte Datei ohne neue Inkonsistenz, M1/M2/M13/M14 rot.
+Nacharbeit 2: `plaene/auftrag-c2-nacharbeit2.md` (Verhalten ändert sich → Runde 3).
