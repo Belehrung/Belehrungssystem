@@ -42,3 +42,22 @@ die Behebung Verhalten ändert: der permanente Fehlerweg entscheidet jetzt über
 fehlender oder `dead`-Zeile) — eine Entscheidung des Ausführenden über den Auftragswortlaut hinaus, begründet mit dem
 Planungs-Fuzz r3 (vorher 15 Pläne mit totem Job neben gesunder Zeile, nachher 0). Benannte Grenze des Ausführenden:
 Restfenster [Nachlesen … `queue.succeed`] nur über den jetzt stündlichen Reaper gedeckt.
+
+| Nr | Quelle | Befund | Nachmessung | Schwere | Behebung |
+|---|---|---|---|---|---|
+| C3b2-1 | CC B1 | DB-Fehler im Nachlesen nach dem COMMIT (`core/storage-replica.js:719`) beim letzten Job-Versuch → toter Job neben `succeeded`-Zeile, Health dauerhaft „degraded“; der Reaper sieht `succeeded` nie, gleicher Inhalt wird übersprungen | CC gemessen M2b (`Job dead/5`, `queue degraded`, Reaper 0 Kandidaten); vorher `succeeded`, ok; Vorschlag F2 gemessen grün | sollte behoben werden (neu gegenüber `1d9b08d`) | DB-Fehler des Nachlesens loggen, als „keine Aussage“ behandeln (Restfenster wie benannt) |
+| C3b2-2 | CC B2 | wirft das Riegel-UPDATE im Fehlerweg selbst, liest die Status-Regel die EIGENE `running`-Lease als fremd → `permanent` entfernt, Job `pending`, Zeile bleibt `running` bis zum Reaper, Health ok statt degraded | selbst gelesen (`:843-852`); CC gemessen `m7` | sollte behoben werden | `zeileJetzt` liest `claim_nr`; eigene `running`-Lease → `permanent` bleibt |
+| C3b2-3 | CC B3 | ABA H1→H2→H1 zwischen COMMIT und Nachlesen: Hash gleich, Zeile `pending` ohne Job | CC gemessen M4; F1 (`|| jetzt.status !== "succeeded"`) gemessen grün | gering | F1 |
+| C3b2-4 | CC B4 | `planeReplikationsJob` wirft „terminal, liess sich nicht wiederbeleben“, wenn der Job zwischen verlorenem `requeue` und Nachlesen durchlief — Zustand richtig, Alarm falsch; Prämisse „unerklärt“ im Kommentar trägt nicht; X5 überlebt | CC gemessen M5 | gering | `requeue` einmal wiederholen statt werfen, Kommentar, M5 als Test |
+| C3b2-5 | CC B5 | `ReplikatUeberholt` im letzten Job-Versuch → toter Job neben `pending`-Zeile, Health „degraded“ bis zum Reaper (≤ ~75 min); vorher unsichtbar | CC gemessen M2c | gering | benennen (`docs/STORAGE_REPLICA.md`); ehrlicher Alarm statt Unsichtbarkeit, heilt selbst |
+| C3b2-6 | CC B6, DS 1 | Texte: „täglicher Reaper“ (`:264`), Doku `:33` alte Hash-Regel, Kommentar „endet dead“ gilt nicht für `running`; `test_feature_audit_batch3_static.js:21` sagt „stündlich“, prüft nur `requeueStale()` | gelesen | gering | berichtigen; Zeile 21 auf den Takt oder Text zurück auf das Geprüfte |
+| C3b2-7 | CC Frage 3 | überlebende Mutationen: X2 (Weg 2 nach COMMIT → toter Job ohne Zeile), X16 (`pending` gleicher Hash), X4, X3 (DB-Fehler konservativ permanent unbewacht), X5, X8 (ungezähltes Vorab-Lesen über `fsP.open`), X1 (Mandantenriegel nur zufällig über den SQL-Text) | CC gemessen, je „alle grün“ | mittel | je ein Test, Mutation ROT; Ein-Puffer-Wache zählt auch `fs.open`/`fsP.open`/`fs.openSync` |
+| C3b2-8 | CC B7 | permanenter Fehler bei fehlender Zeile → toter Job ohne Zeile, Health dauerhaft „degraded“ (keine Aufräumung toter `pdf_jobs`) | CC gemessen, vorher = nachher | gering (vorbestehend) | Sammelliste `offene-befunde-c3b.md` |
+
+Zahlen: CC 7 Befunde + Mutationsliste, DS 1 (erster Versuch am Ausgabelimit abgebrochen, zweiter mit Grenze 64000
+vollständig); 8 Zeilen, keiner gefallen. Nur CC: alle ausser dem Test-Text. Grün (CC): Matrix permanenter Fehler ×
+Zeilenlage (32 Fälle, höchstens 2 Job-Versuche, kein `succeeded` mit falschem Inhalt, keine richtige Fernkopie
+gelöscht); Fehler vor dem COMMIT erreicht `nach_abschluss` nie (M2a/M2d/M6); Fuzz r3 `X,F2,U2c` 0 Verletzungen
+reproduziert; alle neuen Abfragen mit `studio_id`. Nacharbeit 2: `plaene/auftrag-c3b-nacharbeit2.md`.
+Planprüfung für Nacharbeit 2 ausgelassen: die Behebungen §1 sind von der ausführenden Prüfspur schon als Mutation
+gemessen (F1, F2), §2–§5 sind Ein-Stellen-Verfeinerungen mit vorgegebenem Pflichttest; die Diffprüfung Runde 3 folgt.
