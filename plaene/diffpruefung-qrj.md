@@ -88,3 +88,24 @@ der drei Dateien als Bündel.
 | QJ3-E1 | Ein Studio kann Kandidat MEHRERER Abschnitte sein (Vorspann „genau S“ + Rest „alle“/Präfix von S). `erledigtFuer` gibt bei einer eigenen Korrektur sofort `true`, `abschnittIndexFuer` prüft nur den ersten passenden Abschnitt — eine zweite verlorene Charge von S bliebe unerledigt, ohne zu sperren | `core/qr-verbrauch.js` `erledigtFuer`, `abschnittIndexFuer` |
 | QJ3-E2 | Präfix-Abschnitt, dessen Eigentümer nicht mehr existiert: übrige Präfix-Kandidaten gesperrt, Freigabe deckt einen Präfix-Abschnitt ohne Korrektur nicht, verwerfen verboten — Weg in den Endzustand? | `abschnittGedeckt`, `pruefeFreigabe` |
 | QJ3-E3 | `--uebrige-nicht-betroffen` deckt jeden „alle“-Abschnitt — auch eine zweite verlorene Charge desselben Studios? | `abschnittGedeckt` (Zweig `korrektur`) |
+
+### Befunde Runde 3 (CC `scratchpad/qrjcc3/`, DeepSeek, Kimi)
+
+Runde-2-Reproduktionen: 12 von 13 enden über das Werkzeug ohne Doppelvergabe und ohne Sperre (Vergabe literal im
+CC-Bericht); `fg_anderer_block` bleibt gesperrt (QJ3-4). Basis 386/0.
+
+| # | Spuren | Befund | Messung | Schwere | Entscheidung |
+|---|---|---|---|---|---|
+| QJ3-1 | E1, DS B1, Kimi R3-1, CC R3-1 | Mehrere Abschnitte DESSELBEN Studios: eigene Korrektur erledigt das Studio für die ganze Zeile (`erledigtFuer:326`), `vollErledigtDurch:348` bindet die Korrektur an keinen Abschnitt, `abschnittIndexFuer` nimmt den ersten statt den spezifischsten Treffer. Kimi Fall A: zwei „genau 5“-Abschnitte → Zeile nach EINER Korrektur für alle erledigt und versiegelt. Bestand schon auf `0213cd9` | CC: Vergabe S 320200 in die verlorene zweite Charge (genau/Präfix/alle je gleich) | **blockierend** | Nacharbeit 3 §1 |
+| QJ3-2 | CC R3-2 | **Regress:** `chargeBeurteilen` wertet JEDE andere lesbare Zeile mit derselben `charge_id` als Wiederverwendung — auch eine FRÜHERE (vor dem Zurückspielen); die passende Charge verliert ihre Untergrenzen, eine zu niedrige Korrektur wird angenommen | CC: Korrektur 370100–370150 geschrieben, nach zweitem Zurückspielen Vergabe 370151 doppelt; `0213cd9` brach ab | **blockierend** | §2 (Inhaltsvergleich) |
+| QJ3-3 | DS B4, CC R3-5 | Umgekehrt: eine an dieselbe physische Zeile GEKLEBTE vollständige Chargenzeile mit derselben `charge_id` wird weggefiltert (`z !== detail.zeile`) — eine fremde Charge gilt als Beleg | CC gemessen | hoch | §2 |
+| QJ3-4 | CC R3-3, DS B2, E2 | Kandidaten nur aus `studios`: ein im Journal bekannter Eigentümer (lesbare Zeilen von 64) ohne DB-Zeile wird von der Freigabe „für künftige“ mit freigegeben; nach Wiederanlage vergibt 64 doppelt. Und der Präfix-Fall ohne existierenden Eigentümer hat nur einen Weg über eine ERFUNDENE Spanne | CC: 64 vergibt 331100 gegen verlorene 331100–331199; 6 nur mit Scheinspanne 330010 | hoch | §3 (Freigabe mit benanntem Eigentümer) |
+| QJ3-5 | CC R3-4 | „genau 51“, `nr_von` in keinem Block des (wieder angelegten) Studios 51: dauerhaft gesperrt, kein Weg; `zeigen` behauptet einen | CC gemessen | mittel | §4 |
+| QJ3-6 | DS B3, E3, Kimi | `--uebrige-nicht-betroffen`/Freigabe decken jeden „alle“-Abschnitt — auch einen mit Chargenschlüssel, der eine zweite verlorene Charge sein kann | gelesen, CC (c) | mittel | §1 (Regel je Abschnitt) |
+| QJ3-7 | CC R3-6 | Testlücken: X11 (belegtVon ohne Charge-Teil) und X15 (`detail.nr_bis` statt `abschnitt.nr_bis`) bleiben 386/0, Folgen gemessen (Sperre ohne Weg bzw. Vergabe 391151 gegen gelesenes 391199) | CC gemessen | mittel | §5 |
+| QJ3-8 | CC R3-7 | `zeigen`: „Untergrenzen: keine im System“ bei lesbarem `nr_bis` eines Rests | CC gemessen | gering | §5 |
+| QJ3-9 | CC R3-8 | Freigabe-Liste/Payload können vom Leser abweichen (X1, X18, X19 grün) | CC gemessen | gering | §5 |
+| QJ3-10 | Kimi R3-2 | blocklokaler C1-Wurf nennt `uebrige-freigeben` nicht | gelesen | gering | §5 |
+| QJ3-11 | Kimi | `SCHALTER_WIRKUNGSLOS` sagt bei zwei „genau S“-Abschnitten „erledigt sie ohnehin für alle“ — falsch | gelesen | gering | §1 |
+| — | CC | Obergrenze aus späterer kaputter Zeile kann zu niedrig sein, der Schalter ist aber genannt (ohne Schalter befolgt: 350160 doppelt) | CC gemessen | Anmerkung | Wortlaut (e) verschärfen: „nur wenn die Aufkleber die Obergrenze bestätigen“ — §5 |
+| — | CC X5, X36, X17a/b | äquivalente bzw. append-only-bedingt wirkungslose Mutationen | — | — | toter Zweig X36 entfernen (§5) |
