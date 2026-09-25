@@ -25,3 +25,16 @@ nachgesehen; eingearbeitet in Fassung 2 desselben Auftrags.
 Zahlen: DS 10, Kimi 4 + 6 + 6 + 5 Unterpunkte; 15 Zeilen, einer als Doppelvergabe gefallen (PQ4-9, das Werkzeug prüft
 schon). Nur Kimi: PQ4-1, PQ4-2 (die beiden schwersten), PQ4-7, PQ4-8, PQ4-10. Nur DS: Stellenbelege zu §5 und zu den
 bestehenden Tests. Beide: PQ4-3..6, PQ4-14.
+
+## Zweite Runde (Fassung 2)
+
+Spuren: Kimi ABGEBROCHEN (HTTP 429, Guthaben erschöpft); DeepSeek mit Repo-Lesezugriff ABGEBROCHEN
+(`max_output_tokens`, Denken verbrauchte die Ausgabe); Ersatz: DeepSeek-Einzelaufruf mit dem Werkzeug-Bündel
+(`tools/qr-journal.js` ganz, Papier, Planprüfung). Eingearbeitet in Fassung 2.1.
+
+| Nr | Befund | Nachgesehen | Ergebnis |
+|---|---|---|---|
+| PQ4b-1 | benannte Freigabe prüft keine DB-Zeile → Doppelvergabe; Audit behauptet „nicht betroffen“ | Papier: genau dafür ist der Weg da (wieder angelegtes Studio ohne Aufkleber), Betreiber-Erklärung mit Beleg und Warnung | gefallen (als Absicht klargestellt) |
+| PQ4b-2 | „genau S“ mit Eigentümer S in A: §8 nennt nur die Korrektur, der Widerruf-Weg bleibt ungenannt → Sperre ohne genannten Weg | §1 und §8 gelesen: Widerspruch | getragen → §8 präzisiert, Pflichttest |
+| PQ4b-3 | Vorbedingung „für alle ausser A gedeckt“ weiter als Kandidatenschleife lesbar (PQ4-5 nur umformuliert) | gelesen | getragen → „tragende Deckung“ |
+| PQ4b-4 | Fassung 2 schlechter: existierende Studios ohne Korrektur deckbar | wie PQ4b-1 | gefallen |

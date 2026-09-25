@@ -1,4 +1,4 @@
-# Auftrag QR-J Nacharbeit 4 (25.09.2026, Fassung 2)
+# Auftrag QR-J Nacharbeit 4 (25.09.2026, Fassung 2.1)
 
 Grundlage: `plaene/diffpruefung-qrj.md`, Abschnitt „Runde 4“ (QJ4-1..QJ4-12); Fassung 2 nach der Planprüfung
 `plaene/planpruefung-qrj-n4.md` (PQ4-1..15). Baum `/workspace/gymdocu-qrj`, Zweig `fix-qrj-journal-reparatur`, Kopf
@@ -35,8 +35,10 @@ und nicht in F(idx) — auch wenn sie heute eine DB-Zeile haben. Trockenlauf und
 („ausgenommen seit Zeile X“ / „Eigentümer laut Zeile Y“).
 
 **Benannte Freigabe:** `uebrige-freigeben --zeile=N --abschnitt=<i> --ausgenommene-freigeben=<id>[,<id>]
---grund="<Beleg>"`. Zulässig für IDs aus A(i) ohne eigene Korrektur, und nur, wenn `i` für alle Kandidaten AUSSER A(i)
-bereits gedeckt ist (PQ4-5). Für einen Nicht-Eigentümer genügt der Schalter; für einen Eigentümer nur gemeinsam mit dem
+--grund="<Beleg>"`. Zulässig für IDs aus A(i) ohne eigene Korrektur (auch wenn sie heute eine DB-Zeile haben — genau dafür ist der
+Weg da: ein wieder angelegtes Studio, das nachweislich nichts trägt), und nur, wenn es für `i` eine TRAGENDE Deckung
+gibt (PQ4-5; dann sind alle Kandidaten ausser A(i) gedeckt — geprüft wird die tragende Deckung, nicht eine Schleife
+über Kandidaten). Für einen Nicht-Eigentümer genügt der Schalter; für einen Eigentümer nur gemeinsam mit dem
 blanken Schalter `--eigentuemer-widerrufen` (PQ4-7). Zeile: `freigegeben: [ids]`, bei Widerruf `widerrufen: [ids]`.
 Warnung im Klartext (wie §4): „erklärt, dass diese Studios nachweislich keine Aufkleber aus diesem Abschnitt tragen —
 ist das falsch, entsteht eine Doppelvergabe“. Listenwert: nur Ziffern, Komma, keine Doppelten, sonst Abbruch.
@@ -116,7 +118,10 @@ bekanntem Studio. Pflichttest `c_zeigen` MIT zwei bekannten Kandidaten (Block 47
 ## 8. Texte (QJ4-10)
 
 Sperrtext unterscheidet Korrektur, Eigentümer-Freigabe und `keine_aufkleber`; bei einer Zeile, deren einziger Kandidat
-„genau S“ ist, nennen Sperrtext und `zeigen` die Korrektur, nicht `uebrige-freigeben`. Die statische Zählung „`zeigen`
+„genau S“ ist und S NICHT in A(idx) steht, nennen Sperrtext und `zeigen` die Korrektur, nicht `uebrige-freigeben`.
+Steht S in A(idx) (Eigentümer-Freigabe an einer „genau S“-Zeile), gilt die Verzweigung aus §1 (eigene Korrektur ODER
+benannte Freigabe mit `--eigentuemer-widerrufen`) — Pflichttest: „genau 64“, Eigentümer 64, 64 wieder angelegt ohne
+Aufkleber → Widerruf-Weg genannt und gangbar, `erledigt_durch` gesetzt (Planprüfung Fassung 2). Die statische Zählung „`zeigen`
 GENAU 6-mal“ im Test wird mit hergeleiteter Zahl nachgezogen. Literal getestet.
 
 ## 9. Überlebende Mutationen (QJ4-12)
