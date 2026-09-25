@@ -418,7 +418,8 @@ Stand 25.09.2026 nach Container-Neustart (Sparmodus, Routine pausiert):
   (kleine Start-IDs) unsichtbar. Behebung (Testhelfer, beide Dateien): Basis-Studios so wählen, dass Basis*10+9 in
   int4 passt und frei ist — nicht aus der laufenden Sequenz. Danach Suite erneut, dann Gegenproben/Prüfrunde.
 - C3a N2 `ed5f6a5` (gepusht, Baum sauber, keine Marker): der Bauende ist mit dem Neustart weggefallen, sein Bericht
-  fehlt; Suite/Gegenproben des Bauenden unbekannt → nach dem Reset selbst fahren.
+  fehlt. Vom Haupt-Agenten gefahren: volle Suite SUITE_EXIT=0, 399 = 399 (`diff` EXIT 0), Lint EXIT 0. Offen: Diff
+  lesen, Gegenproben, Diffprüfung Runde 3 (Sparmodus: DeepSeek + gpt-6-sol).
 
 QR-J N5 (25.09.2026 ~16:00): der Bauende brach am monatlichen Ausgabelimit seines Modells ab (HTTP 429, „monthly spend
 limit“). Gesichert und gepusht: fünf Commits `0814c63..59fa628` auf `fix-qrj-journal-reparatur` (§0–§6 laut Botschaften
