@@ -8,7 +8,7 @@ Nachmessen; jeder Beitrag durchläuft das volle Ritual (Planprüfung → Bau →
 |---|---|---|---|
 | A | P4 | Unterschrift: Punkt/Strich/zu klein ablehnen, 13 Eintrittspunkte | **ausgeliefert** #475 (a36f5ab), Deploy 443 success |
 | B1 | P2 | Fehlerseiten mit korrektem HTTP-Status (`auftrag-p2-fehlerstatus.md`) | **ausgeliefert** #476 (8d4e2dc), Deploy 444 success, live-check grün (2× ℹ); Rest `offene-befunde-p2.md` |
-| B2 | H1a/H1b | H1a: CSP mit Bericht, dann Enforce (`auftrag-h1a-csp-enforce.md`); H1b: Nonces + Inline-Handler ablösen | H1a: Nacharbeit 1 `df2f500` (Suite 392 = 392), Diffprüfung Runde 2 läuft (Verhaltensänderung: Mount-Reihenfolge, CSRF-Segmentgrenze) |
+| B2 | H1a/H1b | H1a: CSP mit Bericht, dann Enforce (`auftrag-h1a-csp-enforce.md`); H1b: Nonces + Inline-Handler ablösen | H1a: Nacharbeit 2 `c58f9d0` (Suite 393 = 393, Lint 0), PR offen, CI läuft; danach nginx-Header (Betreiber) |
 | B3 | Doku | `ops/SECURITY-HEADER.md`: `server_tokens off`, `http2`, CSP-Stand | offen |
 | B4 | Betreiber | H3 HSTS-Preload (Entscheidung), H2-D8 Ratenbegrenzung `/login/tablet` in nginx | **H3 entschieden 25.09.2026: KEIN Preload** („ich folge deiner empfehlung“ — HSTS bleibt ohne `preload`, Eintrag wäre nur über Monate umkehrbar und gälte für alle Subdomains); H2-D8 offen (Server-Schritt) |
 | C1 | Entschiedene | V01-1, V09-1, V15-2 (`auftrag-c1-entschiedene.md`) | **ausgeliefert** #477 (a8543ac), Deploy 445 success (Health OK, Migration 0061), live-check grün; Rest `offene-befunde-c1.md` |

@@ -77,3 +77,13 @@ unabhängig). 15 Gegenproben rot (Tabelle im CC-Bericht).
 Nacharbeit 2: `plaene/auftrag-h1a-nacharbeit2.md`. Danach eigene Nachmessung mit den `h1cc2`-Skripten (Doppelmutation
 M3+B2, B1, B9b, B3b, R2-5, R2-7); eine dritte volle Runde nur, wenn die Nacharbeit mehr als Tests, Kommentare und die
 genannten Einzeiler ändert.
+
+## Nacharbeit 2 (`c58f9d0`) — eigene Prüfung
+
+Diff gelesen (Produktivteil: `x-powered-by` aus, Segmentgrenze nur für Präfixe ohne eigenen Schrägstrich, Schwärzung
+über `schwaerzeSegment`, Absenderfelder zuerst, Leerzeichen in freien Feldern → `_`). Schwärzung gegen die echten
+Tokenformate gehalten: QR-Token 13 Zeichen aus `0-9A-Z` (≥ `SCHWAERZ_MIN_LAENGE` 13, immer Ziffer oder Grossbuchstabe;
+nur ein reiner Ziffernblock bliebe stehen — Wahrscheinlichkeit (10/32)^13), Download-/Reset-/PIN-Token 48–64 Hex,
+Verify-Code 19 Zeichen Hex mit Bindestrichen → alle geschwärzt. Suite `SUITE_EXIT=0`, Dateizahl-Ritual 393 = 393
+(`diff` EXIT 0), Marker 0. Doppelmutation Mount + Rückfall rot (3/2), je einzeln grün (zwei Riegel, erwartet).
+Keine dritte Runde: die Nacharbeit änderte nur Tests, Kommentare und die in Runde 2 benannten Einzeiler.
