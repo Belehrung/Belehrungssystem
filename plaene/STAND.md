@@ -353,3 +353,9 @@ Botschaft zurückgelesen). Deploy-Prüfung 03:20 (Schritt 4/8 muss jetzt „(N D
 Stand 25.09.2026 03:21 UTC: **T2 ausgeliefert** — Deploy 446 (`00bd9c9`) success, Schritt 4/8 meldet jetzt „659 Dateien“
 (neuer Syntax-Check läuft als Unterprozess nach dem pull, also schon beim eigenen Deploy), Health Versuch 1, live-check
 unauffällig. Laufend: H1a-Bau, QR-J-Bau.
+Stand 25.09.2026 04:40 UTC: QR-J Runde 1 → drei GEMESSENE Doppelvergaben über das Werkzeug (R1, R3 selbst wiederholt),
+Nacharbeit 1 läuft (`plaene/auftrag-qrj-nacharbeit1.md`). H1a Runde 1 → `POST /csp-bericht` mit `application/json`
+bleibt ohne Antwort (selbst bestätigt), Nacharbeit 1 läuft. C2-Bau läuft. **Damit bauen kurzzeitig DREI Beiträge
+gleichzeitig — gegen die Zwei-Regel des Arbeitsplans** (beide Nacharbeiten gingen an ihre Executer, bevor ich
+nachgezählt hatte). Folge: C3a startet erst, wenn höchstens einer läuft. Die ausführende H1a-Prüfspur hat entgegen der
+Vorgabe drei lesende GET an echte Hosts geschickt (selbst gemeldet, `plaene/diffpruefung-h1a.md`).
