@@ -361,3 +361,6 @@ nachgezählt hatte). Folge: C3a startet erst, wenn höchstens einer läuft. Die 
 Vorgabe drei lesende GET an echte Hosts geschickt (selbst gemeldet, `plaene/diffpruefung-h1a.md`).
 Stand 25.09.2026 04:55 UTC: **Betreiber-Entscheidung H3: kein HSTS-Preload** (folgt der Empfehlung). In B3
 (`ops/SECURITY-HEADER.md`) als entschieden vermerken, nicht erneut fragen.
+Stand 25.09.2026 05:25 UTC: QR-J Nacharbeit 1 fertig (`0213cd9`, R1–R3 brechen jetzt ab, Suite 390 = 390) → Runde 2
+mit drei Spuren läuft. C2 gebaut (`0182cf3`, Suite 390 = 390) → Diffprüfung (CC + DeepSeek) läuft. H1a-Nacharbeit läuft.
+C3a-Bau gestartet (zweiter Bauplatz frei, seit C2 und QR-J nur noch prüfen).
