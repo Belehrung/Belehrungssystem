@@ -331,3 +331,6 @@ P2-S5..S7. C1 Runde 3: Verklemmung behoben (0/25), Fuzzer 0 neue Doppelvergaben;
 Sichtvergleich, Advisory-Lock, Indexprüfung über pg_index) läuft. Neu im Arbeitsplan: DB-INIT-SPERREN (vorbestehend
 auf master, db.init() verklemmt mit Unterschriften-INSERTs). T2 Nacharbeit 1 fertig, zweite Suite läuft, Runde 2
 (ausführend) läuft.
+
+Stand 25.09.2026 01:45 UTC: **P2 ausgeliefert** — Deploy 444 (`8d4e2dc`) success, live-check 01:41 unauffällig (2× ℹ wie
+immer). C1 PR #477 (`fefda14`): CI 3/4 grün, Isolation läuft; kein Bot-Kommentar. H1a-Bau und T2-Nacharbeit 2 laufen.
