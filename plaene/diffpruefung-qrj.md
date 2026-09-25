@@ -109,3 +109,20 @@ CC-Bericht); `fg_anderer_block` bleibt gesperrt (QJ3-4). Basis 386/0.
 | QJ3-11 | Kimi | `SCHALTER_WIRKUNGSLOS` sagt bei zwei „genau S“-Abschnitten „erledigt sie ohnehin für alle“ — falsch | gelesen | gering | §1 |
 | — | CC | Obergrenze aus späterer kaputter Zeile kann zu niedrig sein, der Schalter ist aber genannt (ohne Schalter befolgt: 350160 doppelt) | CC gemessen | Anmerkung | Wortlaut (e) verschärfen: „nur wenn die Aufkleber die Obergrenze bestätigen“ — §5 |
 | — | CC X5, X36, X17a/b | äquivalente bzw. append-only-bedingt wirkungslose Mutationen | — | — | toter Zweig X36 entfernen (§5) |
+
+## Runde 4 (25.09.2026, Kopf `e94c4bc`, Nacharbeits-Diff `153a7a4..b7c564a`)
+
+Nacharbeit 3 gebaut (Bericht des Ausführenden): Suite 394 = 394 grün, `test_feature_qr_journal.js` 526 PASS / 0 FAIL,
+Lint 0, 18 Mutationen je ROT, Reproduktionen der Runde 3 danach ohne Fehlvergabe ausser o_ohne (Betreiberwahl gegen die
+Aufkleber) und drei Skripten, die die neuen Schalter nicht kennen. Diff Datei für Datei gelesen.
+
+Eigene Lesung (Fundorte, an die Spuren als Hinweise gegeben):
+- QJ4-E1: ein bei einer Freigabe als `eigentuemer`/`ausgenommen` geführtes Studio wird nach dem Wiederanlegen nicht mehr
+  als `nurJournal` erkannt; eine spätere Freigabe/`--uebrige-nicht-betroffen` könnte es decken, obwohl das Journal es als
+  Eigentümer führt (`tools/qr-journal.js` `kandidatenStudios`, `ausgenommeneFuer`).
+- QJ4-E2: `abschnittGedecktFuer` schliesst den Eigentümer nur über `ausgenommen` aus, nicht über `e.eigentuemer`.
+- QJ4-E3: `zeigen` bestimmt Block/Nachbarn/Obergrenze über das `nr_von` des Vorspanns, auch wenn der offene Abschnitt ein
+  späterer ist.
+- QJ4-E4: Abschnitt mit Chargenschlüssel und Kandidat „alle“, Eigentümer nicht belegbar — ehrlicher Werkzeugweg?
+Anlass für Runde 4: Verhaltensänderung am Leser (Erledigung je Abschnitt). Spuren (unwiderruflich → drei): Claude
+ausführend (`gymdocu-qrj-cc`, `scratchpad/qrjcc4/`), DeepSeek mit Repo-Lesezugriff (Diff), Kimi (Endstand ganz).

@@ -397,3 +397,6 @@ Stand 25.09.2026 09:43 UTC: H1a ausgeliefert (Deploy 447 success auf `22dc613`, 
 Stand 25.09.2026 10:00 UTC: Betreiber hat `/etc/nginx/snippets/security-headers.conf:22` auf Schnipsel A umgestellt
 (Sicherung `/root/security-headers.conf.vorher`, `nginx -t` ok). Live gemessen: `report-uri /csp-bericht` auf
 Haupt-, `verify.`- und `qr.`-Domain. H1a-S4 erledigt; Enforce-Entscheid frühestens 02.10.2026.
+Stand 25.09.2026 10:05 UTC: QR-J Nacharbeit 3 fertig (`e94c4bc`, Suite 394 = 394, 526/0, Lint 0, Diff gelesen, vier
+eigene Fundorte QJ4-E1..E4); Diffprüfung Runde 4 läuft (CC, DeepSeek, Kimi). C2 Nacharbeit 2 im Bau. C3a N1 wartet
+auf seinen Suite-Lauf. Warteschlange Bau: C3b.
