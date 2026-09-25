@@ -19,3 +19,8 @@ Verweist auf `plaene/planpruefung-c2.md` (Nachmessung dort).
 - **C2-S10:** Renderfehler in der Zeichenroutine VOR `finalize()` (10 von 11 `generate*`) lassen `.tmp-` und einen
   offenen Dateideskriptor liegen; der Deskriptor bleibt bis zum Neustart offen (C2R3-9, gemessen; vorbestehend).
   Vorschlag: Abbruchfunktion aus `createDocument`/`schreibStrom` (`stream.destroy()` plus Aufräumen), Aufrufe in `try`.
+- **C2-S11:** `core/pdf-engine.js:517-519` — `registriereVerify` schreibt `verify_dokumente` vor `renameSync`; scheitert
+  das Umbenennen (gleiches Verzeichnis, praktisch nur bei Platten-/Rechtefehler), wird die Datei als abgelehnt in
+  Quarantäne verschoben, die Registerzeile bleibt ohne Datei und die Ernte löscht die Quarantäne-Kopie nach 30 Tagen.
+  Das PDF wurde nie ausgeliefert (Zusage abgelehnt). Behebung wäre eine Kompensation (Registerzeile zurücknehmen) —
+  eigener Auftrag (`diffpruefung-c2.md` C2R4-15).
