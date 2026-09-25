@@ -126,3 +126,24 @@ Eigene Lesung (Fundorte, an die Spuren als Hinweise gegeben):
 - QJ4-E4: Abschnitt mit Chargenschlüssel und Kandidat „alle“, Eigentümer nicht belegbar — ehrlicher Werkzeugweg?
 Anlass für Runde 4: Verhaltensänderung am Leser (Erledigung je Abschnitt). Spuren (unwiderruflich → drei): Claude
 ausführend (`gymdocu-qrj-cc`, `scratchpad/qrjcc4/`), DeepSeek mit Repo-Lesezugriff (Diff), Kimi (Endstand ganz).
+
+| Nr | Quelle | Befund | Nachmessung | Schwere | Behebung |
+|---|---|---|---|---|---|
+| QJ4-1 | CC QJ4-1, DS 1, Kimi N4-1 Weg 1, E1 | `ausgenommen` gilt nur, bis das Studio wieder existiert: eine spätere Freigabe (vom Sperrtext empfohlen) deckt es ohne Korrektur | CC gemessen: 64 vergibt 331100–331109 in die verlorene C2 | blockierend | Einmal ausgenommen/Eigentümer bleibt ausgenommen (Leser UND Werkzeug); benannte Freigabe nur für Nicht-Eigentümer |
+| QJ4-2 | CC QJ4-2, Kimi N4-1 Weg 2 | zweiter, widersprechender `--eigentuemer` wird geschrieben und deckt den ersten | CC gemessen: 64 vergibt 331100–331109 | hoch | `--eigentuemer` nur, wenn der Abschnitt weder Eigentümer noch Korrektur hat |
+| QJ4-3 | CC QJ4-3 | (d') übersieht die Korrektur eines früheren Abschnitts derselben Zeile (`position === zeileNr`) | CC gemessen: Abschnitt 1 mit 360150–360199 angenommen, S vergibt 360200 in die verlorene C3 | hoch | Spannen derselben Zeile nach Abschnitt als davor/danach |
+| QJ4-4 | CC QJ4-4 | wieder angelegter Eigentümer, Block verloren, `nr_von` unlesbar: kein Weg ohne Scheinspanne; Sperrtext empfiehlt einen Befehl, der mit (k) abbricht | CC gemessen | mittel | `--ausserhalb-bloecke` auch bei unlesbarem `nr_von` (--von nach den Aufklebern) |
+| QJ4-5 | CC QJ4-5, DS 5, E4 | `--eigentuemer` nimmt jede nie gesehene ID an (verschmutzt `bekannteStudios`, fremde Zeilen bleiben für immer unerledigt); „alle“-Abschnitt mit Chargenschlüssel ohne belegbaren Eigentümer hat keinen ehrlichen Weg | CC gemessen (999999) | mittel | Eigentümer nur aus `bekannteStudios`; ehrlicher Weg `--keine-aufkleber` |
+| QJ4-6 | CC QJ4-6, DS 4 | `AUSSERHALB_WARNUNG` „hebt keine Vergabe“ falsch: zählt, sobald ein Block sie enthält; `--bis` darf in einen Block ragen | CC gemessen (500101 nach Neuzustellung), DS gelesen (`hoechsteInBereich`) | mittel | Text; `--bis` ausserhalb aller Blöcke |
+| QJ4-7 | CC QJ4-7 | Spanne ausserhalb über dem Block → `datenbank_zurueckgespielt` bei jeder Vergabe (4 von 4) | CC gemessen, Gegenprobe darunter 1 von 4 | gering-mittel | Quelle messen, Daueralarm abstellen |
+| QJ4-8 | CC QJ4-8 | Korrektur-Payload `uebrige_studios` nennt ein Studio, das über einen anderen Abschnitt gesperrt bleibt; keine „NICHT freigegeben“-Zeile | CC gemessen (61) | gering | dieselbe Deckungslogik wie bei der Freigabe; QJ3-9-Test für den Korrekturweg |
+| QJ4-9 | CC QJ4-9, DS 3, Kimi N4-3, E3 | `zeigen`: Block/Grenzen immer vom Vorspann | CC gemessen (Block 370000 statt 470000) | gering-mittel | je offenem Abschnitt |
+| QJ4-10 | CC QJ4-10, Kimi N4-4 | Sperrtext „bereits eine Korrektur“ auch bei reiner Eigentümer-Freigabe; bei „genau S“ wird `uebrige-freigeben` empfohlen | CC gemessen, gelesen | gering | Texte verzweigen |
+| QJ4-11 | CC QJ4-11, DS 2, Kimi N4-2, E2 | Leser schliesst den Eigentümer nur über `ausgenommen` aus | CC gemessen (Handzeile → 64 vergibt) | gering | `e.eigentuemer !== studioId` (in §1 aufgehend) |
+| QJ4-12 | CC Punkt 4 | 10 von 19 Mutationen überleben mit 526/0, fünf mit gemessener Folge (V1, V7, V4, Q6, Q7), dazu V25, V6, T11 | CC gemessen | mittel | je ein Test, Mutation ROT |
+| — | Kimi Frage 1b | „keine Sperre ohne Werkzeugweg; ehrlich: Korrektur eines realen Studios mit hoher Spanne“ | widerlegt durch QJ4-4 (gemessen); der Vorschlag schreibt eine erfundene Angabe | gefallen | — |
+
+Zahlen: CC 11 Befunde + Mutationsliste, DS 5, Kimi 4 (+1 gefallene Behauptung); 12 Zeilen. Nur CC: QJ4-3 (Doppelvergabe),
+QJ4-4, QJ4-7, QJ4-8, Mutationen. Alle drei: QJ4-1, QJ4-9, QJ4-11. Trockenlauf gegen Leser: Zufallssuche 0 Abweichungen
+bei 1221 Studio-Fällen (Positivkontrolle unter Mutation: 36 bzw. 11). Grün: Reproduktionen der Runde 3.
+Nacharbeit 4: `plaene/auftrag-qrj-nacharbeit4.md` (Verhalten ändert sich → Runde 5).
