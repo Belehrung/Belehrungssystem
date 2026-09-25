@@ -325,3 +325,9 @@ Stand 25.09.2026 01:10 UTC: T2 Diffprüfung durch → Nacharbeit 1 an denselben 
 und selbst nachgemessen: `ops/syntax-check.sh` (CI + Deploy-Gate) prüft je 50er-Stapel nur die ERSTE Datei
 (`node --check a b` prüft nur a) — seit Commit `cab4d5c` (12.09.2026) nur ≈13 von 646 Dateien. C1 Runde 2: DeepSeek ohne blockierenden
 Befund; Kimi und die ausführende Spur laufen. P2 Nacharbeit 2 läuft.
+
+Stand 25.09.2026 00:45 UTC: P2 Runde 3 ohne blockierenden Befund → Nacharbeit 3 (letzte an P2) läuft; Rest auf
+P2-S5..S7. C1 Runde 3: Verklemmung behoben (0/25), Fuzzer 0 neue Doppelvergaben; Nacharbeit 3 (letzte an C1: exakter
+Sichtvergleich, Advisory-Lock, Indexprüfung über pg_index) läuft. Neu im Arbeitsplan: DB-INIT-SPERREN (vorbestehend
+auf master, db.init() verklemmt mit Unterschriften-INSERTs). T2 Nacharbeit 1 fertig, zweite Suite läuft, Runde 2
+(ausführend) läuft.
