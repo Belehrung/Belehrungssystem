@@ -334,3 +334,5 @@ auf master, db.init() verklemmt mit Unterschriften-INSERTs). T2 Nacharbeit 1 fer
 
 Stand 25.09.2026 01:45 UTC: **P2 ausgeliefert** — Deploy 444 (`8d4e2dc`) success, live-check 01:41 unauffällig (2× ℹ wie
 immer). C1 PR #477 (`fefda14`): CI 3/4 grün, Isolation läuft; kein Bot-Kommentar. H1a-Bau und T2-Nacharbeit 2 laufen.
+Stand 25.09.2026 01:52 UTC: **C1 gemergt** (#477, Squash `a8543ac`, CI 4/4 grün auf `fefda14`, kein Bot-Kommentar,
+Botschaft zurückgelesen). Deploy-Prüfung 02:20. QR-J-Bau wartet auf einen freien Bauplatz (T2-Nacharbeit 2, H1a laufen).

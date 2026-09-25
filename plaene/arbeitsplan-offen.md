@@ -11,7 +11,7 @@ Nachmessen; jeder Beitrag durchläuft das volle Ritual (Planprüfung → Bau →
 | B2 | H1a/H1b | H1a: CSP mit Bericht, dann Enforce (`auftrag-h1a-csp-enforce.md`); H1b: Nonces + Inline-Handler ablösen | H1a Bau läuft (`/workspace/gymdocu-h1`) |
 | B3 | Doku | `ops/SECURITY-HEADER.md`: `server_tokens off`, `http2`, CSP-Stand | offen |
 | B4 | Betreiber | H3 HSTS-Preload (Entscheidung), H2-D8 Ratenbegrenzung `/login/tablet` in nginx | Frage an Betreiber |
-| C1 | Entschiedene | V01-1, V09-1, V15-2 (`auftrag-c1-entschiedene.md`) | drei Diffrunden durch, PR #477 (fefda14), CI läuft |
+| C1 | Entschiedene | V01-1, V09-1, V15-2 (`auftrag-c1-entschiedene.md`) | **gemergt #477** (a8543ac), Deploy-Prüfung 02:20 |
 | C2 | Stille Fehler | V02-3, V03-1, V04-3, V09-2, V09-3, V08-4, PP4b-22, V03-2, V04-2, Monatslauf (`auftrag-c2-stille-fehler.md`) | Fassung 2 bereit (Planprüfung 14) |
 | C3 | Datenintegrität | C3a: V02-2, V05-2, V07-1 (`auftrag-c3a-datenintegritaet.md`, Fassung 2 bereit, Planprüfung 20); C3b: V10-3 + R6-13 (`auftrag-c3b-replik-upsert.md`, erst messen); Q: V12-1 + PP2-K3/K4b nach P2; V04-2 → C2 | C3a bereit |
 | C4 | Test-Wächter | T2 (`auftrag-t2-zusicherungen.md`): C4 + „grün aus falschem Grund“ + Zeitzonen-Fixtures, **Frist 11.10.2026** | Fassung 2 bereit (Planprüfung 21) |
