@@ -47,3 +47,26 @@ Doppelvergabeweg und hielt den Fall „nur Obergrenze, keine Charge“ für unsc
 Zahlen: 27 Befunde aus drei Spuren plus drei eigene; nach Zusammenfassung 12 Aufträge, einer gefallen (Kimi 1), zwei
 Anmerkungen. Nur CC: R1, R3, alle Mutationen, Metazeilen-Riss. Nur Kimi: geklebter Rest. Nur DS: `typ`-Typ, negative
 Nummern. Nur eigene Lesung: `{"char`-Bruchstück. Überschneidung aller drei: leeres Journal, Lock.
+
+## Runde 2 (Kopf `0213cd9`, 25.09.2026)
+
+Drei Spuren. Runde-1-Reproduktionen R1–R3 brechen jetzt ab (CC). Befunde:
+
+| Nr. | Spur | Befund | Nachgemessen | Einstufung | Auftrag |
+|---|---|---|---|---|---|
+| QJ2-1 | CC R2-3 | Nach dem Zurückspielen wird die verlorene `charge_id` neu vergeben → (d) bricht bei jeder Korrektur ab, der Eigentümer bleibt dauerhaft gesperrt; `zeigen` nennt Zahlen einer fremden Charge als Untergrenzen | CC gemessen (`fc_id_wiederverwendung.js`) | hoch | Nacharbeit 2 §1 |
+| QJ2-2 | CC R2-1, Kimi 2, DS | Präfix-/„alle“-Zeile nach Eigentümer-Korrektur ohne Schalter: übrige Kandidaten (auch künftige Studios) dauerhaft gesperrt, Schalter nachträglich nicht setzbar | CC gemessen (`fb_charge_ohne_schalter.js`) | hoch | §2 (`uebrige-freigeben`) |
+| QJ2-3 | CC R2-2 | (d') widerspricht (d): zwei kaputte Zeilen desselben Studios, `zeigen` führt in die Falle, dauerhafte Sperre | CC gemessen (`fa_dstrich.js`) | hoch | §3 |
+| QJ2-4 | CC R2-4 | Rest-Kandidat nie korrigierbar (Bruchstücke aus dem Vorspann) — einziger Ausweg eine falsche Erklärung → Doppelvergabe | CC gemessen | mittel–hoch | §5 |
+| QJ2-5 | CC R2-5 | (e) harter Abbruch nach oben zwingt `--bis` zu niedrig, wenn eine Altlast-Spanne danach beginnt → Doppelvergabe | CC gemessen | mittel | §4 |
+| QJ2-6 | CC R2-6 | Metazeilen-Bruchstück mit geklebtem Chargen-Rest verwerfbar | CC gemessen | gering–mittel | §6 |
+| QJ2-7 | CC R2-7, Kimi 2.1, DS | Daueralarm bei jedem Druck jedes Studios für teilweise erledigte/nicht existierende Kandidaten | CC gemessen | gering | §6 |
+| QJ2-8 | CC R2-8, Kimi 3.1–3.3, DS 3.3–3.5 | MU1, MU2, MU31, MU18b grün; (d')-Grenzfall; Sollwerte aus derselben Konstante; Wortlisten-Scan ohne `qr-verbrauch.js` | CC gemessen / gelesen | gering | §7 |
+| QJ2-9 | CC R2-9 | `uebrige_nicht_betroffen` protokolliert keine Liste | gelesen | gering | §2 |
+| QJ2-10 | DS R2-1 | Präfix mit führender Null sperrt das Studio nicht | gelesen; entsteht nicht durch `JSON.stringify` (CC, Kimi) | gering | §6 |
+| — | Kimi 1 | „Riss nach `"menge":` + geklebte Charge ist gültiges JSON und verschluckt die Charge“ | **gefallen** — gemessen: kein gültiges JSON (schliessende Klammer fehlt), Studio 6 `hoechste` 201399, `kaputteZeilen` 1 | — | — |
+| — | Kimi 3 | Rückrollen auf `dc7ebac` entsperrt Mitkandidaten | **gefallen** — `dc7ebac` war nie ausgeliefert, master steht vor QR-J | — | — |
+| — | Kimi 4 | `kandidatenStudios` ohne `studio_id` unkommentiert | gelesen | Anmerkung | §6 Kommentar |
+
+Executer-Widerspruch (zwei Korrekturen verschiedener Kandidaten legitim): alle drei Spuren geben ihm recht; meine
+Testvorgabe in Nacharbeit 1 §5 war falsch.
