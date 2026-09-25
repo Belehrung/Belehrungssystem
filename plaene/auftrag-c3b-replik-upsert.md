@@ -33,3 +33,10 @@ Sperr- und Löschauftragslogik aus dem unlink-Beitrag gehalten (CLAUDE.md „Tra
 Klasse ist die Behebung gefährlicher als der Fehler).
 
 -- Ende des Auftrags --
+
+## Ergebnis Stufe 1 (gemessen 25.09.2026)
+
+Alle drei Zustände bestätigt, je mit Positivkontrolle; Einzelheiten und Fundstellen in `plaene/auftrag-c3b-stufe2.md`,
+Abschnitt „Gemessen“. Kurz: M1 — neuer Hash erbt das verbrauchte Budget (`dead/5` → Upsert → `pending/5` → ein
+Fehlschlag → `dead/6`). M2 — `succeeded` mit `sha256=H2`, Datei hinter `remote_ref` enthält H1, die richtige H2-Datei
+wurde als „ersetzt“ gelöscht. M3 — geprüft gegen H1, gebucht als H2, Fernkopie H1.
