@@ -408,6 +408,10 @@ Stand 25.09.2026 11:41 UTC (Stundentakt): Im Bau: C2 N2 (Suite läuft), QR-J N4 
 Planprüfungen). C3b gebaut (`1d9b08d`, Suite 394 = 394), Diffprüfung Runde 1 läuft (CC + zwei DeepSeek-Spuren; Kimi
 ohne Guthaben — Betreiber gefragt). C3a Runde 2 ausgewertet, Nacharbeit 2 wartet auf Bauplatz. Warteschlange Bau:
 C3a N2.
+**C3a AUSGELIEFERT 26.09.2026:** PR #480 gemergt (`d5c559d`, Squash-Botschaft zurückgelesen), CI grün auf `8b46b9a`
+(4/4), keine Bot-Kommentare, Deploy 448 `success` mit richtigem `head_sha` (Migration 0064 beim App-Start), live-check
+EXIT 0. Sammelliste `offene-befunde-c3a.md` (S1–S7) bleibt für die Extrarunde.
+
 Server (Betreiber-Messung 26.09.2026, `sshd -T`): `passwordauthentication no`, `kbdinteractiveauthentication no`,
 `pubkeyauthentication yes`, `permitrootlogin without-password` — SSH nur mit Schlüssel ist ERLEDIGT. Paket-Updates vom Betreiber eingespielt, Server neu gestartet (26.09.2026 ~07:20 UTC):
 pm2 alle fünf Prozesse online (automatisch hochgekommen), live-check EXIT 0 (Landingpage, keine Versionsangabe,
