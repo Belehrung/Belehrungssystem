@@ -408,6 +408,11 @@ Stand 25.09.2026 11:41 UTC (Stundentakt): Im Bau: C2 N2 (Suite läuft), QR-J N4 
 Planprüfungen). C3b gebaut (`1d9b08d`, Suite 394 = 394), Diffprüfung Runde 1 läuft (CC + zwei DeepSeek-Spuren; Kimi
 ohne Guthaben — Betreiber gefragt). C3a Runde 2 ausgewertet, Nacharbeit 2 wartet auf Bauplatz. Warteschlange Bau:
 C3a N2.
+**BETREIBER-ENTSCHEIDUNG 26.09.2026 (C3a3-1):** „ich folge deiner empfehlung“ — die Admin-Deaktivierung hat Vorrang
+vor Magicline: Magicline/API-Sync reaktiviert nur Mitarbeiter, die NICHT von Hand deaktiviert wurden; jede
+Reaktivierung über Magicline/Sync kommt in die Audit-Kette. Fortsetzung bei erschöpftem Kontingent: Mittwoch
+30.09.2026 00:01 Europe/Berlin (`send_later` `trig_01Hu6x9Q2EkdeL9QVAuADG7Z`, 29.09. 22:01 UTC).
+
 Stand 26.09.2026 (Sparmodus, ~4 %): Diffprüfung QR-J Runde 6 und C3a Runde 3 über Lesespuren gelaufen — Tabellen in
 `diffpruefung-qrj.md` (QJ6-1..9, QJ6-1 blockierend: Freigabe umgeht den Spannen-Riegel bei kaputter Korrektur-Metazeile)
 und `diffpruefung-c3a.md` (C3a3-1 blockierend: Magicline reaktiviert Deaktivierte still — BETREIBER-ENTSCHEIDUNG nötig:
