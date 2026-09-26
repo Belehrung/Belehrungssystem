@@ -419,6 +419,10 @@ OpenRouter-Schlüssel liegt zusätzlich in `/tmp/claude-0/.openrouter-key` (Rech
 Kimi-Probe ging durch); ungenutzt, nicht im Prüfwerkzeug. Vor der nächsten Planprüfung Kimi-Guthaben über
 `/v1/users/me/balance` prüfen.
 
+OpenRouter-Free-Modelle (26.09.2026, `plaene/openrouter-free-eignung-26-09-2026.md`): von 17 erfüllen nur zwei die
+Datengrenze (ZDR: `ling-3.0-flash-fin`/`-sante`); Probe am bekannten Befund C3a4-1: beide Treffer, `-sante` ein
+Fehlalarm am behobenen Stand; qwen nimmt ZDR an, antwortet aber nicht. Empfehlung: keines als Prüfspur.
+
 Betreiber 26.09.2026: „wenn das limit weg ist, musst du nicht mehr sparsam vorgehen.“ — Nach dem Reset gilt wieder das
 volle Prüfverfahren laut CLAUDE.md (mit ausführender Claude-Spur); die Fortsetzungs-Erinnerung `trig_01Hu6x9Q2EkdeL9QVAuADG7Z`
 ist entsprechend umgeschrieben.
