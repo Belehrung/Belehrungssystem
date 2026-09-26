@@ -299,6 +299,7 @@ sondern falsch.
 | 26.09.2026 | C3a Diffprüfung Runde 3 (deepseek-v4-pro) | Diff 1936 Zeilen, Suchen 13, Lesungen 30, Token rein 1281130, Token raus 42310, Runden 10 | 7 | 3 gelesen und getragen, Rest ungeprüft | — | 1,86 $ |
 | 26.09.2026 | QR-J Diffprüfung Runde 6 (sol) (gpt-6-sol) | Diff 775 Zeilen, Suchen 16, Lesungen 27, Token rein 1731878, Token raus 33564, Runden 13 | 7 | ungeprüft (Sparmodus) | — | 7,43 $ |
 | 26.09.2026 | QR-J Diffprüfung Runde 6 (deepseek-v4-pro) | Diff 2452 Zeilen, Suchen 21, Lesungen 17, Token rein 4695098, Token raus 69883, Runden 23 | 5 + Anm. | ungeprüft (Sparmodus) | — | 6,47 $ |
+| 26.09.2026 | Planprüfung C3a Nacharbeit 3 (deepseek-v4-pro) | Diff 41 Zeilen, Suchen 20, Lesungen 25, Token rein 846472, Token raus 32513, Runden 13 | 7 | 6 (Einzelheiten `plaene/planpruefung-c3a-n3.md`) | 1 („0063 frei“ — C3b-Zweig nicht sichtbar) | 1,25 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
