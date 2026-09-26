@@ -408,6 +408,12 @@ Stand 25.09.2026 11:41 UTC (Stundentakt): Im Bau: C2 N2 (Suite läuft), QR-J N4 
 Planprüfungen). C3b gebaut (`1d9b08d`, Suite 394 = 394), Diffprüfung Runde 1 läuft (CC + zwei DeepSeek-Spuren; Kimi
 ohne Guthaben — Betreiber gefragt). C3a Runde 2 ausgewertet, Nacharbeit 2 wartet auf Bauplatz. Warteschlange Bau:
 C3a N2.
+Kimi (26.09.2026): direktes Moonshot-Konto gemessen `available_balance 0`, `cash_balance -0.08` (seit 25.09. HTTP 429).
+Betreiber lädt Kimi DIREKT wieder auf („nein ich lade kimi wied auf“) — also kein OpenRouter-Weg für Kimi. Ein
+OpenRouter-Schlüssel liegt zusätzlich in `/tmp/claude-0/.openrouter-key` (Rechte 600; Limit 100, Guthaben 0, eine
+Kimi-Probe ging durch); ungenutzt, nicht im Prüfwerkzeug. Vor der nächsten Planprüfung Kimi-Guthaben über
+`/v1/users/me/balance` prüfen.
+
 Betreiber 26.09.2026: „wenn das limit weg ist, musst du nicht mehr sparsam vorgehen.“ — Nach dem Reset gilt wieder das
 volle Prüfverfahren laut CLAUDE.md (mit ausführender Claude-Spur); die Fortsetzungs-Erinnerung `trig_01Hu6x9Q2EkdeL9QVAuADG7Z`
 ist entsprechend umgeschrieben.
