@@ -408,6 +408,10 @@ Stand 25.09.2026 11:41 UTC (Stundentakt): Im Bau: C2 N2 (Suite läuft), QR-J N4 
 Planprüfungen). C3b gebaut (`1d9b08d`, Suite 394 = 394), Diffprüfung Runde 1 läuft (CC + zwei DeepSeek-Spuren; Kimi
 ohne Guthaben — Betreiber gefragt). C3a Runde 2 ausgewertet, Nacharbeit 2 wartet auf Bauplatz. Warteschlange Bau:
 C3a N2.
+Betreiber 26.09.2026: IT-PDFs („nein wir warten bis das limit weg is“) erst nach dem Kontingent-Reset. Vorschlag dafür
+steht: Standardmodell, Grundlage die fünf Dokumente vom 18.09., nur geänderte Aussagen am Code nachprüfen, je Dokument
+committen; CSP als Beobachtungsmodus beschreiben, solange Enforce (≥ 02.10.) nicht aktiv ist.
+
 **C3a AUSGELIEFERT 26.09.2026:** PR #480 gemergt (`d5c559d`, Squash-Botschaft zurückgelesen), CI grün auf `8b46b9a`
 (4/4), keine Bot-Kommentare, Deploy 448 `success` mit richtigem `head_sha` (Migration 0064 beim App-Start), live-check
 EXIT 0. Sammelliste `offene-befunde-c3a.md` (S1–S7) bleibt für die Extrarunde.
