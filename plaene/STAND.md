@@ -409,8 +409,10 @@ Planprüfungen). C3b gebaut (`1d9b08d`, Suite 394 = 394), Diffprüfung Runde 1 l
 ohne Guthaben — Betreiber gefragt). C3a Runde 2 ausgewertet, Nacharbeit 2 wartet auf Bauplatz. Warteschlange Bau:
 C3a N2.
 Server (Betreiber-Messung 26.09.2026, `sshd -T`): `passwordauthentication no`, `kbdinteractiveauthentication no`,
-`pubkeyauthentication yes`, `permitrootlogin without-password` — SSH nur mit Schlüssel ist ERLEDIGT. Beim Betreiber offen:
-die 48 Paket-Updates (`apt upgrade`, ggf. Neustart, danach `pm2 status` + live-check). HSTS: ohne Preload (entschieden).
+`pubkeyauthentication yes`, `permitrootlogin without-password` — SSH nur mit Schlüssel ist ERLEDIGT. Paket-Updates vom Betreiber eingespielt, Server neu gestartet (26.09.2026 ~07:20 UTC):
+pm2 alle fünf Prozesse online (automatisch hochgekommen), live-check EXIT 0 (Landingpage, keine Versionsangabe,
+Echtheitsprüfung, Subdomain-Abweisung, Handbuch; Zertifikat/Health wie immer ℹ). HSTS: ohne Preload (entschieden).
+Damit ist beim Betreiber nichts Sicherheitsrelevantes mehr offen.
 
 **BETREIBER-ENTSCHEIDUNG 26.09.2026 (C3a3-1):** „ich folge deiner empfehlung“ — die Admin-Deaktivierung hat Vorrang
 vor Magicline: Magicline/API-Sync reaktiviert nur Mitarbeiter, die NICHT von Hand deaktiviert wurden; jede
