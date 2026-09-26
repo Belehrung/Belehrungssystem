@@ -792,6 +792,16 @@ letzte Instanz, Datengrenze). Drei Punkte daraus sind neu und übernommen:
   Schreibweg in unseren Ablauf, den niemand gemessen hat; `run_tests` und
   `get_ci_status` koppeln den Prüfer an unsere Infrastruktur. Bleibt abgelehnt.
 
+  **BETREIBER-ENTSCHEIDUNG 26.09.2026 — begrenzte Ausführung für DeepSeek („dann machen wir in zukunft variante 1“).**
+  `deepseek-v4-pro` bekommt eine AUSFÜHRENDE Prüfspur, aber KEINE freie Shell und keinen Schreibzugriff auf einen
+  Zweig: nur feste Werkzeuge, die wir bauen — (1) genau eine Stelle in einer WEGWERFKOPIE des Baums ändern (Abbruch bei
+  ≠ 1 Treffer), (2) EINE registrierte Testdatei gegen eine eigene `_test`-DB laufen lassen, mit Zeitlimit, als
+  unprivilegierter Benutzer (kommt nicht an `/tmp/claude-0`), Ausgabe durch den Geheimnis-Riegel, (3) automatisch
+  zurücksetzen. Grund für die Grenze: ein fremdes Modell mit freier Shell könnte Schlüssel lesen und hinausschicken
+  oder über präparierten Repo-Text dazu verleitet werden. Eigene Mess-Skripte schreibt es damit NICHT (das bliebe freie
+  Codeausführung). Bauen bleibt beim Executer. Einführung: erst EIN gemessener A/B gegen die Claude-Spur an einem echten
+  Diff; ersetzt sie erst, wenn DeepSeek dort nachweislich Eigenes findet (`ASTRA-LAEUFE.md`).
+
   **NACHGESCHÄRFT 13.09.2026 — reines LESEN fällt NICHT unter diese
   Ablehnung.** Bis hierher stand hier „Werkzeuge und Repo-Zugriff" in einem
   Atemzug, mit `read_file` in derselben Klammer. Das widersprach zwei Dingen
