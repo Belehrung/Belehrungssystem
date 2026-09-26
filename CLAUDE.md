@@ -2517,3 +2517,12 @@ github.com/Belehrung/Gymdocu), daneben im Hauptserver
 (/workspace/gymdocu-hauptserver). Etablierte Regeln dort: Deaktivieren statt
 Löschen, jede Abfrage trägt `studio_id`, Migrationen für alle Studios,
 PR-Nummern erst nennen, wenn GitHub sie bestätigt hat.
+
+**Umfang von GymDocu — Betreiber-Vorgabe 26.09.2026:** „ich möchte mich mit
+gymdocu nur auf gesetzliche pflichten konzentrieren." Eine neue Funktion
+braucht eine benannte Norm (Gesetz, Verordnung, Unfallverhütungsvorschrift),
+deren Pflicht sie erfüllt oder nachweist. Reine Organisationshilfen
+(allgemeine Checklisten, Aufgabenlisten, Kennzahlen, Standortvergleich —
+Anlass war der Vergleich mit Revault) werden nicht gebaut. Hilfsfunktionen,
+ohne die eine Pflicht nicht erfüllbar wäre (QR an Geräten, Magicline-Abgleich
+der Mitarbeiter), bleiben zulässig; im Zweifel entscheidet der Betreiber.
