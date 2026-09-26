@@ -77,3 +77,16 @@ kein Bericht). Suite auf `ed5f6a5` grün (399 = 399), Lint 0. Bericht und Gegenp
 | C3a3-3 | Unterschrift liest den Mitarbeiter ohne `aktiv=1` (`routes/belehrungen.js:843`); bei ausgeschalteter Tablet-Sperre unterschreibt ein Deaktivierter weiter | ja, gelesen | sollte behoben werden |
 | C3a3-4 | leeres `catch {}` beim Aufräumen nach dem Löschen (`routes/admin/mitarbeiter.js:1184-1186`) = C3a-S6 | Sammelliste | sollte behoben werden |
 | C3a3-5 | PIN-direkt/Einladen für Deaktivierte sichtbar und wirksam (`:218-222`, `:867`); Aufgabe-Reaktivieren ohne ID-Wache (`routes/getraenkeanlage.js:1009`) und ohne `rowCount` (`:1011`) | nein | gering |
+
+## Runde 4 (Nacharbeit 3, Kopf `e2f4cc7`; Sparmodus: eine Lesespur)
+
+Bauender: Suite 401 = 401, Lint 0, Gegenproben GP1–GP5 rot. Eigene Lesung (Webhook, Sync, Migration 0064): Fundort
+Webhook-Race. DeepSeek mit Repo-Lesezugriff bestätigt ihn.
+
+| Nr | Befund | Nachgesehen | Schwere |
+|---|---|---|---|
+| C3a4-1 | Webhook-Upsert liest `vorh` ausserhalb jeder Transaktion, Autocommit-Zweig schreibt `aktiv` ohne Bedingung → Admin-Deaktivierung dazwischen wird still aufgehoben (`aktiv=1, manuell_deaktiviert=1`, kein Audit); der Sync liest nach dem Studio-Lock und ist nicht betroffen | selbst gelesen (`routes/webhooks.js:296-378`) | blockierend |
+| C3a4-2 | Sync-Kernfall-Test prüft nur Status 200; die Route liefert 200 auch bei gesammelten Fehlern → grün ohne Verarbeitung | gelesen | sollte behoben werden |
+| C3a4-3 | Sync serialisiert jeden Eintrag über den Studio-Lock; `pin_generation` steigt bei jedem ACTIVE-Webhook für manuell Deaktivierte | gelesen | Anmerkung |
+
+Nacharbeit 4: `plaene/auftrag-c3a-nacharbeit4.md`.
