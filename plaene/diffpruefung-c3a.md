@@ -90,3 +90,17 @@ Webhook-Race. DeepSeek mit Repo-Lesezugriff bestätigt ihn.
 | C3a4-3 | Sync serialisiert jeden Eintrag über den Studio-Lock; `pin_generation` steigt bei jedem ACTIVE-Webhook für manuell Deaktivierte | gelesen | Anmerkung |
 
 Nacharbeit 4: `plaene/auftrag-c3a-nacharbeit4.md`.
+
+## Runde 5 (Nacharbeit 4, Kopf `35c4e01`; eine Lesespur)
+
+Nacharbeit 4: Webhook-Upsert in einer `auditTx` plus CASE-Riegel; Gegenproben: nur CASE weg → ROT 32/1, nur auditTx weg →
+GRÜN (der CASE-Riegel liest live und fängt dieses Rennen allein), beide weg → ROT; Suite 401 = 401, Lint 0. DeepSeek:
+kein Kreis (Webhook fasst `mitarbeiter_token` nicht an), Serialisierung je Studio als Anmerkung.
+
+| Nr | Befund | Nachgesehen | Schwere |
+|---|---|---|---|
+| C3a5-1 | Sync-UPDATE (`routes/api.js:303`) ohne den CASE-Riegel — Lücke nur gegen Schreiber ohne Studio-Lock | gelesen | sollte behoben werden |
+| C3a5-2 | Race-Test (5): Namens-Zusicherung `:275` immer grün (Name steht schon im INSERT `:253`), Webhook-Antwort ungeprüft | gelesen | sollte behoben werden |
+| C3a5-3 | `inaktiv_seit` folgt im Rennen dem alten JS-Wert (vom Bauenden benannt) | Bericht | Sammelliste C3a-S7 |
+
+Nacharbeit 5 an denselben Bauenden (klein).

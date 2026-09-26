@@ -25,3 +25,6 @@ Verweist auf `plaene/planpruefung-c3a.md` (Nachmessung dort).
   bestehenden leeren `catch` erstmals sichtbar auslöste. Zwei getrennte Punkte: (a) der leere `catch` verdient
   dieselbe `melde()`-Behandlung wie der Token-Hausputz daneben; (b) das ist eine Verhaltensänderung, keine
   Zusicherungs-Ergänzung, gehört also NICHT beiläufig in diese Nacharbeit.
+- **C3a-S7:** `routes/webhooks.js` Upsert: `inaktiv_seit` folgt im Rennen (Admin-Deaktivierung zwischen Lesen und
+  Schreiben durch einen Schreiber ohne Studio-Lock) dem alten JS-Wert, nicht dem CASE-Riegel; `aktiv` ist korrekt
+  (`diffpruefung-c3a.md` C3a5-3).
