@@ -64,3 +64,16 @@ der Transaktion; NOT VALID nur über `convalidated` sichtbar. Spuren: Claude aus
 Zahlen: CC 6 Befundgruppen + Mutationsliste, DS 10; 9 Zeilen, keiner gefallen (DS B3 von „blockierend“ auf mittel:
 enges Fenster, Folge ohne Nachweisverlust). Nur DS: Test prüft Kopie der PDF-Abfrage, Regex, Waisen ohne `studio_id`.
 Nur CC: Nachholweg, leeres PDF bei Waisen, Tablet-Texte. Nacharbeit 2: `plaene/auftrag-c3a-nacharbeit2.md`.
+
+## Runde 3 (Nacharbeit 2, Kopf `ed5f6a5`; Sparmodus: Lesespuren, keine Claude-Spur)
+
+Spuren: DeepSeek mit Repo-Lesezugriff (ganzer Diff); `gpt-6-sol` ABGEBROCHEN (Lesebudget 614.400 Bytes überschritten,
+kein Bericht). Suite auf `ed5f6a5` grün (399 = 399), Lint 0. Bericht und Gegenproben des Bauenden fehlen (Neustart).
+
+| Nr | Befund | Nachgesehen | Schwere (vorläufig) |
+|---|---|---|---|
+| C3a3-1 | Magicline-Webhook setzt einen vom Admin deaktivierten Mitarbeiter bei jedem `EMPLOYEE_CREATED/UPDATED` ohne Status `INACTIVE` still wieder `aktiv=1`, ohne Audit (`routes/webhooks.js:282`, UPDATEs `:324-336`) | ja, gelesen | blockierend — Entscheidung nötig: wer gewinnt, Admin oder Magicline? |
+| C3a3-2 | derselbe Effekt über `/v1/mitarbeiter/sync` (`routes/api.js:279`, `aktiv = 1` fest) | ja, gelesen | sollte behoben werden |
+| C3a3-3 | Unterschrift liest den Mitarbeiter ohne `aktiv=1` (`routes/belehrungen.js:843`); bei ausgeschalteter Tablet-Sperre unterschreibt ein Deaktivierter weiter | ja, gelesen | sollte behoben werden |
+| C3a3-4 | leeres `catch {}` beim Aufräumen nach dem Löschen (`routes/admin/mitarbeiter.js:1184-1186`) = C3a-S6 | Sammelliste | sollte behoben werden |
+| C3a3-5 | PIN-direkt/Einladen für Deaktivierte sichtbar und wirksam (`:218-222`, `:867`); Aufgabe-Reaktivieren ohne ID-Wache (`routes/getraenkeanlage.js:1009`) und ohne `rowCount` (`:1011`) | nein | gering |

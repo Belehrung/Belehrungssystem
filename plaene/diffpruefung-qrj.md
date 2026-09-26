@@ -184,3 +184,23 @@ Zahlen: CC 9 Befunde + Mutationsliste, DS 3 + Frage 5, DSB 3 + Hinweis; 11 Zeile
 den Leser 2 × 3000 Zeilen 0 Abweichungen (Positivkontrolle V1n 143, V7n 80, V2n 155); Werkzeug-Zufallssuche gegen das
 Modell I1 = 0 (Positivkontrolle T13 → I1 = 2); Reproduktionen der Runde 4 14/15 (f_wieder Skriptfehler, in `r13` richtig).
 Nacharbeit 5: `plaene/auftrag-qrj-nacharbeit5.md`.
+
+## Runde 6 (Nacharbeit 5, Kopf `33d35c3`; Sparmodus: zwei Lesespuren, keine Claude-Spur)
+
+Spuren: DeepSeek mit Repo-Lesezugriff (ganzer Diff `24b9be8..33d35c3`), `gpt-6-sol` mit Repo-Lesezugriff (nur
+`core/`+`tools/`). Suite auf `33d35c3` grün (395 = 395), Lint 0. Diff vom Haupt-Agenten NOCH NICHT gelesen (Kontingent);
+nachgesehen sind nur die markierten Befunde.
+
+| Nr | Quelle | Befund | Nachgesehen | Schwere (vorläufig) |
+|---|---|---|---|---|
+| QJ6-1 | sol | Freigabe „ohne Korrektur“ gilt für jeden Abschnitt, den `abschnittLesen` schlüssellos nennt — auch eine abgerissene oder ungültige KORREKTUR-Metazeile (`{"typ":…`), die eine Spanne (`studio_id`, `nr_von`) enthält; `verwerfbarkeit` verweigert genau dort das Verwerfen, die Freigabe (`tools/qr-journal.js:1209`, `wegFuer` `core/qr-verbrauch.js:619-621`) nicht → Spanne ohne Neuschreiben erledigt | nein | blockierend |
+| QJ6-2 | DS, sol | `KORREKTUR_BEFEHL` (`core/qr-verbrauch.js:586`) nennt `--ausserhalb-bloecke`/`--ohne-systembeleg` nicht; liegt die belegte Spanne in keinem Block, bricht der genannte Befehl mit (c) ab (`tools/qr-journal.js:755-767`); `test_feature_qr_journal.js:1675` schreibt es fest; die Weg-Fixtur hat nur passende Blöcke | nein | blockierend nach Leitregel (vorbestehend) |
+| QJ6-3 | sol | Eigentümer-Weg (`core/qr-verbrauch.js:630`) ohne `--eigentuemer-unbekannt`; hat E keine Journalspur, bricht er mit (k) ab (`tools/qr-journal.js:1231-1234`); Fixtur B4 legt E vorher als Spur an | nein | blockierend nach Leitregel (vorbestehend) |
+| QJ6-4 | sol | `verwerfen` und danach `korrigieren` derselben Zeile werden jetzt angenommen (`:648-692`, Abbruch „erledigt“ entfernt); `verworfen` wird nie widerlegt → „gegenstandslos“ und „belegte Spanne“ stehen widerspruchslos nebeneinander | nein | sollte behoben werden |
+| QJ6-5 | DS, sol | Weg-Test führt bei „zuerst …, danach …“ nur den ersten Schritt aus (`test_feature_qr_journal_wege.js:345`), der zweite wird nur gezählt; `:337` bestimmt „gesperrt“ aus dem Modell statt dem Leser; `:352` zählt nicht ersetzbare Platzhalter als übersprungen, `:368` verlangt keinen ausgeführten Befehl | nein | sollte behoben werden |
+| QJ6-6 | DS, sol | Referenzmodell nicht unabhängig: Widerlegung (`:109`) strukturgleich mit dem Leser, Metazeilen-Auswahl über `qrVerbrauch.metaZeileVollstaendig` (`:130`) | nein | sollte behoben werden |
+| QJ6-7 | sol | `test_feature_qr_journal.js:1969`: Oder-Zweig hält die Zusicherung grün ohne den behaupteten Abbruchgrund | nein | gering |
+| QJ6-8 | sol | Zeile mit schlüssellosem Vorspann + „genau Q“-Rest bleibt nach der Freigabe unerledigt, weil ein nur im Journal bekanntes E als „alle“-Kandidat ausgenommen wird | nein | gering |
+| QJ6-9 | DS | Anmerkungen: Sperrtext 3 Zeilen (gewollt), alte `widerrufen`-Zeilen gelten jetzt als kaputt (fail-closed, keine ausgeliefert), Frischprüfung strenger | nein | Anmerkung |
+
+Nächster Schritt nach dem Reset: Diff lesen, QJ6-1..8 nachmessen, Nacharbeit 6.

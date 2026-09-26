@@ -408,6 +408,11 @@ Stand 25.09.2026 11:41 UTC (Stundentakt): Im Bau: C2 N2 (Suite läuft), QR-J N4 
 Planprüfungen). C3b gebaut (`1d9b08d`, Suite 394 = 394), Diffprüfung Runde 1 läuft (CC + zwei DeepSeek-Spuren; Kimi
 ohne Guthaben — Betreiber gefragt). C3a Runde 2 ausgewertet, Nacharbeit 2 wartet auf Bauplatz. Warteschlange Bau:
 C3a N2.
+Stand 26.09.2026 (Sparmodus, ~4 %): Diffprüfung QR-J Runde 6 und C3a Runde 3 über Lesespuren gelaufen — Tabellen in
+`diffpruefung-qrj.md` (QJ6-1..9, QJ6-1 blockierend: Freigabe umgeht den Spannen-Riegel bei kaputter Korrektur-Metazeile)
+und `diffpruefung-c3a.md` (C3a3-1 blockierend: Magicline reaktiviert Deaktivierte still — BETREIBER-ENTSCHEIDUNG nötig:
+gewinnt die Admin-Deaktivierung gegen Magicline?). Befunde grösstenteils noch nicht selbst nachgemessen.
+
 Stand 25.09.2026 abends (Sparmodus, Kontingent ~4 %, Routine pausiert) — QR-J N5 GRÜN:
 - Testhelfer-Behebung `1f1aa4b` (Basis-Studios der S*10+k-Geschwister aus einem geprüft freien Zehnerblock unter int4,
   `test/helfer/studio-zehnerblock.js`; Gegenprobe ROT) und `33d35c3` (Sequenz nach `studioMitId` auf MAX(id) — sonst

@@ -295,6 +295,10 @@ sondern falsch.
 | 25.09.2026 | C2 Diffprüfung Runde 4 (deepseek-v4-pro) | Diff 1199 Zeilen, Suchen 8, Lesungen 16, Token rein 824842, Token raus 38797, Runden 13 | 7 | 7 (einzig: `_quarantaene/.tmp-*` gelöscht, Nachbar-try im Verdrahtungs-Wächter) | 0 | 1,24 $ |
 | 25.09.2026 | Planprüfung C2 Nacharbeit 4 (deepseek-v4-pro) | Diff 109 Zeilen, Suchen 16, Lesungen 18, Token rein 853340, Token raus 43884, Runden 14 | 9 | ungeprüft (Sparmodus) | — | 1,30 $ |
 | 25.09.2026 | Planprüfung C2 Nacharbeit 4, zweite Spur (deepseek-v4-pro Einzelaufruf, Bündel 96 KB, effort high) | siehe `plaene/planpruefung-c2-n4-roh.md` | 6 | ungeprüft (Sparmodus) | — | ~0,2 $ |
+| 26.09.2026 | C3a Diffprüfung Runde 3 (sol) (gpt-6-sol) | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 826 Zeilen, Suchen 40, Lesungen 56, Token rein 1383361, Token raus 5262, Runden 12 | — | — | — | 5,61 $ |
+| 26.09.2026 | C3a Diffprüfung Runde 3 (deepseek-v4-pro) | Diff 1936 Zeilen, Suchen 13, Lesungen 30, Token rein 1281130, Token raus 42310, Runden 10 | 7 | 3 gelesen und getragen, Rest ungeprüft | — | 1,86 $ |
+| 26.09.2026 | QR-J Diffprüfung Runde 6 (sol) (gpt-6-sol) | Diff 775 Zeilen, Suchen 16, Lesungen 27, Token rein 1731878, Token raus 33564, Runden 13 | 7 | ungeprüft (Sparmodus) | — | 7,43 $ |
+| 26.09.2026 | QR-J Diffprüfung Runde 6 (deepseek-v4-pro) | Diff 2452 Zeilen, Suchen 21, Lesungen 17, Token rein 4695098, Token raus 69883, Runden 23 | 5 + Anm. | ungeprüft (Sparmodus) | — | 6,47 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
