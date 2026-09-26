@@ -408,6 +408,10 @@ Stand 25.09.2026 11:41 UTC (Stundentakt): Im Bau: C2 N2 (Suite läuft), QR-J N4 
 Planprüfungen). C3b gebaut (`1d9b08d`, Suite 394 = 394), Diffprüfung Runde 1 läuft (CC + zwei DeepSeek-Spuren; Kimi
 ohne Guthaben — Betreiber gefragt). C3a Runde 2 ausgewertet, Nacharbeit 2 wartet auf Bauplatz. Warteschlange Bau:
 C3a N2.
+Server (Betreiber-Messung 26.09.2026, `sshd -T`): `passwordauthentication no`, `kbdinteractiveauthentication no`,
+`pubkeyauthentication yes`, `permitrootlogin without-password` — SSH nur mit Schlüssel ist ERLEDIGT. Beim Betreiber offen:
+die 48 Paket-Updates (`apt upgrade`, ggf. Neustart, danach `pm2 status` + live-check). HSTS: ohne Preload (entschieden).
+
 **BETREIBER-ENTSCHEIDUNG 26.09.2026 (C3a3-1):** „ich folge deiner empfehlung“ — die Admin-Deaktivierung hat Vorrang
 vor Magicline: Magicline/API-Sync reaktiviert nur Mitarbeiter, die NICHT von Hand deaktiviert wurden; jede
 Reaktivierung über Magicline/Sync kommt in die Audit-Kette. Fortsetzung bei erschöpftem Kontingent: Mittwoch
