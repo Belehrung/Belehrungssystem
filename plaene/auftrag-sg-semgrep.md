@@ -1,77 +1,110 @@
-# Auftrag SG — Semgrep-Hinweis am PR und GCM-Tag-Länge (27.09.2026, Fassung 1)
+# Auftrag SG — Semgrep-Hinweis am PR und GCM-Tag-Länge (27.09.2026, Fassung 2)
 
-Grundlage: `plaene/semgrep-messung-27-09-2026.md`. Betreiber 27.09.2026 auf „Soll Semgrep als PR-Hinweis eingebaut
-werden?": „Ja denn es kann auch nicht schaden". Neuer Zweig `fix-sg-semgrep` von `origin/master` (`d5c559d`), eigener
-Arbeitsbaum `/workspace/gymdocu-sg`. Einzeltests nur gegen eine eigene DB (`gymdocu_sg_test`). Einordnung: nicht sehr
-komplex (Standard-Executer) — zwei kleine, getrennte Teile, beide mit Muster im Bestand.
+Grundlage: `plaene/semgrep-messung-27-09-2026.md`, Planprüfung `plaene/planpruefung-sg.md` (PSG-1..12, dort je
+Nachmessung). Betreiber 27.09.2026: „Ja denn es kann auch nicht schaden". Zweig `fix-sg-semgrep` von `origin/master`
+(`d5c559d`), Arbeitsbaum `/workspace/gymdocu-sg` (steht, sauber). Einzeltests nur gegen eine eigene DB
+(`gymdocu_sg_test`). Einordnung: nicht sehr komplex (Standard-Executer) — zwei kleine, getrennte Teile.
+
+Änderungen gegenüber Fassung 1: eigener Workflow statt Job in `ci.yml` (PSG-3), kuratierte Regeln + Kontrolllauf
+(eigener Messbefund), Zustände vollständig (PSG-1/2/6), Exit-Codes berichtigt (PSG-4), Längengrenze 28 (PSG-10).
 
 ## Teil A — `core/secret-crypto.js`: kein gekürztes GCM-Tag
 
 Befund (gemessen, Node 22.22.2): `versuchOeffnen()` schneidet `tag = buf.subarray(12, 28)` ohne Längenprüfung und ruft
-`createDecipheriv('aes-256-gcm', key, iv)` ohne `authTagLength`. Ist der gespeicherte Wert kürzer als 28 Byte, wird
-das Tag kürzer; ein auf 4 Byte gekürztes Tag mit richtigem Präfix wird ANGENOMMEN (Klartext ""), ein falsches abgelehnt.
+`createDecipheriv` ohne `authTagLength`; ein auf 4 Byte gekürztes Tag mit richtigem Präfix wird ANGENOMMEN.
 
-1. In `versuchOeffnen()` vor dem Entschlüsseln: `buf.length < 12 + 16 + 1` → werfen (ein gültiger Wert hat immer
-   mindestens 1 Byte Ciphertext, weil `verschluesseln('')` gar nicht verschlüsselt — `core/secret-crypto.js`, Anfang
-   von `verschluesseln()`). Die Konstanten benennen (IV 12, Tag 16), nicht als Zahlen verstreuen.
-2. `createDecipheriv(..., { authTagLength: 16 })`, beim Verschlüsseln ebenso `createCipheriv(..., { authTagLength: 16 })`.
-3. `core/file-crypto.js` NICHT anfassen (feste Tag-Länge per `subarray` mit vorheriger Längenprüfung — gemessen
-   unkritisch); nur im Bericht bestätigen, dass dort beide Wege (Buffer und Stream) die Länge prüfen.
-4. Tests in `test_feature_secret_crypto.js`, über das ECHTE `entschluesseln()`:
-   - Kontrolle der Bauweise: den Wert von Hand bauen (derselbe Schlüssel wie der Test, `iv | tag | ct`, Präfix
-     `enc:v1:`, Klartext „x") → `entschluesseln()` liefert „x". Ohne diese Kontrolle könnte der folgende Fall aus dem
-     falschen Grund werfen (falsche Bauweise statt Riegel).
-   - Derselbe Bau mit leerem Ciphertext und auf 4 Byte gekürztem, aber RICHTIGEM Tag → wirft.
-   - Leerer Ciphertext mit vollem 16-Byte-Tag → wirft (Längenprüfung).
-   - Gegenproben, je einzeln, wörtlich mit Zahlen: (G1) Längenprüfung UND `authTagLength` entfernt → der 4-Byte-Fall
-     wird ROT; (G2) nur `authTagLength` entfernt; (G3) nur die Längenprüfung entfernt. Bei G2/G3 ist zu erwarten, dass
-     der jeweils andere Riegel den 4-Byte-Fall noch fängt (Tiefenstaffelung) — messen und berichten, welcher Fall bei
-     welcher Gegenprobe rot wird. Erreicht eine Gegenprobe den Riegel nicht, das sagen, nicht umdeuten.
+1. In `versuchOeffnen()` vor dem Entschlüsseln: `buf.length < IV_LAENGE + TAG_LAENGE` (12 + 16 = 28) → werfen. Grenze
+   BEWUSST 28, nicht 29: ein Wert mit vollem Tag und leerem Ciphertext bleibt lesbar (PSG-10 — ob solche Werte im
+   Bestand existieren, ist nicht einsehbar; bei 28 kann keiner brechen, und ein volles Tag ist nicht fälschbar).
+   Konstanten benennen.
+2. `createDecipheriv(..., { authTagLength: TAG_LAENGE })` und ebenso beim `createCipheriv`.
+3. `core/file-crypto.js` NICHT anfassen; im Bericht bestätigen, dass beide Wege (Buffer, Stream) die Länge prüfen.
+4. Tests in `test_feature_secret_crypto.js` über das ECHTE `entschluesseln()`:
+   - Kontrolle der Bauweise: Wert von Hand bauen (Testschlüssel, `iv | tag | ct`, Präfix `enc:v1:`, Klartext „x") →
+     liefert „x".
+   - Leerer Ciphertext, volles richtiges Tag (28 Byte) → liefert `""` (bleibt lesbar).
+   - Leerer Ciphertext, Tag auf 4 Byte gekürzt, richtiges Präfix → wirft.
+   - Statische Zusicherungen (PSG-11; beide Riegel sind verhaltensgleich, weil ein kurzes Tag bei vorhandener
+     Längenprüfung unerreichbar ist): Quelltext ohne Kommentare enthält die Längenprüfung vor `createDecipheriv` und
+     `authTagLength` in BEIDEN `create…iv`-Aufrufen.
+   - Gegenproben, je einzeln, wörtlich: (G1) beide Riegel entfernt → 4-Byte-Fall ROT; (G2) nur `authTagLength`
+     entfernt → statische Zusicherung ROT; (G3) nur die Längenprüfung entfernt → statische Zusicherung ROT; (G4) Grenze
+     auf 29 → der 28-Byte-Fall ROT.
 
-## Teil B — CI-Job „Semgrep-Hinweis" (nur PR, nie blockierend)
+## Teil B — eigener Workflow „Semgrep-Hinweis" (nur PR, nie Teil der CI)
 
-Vorbild für die Zustände: `ops/audit-gate.sh` (unterscheidet „geprüft, sauber" / „Funde" / „NICHT GEPRÜFT").
+**Eigene Datei `.github/workflows/semgrep-hinweis.yml`, `name: Semgrep-Hinweis`** — NICHT in `ci.yml`. Grund
+(gemessen): `test_feature_ci_gates.js` legt die Jobliste von `ci.yml` fest (`:184`), verbietet `continue-on-error` an
+jedem Job und Schritt (`:294–308`) und prüft jedes `if:` gegen `BEKANNTE_IFS`. Diese Wächter schützen das Deploy-Gate
+und werden NICHT angefasst. `deploy.yml` hört nur auf `workflows: ["CI"]` (`test_feature_deploy_gate_static.js:222`,
+dort auch „genau eine Datei mit `name: CI`"); ein eigener Workflow kann das Deploy nie beeinflussen. `ci.yml` und
+`deploy.yml` bleiben unverändert.
 
-1. Neues Skript `ops/semgrep-hinweis.js` mit exportierter, reiner Funktion `auswerten(jsonText)` → `{ zustand:
-   'sauber' | 'funde' | 'nicht_geprueft', funde: [{pfad, zeile, regel, text}], teilweise: [...] }`:
-   - JSON fehlt/unlesbar/ohne `results` → `nicht_geprueft` (mit Grund).
-   - `results` leer und keine `errors` → `sauber`.
-   - `results` nicht leer → `funde`.
-   - `errors` (z. B. `Timeout`, Parse-Fehler) → zusätzlich `teilweise` mit Datei und Fehlerart; sie dürfen einen
-     sonst leeren Lauf NICHT als `sauber` erscheinen lassen (eigener Hinweis „teilweise ungeprüft").
-   Als Kommandozeile: liest die Datei, schreibt je Fund eine GitHub-Anmerkung
-   `::warning file=<pfad>,line=<zeile>,title=Semgrep <regel>::<text>` und eine Zusammenfassung nach
-   `$GITHUB_STEP_SUMMARY` (falls gesetzt). Exit 0 bei `sauber` und `funde` (Hinweis, kein Gate); Exit 2 bei
-   `nicht_geprueft` mit dem Wortlaut „NICHT GEPRÜFT". Pfade relativ zum Repo (Semgrep liefert sie so, prüfen).
-2. Job in `.github/workflows/ci.yml`: `semgrep-hinweis`, `if: github.event_name == 'pull_request'`,
-   `continue-on-error: true` (ein roter Hinweis-Job darf das CI-Ergebnis und damit das Deploy-Gate in `deploy.yml`
-   NIE beeinflussen — dort am Wortlaut prüfen und im Bericht belegen, wie `workflow_run` die Gesamt-conclusion liest),
-   `timeout-minutes: 20`, `permissions: contents: read`, `actions/checkout@v6` mit `fetch-depth: 0`,
-   `pip install semgrep==1.178.0` (Version fest), Aufruf:
-   `semgrep scan --metrics=off --config p/expressjs --config p/nodejsscan --baseline-commit "$BASE" --exclude node_modules --json --output semgrep.json`
-   mit `BASE: ${{ github.event.pull_request.base.sha }}`; danach `node ops/semgrep-hinweis.js semgrep.json`.
-   Der Semgrep-Exit-Code darf die Auswertung nicht überspringen (Funde → Exit ≠ 0 bei Semgrep; Auswertung muss
-   trotzdem laufen, z. B. `set +e` / eigener Schritt mit `if: always()`).
-3. Tests `test_feature_semgrep_hinweis.js` (in `test/run.sh` registrieren) gegen FESTE JSON-Fixturen, die aus einem
-   echten Semgrep-Lauf stammen (Form am echten Ausgabeformat von 1.178.0 lernen, nicht raten): sauber / zwei Funde
-   (verschiedene Dateien, verschiedene Zeilen — jede Zahl anders) / nur `errors` mit Timeout / kaputtes JSON /
-   Datei fehlt. Literale Sollwerte, auch für den Anmerkungstext. Gegenproben je Zustand (z. B. `errors` ignoriert →
-   Timeout-Fixtur wird fälschlich `sauber` → ROT).
-4. Kein Test startet Semgrep oder braucht Netz. Semgrep nur im CI-Job.
+1. Workflow: `on: pull_request` (branches `[master]`), sonst nichts; `permissions: contents: read`; keine `secrets.`;
+   ein Job, `timeout-minutes: 25`, `actions/checkout@v6` mit `fetch-depth: 0`, `actions/setup-node@v7` (Node 22),
+   `pip install semgrep==1.178.0`. Schritte, jeder Semgrep-Aufruf in `timeout 15m …` und mit `set +e`, Exit-Code in
+   eine Datei/Umgebungsvariable gesichert (Semgrep liefert bei Funden EXIT 0, bei kaputter Konfiguration EXIT 7 —
+   gemessen, PSG-4):
+   a. **Kontrolllauf** gegen die Probedatei (Punkt 3) mit denselben `--config`-Angaben → `kontrolle.json`.
+   b. **Diff-Lauf**: `semgrep scan --metrics=off --config p/expressjs --config p/nodejsscan --baseline-commit "$BASE"
+      --exclude node_modules --exclude <Probeverzeichnis> --json --output semgrep.json` mit
+      `BASE: ${{ github.event.pull_request.base.sha }}` über `env:` (nicht direkt in `run:` einsetzen).
+   c. **Referenz von aussen**: Liste der geänderten `.js`-Dateien per `git diff --name-only "$BASE" HEAD -- '*.js'`
+      (ohne `node_modules/` und Probeverzeichnis) → `geaendert.txt`.
+   d. `node ops/semgrep-hinweis.js` mit den drei Dateien und beiden Exit-Codes.
+2. `ops/semgrep-hinweis.js`, zwei reine, exportierte Funktionen plus dünne Kommandozeile:
+   - `REGELN` = genau die leisen Regeln aus `plaene/planpruefung-sg.md` (Tabelle „Positivkontrolle × Regel"), als
+     literale Liste. Funde anderer Regeln werden gezählt, aber nicht angemerkt („N Funde aus nicht ausgewählten
+     Regeln ausgeblendet").
+   - `auswerten({ semgrepJson, semgrepExit, kontrolleJson, kontrolleExit, geaenderteDateien })` → `{ zustand, funde,
+     teilweise, grund }`. Entscheidungstabelle, VOLLSTÄNDIG und in dieser Reihenfolge:
+     1. Ein Exit-Code ∉ {0, 1}, JSON fehlt/unlesbar/ohne `results`, oder ein `errors`-Eintrag OHNE `path` →
+        `nicht_geprueft` (Grund nennen).
+     2. Kontrolllauf: fehlt für eine Klasse der Tabelle (SQL, exec, Weiterleitung, eval, Geheimnis) jeder Treffer einer
+        ausgewählten Regel → `nicht_geprueft` („Regel X nicht mehr wirksam — Registry geändert?").
+     3. `geaenderteDateien` leer → `nichts_zu_pruefen`.
+     4. Eine geänderte Datei fehlt in `paths.scanned` → `nicht_geprueft` bzw. bei Teilmenge Liste unter `teilweise`
+        (Semgrep überspringt z. B. sehr grosse Dateien — messen, wie es sie meldet).
+     5. `errors` MIT `path` (z. B. `Timeout`) zu einer AUSGEWÄHLTEN Regel → Eintrag unter `teilweise` (Datei, Regel,
+        Art); zu einer nicht ausgewählten Regel → nur gezählt.
+     6. Funde ausgewählter Regeln → `funde`; sonst `sauber`. `teilweise` bleibt in beiden Fällen sichtbar erhalten
+        und macht aus `sauber` die Meldung „keine neuen Funde, TEILWEISE UNGEPRÜFT: …".
+   - `baueAusgabe(ergebnis)` → `{ zeilen: [...], zusammenfassung: '...', exitCode }`: je Fund
+     `::warning file=<pfad>,line=<zeile>,title=Semgrep <regel-kurzname>::<meldung>`, Maskierung nach GitHub-Vorgabe
+     (Daten: `%`→`%25`, `\r`→`%0D`, `\n`→`%0A`; Eigenschaften zusätzlich `:`→`%3A`, `,`→`%2C`); alle Funde auch in
+     der Zusammenfassung (GitHub begrenzt Anmerkungen je Schritt). exitCode 0 bei `sauber`, `funde`,
+     `nichts_zu_pruefen`; 2 bei `nicht_geprueft` mit dem Wortlaut „NICHT GEPRÜFT".
+   - Kommandozeile: liest Dateien und Argumente, ruft beide Funktionen, schreibt Zeilen nach stdout und die
+     Zusammenfassung nach `$GITHUB_STEP_SUMMARY` (falls gesetzt), setzt den Exit-Code. Keine weitere Logik.
+3. Probedatei im Repo (Verzeichnis z. B. `ops/semgrep-probe/`, von jedem anderen Scan ausgeschlossen) mit je einem
+   Fall der fünf Klassen im Stil unserer Routen (`db.q` mit Template-String aus `req.query`, `exec`, `eval`,
+   `res.redirect(req.query…)`, fest eingetragenes Geheimnis). Das „Geheimnis" darf keinem echten Muster ähneln und muss
+   durch `tools/geheimnis-riegel.js` des Belehrungssystem-Repos NICHT als Geheimnis erkannt werden (einmal messen); die
+   Datei darf von keinem Code geladen werden und nicht in Syntax-/Lint-Prüfungen stören (prüfen, ob `check:syntax`,
+   ESLint oder ein Wächter sie erfasst, und sie dort sauber ausnehmen — begründet im Kopf der Datei).
+4. Tests `test_feature_semgrep_hinweis.js` (in `test/run.sh` registrieren), gegen FESTE Fixturen, die aus echten
+   Läufen AUS DER REPO-WURZEL stammen (relative Pfade; die Mess-JSONs im Scratchpad tragen ein `gd/`-Präfix und taugen
+   nicht, PSG-8). Je Zeile der Entscheidungstabelle ein Fall mit literalem Sollwert für `zustand`, Anmerkungszeile und
+   exitCode, dazu Maskierung (`a\nb%, c:`) und „Funde nicht ausgewählter Regeln erscheinen nicht als Anmerkung".
+   Statisch (Muster `test_feature_deploy_gate_static.js`, js-yaml): `semgrep-hinweis.yml` hat `name` ≠ „CI",
+   `on` genau `pull_request`, `permissions` genau `contents: read`, kein `secrets.`, jeder Semgrep-Aufruf mit
+   `--metrics=off`; `deploy.yml` bleibt bei `workflows: ["CI"]`. Gegenproben je Tabellenzeile und je statischer
+   Zusicherung (u. a. Zeile 3 entfernt → leerer Diff wird `sauber` → ROT; `on: push` ergänzt → ROT).
+5. Kein Test startet Semgrep oder braucht Netz.
 
 ## Messung, die der Bericht enthält
 
-- Lokal: derselbe Aufruf wie im Job im Diff-Modus über einen echten, bereits gemergten Beitrag, z. B.
-  `--baseline-commit <Commit vor C3a>` gegen den C3a-Merge (`d5c559d`), und über einen zweiten, kleineren PR:
-  Anzahl neuer Funde, davon echt/Fehlalarm (je Fund ein Satz), Laufzeit.
-- Positivkontrolle im Diff-Modus: eine Wegwerf-Änderung (NIE committen) mit `db.q` + Template-String aus `req.query`
-  → muss als neuer Fund erscheinen; Rücknahme per `git checkout -- <datei>` und `git status` sauber belegen.
+- Den Workflow-Ablauf lokal nachstellen (dieselben Befehle wie im Job) über: (i) C3a-PR `22dc613..d5c559d`,
+  (ii) einen kleinen PR aus der Historie, (iii) leeren Diff, (iv) kaputte Konfiguration. Je: Zustand, Anmerkungen,
+  Laufzeit. Erwartung für (i): 0 Anmerkungen aus ausgewählten Regeln (Stand Planprüfung) — abweichend? Dann berichten.
+- Positivkontrolle im Diff-Modus: Wegwerf-Änderung mit `db.q` + Template-String aus `req.query` in einer Route (NIE
+  committen) → genau eine Anmerkung; Rücknahme per `git checkout -- <datei>`, `git status` sauber belegen.
 
 ## Zustandsfrage für den Bericht
 
-Welcher Zustand entsteht, den es vorher nicht gab (neuer Job, Anmerkungen im PR, Wurf bei kurzen gespeicherten Werten)?
-Kann danach (a) ein bisher lesbares Geheimnis (TOTP-Seed, andere `enc:v1:`-Werte) unlesbar werden — Bestand prüfen:
-gibt es gültige Werte unter 29 Byte? — (b) das CI-Ergebnis oder ein Deploy vom Semgrep-Job abhängen, (c) ein Lauf,
-der nichts geprüft hat, wie „keine Funde" aussehen?
+Welcher Zustand entsteht, den es vorher nicht gab (neuer Workflow, Anmerkungen im PR, Probedatei im Repo, Wurf bei
+Werten unter 28 Byte)? Kann danach (a) ein bisher lesbares Geheimnis unlesbar werden, (b) CI oder Deploy vom neuen
+Workflow abhängen, (c) ein Lauf, der nichts oder nicht alles geprüft hat, wie „keine neuen Funde" aussehen, (d) die
+Probedatei von einem anderen Scan, Lint oder Wächter erfasst werden?
 
 -- Ende des Auftrags --
