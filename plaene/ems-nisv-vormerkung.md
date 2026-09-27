@@ -4,6 +4,9 @@ Betreiber 27.09.2026: „Merke es dir für später". Anlass: Vergleich mit NOVAp
 Fitness- und EMS-Studios). Unter der Umfangsregel „nur gesetzliche Pflichten" (CLAUDE.md, Kontext) ist das eine
 echte Lücke: GymDocu erwähnt die NiSV bisher nur, um das Solarium auszuschliessen (`core/hilfe-texte.js`).
 
+**Stand 27.09.2026: ruht.** Betreiber auf die Frage, ob die Studios EMS-Training haben: „Nein haben sie nicht". Wieder
+aufnehmen, sobald ein Kunde mit EMS dazukommt.
+
 ## Am Wortlaut nachgelesen (gesetze-im-internet.de, 27.09.2026)
 
 - **§ 1 Abs. 1 NiSV:** gilt für Anlagen zur Anwendung nichtionisierender Strahlung am Menschen zu nichtmedizinischen
