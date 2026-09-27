@@ -419,6 +419,12 @@ OpenRouter-Schlüssel liegt zusätzlich in `/tmp/claude-0/.openrouter-key` (Rech
 Kimi-Probe ging durch); ungenutzt, nicht im Prüfwerkzeug. Vor der nächsten Planprüfung Kimi-Guthaben über
 `/v1/users/me/balance` prüfen.
 
+SG (27.09.2026): Auftrag Fassung 2 nach Planprüfung (`plaene/planpruefung-sg.md`). Executer zweimal am Wochenlimit
+abgebrochen (Reset 29.09. 22:00 UTC), vorher selbst committet und gepusht: `fix-sg-semgrep` = `fd515d4`, Arbeitsbaum
+`/workspace/gymdocu-sg` sauber, keine Marker, Krypto-Riegel beide vorhanden (von mir geprüft). Bericht, Suite und
+Gegenproben stehen AUS — nach dem Reset denselben Executer fortsetzen. Betreiber 27.09.2026: DeepSeek bis auf
+Widerruf nur `deepseek-flash` (CLAUDE.md). Fortsetzungs-Trigger um SG, GH und die Flash-Vorgabe ergänzt.
+
 OpenRouter-Free-Modelle (26.09.2026, `plaene/openrouter-free-eignung-26-09-2026.md`): von 17 erfüllen nur zwei die
 Datengrenze (ZDR: `ling-3.0-flash-fin`/`-sante`); Probe am bekannten Befund C3a4-1: beide Treffer, `-sante` ein
 Fehlalarm am behobenen Stand; qwen nimmt ZDR an, antwortet aber nicht. Empfehlung: keines als Prüfspur.

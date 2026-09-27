@@ -675,6 +675,12 @@ Sachfrage):
   deshalb `high`; `max` nur mit Werkzeugweg. **Die Rollentrennung bleibt:** hat DeepSeek
   für einen Beitrag Code-Schnipsel geliefert, prüft diesen Beitrag eine ANDERE Lesespur — wer
   mitgeschrieben hat, prüft seinen eigenen Entwurf. Gebaut wird weiter über den Executer.
+- **BETREIBER-VORGABE 27.09.2026, sie geht dem Absatz darüber vor:** wörtlich „nutzung von deepseak nur noch über das
+  flash model bis auf wiederrruf". Jede DeepSeek-Spur (Lesespur, Einzelaufruf, künftige ausführende Spur „Variante 1")
+  läuft mit `deepseek-flash`, nie mit `deepseek-v4-pro`, bis der Betreiber das zurücknimmt. `tools/gegenleser-repo.js`
+  bekommt das Modell über `--modell=`, hat also keinen fest eingetragenen Standard, der umzustellen wäre. Flash hat
+  laut Doku Bildeingabe (Bildprobe 23.09.2026). Seine PRÜFGÜTE ist nicht gemessen; die Befunde werden wie jede andere
+  Spur einzeln nachgemessen.
 - *Bis 23.09.2026:* **`gpt-5.6-sol`** — Betreiber-Entscheidung vom
   18.09.2026, und der Grund sind die Kosten. Die Preistabelle in
   `tools/gegenleser-repo.js` nennt 5,00/30,00 $ je Mio Token gegen 12,50/75,00 $
