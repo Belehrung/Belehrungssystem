@@ -30,7 +30,8 @@ das nötige minimum."
   höchstens ein Satz, Schlussmeldungen wenige Zeilen.
 - Verschärft 30.09.2026: Beschreibungen des eigenen Vorgehens verbrauchen die meisten Token — so kurz wie überhaupt
   möglich, im Zweifel gar nicht. Und: „Nutze so viel wie geht DeepSeek" — Lese-, Prüf- und Recherchearbeit zuerst an
-  DeepSeek (`deepseek-flash`), Claude-Agenten nur, wo DeepSeek es nicht kann (Bauen, Ausführen).
+  DeepSeek (`deepseek-flash`), Claude-Agenten nur, wo DeepSeek es nicht kann (Bauen, Ausführen). DeepSeeks Ergebnisse prüft der Haupt-Agent
+  weiterhin selbst (Betreiber, selber Tag).
 
 ## Eine benannte Grenze ist kein Endzustand
 
