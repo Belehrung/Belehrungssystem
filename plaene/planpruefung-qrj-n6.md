@@ -14,3 +14,13 @@ A-B2, B-B2, B-B3, B-B4 entfallen damit); umzustellende Zusicherungen namentlich 
 T13-Haken (B, §5). Nicht getragen: keiner gefallen; A-B12 (Kürzel nicht auflösbar) betrifft nur das Bündel.
 
 Runde 2 über Fassung 2: s. unten.
+
+## Runde 2 (Fassung 2, dieselben zwei Spuren)
+
+A 13 Befunde (1 blockierend), B 9 (2 blockierend). Selbst nachgesehen: `abschnitteVon` trennt nur an `{"charge_id":`
+(MU31 ist EIN Abschnitt); `traegtChargenschluessel` wertet jede `{"typ":`-Zeile schlüssellos; `schreibfehlerEinordnen`
+ist für alle drei Befehle gemeinsam. Getragen und eingearbeitet (Fassung 3): Typwort-Riss fail-closed (B-B1), MU31 als
+benannte Grenze statt Umstellung (A-B1, B-B2), Kandidat bleibt „alle“ statt enger (A-B12, macht A-B2/B-B8 gegenstandslos),
+Schreibfehlertext nur für Korrektur (B-B4), feste Sollzahlen und Typwort-/„nichts lesbar“-Fälle (B-B3), §2 ohne
+zweiten Befehl — Weg-Test folgt dem Abbruchtext (A-B4, A-B5, A-B7, A-B8), zweites `verwerfen` nach Widerlegung (A-B10,
+B-B6). Keiner gefallen.

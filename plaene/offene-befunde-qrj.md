@@ -9,3 +9,6 @@ Stand 25.09.2026. Verweise statt Kopien; jeder Punkt bekommt eine eigene Extraru
 - **QJ6-8** (Runde 6, gering; `plaene/diffpruefung-qrj.md`): Zeile mit schlüssellosem Vorspann und „genau Q“-Rest bleibt
   nach der Freigabe unerledigt, weil ein nur im Journal bekanntes E als „alle“-Kandidat ausgenommen wird. Sicher
   (E gesperrt), Weg nach Neuanlage von E gangbar. Extrarunde.
+- **QJ6-MU31** (Planprüfung N6 Runde 2): ein Korrektur-Anfang MITTEN in einem Chargen-Abschnitt wird nicht als
+  Korrektur-Bruchstück erkannt; der heutige Schreiber verhindert die Form (Zeilenumbruch nach Riss,
+  `core/qr-verbrauch.js:933-940`), möglich nur durch alte Schreiber oder Handbearbeitung. Extrarunde.
