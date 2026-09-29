@@ -204,3 +204,20 @@ nachgesehen sind nur die markierten Befunde.
 | QJ6-9 | DS | Anmerkungen: Sperrtext 3 Zeilen (gewollt), alte `widerrufen`-Zeilen gelten jetzt als kaputt (fail-closed, keine ausgeliefert), Frischprüfung strenger | nein | Anmerkung |
 
 Nächster Schritt nach dem Reset: Diff lesen, QJ6-1..8 nachmessen, Nacharbeit 6.
+
+### Runde 6 — ausführende Claude-Spur (30.09.2026, `scratchpad/qrjr6cc/`)
+
+Grundläufe 870/0 und 189/0. QJ6-1 selbst reproduziert (`q1.js b`, eigene DB): `S vergibt: 920010–920014 | belegte
+(verlorene) Spanne S: 920010–920109` → **Doppelvergabe**. Urteile: QJ6-1 trägt verschärft (Varianten b, c, e
+Doppelvergabe; a bleibt gesperrt), QJ6-2/-3/-4/-5/-7 tragen, QJ6-6 teilweise (Leser-Mutationen fängt nur die Wege-Datei;
+C15 fängt nur die Journal-Datei), QJ6-8 trägt (gering, kein Sackgasse: nach Neuanlage von E ist die benannte Freigabe
+gangbar).
+
+| Nr | Befund | Schwere |
+|---|---|---|
+| QJ6-N1 | §4-Korrektur eines gedeckten Studios scheitert beim Schreiben → Bruchstück; Meldung verspricht „wird erneut korrigiert“, `zeigen` nennt N ERLEDIGT, `verwerfen` hebt die Sperre auf → Doppelvergabe (950010–950014 in 950010–950109) | blockierend |
+| QJ6-N2 | verworfener Abschnitt wird nie widerlegt, Freigabe ohne Korrektur schon; in der Wege-Datei festgeschrieben (C16) | sollte (mit QJ6-4) |
+| QJ6-N3 | ungesicherte Riegel: T10 (Audit `wieder_gesperrt` nennt schon Gesperrte), T13 (Frischprüfung der Freigabe) | sollte |
+| — | weitere Überlebende: T18 (mit `--ausserhalb-bloecke` ungemessen), C19 (Zweig nur per Handzeile) — gleichwertig: T02, T03, C18 | sollte / keine |
+
+-- Ende Runde 6 --
