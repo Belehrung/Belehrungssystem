@@ -53,3 +53,14 @@ wo nicht gepusht wird, `permissions: contents: read` in Hauptserver und Belehrun
 (Wert vom Betreiber), `workflow_run.event == 'push'` im Deploy-`if` samt Wächter, gitleaks mit Baseline als Hinweis.
 
 -- Ende --
+
+## Host-Schlüssel des Servers (Betreiber, 30.09.2026, Bildschirmfoto `ssh-keygen -lf`)
+
+    ECDSA    SHA256:32fDXTS0yIjX6XWrfmO5vfdzf6uUNa0/0jXf6NxPFe0
+    ED25519  SHA256:UhbNcyKXYO4wacFJsBvkwz9feZiFNRDepjikEy0XMPs
+    RSA      SHA256:RBbPj9tmirFrqR3QIbyDwFnUbBPvmdGLnly4zqeP3gk
+
+Aus einem BILD abgelesen, nicht als Text geliefert: Verwechslungsgefahr bei `O`/`0` und `I`/`l` (u. a. `YO4`, `Ey0`,
+`fmO5`, `QIby`, `Lnly`). Je 43 Zeichen (Länge stimmt). Folge für GH: Welchen Schlüsseltyp die Deploy-Aktion aushandelt,
+vor dem Eintragen messen; ein falscher Wert lässt den Deploy LAUT scheitern (nichts ausgeliefert, sicher), dann wird
+berichtigt. Beim ersten Deploy nach dem Eintragen ausdrücklich prüfen.
