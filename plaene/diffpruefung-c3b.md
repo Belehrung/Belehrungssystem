@@ -61,3 +61,15 @@ gelöscht); Fehler vor dem COMMIT erreicht `nach_abschluss` nie (M2a/M2d/M6); Fu
 reproduziert; alle neuen Abfragen mit `studio_id`. Nacharbeit 2: `plaene/auftrag-c3b-nacharbeit2.md`.
 Planprüfung für Nacharbeit 2 ausgelassen: die Behebungen §1 sind von der ausführenden Prüfspur schon als Mutation
 gemessen (F1, F2), §2–§5 sind Ein-Stellen-Verfeinerungen mit vorgegebenem Pflichttest; die Diffprüfung Runde 3 folgt.
+
+## Runde 3 (Nacharbeit 2, Kopf `3546c47`; Claude-Spur + Lesespur `deepseek-flash`)
+
+| Nr | Spur | Befund | Schwere |
+|---|---|---|---|
+| C3b3-1 | CC (m9), DS | zweiter `requeue` in `planeReplikationsJob` wirft auch, wenn ein dritter Aufrufer den Job inzwischen belebt hat (Job offen, Zustand richtig) → Fehlalarm; Reaper zählt `fehler 1`, Upload-Weg legt Fallback mit veraltetem Hash an; N3g-Stub zementiert den Wurf. Behebung V1 (nachlesen, offen → `offen:true`) von CC als Mutation gemessen | sollte |
+| C3b3-2 | CC | `danach.status === "dead"` im zweiten Anlauf unbewacht (Y1 grün) | gering |
+| C3b3-3 | DS | DB-Fehler beim Nachlesen nach COMMIT nur `console.warn`, kein `melde()` | gering |
+| C3b3-4 | CC | Fallback in `routes/belehrungen.js:205-214` schreibt einen vorab gebildeten Hash → Zeile `dead` mit veraltetem Hash; an `9ef94f1` identisch (vorbestehend) | Sammelliste |
+| — | DS | „open-Zählung kann nicht rot werden“ — fällt: X8 machte sie rot (123/4) | gefallen |
+
+Zustandsmatrix M10 (20 Fälle): 0 Verletzungen. Überlebende ohne Folge: Y2, Y4, Y5.
