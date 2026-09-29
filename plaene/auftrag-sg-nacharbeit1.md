@@ -1,4 +1,4 @@
-# Auftrag SG Nacharbeit 1 (30.09.2026)
+# Auftrag SG Nacharbeit 1 (30.09.2026, Fassung 2 nach Planprüfung `scratchpad/sgn1p/antwort.txt`, G1–G11)
 
 Grundlage: Diffprüfung von `fd515d4` — eigene Messung (K1–K4, `plaene/STAND.md`), Lesespur `deepseek-flash`
 (`scratchpad/sgd/antwort.txt`, F1–F6), ausführende Claude-Spur (`scratchpad/sgcc/`: `lauf.sh` baut die CI-Schritte
@@ -16,7 +16,16 @@ ohne `errors`-Eintrag; und „Fixpoint timeout while performing taint analysis a
 - Beide Läufe mit `--debug`, stderr in eine Datei; jede Zeile „Fixpoint timeout … at <pfad>:…“ wird unter `teilweise`
   aufgenommen (Datei, Art `Fixpoint`, Regeln laut Zeile). Die Auswertung bekommt die Datei als weiteres Argument; fehlt
   sie oder ist sie leer, obwohl Semgrep lief → `nicht_geprueft`.
-- `nichtAusgewaehlteFehler` in der Zusammenfassung ausgeben.
+- Die Debug-Datei wird NIE ausgegeben oder hochgeladen (kein `cat`, kein Artefakt); nur extrahierte Pfade und
+  Regelkennungen erscheinen in Anmerkung und Zusammenfassung (statisch zugesichert, G6). Formatwache: die Debug-Datei
+  muss eine im Bericht gemessene, in jedem Lauf vorhandene Kennzeile enthalten, sonst `nicht_geprueft` (Parser gegen
+  ein unbekanntes Format, G-a); Fixtur aus einer ECHTEN Debug-Ausgabe mit Fixpoint-Zeile. Gilt für Diff- und
+  Kontrolllauf. Die Auswertung bekommt Debug-Datei und Git-Exit als weitere Pflichtargumente (Reihenfolge und
+  Usage-Text festlegen, G11).
+- `--timeout-threshold 0` = „nie überspringen“ im Bericht belegen (G7).
+- **K3:** ein `errors`-Eintrag MIT `path` und OHNE `rule_id` (gemessen: `type: "Syntax error"`, Datei mit Parsefehler →
+  heute „keine neuen Funde.“) kommt unter `teilweise` (Art = `type`).
+- `nichtAusgewaehlteFehler` in der Zusammenfassung als eigene Zeile ausgeben.
 - Messung im Bericht: die 6-Dateien-Probe mit den neuen Einstellungen dreimal; jeder nicht gefundene Fall steht als
   `teilweise` in der Ausgabe (nie „keine neuen Funde“ ohne Zusatz).
 
@@ -24,9 +33,12 @@ ohne `errors`-Eintrag; und „Fixpoint timeout while performing taint analysis a
 
 - `.semgrepignore` in der Repo-Wurzel mit NUR `node_modules/` (gemessen: mit `ops/semgrep-probe/` darin liefert der
   Kontrolllauf 0 Treffer). Kopfkommentar: warum (Standard-Ignoreliste schliesst `test/` aus). Nachmessen, dass
-  `public/vendor/*.min.js` dann gescannt oder als `teilweise` gemeldet wird.
-- `git -c core.quotePath=false diff --name-only -z --diff-filter=d "$BASE" HEAD -- '*.js' '*.cjs' '*.mjs'`; Exit-Code von
-  `git diff` getrennt sichern (kein `|| true` über die Pipe); Scheitern → `nicht_geprueft`.
+  `public/vendor/jsqr/jsQR.js` (252 KB, minifiziert) dann gescannt oder als `teilweise` gemeldet wird (G5).
+- `git -c core.quotePath=false diff --name-only -z --diff-filter=d "$BASE" HEAD -- '*.js' '*.cjs' '*.mjs' > geaendert.txt`
+  im Schritt mit `set +e`, Exit-Code nach `$GITHUB_ENV` (Muster der Semgrep-Schritte) und als Argument an die Auswertung;
+  Exit ≠ 0 → `nicht_geprueft` (G3). Die Kommandozeile trennt `geaendert.txt` an `\0`, nicht an `\n` (G1). Die
+  `grep -v`-Filter entfallen: eine geänderte Probedatei erscheint als `teilweise` (vom Diff-Lauf ausgenommen), nicht
+  still als „nichts zu prüfen“ (G2).
 - `auswerten()`: `nichts_zu_pruefen` NUR, wenn zusätzlich `paths.scanned` und `results` leer sind; sonst
   `nicht_geprueft` (Referenz und Semgrep widersprechen sich).
 - `teilweise` erzeugt zusätzlich eine `::warning`-Zeile („TEILWEISE UNGEPRÜFT: …“), damit es am PR sichtbar ist; Exit
@@ -35,7 +47,8 @@ ohne `errors`-Eintrag; und „Fixpoint timeout while performing taint analysis a
 ## 3. Kontrolllauf belegt die Konfiguration des Diff-Laufs (Claude-Spur B-3)
 
 Statische Zusicherungen: beide `semgrep scan`-Aufrufe tragen dieselbe, im Test LITERAL stehende `--config`-Menge; der
-Diff-Lauf trägt `--baseline-commit "$BASE"`, `--timeout-threshold 0`, `--exclude ops/semgrep-probe`; `geaendert.txt`
+Diff-Lauf trägt `--baseline-commit "$BASE"`, (die Kontroll-Fixtur wird aus einem ECHTEN Lauf mit der neuen
+Konfiguration neu erzeugt; die nicht ausgewählte njsscan-Regel verschwindet daraus, Testtexte anpassen, G4) `--timeout-threshold 0`, `--exclude ops/semgrep-probe`; `geaendert.txt`
 kommt aus `git … diff … "$BASE" HEAD`. Erfassung aller Semgrep-Aufrufe über `/\bsemgrep\b/` in `run:` (ohne
 `pip install`), Anzahl literal (F3). Gegenproben je Zeile (u. a. W09: eine `--config` gestrichen → ROT).
 
@@ -51,13 +64,13 @@ Aufrufen, Kommentarabzug auch für `/* … */`; Gegenproben `buf.length < IV_LAE
 ## 5. Kleines
 
 - K4: `persist-credentials: false` am Checkout.
-- F5: ein Wert unter 28 Byte wirft in `entschluesseln()` einen EIGENEN Fehler („zu kurz“), nicht „mit keinem Schlüssel
-  zu öffnen“; `ops/schluessel-rotieren.js` meldet ihn unterscheidbar. Test literal.
-- Fehlalarme der Klasse Geheimnis in Testdateien (`test_*.js`, `test/`, `e2e/`) werden gezählt, nicht angemerkt (Liste
-  der Muster literal, Test).
+- F5: ein Wert unter 28 Byte wirft in `entschluesseln()` einen eigenen Fehler mit eigenem `name`
+  (`SecretZuKurzError`), geprüft VOR den Schlüsselversuchen; `ops/schluessel-rotieren.js:232-238` unterscheidet über
+  `name` (kein Textvergleich), bricht weiterhin ab, nennt „Wert zu kurz“. Test literal (G8).
+- Fehlalarme der Klasse Geheimnis in Testdateien (`test_*.js`, `test/`, `e2e/`) werden gezählt, nicht angemerkt, mit
+  eigener Zeile „N Geheimnis-Treffer in Testdateien ausgeblendet“ (Muster literal, Test; G9).
 
-Nicht in diesem Auftrag: F6 (`core/file-crypto.js` Leerinhalt → Sammelliste `plaene/offene-befunde-sg.md`), `// nosemgrep`
-(bleibt erlaubt, im Diff sichtbar).
+Nicht in diesem Auftrag: F6 (`core/file-crypto.js` Leerinhalt → Sammelliste `plaene/offene-befunde-sg.md`).
 
 ## Zustandsfrage für den Bericht
 

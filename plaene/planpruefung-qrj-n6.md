@@ -24,3 +24,11 @@ benannte Grenze statt Umstellung (A-B1, B-B2), Kandidat bleibt „alle“ statt 
 Schreibfehlertext nur für Korrektur (B-B4), feste Sollzahlen und Typwort-/„nichts lesbar“-Fälle (B-B3), §2 ohne
 zweiten Befehl — Weg-Test folgt dem Abbruchtext (A-B4, A-B5, A-B7, A-B8), zweites `verwerfen` nach Widerlegung (A-B10,
 B-B6). Keiner gefallen.
+
+## Runde 3 (Fassung 3, eine Spur `deepseek-flash`)
+
+10 Befunde (6 sollte, 4 Anmerkung), keiner blockierend. Selbst nachgesehen: `verwerfbarkeit` Zweig `beginntMitMeta`
+`core/qr-verbrauch.js:366-370`; `verwerfen` ohne `--abschnitt`, Erledigung zeilenweit `:317`; `tragendeDeckungen`
+`:512` (keine_aufkleber nur mit Schlüssel). Eingearbeitet (Fassung 4): Ort der Unterscheidung (B1), zweites Verwerfen
+zeilenweit (B2), `--keine-aufkleber` ausgeschlossen (B3), Präfixregel f/v (B4), Hinweis-Ort und -Test (B5),
+Gegenrichtung gepinnt (B6), Schreibfehlertext auf `zeigen` (B4). B7–B10 Anmerkungen (B7 zur MU31-Grenze).

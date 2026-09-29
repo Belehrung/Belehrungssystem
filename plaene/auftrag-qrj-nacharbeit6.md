@@ -1,4 +1,4 @@
-# Auftrag QR-J Nacharbeit 6 (30.09.2026, Fassung 3)
+# Auftrag QR-J Nacharbeit 6 (30.09.2026, Fassung 4)
 
 Grundlage: `plaene/diffpruefung-qrj.md`, Abschnitt „Runde 6“ (QJ6-1..QJ6-9, QJ6-N1..N3); Fassung 2/3 nach Planprüfung Runde 1/2 (`plaene/planpruefung-qrj-n6.md`). Baum `/workspace/gymdocu-qrj`,
 Zweig `fix-qrj-journal-reparatur`, Kopf `33d35c3`. Reproduktionen der Prüfspur: `scratchpad/qrjr6cc/` (`q1.js a|b|c|e|k`,
@@ -16,16 +16,21 @@ Gemessen: eine abgerissene KORREKTUR-Metazeile gilt heute als schlüsselloser Ab
 Korrektur (bzw. `verwerfen`, wo erlaubt) hebt die Sperre auf, S vergibt in die belegte Spanne (`q1.js b`: 920010–920014
 in 920010–920109; `c`, `e` ebenso).
 
-- **Erkennung (fail-closed):** Ein Abschnitt am ZEILENANFANG, der mit `{"typ` beginnt und NICHT bis zum Ende des Typworts
-  eindeutig `{"typ":"freigabe"` oder `{"typ":"verworfen"` ist, ist ein **Korrektur-Bruchstück** — auch wenn der Riss im
-  Typwort liegt (`{"typ":"k`, `{"typ":"`, `{"typ`). Bruchstücke von Freigabe-/Verwerfen-Zeilen tragen keine Spanne und
-  bleiben wie heute verwerfbar.
+- **Erkennung (fail-closed, Präfixregel):** Ein Abschnitt am ZEILENANFANG, der mit `{"typ` beginnt, ist ein
+  **Korrektur-Bruchstück** — AUSSER er ist ab `{"typ":"f` ein Präfix von `{"typ":"freigabe"` bzw. ab `{"typ":"v` ein
+  Präfix von `{"typ":"verworfen"` (nur diese drei Typen gibt es, `core/qr-verbrauch.js:276-291`). Also Korrektur:
+  `{"typ`, `{"typ":`, `{"typ":"`, `{"typ":"k…`; verwerfbar wie heute: `{"typ":"f…`, `{"typ":"v…`. Die Unterscheidung
+  steht an EINEM Ort: `verwerfbarkeit()` (`core/qr-verbrauch.js:350-377`, Zweig `beginntMitMeta` `:366-370`, Aufrufer
+  `tools/qr-journal.js:834`, `:872`, `:1078`) und `abschnittLesen`/`traegtChargenschluessel` lesen dieselbe Funktion.
 - **Kandidat bleibt „alle“** (wie heute beim Bruchstück, also nicht lockerer als bisher — Planprüfung Runde 2, A-B12):
   der Abschnitt gilt aber als MIT Schlüssel. Damit lehnen `verwerfen` und `uebrige-freigeben` ohne Korrektur ab; gangbar
   sind `korrigieren` DES BRUCHSTÜCKS durch das Studio mit Aufklebern (Spanne aus den Aufklebern), danach
-  `uebrige-freigeben` für die übrigen, sowie die bestehenden Sonderwege. Keine automatische Erledigung, keine neue
-  Präfixregel.
-- **Hinweis im Sperr-/Ablehnungstext:** ist `studio_id` nach der Chargen-Feldregel (`core/qr-verbrauch.js:188-197`,
+  `uebrige-freigeben` für die übrigen, `--eigentuemer` und die benannte Freigabe. **`--keine-aufkleber` ist für ein
+  Korrektur-Bruchstück ausgeschlossen** (es dokumentiert Aufkleber; heute unwirksam wegen `tragendeDeckungen`
+  `core/qr-verbrauch.js:512`, danach wäre es tragend — das wäre lockerer, Runde 3 B3): Ablehnung mit Text und Test.
+  Keine automatische Erledigung.
+- **Hinweis im Sperr-/Ablehnungstext** (Ort: `wegFuer`, `core/qr-verbrauch.js:587-631`; dafür liest `abschnittLesen`
+  `:382-394` bei Korrektur-Bruchstücken zusätzlich `studio_id` und `ersetzt_zeile`): ist `studio_id` nach der Chargen-Feldregel (`core/qr-verbrauch.js:188-197`,
   Feldreihenfolge des Schreibers `tools/qr-journal.js:996`, Komma = genau, unabgeschlossen am Ende = Präfix, NUR für
   `studio_id`) lesbar, nennt der Text dieses Studio bzw. den Präfix als vermutlichen Eigentümer; dazu: „sollte die
   abgebrochene Korrektur eine Freigabe, ein Verwerfen oder `--keine-aufkleber` der Zeile Z widerlegen, die Korrektur für
@@ -34,9 +39,11 @@ in 920010–920109; `c`, `e` ebenso).
   `test_feature_qr_journal.js:1296`). Der heutige Schreiber setzt vor jede Zeile nach einem Riss einen Zeilenumbruch
   (`core/qr-verbrauch.js:933-940`); die Form entsteht nur durch alte Schreiber oder Handbearbeitung. MU31 bleibt
   unverändert.
-- **Schreibfehler-Meldung** (`schreibfehlerEinordnen`, `tools/qr-journal.js:912-923`, gerufen mit `art` Korrektur `:1048`,
-  Verwerfen `:1150`, Freigabe `:1424`): NUR für `art === 'Korrektur'` den neuen Weg nennen (Bruchstück korrigieren, dann
-  die Korrektur der ursprünglichen Zeile wiederholen); Verwerfen/Freigabe behalten „verwerfen“.
+- **Schreibfehler-Meldung** (`schreibfehlerEinordnen`, `tools/qr-journal.js:912-923`, gerufen für Korrektur `:1048`,
+  Verwerfen `:1150`, Freigabe `:1424`): nennt für alle drei nicht mehr einen festen Befehl, sondern „`zeigen` — dort steht
+  der Weg für das Bruchstück“ (ein kurzer Riss einer Freigabe-/Verwerfen-Zeile bei `{"typ":"` gilt als Korrektur, ein
+  fester Rat „verwerfen“ wäre dann ungangbar); für `art === 'Korrektur'` zusätzlich: „danach die Korrektur der
+  ursprünglichen Zeile wiederholen“.
 - Bestehende Zusicherungen FACHLICH umstellen (nie streichen), je mit neuem literalem Sollwert: F6
   `test_feature_qr_journal.js:2647-2676` (Fehler auf dem KORREKTUR-Weg erzeugen, sonst lehnt der Trockenlauf von
   `verwerfen` schon ab), J1 `:2276-2315`, `:1283-1291`, G6 `:1273`/`:1281`; `test_feature_qr_journal_wege.js:167`,
@@ -47,7 +54,11 @@ in 920010–920109; `c`, `e` ebenso).
   `uebrige-freigeben` lehnen ab (Grund literal), nach `korrigieren` des Bruchstücks und `uebrige-freigeben` vergibt S ab
   920110 (literal); `k` als Kontrolle. Risse im Typwort (`{"typ":"k`, `{"typ`) und „nichts lesbar“
   (`{"typ":"korrektur","ers`): je `chargenschluessel === true`, `verwerfbar === false`, beide Ablehnungen literal, Weg bis
-  zum Ziel. Gegenproben: Erkennung entfernt → Doppelvergabe → ROT; Typwort-Riss nicht erkannt → ROT.
+  zum Ziel. Hinweistext literal (vermutlicher Eigentümer bei `"studio_id":92001,`, Z-Satz bei `"ersetzt_zeile":9,`).
+  GEGENRICHTUNG: `{"typ":"freigabe","ers`, `{"typ":"f`, `{"typ":"verworfen",` bleiben `verwerfbar === true`, `verwerfen`
+  angenommen (Muster A5 `test_feature_qr_journal.js:287-288`). `--keine-aufkleber` auf ein Korrektur-Bruchstück →
+  Ablehnung literal. Gegenproben: Erkennung entfernt → Doppelvergabe → ROT; Typwort-Riss nicht erkannt → ROT;
+  Erkennung überbreit (auch `{"typ":"f`) → Gegenrichtung ROT.
 
 ## 2. Weg-Texte, die bis zum Ende tragen (QJ6-2, QJ6-3 — blockierend nach Leitregel)
 
@@ -65,9 +76,10 @@ Weg-Text wie er ist, und der WEG-TEST folgt dem Abbruch:
 
 Eine spätere vollständige Korrektur mit Spanne für einen verworfenen Abschnitt WIDERLEGT das Verwerfen wie eine Freigabe
 ohne Korrektur (`widerlegendeKorrekturen` gilt auch für `verworfen`): die übrigen Kandidaten sind wieder gesperrt, bis
-eine tragende Deckung sie erneut deckt. Log und `zeigen` sagen das mit literalem Text („verworfen durch Zeile V, widerlegt durch Korrektur Zeile K“). Ein
-zweites `verwerfen` desselben Abschnitts nach der Widerlegung lehnt ab (die Korrektur belegt Aufkleber) und nennt
-`uebrige-freigeben` als Weg. Das Referenzmodell der Wege-Datei (C16) wird auf
+eine tragende Deckung sie erneut deckt. Log und `zeigen` (bei der Zeile) sagen das mit literalem Text („verworfen durch Zeile V, widerlegt durch Korrektur Zeile
+K“). `verwerfen` hat kein `--abschnitt` und wirkt zeilenweit (`core/qr-verbrauch.js:317`); deshalb: eine Zeile, die
+eine vollständige Korrektur mit Spanne trägt, ist NICHT verwerfbar (die Korrektur belegt Aufkleber) — Ablehnung nennt
+`uebrige-freigeben`. Test: verwerfen → korrigieren → erneutes verwerfen lehnt ab, T bleibt gesperrt. Das Referenzmodell der Wege-Datei (C16) wird auf
 diese Regel umgestellt — aus diesem Papier hergeleitet, nicht aus dem Leser. Pflichttest `q4` beide Folgen literal;
 Gegenprobe: `verworfen` aus der Widerlegung genommen → ROT.
 
