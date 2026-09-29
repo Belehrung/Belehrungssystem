@@ -28,6 +28,9 @@ das nötige minimum."
 - Ausführliches bleibt in den Repo-Dateien (Befunde, Aufträge, STAND.md).
 - Wiederholt 24.09.2026: „Die Token möchte ich gerne für die echte Arbeit sparen." Zwischenstände
   höchstens ein Satz, Schlussmeldungen wenige Zeilen.
+- Verschärft 30.09.2026: Beschreibungen des eigenen Vorgehens verbrauchen die meisten Token — so kurz wie überhaupt
+  möglich, im Zweifel gar nicht. Und: „Nutze so viel wie geht DeepSeek" — Lese-, Prüf- und Recherchearbeit zuerst an
+  DeepSeek (`deepseek-flash`), Claude-Agenten nur, wo DeepSeek es nicht kann (Bauen, Ausführen).
 
 ## Eine benannte Grenze ist kein Endzustand
 
