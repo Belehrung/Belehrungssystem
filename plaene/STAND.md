@@ -419,6 +419,10 @@ OpenRouter-Schlüssel liegt zusätzlich in `/tmp/claude-0/.openrouter-key` (Rech
 Kimi-Probe ging durch); ungenutzt, nicht im Prüfwerkzeug. Vor der nächsten Planprüfung Kimi-Guthaben über
 `/v1/users/me/balance` prüfen.
 
+Stand 30.09.2026 23:40 UTC (Takt, nach Container-Neustart): Vier Bauten abgebrochen und fortgesetzt — C2 N4
+(`52a7d4f`), SG N1 (`f746a5a`), QR-J N6 (`0f0ae43`), C3b N3 (`d64d5e2`); alle Bäume sauber, gepusht, keine Marker.
+GH Fassung 2 wartet auf den SG-Merge (Host-Schlüssel festgehalten in `plaene/git-mechanismen-27-09-2026.md`).
+
 Stand 30.09.2026 (Takt): Im Bau C3b N2, C2 N4 (Fassung 3). Läuft: SG-Diffprüfung (Claude-Spur), Planprüfung QR-J N6
 (zwei Flash-Spuren). QR-J Runde 6: Doppelvergabe reproduziert, Auftrag `plaene/auftrag-qrj-nacharbeit6.md`.
 Betreiber 30.09.: kürzeste Meldungen, DeepSeek bevorzugt, Ergebnisse selbst prüfen (CLAUDE.md).
