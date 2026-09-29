@@ -307,6 +307,7 @@ sondern falsch.
 | 30.09.2026 | Planpruefung C2 N4 Fassung 2 Spur b (deepseek-flash) | Diff 151 Zeilen, Suchen 30, Lesungen 41, Token rein 2699941, Token raus 106315, Runden 22 | 14 | 14 (einzig: Gegenprobe (f) kann nicht rot werden, `err.code` erreicht die Signatur nicht, Probelauf meldet je Studio, Verdrahtungs-Wächter) | 0 | 0,94 $ |
 | 30.09.2026 | Planpruefung QR-J N6 Spur b (deepseek-flash) | Diff 78 Zeilen, Suchen 28, Lesungen 22, Token rein 3033129, Token raus 66200, Runden 28 | 7 | 7 (einzig: Präfix-/Kommaregel für lesbare Felder, Frischprüfung vor dem Haken) | 0 | 0,99 $ |
 | 30.09.2026 | Planpruefung QR-J N6 Spur a (deepseek-flash) | Diff 78 Zeilen, Suchen 12, Lesungen 20, Token rein 1219084, Token raus 83270, Runden 10 | 12 | 11 (einzig: Wiederholung unmöglich bei nicht kaputter Zielzeile, Schreibfehler-Meldung nennt verwerfen) | 0 (A-B12 betrifft das Bündel) | 0,47 $ |
+| 30.09.2026 | Planpruefung QR-J N6 F2 Spur b (deepseek-flash) | Diff 99 Zeilen, Suchen 12, Lesungen 29, Token rein 2326029, Token raus 115359, Runden 21 | — | — | — | 0,84 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
