@@ -419,6 +419,10 @@ OpenRouter-Schlüssel liegt zusätzlich in `/tmp/claude-0/.openrouter-key` (Rech
 Kimi-Probe ging durch); ungenutzt, nicht im Prüfwerkzeug. Vor der nächsten Planprüfung Kimi-Guthaben über
 `/v1/users/me/balance` prüfen.
 
+Stand 30.09.2026 (Takt): Im Bau C3b N2, C2 N4 (Fassung 3). Läuft: SG-Diffprüfung (Claude-Spur), Planprüfung QR-J N6
+(zwei Flash-Spuren). QR-J Runde 6: Doppelvergabe reproduziert, Auftrag `plaene/auftrag-qrj-nacharbeit6.md`.
+Betreiber 30.09.: kürzeste Meldungen, DeepSeek bevorzugt, Ergebnisse selbst prüfen (CLAUDE.md).
+
 Stand 29.09.2026 22:30 UTC (nach Reset): SG-Bericht da (`fd515d4`, Suite 0, 402 = 402, G1–G4 rot). Eigene Messung am
 Diff: vier Befunde K1–K4 (Semgrep ignoriert `test/` → falsches NICHT GEPRÜFT; gelöschte Dateien ebenso; Datei mit
 Parsefehler meldet „keine neuen Funde" (Positivkontrolle ohne Parsefehler: 1 Anmerkung); checkout ohne
