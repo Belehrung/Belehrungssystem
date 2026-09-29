@@ -419,6 +419,14 @@ OpenRouter-Schlüssel liegt zusätzlich in `/tmp/claude-0/.openrouter-key` (Rech
 Kimi-Probe ging durch); ungenutzt, nicht im Prüfwerkzeug. Vor der nächsten Planprüfung Kimi-Guthaben über
 `/v1/users/me/balance` prüfen.
 
+Stand 29.09.2026 22:30 UTC (nach Reset): SG-Bericht da (`fd515d4`, Suite 0, 402 = 402, G1–G4 rot). Eigene Messung am
+Diff: vier Befunde K1–K4 (Semgrep ignoriert `test/` → falsches NICHT GEPRÜFT; gelöschte Dateien ebenso; Datei mit
+Parsefehler meldet „keine neuen Funde" (Positivkontrolle ohne Parsefehler: 1 Anmerkung); checkout ohne
+`persist-credentials: false`). Behebung K1 gemessen: `.semgrepignore` NUR mit `node_modules/` (mit
+`ops/semgrep-probe/` darin liefert der Kontrolllauf 0 Treffer). Diffprüfung läuft: Claude-Spur (ausführend) +
+Lesespur `deepseek-flash`. Parallel C3b N2 im Bau (Planprüfung ausgelassen: die Behebungen hat die Prüfspur schon als
+Mutation gemessen, keine neue Architektur). QR-J Runde 6: Claude-Spur läuft.
+
 SG (27.09.2026): Auftrag Fassung 2 nach Planprüfung (`plaene/planpruefung-sg.md`). Executer zweimal am Wochenlimit
 abgebrochen (Reset 29.09. 22:00 UTC), vorher selbst committet und gepusht: `fix-sg-semgrep` = `fd515d4`, Arbeitsbaum
 `/workspace/gymdocu-sg` sauber, keine Marker, Krypto-Riegel beide vorhanden (von mir geprüft). Bericht, Suite und
