@@ -310,6 +310,8 @@ sondern falsch.
 | 30.09.2026 | Planpruefung QR-J N6 F2 Spur b (deepseek-flash) | Diff 99 Zeilen, Suchen 12, Lesungen 29, Token rein 2326029, Token raus 115359, Runden 21 | — | — | — | 0,84 $ |
 | 30.09.2026 | Planpruefung QR-J N6 F2 Spur a (deepseek-flash) | Diff 99 Zeilen, Suchen 16, Lesungen 31, Token rein 3651801, Token raus 133338, Runden 25 | — | — | — | 1,26 $ |
 | 30.09.2026 | Planpruefung GH Workflow-Haertung (deepseek-flash) | Diff 68 Zeilen, Suchen 20, Lesungen 24, Token rein 829193, Token raus 70103, Runden 9 | 14 | 12 (einzig: CI-Handstart fiele als Auslöser weg; Freigabe-Ref vor SSH; exakter `ERWARTETES_IF`) | 0 (B10/B12 Bündel) | 0,33 $ |
+| 30.09.2026 | Planpruefung SG N1 (deepseek-flash) | Diff 67 Zeilen, Suchen 35, Lesungen 21, Token rein 875060, Token raus 82425, Runden 9 | — | — | — | 0,36 $ |
+| 30.09.2026 | C3b Diffpruefung Runde 3 Lesespur (deepseek-flash) | Diff 625 Zeilen, Suchen 14, Lesungen 17, Token rein 1604154, Token raus 75257, Runden 14 | 4 | 3 (einzig: zweiter `requeue` wirft auch bei inzwischen offenem Job — Fehlalarm, Test N3g zementiert ihn) | 1 (open-Zählung „kann nicht rot werden“ — X8 machte sie rot, 123/4) | 0,57 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
