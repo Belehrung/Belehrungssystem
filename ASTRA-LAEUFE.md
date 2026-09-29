@@ -302,6 +302,7 @@ sondern falsch.
 | 26.09.2026 | Planprüfung C3a Nacharbeit 3 (deepseek-v4-pro) | Diff 41 Zeilen, Suchen 20, Lesungen 25, Token rein 846472, Token raus 32513, Runden 13 | 7 | 6 (Einzelheiten `plaene/planpruefung-c3a-n3.md`) | 1 („0063 frei“ — C3b-Zweig nicht sichtbar) | 1,25 $ |
 | 26.09.2026 | C3a Diffprüfung Runde 4 (deepseek-v4-pro) | Diff 1095 Zeilen, Suchen 17, Lesungen 18, Token rein 1168361, Token raus 38730, Runden 17 | 3 | 3 (Fundort bestätigt; einzig: Sync-Test ohne Verarbeitungsbeleg) | 0 | 1,70 $ |
 | 26.09.2026 | C3a Diffprüfung Runde 5 (deepseek-v4-pro) | Diff 373 Zeilen, Suchen 8, Lesungen 21, Token rein 712729, Token raus 33474, Runden 13 | 3 | 2 (Sync ohne Riegel, wirkungslose Namens-Zusicherung) | 0 (dritter ist Anmerkung) | 1,07 $ |
+| 30.09.2026 | SG Diffpruefung Lesespur (deepseek-flash) | Diff 872 Zeilen, Suchen 32, Lesungen 37, Token rein 2062306, Token raus 95625, Runden 16 | 6 | 5 (einzig: `\|\| true` macht git-Fehler zu „nichts zu prüfen“; statische Prüfung ohne Grenzwert; file-crypto Leerinhalt wirft — selbst gemessen 28 Byte) | 0 (F2 „teilweise grün“ ist Entwurfsentscheidung) | 0,73 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
