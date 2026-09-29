@@ -309,6 +309,7 @@ sondern falsch.
 | 30.09.2026 | Planpruefung QR-J N6 Spur a (deepseek-flash) | Diff 78 Zeilen, Suchen 12, Lesungen 20, Token rein 1219084, Token raus 83270, Runden 10 | 12 | 11 (einzig: Wiederholung unmöglich bei nicht kaputter Zielzeile, Schreibfehler-Meldung nennt verwerfen) | 0 (A-B12 betrifft das Bündel) | 0,47 $ |
 | 30.09.2026 | Planpruefung QR-J N6 F2 Spur b (deepseek-flash) | Diff 99 Zeilen, Suchen 12, Lesungen 29, Token rein 2326029, Token raus 115359, Runden 21 | — | — | — | 0,84 $ |
 | 30.09.2026 | Planpruefung QR-J N6 F2 Spur a (deepseek-flash) | Diff 99 Zeilen, Suchen 16, Lesungen 31, Token rein 3651801, Token raus 133338, Runden 25 | — | — | — | 1,26 $ |
+| 30.09.2026 | Planpruefung GH Workflow-Haertung (deepseek-flash) | Diff 68 Zeilen, Suchen 20, Lesungen 24, Token rein 829193, Token raus 70103, Runden 9 | 14 | 12 (einzig: CI-Handstart fiele als Auslöser weg; Freigabe-Ref vor SSH; exakter `ERWARTETES_IF`) | 0 (B10/B12 Bündel) | 0,33 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
