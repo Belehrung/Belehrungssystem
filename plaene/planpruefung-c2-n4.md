@@ -34,7 +34,6 @@ Befund die eigene Nachmessung am Stand `32822d9` (`/workspace/gymdocu-c2`) und w
 Zahlen: Spur 1 11 Befunde, Spur 2 17 (inkl. P/W); nach Nachmessung 24 Zeilen, 23 tragen ganz oder teilweise, einer
 (P1) nicht in der benannten Form. Einzig von Spur 1: 1.2, 5.1, Z1, 5.6. Einzig von Spur 2: A3, B2, P2, P4, P6, W1, W5–W7.
 
--- Ende --
 
 ## Planprüfung der Fassung 2 (30.09.2026, zwei Spuren `deepseek-flash`, verschiedene Bündel)
 
