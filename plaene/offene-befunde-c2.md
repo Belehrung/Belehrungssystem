@@ -24,3 +24,13 @@ Verweist auf `plaene/planpruefung-c2.md` (Nachmessung dort).
   Quarantäne verschoben, die Registerzeile bleibt ohne Datei und die Ernte löscht die Quarantäne-Kopie nach 30 Tagen.
   Das PDF wurde nie ausgeliefert (Zusage abgelehnt). Behebung wäre eine Kompensation (Registerzeile zurücknehmen) —
   eigener Auftrag (`diffpruefung-c2.md` C2R4-15).
+
+## Aus Nacharbeit 4 (Bericht 30.09.2026, benannte Grenzen)
+
+- **C2-S12** hartes Prozessende (SIGKILL/OOM) oder ein nicht gelistetes `process.exit()` verliert die FOLGEMELDUNG eines
+  Fensters (Sofortmeldung ist raus, jeder Einzelfall steht im Server-Log); Deckel 5 s im Signalweg, 1,5 s bei
+  `uncaughtException`. Gegenüber `a1a41d7` schlechter nur in diesem Fall (dort ein Ping je Studio sofort).
+- **C2-S13** `workers/pdf-job-worker.js` hat keinen Signal-Weg für die Sammelstufe (eigene SIGTERM-Behandlung).
+- **C2-S14** Zähler, die nach dem Halten eines Studios auflaufen, erscheinen erst im nächsten Fenster; die Summenbildung
+  gehaltener Zähler ist über `melde()` nicht erreichbar und damit ungetestet.
+- **C2-S15** `ERNTE_FEHLER` meldet täglich, solange eine Anomalie liegen bleibt (gewollt laut, aber Dauerrauschen möglich).
