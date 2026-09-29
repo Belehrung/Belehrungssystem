@@ -303,6 +303,8 @@ sondern falsch.
 | 26.09.2026 | C3a Diffprüfung Runde 4 (deepseek-v4-pro) | Diff 1095 Zeilen, Suchen 17, Lesungen 18, Token rein 1168361, Token raus 38730, Runden 17 | 3 | 3 (Fundort bestätigt; einzig: Sync-Test ohne Verarbeitungsbeleg) | 0 | 1,70 $ |
 | 26.09.2026 | C3a Diffprüfung Runde 5 (deepseek-v4-pro) | Diff 373 Zeilen, Suchen 8, Lesungen 21, Token rein 712729, Token raus 33474, Runden 13 | 3 | 2 (Sync ohne Riegel, wirkungslose Namens-Zusicherung) | 0 (dritter ist Anmerkung) | 1,07 $ |
 | 30.09.2026 | SG Diffpruefung Lesespur (deepseek-flash) | Diff 872 Zeilen, Suchen 32, Lesungen 37, Token rein 2062306, Token raus 95625, Runden 16 | 6 | 5 (einzig: `\|\| true` macht git-Fehler zu „nichts zu prüfen“; statische Prüfung ohne Grenzwert; file-crypto Leerinhalt wirft — selbst gemessen 28 Byte) | 0 (F2 „teilweise grün“ ist Entwurfsentscheidung) | 0,73 $ |
+| 30.09.2026 | Planpruefung C2 N4 Fassung 2 Spur a (deepseek-flash) | Diff 151 Zeilen, Suchen 29, Lesungen 40, Token rein 2831185, Token raus 83379, Runden 26 | 20 | 19 (einzig: Env-Merker vererbt, netz-attrappe ohne Body, boot-smoke lädt in-process, child_process-Ausnahme) | 0 (B20 schon benannt) | 0,95 $ |
+| 30.09.2026 | Planpruefung C2 N4 Fassung 2 Spur b (deepseek-flash) | Diff 151 Zeilen, Suchen 30, Lesungen 41, Token rein 2699941, Token raus 106315, Runden 22 | 14 | 14 (einzig: Gegenprobe (f) kann nicht rot werden, `err.code` erreicht die Signatur nicht, Probelauf meldet je Studio, Verdrahtungs-Wächter) | 0 | 0,94 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht

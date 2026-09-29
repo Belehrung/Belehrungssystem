@@ -35,3 +35,13 @@ Zahlen: Spur 1 11 Befunde, Spur 2 17 (inkl. P/W); nach Nachmessung 24 Zeilen, 23
 (P1) nicht in der benannten Form. Einzig von Spur 1: 1.2, 5.1, Z1, 5.6. Einzig von Spur 2: A3, B2, P2, P4, P6, W1, W5–W7.
 
 -- Ende --
+
+## Planprüfung der Fassung 2 (30.09.2026, zwei Spuren `deepseek-flash`, verschiedene Bündel)
+
+Spur A (§1/§2) 20 Befunde, Spur B (§3/§4) 14. Stichproben selbst nachgemessen: Env-Merker `core/error-tracker.js:427`
+vererbt; `signatur()` nimmt `err.name` vor `err.code` (`:252`); Probelauf meldet je Studio vor `if (!wirklich)`;
+`ops/boot-smoke.js` lädt `server.js` in-process; `test_feature_keine_systemeingriffe.js` sperrt `child_process`;
+`routes/bezirk-export.js:112` löscht Quarantäne. Alle eingearbeitet in Fassung 3. Blockierend waren: A-B1 (alle
+Kandidaten-Attrappen tragen fremde Namen) und B-B1 (Gegenprobe (f) kann wegen der Fensterkennung nicht rot werden).
+
+-- Ende --
