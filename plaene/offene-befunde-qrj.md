@@ -15,3 +15,11 @@ Stand 25.09.2026. Verweise statt Kopien; jeder Punkt bekommt eine eigene Extraru
 - **QJ7-K** (Runde 7, ausführende Spur K04–K14): Vollständigkeitsregeln des Lesers für Felder, die keine Stichprobe
   beschädigt (`abschnitt` ohne Ganzzahlprüfung, `roh_sha256`, `durch`/`zeitpunkt`) — Mutationen überleben. Bestand,
   nicht Teil von N6/N7. Extrarunde: je Feld ein literaler Fall.
+- **QJ7-G** (Nacharbeit 7, benannte Grenzen laut Bericht und Kopfkommentar `core/qr-verbrauch.js` „BENANNTE GRENZEN"):
+  (1) ein nur als Präfix lesbares `studio_id` benennt NICHT (nur Hinweis) — sonst Dauersperre für jedes passende Studio;
+  (2) Untergrenze über dem Block von `--von` bricht mit eigenem Text ab, ohne Schalter (nur Handzeile/geänderter Block);
+  (3) ein Bruchstück mit unlesbarem Typ OHNE Werkzeugmeldung (Signal, Absturz, Handzeile) bleibt gesperrt, bis ein
+  Studio korrigiert oder `--eigentuemer` eines fehlenden Studios greift; (4) Frischprüfung der Freigabe vergleicht
+  Erledigungen, nicht die DB-Sicht; (5) Handzeile mit `nr_bis` unter der Untergrenze; (6) `KORREKTUR_Z_BEFEHL` nennt
+  `--abschnitt=<i>`, wenn der Abschnitt von Z nicht eindeutig ist; (7) ungetestet laut Bericht: R29/R29b, R46c, R49b,
+  R58; (8) (v)-Text nennt `--abschnitt=5` statt des Abschnitts. Extrarunde nach dem Merge.
