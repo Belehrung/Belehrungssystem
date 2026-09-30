@@ -286,9 +286,17 @@ function sperreErwerben(pid = process.pid, startzeit = startzeitVon(process.pid)
     });
 }
 
+// Liefert true, sobald die Sperre wirklich frei ist: SIGKILL ist asynchron,
+// die flock faellt erst mit dem Tod des Halters — ein flock -n unmittelbar
+// nach dem kill sah sie noch belegt (gemessen 30.09.2026 im Selbsttest).
 function sperreFreigeben(halter) {
-    if (!halter) return;
+    if (!halter) return true;
     try { process.kill(-halter.pid, 'SIGKILL'); } catch (e) { /* schon weg */ }
+    for (let i = 0; i < 20; i++) {
+        if (spawnSync('flock', ['-n', '-E', '75', SPERRDATEI, 'true'], { env: { PATH: KIND_PATH } }).status === 0) return true;
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+    }
+    return false;
 }
 
 function clusterListe() {
@@ -498,7 +506,7 @@ function aufraeumenIntern(l) {
     try { fs.rmSync(l.dir, { recursive: true, force: true }); } catch (e) { melden(`${l.dir}: ${e.message}`); }
     if (fs.existsSync(l.dir)) melden(`${l.dir} existiert nach dem Entfernen noch`);
     if (l.cluster && clusterListe().some((c) => c.name === l.cluster)) melden(`Cluster ${l.cluster} steht noch in pg_lsclusters`);
-    sperreFreigeben(l.halter);
+    if (!sperreFreigeben(l.halter)) melden(`Sperre ${SPERRDATEI} nach dem Beenden des Halters weiter belegt`);
     return sauber;
 }
 
@@ -1503,6 +1511,15 @@ async function selbsttestSpur(pruefen) {
         const tt = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/wert.js', alt: '42', neu: '43', testdatei: 'test_laut.js' });
         pruefen('TRANSIENT: nach dem Infrastrukturfehler faehrt der naechste Aufruf einen frischen Grundlauf (in diesem Aufruf gefahren) und gelingt',
             tt.status === 'bestanden' && tt.text.includes('grundlauf: bestanden, gueltig (in diesem Aufruf gefahren)'));
+        // Derselbe Fehler IM Grundlauf von mutiere_und_teste (eigener Zweig des
+        // Zwischenspeichers): gemessen 30.09.2026 blieb die Gegenprobe "alles
+        // zwischenspeichern" an dieser Stelle sonst gruen.
+        lauf.port = 1;
+        const tg1 = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/wert.js', alt: '42', neu: '43', testdatei: 'test_geheimnis.js' });
+        lauf.port = echterPort;
+        const tg2 = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/wert.js', alt: '42', neu: '43', testdatei: 'test_geheimnis.js' });
+        pruefen(`TRANSIENT IM GRUNDLAUF: mutiere_und_teste mit scheiternder Verwaltung -> grundlauf-rot (${tg1.status}), nichts gemerkt, der naechste Aufruf faehrt den Grundlauf frisch und gelingt (${tg2.status})`,
+            tg1.status === 'grundlauf-rot' && tg1.text.includes('Infrastrukturfehler des Werkzeugs (Datenbankverwaltung)') && tg2.status === 'bestanden' && tg2.text.includes('gueltig (in diesem Aufruf gefahren)'));
         aufraeumen();
 
         // ----- Reste eines abgestuerzten Laufs: Sperr-Halter getoetet, nichts aufgeraeumt, Neustart raeumt -----

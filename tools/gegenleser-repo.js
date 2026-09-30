@@ -4429,10 +4429,10 @@ async function selbsttestAusfuehrung() {
     // Sperr-Halter x2, Einrichten-Ablehnungen x2) = 113; Runde 2 der
     // Diffpruefung (30.09.2026) dazu 16 abwehrende Faelle (Prozesse nach der
     // Stufe, Symlink-Ziel, Vorrang, Konsistenz, Kopfzeilen, Steuerzeichen im
-    // Pfad x2, Umgebungsstufe, W-E3-Positivkontrollen x3, Infrastruktur x4,
-    // Klammer-comm) = 130. Unten durch den
+    // Pfad x2, Umgebungsstufe, W-E3-Positivkontrollen x3, Infrastruktur x5,
+    // Klammer-comm) = 131. Unten durch den
     // tatsaechlichen Lauf bestaetigt.
-    const ERWARTETE_FAELLE = 130;
+    const ERWARTETE_FAELLE = 131;
     if (process.getuid() !== 0) {
         if (process.env.CI === 'true') {
             console.log(`  ✗ FEHLT: --selbsttest-ausfuehrung braucht root (uid 0, gefunden ${process.getuid()}) -- unter CI=true ist das ROT, kein SKIP.`);
