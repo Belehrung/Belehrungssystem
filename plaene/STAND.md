@@ -419,6 +419,9 @@ OpenRouter-Schlüssel liegt zusätzlich in `/tmp/claude-0/.openrouter-key` (Rech
 Kimi-Probe ging durch); ungenutzt, nicht im Prüfwerkzeug. Vor der nächsten Planprüfung Kimi-Guthaben über
 `/v1/users/me/balance` prüfen.
 
+Stand 30.09.2026 04:40 UTC (Takt): GH GymDocu Nacharbeit 1 fertig und geprüft (`5de6a68`, master mit DEP, Suite 0,
+409 = 409, Lint 0), PR angelegt, CI läuft; Check-in 05:15 (erster Deploy mit fingerprint). QR-J N7 im Bau (Suite).
+
 Stand 30.09.2026 04:23 UTC: **GymDocu DEP ausgeliefert** (#485, squash `364087f`, Deploy 452 success, live-check EXIT 0;
 nodemailer 10.0.12 live). Offen aus DEP: `plaene/offene-befunde-dep.md`.
 
