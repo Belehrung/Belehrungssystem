@@ -419,6 +419,11 @@ OpenRouter-Schlüssel liegt zusätzlich in `/tmp/claude-0/.openrouter-key` (Rech
 Kimi-Probe ging durch); ungenutzt, nicht im Prüfwerkzeug. Vor der nächsten Planprüfung Kimi-Guthaben über
 `/v1/users/me/balance` prüfen.
 
+Stand 30.09.2026 02:15 UTC: **SG gemergt** (#483, squash `2daed4b`, Botschaft zurückgelesen; erster echter
+Semgrep-Hinweis-Lauf am eigenen PR lokal nachgestellt: „keine neuen Funde.“ + Probe-Zeile + 5 Geheimnis-Treffer in
+Testdateien ausgeblendet). Deploy-Prüfung 02:45 UTC. GH-Bau gestartet (Teil A + Hauptserver; Belehrungssystem-ci.yml
+mache ich selbst, eine Aktion). Im Bau: C2 master-Merge + N6. QR-J N7 Fassung 2 in Planprüfung Runde 2.
+
 Stand 30.09.2026 01:40 UTC (Takt): Im Bau C2 N5, SG N4 (Baumlauf las Laufzeitdaten, blockierend); läuft QR-J Runde 7
 ausführende Spur. Nichts sonst.
 
