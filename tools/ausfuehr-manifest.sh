@@ -14,10 +14,24 @@
 # Sortiert als NUL-Saetze unter LC_ALL=C (Byteordnung), damit Host- und
 # tmpfs-Reihenfolge keine Rolle spielen. node_modules bleibt aussen vor
 # (dort haengt ro der Baum des Zielrepos).
+#
+# Der Exit von find wird geprueft (Runde 4 Befund 3): scheitert find auch nur
+# teilweise, ist das Exit 3 — keine verkuerzte Liste mit Exit 0 (gemessen
+# 30.09.2026 als 65534 mit einem Verzeichnis im Modus 000: "Permission
+# denied" auf stderr, Exit 0, vier statt fuenf Saetze).
 set -u
 export LC_ALL=C
 cd "${1:?Verzeichnis}" || exit 2
-mapfile -d '' -t felder < <(find . -path ./node_modules -prune -o -printf '%y\0%p\0%l\0')
+ausgabe=$(mktemp) && fehler=$(mktemp) || exit 3
+find . -path ./node_modules -prune -o -printf '%y\0%p\0%l\0' > "$ausgabe" 2> "$fehler"
+rc=$?
+if [ "$rc" -ne 0 ] || [ -s "$fehler" ]; then
+    echo "ausfuehr-manifest: find endete mit $rc: $(head -c 400 "$fehler")" >&2
+    rm -f "$ausgabe" "$fehler"
+    exit 3
+fi
+mapfile -d '' -t felder < "$ausgabe"
+rm -f "$ausgabe" "$fehler"
 n=${#felder[@]}
 (( n > 0 && n % 3 == 0 )) || { echo "ausfuehr-manifest: $n Felder, erwartet ein Vielfaches von 3 (> 0)" >&2; exit 3; }
 for ((i = 0; i < n; i += 3)); do

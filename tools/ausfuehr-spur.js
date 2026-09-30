@@ -417,15 +417,25 @@ function datenbankFrisch() {
         `SELECT string_agg(CASE WHEN datistemplate THEN format('ALTER DATABASE %I IS_TEMPLATE false;', datname) || E'\\n' ELSE '' END`
         + ` || format('DROP DATABASE IF EXISTS %I WITH (FORCE);', datname), E'\\n' ORDER BY datname)`
         + ` FROM pg_database WHERE datname NOT IN (${SYSTEM_DATENBANKEN_SQL})`).trim();
-    psqlVerwaltungSkript(`${skript ? skript + '\n' : ''}ALTER ROLE ${DB_ROLLE} RESET ALL;\nCREATE DATABASE ${DB_NAME} OWNER ${DB_ROLLE};\n`);
-    // Large Objects in postgres (verbindbar, die Rolle darf lo_create) und —
-    // fail-closed — in template1 abraeumen (Runde 3 Befund 2); danach muss
-    // die Zahl 0 sein.
+    psqlVerwaltungSkript(`${skript ? skript + '\n' : ''}ALTER ROLE ${DB_ROLLE} RESET ALL;\n`);
+    // Large Objects VOR dem Klonen zaehlen und abraeumen (Runde 3 Befund 2,
+    // Runde 4 Befund 1: nach dem CREATE DATABASE geraeumt war das LO schon
+    // in der frischen Kopie, und die Nachzaehlung konnte nie fallen). In
+    // postgres darf die Rolle welche anlegen (verbindbar) — die werden still
+    // geraeumt. In template1 darf OHNE CONNECT-Recht keines entstehen: eines
+    // dort ist ein Befund gegen das Werkzeug oder den Cluster — geraeumt,
+    // dann Infrastrukturfehler (Protokoll und stderr), kein Testergebnis.
+    const vorher = {};
     for (const db of ['template1', 'postgres']) {
-        psqlVerwaltungIn(db, 'SELECT count(lo_unlink(oid)) FROM pg_largeobject_metadata');
+        vorher[db] = psqlVerwaltungIn(db, 'SELECT count(*) FROM pg_largeobject_metadata').trim();
+        if (vorher[db] !== '0') psqlVerwaltungIn(db, 'SELECT count(lo_unlink(oid)) FROM pg_largeobject_metadata');
         const rest = psqlVerwaltungIn(db, 'SELECT count(*) FROM pg_largeobject_metadata').trim();
-        if (rest !== '0') throw new Error(`Large Objects in ${db} nach dem Abraeumen: ${rest}`);
+        if (rest !== '0') throw new Error(`Datenbankverwaltung: Large Objects in ${db} nach dem Abraeumen: ${rest}`);
     }
+    if (vorher.template1 !== '0') {
+        throw new Error(`Datenbankverwaltung: ${vorher.template1} Large Object(s) in template1 VOR dem Klonen gefunden — ohne CONNECT-Recht der Rolle darf dort keines entstehen (abgeraeumt, nicht geklont; dieser Aufruf ohne Testergebnis)`);
+    }
+    psqlVerwaltung(`CREATE DATABASE ${DB_NAME} OWNER ${DB_ROLLE}`);
     // Fail-closed: genau die System-Datenbanken plus die frische gymdocu_test.
     const soll = [...SYSTEM_DATENBANKEN, DB_NAME].sort().join(',');
     const ist = psqlVerwaltung("SELECT string_agg(datname, ',' ORDER BY datname) FROM pg_database").trim();
@@ -944,8 +954,15 @@ function ungueltigerAufruf() {
 // sonst "unbekannter Grund" (abbruchMarker() ist dann null).
 function keineAusfuehrungGrund() {
     if (lauf.isolation.abgebrochen) return abbruchMarker();
-    if (lauf.werkzeugBefund) return `${lauf.werkzeugBefund} — keine Ausfuehrung in diesem Lauf`;
+    if (lauf.werkzeugBefund) return werkzeugBefundMarker();
     return null;
+}
+// Eigener Marker fuer gegenleser-repo.js (Runde 4 Befund 2): beendet die
+// Werkzeugnutzung wie der Abbruchmarker, ist aber nicht mit ihm verwechselbar.
+function istWerkzeugBefund() { return lauf !== null && lauf.werkzeugBefund !== null; }
+function werkzeugBefundMarker() {
+    if (!istWerkzeugBefund()) return null;
+    return `${lauf.werkzeugBefund} — keine Ausfuehrung in diesem Lauf`;
 }
 
 function deckelPruefen() {
@@ -1279,6 +1296,16 @@ async function selbsttestSpur(pruefen) {
         const mlo = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/schema.js', alt: "module.exports = 'CREATE TABLE", neu: "const lo = require('node:child_process').spawnSync('psql', [process.env.DATABASE_URL.replace('/gymdocu_test?', '/template1?'), '-X', '-tA', '-c', 'SELECT lo_create(0)'], { encoding: 'utf8' });\nif (lo.status === 0) { console.error('lo_create in template1 GELUNGEN: ' + lo.stdout); process.exit(1); }\nconsole.error('template1: ' + lo.stderr.trim().split('\\n').pop());\nmodule.exports = 'CREATE TABLE", testdatei: 'test_gruen.js' });
         pruefen('TEMPLATE1 GESPERRT: die Vorbereitung kann in template1 kein Large Object anlegen (Verbindung verweigert), der Lauf besteht; ohne Sperre braeche die Fixture mit Exit 1 ab',
             mlo.status === 'bestanden' && mlo.text.includes('1 PASS / 0 FAIL'));
+        // ----- Large Object in template1 VOR dem Klonen (Runde 4 Befund 1) -----
+        // Als postgres angelegt — an der CONNECT-Sperre der Rolle vorbei.
+        psqlVerwaltungIn('template1', 'SELECT lo_create(0)');
+        const lo1 = await werkzeugAufrufen('teste', { testdatei: 'test_laut.js' });
+        const lo1Protokoll = protokollEintraege[protokollEintraege.length - 1];
+        const lo2 = await werkzeugAufrufen('teste', { testdatei: 'test_laut.js' });
+        pruefen(`LO IN TEMPLATE1 VOR DEM KLONEN: gezaehlt, abgeraeumt, als Infrastrukturfehler gemeldet (umgebung-fehler, Datenbankverwaltung, Volltext im Protokoll), nicht geklont (${lo1.status}); der naechste Aufruf gelingt (${lo2.status}) und die Selbstmessung sieht kein LO`,
+            lo1.status === 'umgebung-fehler' && lo1.text.includes('Infrastrukturfehler des Werkzeugs (Datenbankverwaltung)') && !lo1.text.includes('template1')
+            && lo1Protokoll.status === 'umgebung-fehler' && lo1Protokoll.grund.includes('1 Large Object(s) in template1 VOR dem Klonen')
+            && lo2.status === 'bestanden' && lo2.text.includes('SELBSTMESSUNG: 34 ✓ / 0 ✗') && !istAbgebrochen());
         // ----- Zeilenumbruch im Symlink-Ziel tarnt eine Loeschung (Runde 3 Befund 3) -----
         const mz = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/schema.js', alt: "module.exports = 'CREATE TABLE", neu: "const fz = require('node:fs'); fz.unlinkSync('zeiger2.js'); fz.unlinkSync('zeiger.js'); fz.symlinkSync('lib/wert.js\\nl ./zeiger2.js lib/wert.js', 'zeiger.js');\nmodule.exports = 'CREATE TABLE", testdatei: 'test_gruen.js' });
         pruefen('MANIPULIERT: zeiger2.js geloescht und das Ziel von zeiger.js mit Zeilenumbruch auf die alte Zeile von zeiger2.js getrimmt -> die NUL-terminierte Datei-Liste weicht trotzdem ab',
@@ -1424,6 +1451,24 @@ async function selbsttestSpur(pruefen) {
         pruefen('KOPFZEILEN neutralisiert: ein Steuerzeichen in testdatei oder Grund erreicht den Modelltext nur als U+FFFD',
             (() => { const o = ergebnisObjekt({ status: 'bestanden', exit: 0, grund: 'x\u001by', testdatei: 'a\u0000b', mutation: null, hinweise: ['h\rw'], selbstmessungZeile: 's', ausgabe: '' }); return !/[\u0000-\u0008\u000B-\u001F\u007F]/.test(o.text) && o.text.includes('a\uFFFDb') && o.text.includes('x\uFFFDy') && o.text.includes('h\uFFFDw'); })());
 
+        // ----- Manifest-Skript: find-Fehler ist Exit 3, keine verkuerzte Liste (Runde 4 Befund 3) -----
+        // Gemessen als 65534 (root liest alles): ein Verzeichnis mit Modus 000
+        // liess find "Permission denied" melden, das Skript endete trotzdem 0
+        // mit vier statt fuenf Saetzen.
+        const mfDir = fs.mkdtempSync(path.join(basis, 'manifest-'));
+        fs.chmodSync(mfDir, 0o755);
+        fs.mkdirSync(path.join(mfDir, 'lib')); fs.writeFileSync(path.join(mfDir, 'lib', 'a'), 'a');
+        fs.mkdirSync(path.join(mfDir, 'geheim')); fs.writeFileSync(path.join(mfDir, 'geheim', 'b'), 'b');
+        fs.chmodSync(path.join(mfDir, 'lib'), 0o755); fs.chmodSync(path.join(mfDir, 'lib', 'a'), 0o644);
+        fs.chmodSync(path.join(mfDir, 'geheim'), 0o000);
+        const alsNobody = (dir) => spawnSync('setpriv', ['--reuid=65534', '--regid=65534', '--clear-groups', 'bash', MANIFEST_SKRIPT, dir], { encoding: 'utf8', env: { PATH: KIND_PATH } });
+        const mfRot = alsNobody(mfDir);
+        fs.chmodSync(path.join(mfDir, 'geheim'), 0o755); fs.chmodSync(path.join(mfDir, 'geheim', 'b'), 0o644);
+        const mfGruen = alsNobody(mfDir);
+        pruefen(`MANIFEST-SKRIPT: unlesbares Verzeichnis (als 65534) -> Exit ${mfRot.status} mit find-Meldung statt verkuerzter Liste; lesbar -> Exit ${mfGruen.status} mit 5 Saetzen`,
+            mfRot.status === 3 && /find endete mit 1/.test(mfRot.stderr) && /Permission denied/.test(mfRot.stderr) && mfRot.stdout === ''
+            && mfGruen.status === 0 && mfGruen.stdout.split('\0').length - 1 === 5);
+
         // ----- Kein Zustand, Umgebungsvertrag, Riegel, Deckel -----
         const z1 = await werkzeugAufrufen('teste', { testdatei: 'test_zustand.js' });
         const z2 = await werkzeugAufrufen('teste', { testdatei: 'test_zustand.js' });
@@ -1562,6 +1607,18 @@ async function selbsttestSpur(pruefen) {
             tfm.abgelehnt && lauf.kanarie.ergebnis.status === 'manipuliert' && lauf.kanarie.ergebnis.exit === 25 && lauf.kanarie.ergebnis.ausgabe.includes('fremdes Mountziel unter den Ablagen (nicht ro): /tmp/fremd'));
         aufraeumen();
 
+        // ----- ro-Einhaengung mit Leerzeichen im Ziel unter /tmp (Runde 4 Befund 4) -----
+        // findmnt -r maskiert das Leerzeichen als \x20; ohne Dekodierung stand
+        // "/tmp/mit\x20leerzeichen" in der Erlaubnisliste, find meldete den
+        // echten Pfad als Rest -> Exit 25 fuer eine rechtmaessige ro-Einhaengung.
+        const aufbauLeerzeichen = path.join(basis, 'aufbau-leerzeichen.sh');
+        fs.writeFileSync(aufbauLeerzeichen, aufbauOriginal.replace(vorbereitungZeile, 'mkdir -p "/tmp/mit leerzeichen" && mount -n -t tmpfs -o ro tmpfs "/tmp/mit leerzeichen"   # Selbsttest: ro-Mount mit Leerzeichen\n' + vorbereitungZeile));
+        await einrichten({ wurzel: fx.wurzel, istHartGesperrt, tSekunden: T_KURZ, aufbauSkript: aufbauLeerzeichen });
+        const tlz = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
+        pruefen(`RO-MOUNT MIT LEERZEICHEN: eine ro-Einhaengung "/tmp/mit leerzeichen" nach der Selbstmessung wird dekodiert und geduldet -> Kanarie und Lauf bestanden (${tlz.status})`,
+            tlz.status === 'bestanden' && lauf.kanarie.gruen);
+        aufraeumen();
+
         // ----- Host-Anordnung ausserhalb der Literal-Praefixe: Werkzeug-Befund, KEIN Isolationsabbruch (Runde 3 Befund 7) -----
         const fremdBasis = fs.mkdtempSync('/tmp/fremd-anordnung-');
         fs.chmodSync(fremdBasis, 0o755);
@@ -1674,7 +1731,7 @@ async function selbsttestSpur(pruefen) {
 
 module.exports = {
     ERLAUBTES_MODELL, WERKZEUGE_AUSFUEHRUNG, MAX_ERGEBNIS_BYTES, MAX_AUFRUFE, T_SEKUNDEN,
-    einrichten, aufraeumen, werkzeugAufrufen, ungueltigerAufruf, istAktiv, istAbgebrochen, abbruchMarker, zaehler,
+    einrichten, aufraeumen, werkzeugAufrufen, ungueltigerAufruf, istAktiv, istAbgebrochen, abbruchMarker, istWerkzeugBefund, werkzeugBefundMarker, zaehler,
     vorspannAbsatz, zusammenfassungZeilen, protokollMaterialZusatz, statusAusExit,
     selbsttestSpur, fixtureAnlegen,
 };

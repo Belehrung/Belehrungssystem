@@ -179,7 +179,13 @@ ip link set lo up || scheitern "lo"
 [ -s /dsv1/ergebnis/manifest.liste ] && [ -s /dsv1/ergebnis/manifest.sha256 ] || scheitern "Manifest fehlt"
 manifest_pruefen() {
     local stufe_name="$1"
-    bash /dsv1/werkzeug/ausfuehr-manifest.sh /dsv1/kopie > /dsv1/ergebnis/manifest.liste-jetzt 2>/dev/null
+    # Der Exit des Manifest-Skripts wird ausgewertet (Runde 4 Befund 3): eine
+    # nicht ermittelbare Liste ist KEIN Vergleich, sondern ein Fehler.
+    if ! bash /dsv1/werkzeug/ausfuehr-manifest.sh /dsv1/kopie > /dsv1/ergebnis/manifest.liste-jetzt 2> /dsv1/ergebnis/manifest.fehler; then
+        echo "[dsv1] MANIFEST NICHT ERMITTELBAR nach $stufe_name — Datei-Liste der Kopie nicht lesbar:" >&2
+        head -n 5 /dsv1/ergebnis/manifest.fehler >&2
+        return 1
+    fi
     if ! cmp -s /dsv1/ergebnis/manifest.liste /dsv1/ergebnis/manifest.liste-jetzt; then
         echo "[dsv1] MANIFEST VERLETZT nach $stufe_name — Datei-Liste der Kopie weicht ab (Saetze, NUL als Zeilenumbruch gezeigt):" >&2
         diff <(tr '\0' '\n' < /dsv1/ergebnis/manifest.liste) <(tr '\0' '\n' < /dsv1/ergebnis/manifest.liste-jetzt) | head -n 20 >&2
@@ -232,6 +238,10 @@ ablagen_leeren() {
     local erlaubt="" ziel optionen rest
     find /tmp /var/tmp /dev/shm -mindepth 1 -xdev -delete 2>/dev/null
     while read -r ziel optionen; do
+        # findmnt -r maskiert Leerzeichen, Tab, Zeilenumbruch und Backslash als
+        # \xHH (Runde 4 Befund 4) — printf %b dekodiert das, damit der Pfad dem
+        # entspricht, was find unten meldet.
+        ziel=$(printf '%b' "$ziel")
         case "$ziel" in /tmp/*|/var/tmp/*|/dev/shm/*) ;; *) continue ;; esac
         case "$optionen" in ro|ro,*) ;; *) echo "[dsv1] fremdes Mountziel unter den Ablagen (nicht ro): $ziel ($optionen)" >&2; return 1 ;; esac
         while [ "$ziel" != /tmp ] && [ "$ziel" != /var/tmp ] && [ "$ziel" != /dev/shm ] && [ "$ziel" != / ] && [ -n "$ziel" ]; do

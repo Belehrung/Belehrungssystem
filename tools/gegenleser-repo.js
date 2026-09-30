@@ -61,10 +61,13 @@
 // sein und test/umgebung.sh + test/db-vorbereiten.js tragen
 // (--kanarie=<testdatei> waehlt den Kanarientest, sonst die erste
 // *_static.js der TESTS-Liste). Bricht die Isolation (Selbstmessung im Kind
-// rot, Kanarie nicht gruen, Werkzeug-Befund), gibt es keine Ausfuehrung
-// mehr, die letzte Runde laeuft ohne Werkzeuge mit dem Marker "AUSFÜHRUNG
-// ABGEBROCHEN — Belege nach Aufruf N fehlen", Exit 7. Alles Weitere im Kopf
-// von tools/ausfuehr-spur.js.
+// rot, Kanarie nicht gruen), gibt es keine Ausfuehrung mehr, die letzte Runde
+// laeuft ohne Werkzeuge mit dem Marker "AUSFÜHRUNG ABGEBROCHEN — Belege nach
+// Aufruf N fehlen", Exit 7. Meldet die Selbstmessung einen WERKZEUG-Befund
+// (Host-Anordnung ausserhalb der Literal-Praefixe, Isolation intakt), endet
+// die Werkzeugnutzung genauso — eigener Marker "WERKZEUG-BEFUND der Kanarie
+// …", Exit 9, eigene abgebrochen-Zeile im Laufprotokoll (Runde 4 Befund 2).
+// Alles Weitere im Kopf von tools/ausfuehr-spur.js.
 //
 // --brief=<datei> ist PFLICHT (seit 12.09.2026, siehe BRIEF_KOPF-Kommentar
 // weiter unten): sie liefert den beitragsspezifischen Teil des Auftrags.
@@ -79,7 +82,10 @@
 // seit 19.09.2026, siehe maxAusgabeBytesErmitteln()), 5 das Modell hat am
 // Ende keinen Text geliefert, 6 kein --brief angegeben oder die Datei ist
 // leer/unlesbar, 7 Isolationsabbruch der ausfuehrenden Spur (der Bericht
-// ist nur noch ein Text ohne Belege), 1 sonstiger Fehler.
+// ist nur noch ein Text ohne Belege), 8 Aufraeumen der ausfuehrenden Spur
+// unvollstaendig (Reste von Hand pruefen), 9 Werkzeug-Befund der
+// ausfuehrenden Spur (nie ein Test gelaufen, Bericht ohne Belege), 1
+// sonstiger Fehler.
 //
 // LAUF-PROTOKOLL (seit 13.09.2026, TEIL D weiter unten): JEDER echte Lauf --
 // Erfolg wie Abbruch ueber Exit 3/4/5 -- traegt sich selbst als Zeile in
@@ -1721,14 +1727,19 @@ async function main(argvUeberschreibung) {
             // letzte, OHNE Werkzeuge (auch ohne suche/lies), mit dem Marker --
             // das Modell liefert nur noch Text, und der Lauf endet mit Exit 7.
             const isolationAbgebrochen = spurAktiv() && spur().istAbgebrochen();
-            let rundenHinweis = rundenHinweisBauen(runde, optionen.maxRunden, istLetzteZweiRunden || isolationAbgebrochen, ist70Prozent);
+            // Werkzeug-Befund (Stufe 26, Runde 4 Befund 2): dieselbe Folge, eigener
+            // Marker, eigener Exit 9 -- nicht mit dem Isolationsabbruch verwechselbar.
+            const werkzeugBefund = !isolationAbgebrochen && spurAktiv() && spur().istWerkzeugBefund();
+            const spurGesperrt = isolationAbgebrochen || werkzeugBefund;
+            let rundenHinweis = rundenHinweisBauen(runde, optionen.maxRunden, istLetzteZweiRunden || spurGesperrt, ist70Prozent);
             if (isolationAbgebrochen) rundenHinweis += ` ${spur().abbruchMarker()}. Nenne in deinem Bericht, welche Belege dir deshalb fehlen.`;
+            else if (werkzeugBefund) rundenHinweis += ` ${spur().werkzeugBefundMarker()}. Es lief kein einziger Test; nenne das in deinem Bericht.`;
             verlauf.push({ role: 'user', content: rundenHinweis });
-            protokollSchreiben({ typ: 'rundenhinweis', runde, istLetzteZweiRunden, ist70Prozent, isolationAbgebrochen, text: rundenHinweis });
+            protokollSchreiben({ typ: 'rundenhinweis', runde, istLetzteZweiRunden, ist70Prozent, isolationAbgebrochen, werkzeugBefund, text: rundenHinweis });
 
             let antwort;
             try {
-                antwort = await anfragen(schluessel, optionen.modell, verlauf, !istLetzteZweiRunden && !isolationAbgebrochen);
+                antwort = await anfragen(schluessel, optionen.modell, verlauf, !istLetzteZweiRunden && !spurGesperrt);
             } catch (e) {
                 // Punkt 13/B8: der Verbrauch aus einem Fehlschlag darf nicht
                 // verloren gehen -- sonst meldet die Zusammenfassung "Token
@@ -1774,6 +1785,11 @@ async function main(argvUeberschreibung) {
                     console.log(`\n[${spur().abbruchMarker()} -- der Bericht ist ein Text OHNE Belege aus der Ausfuehrung. NICHT als Pruefung werten.]`);
                     zusammenfassungAusgeben();
                     return abschliessen(7, 'Isolationsabbruch der ausfuehrenden Spur');
+                }
+                if (werkzeugBefund) {
+                    console.log(`\n[${spur().werkzeugBefundMarker()} -- der Bericht ist ein Text OHNE Belege aus der Ausfuehrung (es lief kein Test). NICHT als Pruefung werten.]`);
+                    zusammenfassungAusgeben();
+                    return abschliessen(9, 'Werkzeug-Befund der ausfuehrenden Spur');
                 }
                 // WICHTIG (Auftrag Teil 2): ein unter Rundendruck erzeugter
                 // Bericht ist NICHT dasselbe wie ein regulaerer und muss als
@@ -4434,9 +4450,12 @@ async function selbsttestAusfuehrung() {
     // Infrastruktur x5 (Kategorie, Protokoll, Aufraeumen, kein Zwischenspeicher,
     // Transient) + Transient im Grundlauf, Klammer-comm) = 131; Runde 3 dazu 5
     // (template1 gesperrt, Zeilenumbruch-Tarnung, GEGENPROBE-VORBEREITUNG
-    // Vorbereitungszeile, fremdes Mountziel, Werkzeug-Befund) = 136. Unten durch den
+    // Vorbereitungszeile, fremdes Mountziel, Werkzeug-Befund) = 136; Runde 4
+    // dazu LAUF E6 (Werkzeug-Befund durch den ganzen Lauf) x3 und in
+    // selbsttestSpur() LO in template1, Manifest-Skript find-Exit, ro-Mount
+    // mit Leerzeichen = 142. Unten durch den
     // tatsaechlichen Lauf bestaetigt.
-    const ERWARTETE_FAELLE = 136;
+    const ERWARTETE_FAELLE = 142;
     if (process.getuid() !== 0) {
         if (process.env.CI === 'true') {
             console.log(`  ✗ FEHLT: --selbsttest-ausfuehrung braucht root (uid 0, gefunden ${process.getuid()}) -- unter CI=true ist das ROT, kein SKIP.`);
@@ -4557,6 +4576,39 @@ async function selbsttestAusfuehrung() {
             const zeile = fs.readFileSync(protokollDatei, 'utf8').split('\n').find((z) => z.includes('Selbsttest E2'));
             pruefen(`LAUF E2 ASTRA-Zeile: abgebrochen (Isolationsabbruch), Ausfuehrungen 3 (Kanarie + Grundlauf + Mutation), Mutationen 1`,
                 !!zeile && zeile.includes('**abgebrochen** (Isolationsabbruch der ausfuehrenden Spur)') && zeile.includes('Ausfuehrungen 3, Mutationen 1'));
+        }
+        // ----- LAUF E6: Werkzeug-Befund (Stufe 26) durch den ganzen Lauf (Runde 4 Befund 2) -----
+        {
+            protokollFrisch();
+            const fremdBasis = fs.mkdtempSync('/tmp/fremd-anordnung-');
+            fs.chmodSync(fremdBasis, 0o755);
+            const fremdBrowser = path.join(fremdBasis, 'browser', 'chromium-9999', 'chrome-linux');
+            fs.mkdirSync(fremdBrowser, { recursive: true });
+            fs.writeFileSync(path.join(fremdBrowser, 'chrome'), '#!/bin/sh\necho chrome-attrappe\n', { mode: 0o755 });
+            const browserVorher = process.env.PLAYWRIGHT_BROWSERS_PATH;
+            process.env.PLAYWRIGHT_BROWSERS_PATH = path.join(fremdBasis, 'browser');
+            const aufgezeichnet = [];
+            https.request = httpsStubBauen([
+                antwortKoerperBauen(elementFunktionsaufrufBauen('call-w1', 'teste', { testdatei: 'test_gruen.js' }), 100, 50),
+                antwortKoerperBauen(elementTextBauen('BERICHT-NACH-WERKZEUG-BEFUND'), 100, 50),
+            ], aufgezeichnet);
+            let code;
+            try {
+                code = await mainStumm([diffPfad, `--brief=${briefPfad}`, `--wurzel=${fx.wurzel}`, '--modell=deepseek-flash', '--ausfuehren', '--max-runden=6',
+                    `--protokoll=${path.join(basis, 'p6.jsonl')}`, '--zweck=Selbsttest E6']);
+            } finally {
+                process.env.PLAYWRIGHT_BROWSERS_PATH = browserVorher;
+                fs.rmSync(fremdBasis, { recursive: true, force: true });
+            }
+            const zweiter = aufgezeichnet[1];
+            const hinweis = zweiter ? zweiter.input[zweiter.input.length - 1] : null;
+            pruefen('LAUF E6 nach dem Werkzeug-Befund: der naechste Koerper traegt KEIN tools-Feld, der Rundenhinweis den Marker WERKZEUG-BEFUND (nicht den Abbruchmarker)',
+                !!zweiter && zweiter.tools === undefined && !!hinweis && hinweis.role === 'user' && hinweis.content.includes('WERKZEUG-BEFUND der Kanarie') && !hinweis.content.includes('AUSFÜHRUNG ABGEBROCHEN'));
+            pruefen(`LAUF E6 Exit ${code} (9, nicht 7), Marker in der Ausgabe, Bericht als Text ohne Belege gekennzeichnet, Spur aufgeraeumt`,
+                code === 9 && ausgabeZeilen.some((z) => z.includes('WERKZEUG-BEFUND') && z.includes('OHNE Belege')) && !spurAktiv());
+            const zeile = fs.readFileSync(protokollDatei, 'utf8').split('\n').find((z) => z.includes('Selbsttest E6'));
+            pruefen(`LAUF E6 ASTRA-Zeile: abgebrochen (Werkzeug-Befund der ausfuehrenden Spur), Ausfuehrungen 1 (nur die Kanarie), kein regulaerer Lauf: ${zeile ? zeile.slice(0, 120) : '(keine Zeile)'}`,
+                !!zeile && zeile.includes('**abgebrochen** (Werkzeug-Befund der ausfuehrenden Spur)') && zeile.includes('Ausfuehrungen 1, Mutationen 0'));
         }
         // ----- LAUF E3: unlesbare Argumente eines Ausfuehrungsaufrufs zaehlen gegen den Deckel (Befund S9) -----
         {
