@@ -94,6 +94,7 @@ const KIND_GID = 65534;
 const BROWSERPFAD_VORGABE = '/opt/pw-browsers';
 const AUFBAU_SKRIPT = path.join(__dirname, 'ausfuehr-aufbau.sh');
 const SELBSTMESSUNG_SKRIPT = path.join(__dirname, 'ausfuehr-selbstmessung.js');
+const MANIFEST_SKRIPT = path.join(__dirname, 'ausfuehr-manifest.sh');   // Datei-Liste, dieselbe Datei im Kind (Runde 3 Befund 3)
 const BENOETIGTE_PROGRAMME = ['pg_createcluster', 'pg_ctlcluster', 'pg_dropcluster', 'pg_lsclusters', 'psql',
     'unshare', 'setpriv', 'pivot_root', 'prlimit', 'timeout', 'runuser', 'flock', 'chown', 'git', 'findmnt', 'ip', 'bash',
     'sha256sum', 'find', 'sort', 'xargs', 'cmp'];
@@ -101,7 +102,7 @@ const PROGRAMMPFADE = ['/usr/local/sbin', '/usr/local/bin', '/usr/sbin', '/usr/b
 const KIND_PATH = '/usr/sbin:/usr/bin:/sbin:/bin';   // Umgebung des timeout-Spawns: NUR das
 const TESTSTART_MARKER = '[dsv1] Teststufe gestartet: ';
 // Exit-Codes der Stufen (Vertrag mit tools/ausfuehr-aufbau.sh, dort im Kopf)
-const STUFE = { AUFBAU: 20, SELBSTMESSUNG: 21, VORBEREITUNG: 22, UMGEBUNG: 23, UMGEBUNGSNAMEN: 24, MANIFEST: 25, SIGNAL: 30 };
+const STUFE = { AUFBAU: 20, SELBSTMESSUNG: 21, VORBEREITUNG: 22, UMGEBUNG: 23, UMGEBUNGSNAMEN: 24, MANIFEST: 25, WERKZEUG: 26, SIGNAL: 30 };
 // Gemessen am Zielrepo (30.09.2026): alle 412 registrierten Dateien tragen
 // "PASS" oder "✓" im Quelltext; Ueberspringen wird als "⤳ SKIP (n):",
 // "N ÜBERSPRUNGEN"/"N übersprungen"/"N SKIP" in der Schlusszeile oder
@@ -122,8 +123,8 @@ const STATUS_KATALOG = {
     'bestanden': 'Teststufe mit Exit 0 UND mindestens einer echten PASS-Zeile (Zahl >= 1 oder ✓) UND ohne Uebersprungen-/NICHT-GEPRUEFT-Zeile.',
     'gescheitert': 'Teststufe mit Exit 1. NUR nach gueltigem Grundlauf heisst das "Verhaltensaenderung des Testlaufs".',
     'ohne-nachweis': 'Teststufe mit Exit 0, aber ohne echte PASS-Zeile oder mit Uebersprungen-Zeile — kein Nachweis, dass der Test lief (z. B. process.exit(0) in einer vorgeladenen Datei). Nicht bestanden, kein erkannter Mutant.',
-    'manipuliert': 'Vorbereitung oder Umgebung haben die Kopie veraendert (Manifest: Datei-Liste mit Symlink-Ziel oder Inhalt) oder Prozesse hinterlassen — kein Testergebnis, nie bestanden oder gescheitert.',
-    'erfassung-gerissen': 'Der Erfassungsdeckel der Ausgabe ist gerissen — das Ergebnis ist ungueltig, auch als Grundlauf (der Exit steht im Kopf).',
+    'manipuliert': 'Vorbereitung oder Umgebung haben die Kopie veraendert (Manifest: Datei-Liste mit Symlink-Ziel oder Inhalt), Prozesse hinterlassen oder Ablagen unleerbar gemacht — kein Testergebnis, nie bestanden oder gescheitert.',
+    'erfassung-gerissen': 'Der Erfassungsdeckel (4 MiB) ist gerissen, die Ausgabe ist unvollstaendig — ein Testergebnis (bestanden/gescheitert/ohne-nachweis) gilt dann nicht. Stufencodes, Zeitlimit, manipuliert und signaltod bleiben stehen.',
     'signaltod': 'Teststufe durch ein Signal beendet (Exit >= 129), oder SIGKILL vor Ablauf des Zeitlimits.',
     'zeitlimit': `Zeitlimit von ${T_SEKUNDEN} s ueberschritten — nur, wenn die eigene Uhr es belegt und die Teststufe nie geendet hat.`,
     'vorbereitung-gescheitert': 'test/db-vorbereiten.js endete != 0 — im CI-Gate bricht test/run.sh dann VOR jedem Test ab; der Befund ist "Gate rot vor jedem Test", nicht "Zusicherung gefallen".',
@@ -228,6 +229,17 @@ function psqlVerwaltungIn(datenbank, ...anweisungen) {
     return laufen('runuser', argumente);
 }
 function psqlVerwaltung(...anweisungen) { return psqlVerwaltungIn('postgres', ...anweisungen); }
+// Ein SQL-Skript ueber stdin (psql -f -): jede Anweisung in eigener
+// Transaktion (DROP DATABASE darf nicht in einem Block laufen, den -c mit
+// mehreren Anweisungen oeffnet — gemessen 30.09.2026), und die Grenzen
+// zwischen den Anweisungen zieht der SQL-Lexer von psql, nicht dieser Client:
+// ein Zeilenumbruch in einem gequoteten Bezeichner bleibt Teil des Namens.
+function psqlVerwaltungSkript(text) {
+    const r = spawnSync('runuser', ['-u', 'postgres', '--', 'psql', '-h', lauf.pgDir, '-p', String(lauf.port), '-X', '-qtA', '-v', 'ON_ERROR_STOP=1', '-d', 'postgres', '-f', '-'],
+        { encoding: 'utf8', env: { PATH: KIND_PATH }, input: text, timeout: 60000 });
+    if (r.status !== 0) throw new Error(`runuser -u postgres -- psql -f - endete mit ${r.status}: ${(r.stderr || '').trim().slice(0, 600)}`);
+    return r.stdout || '';
+}
 // SQL-Bezeichner mit Verdopplung der Anfuehrungszeichen (Befund 5, Runde 2):
 // ein Datenbankname wie "Foo" wird gedroppt, nicht abgewiesen.
 function sqlBezeichner(name) { return '"' + name.replace(/"/g, '""') + '"'; }
@@ -373,6 +385,14 @@ function clusterAnlegen(id) {
     // PG >= 15 zieht das Recht selbst zurueck; hier ausdruecklich, damit die
     // Eigenschaft am Werkzeug haengt und die Selbstmessung sie messen kann.
     for (const db of ['template1', 'postgres']) psqlVerwaltungIn(db, 'REVOKE CREATE ON SCHEMA public FROM PUBLIC');
+    // template1 fuer die Rolle gar nicht verbindbar (Runde 3 Befund 2):
+    // Objekte ohne Schemazwang — Large Objects — waeren sonst in jede
+    // frische gymdocu_test kopiert worden (gemessen 30.09.2026). CREATE
+    // DATABASE braucht kein CONNECT auf die Vorlage (gemessen). postgres
+    // bleibt verbindbar: test_feature_migration_0060_loeschauftrag.js des
+    // Zielrepos legt darueber Datenbanken an — dort raeumt datenbankFrisch()
+    // Large Objects vor jedem Lauf ab.
+    psqlVerwaltung('REVOKE CONNECT ON DATABASE template1 FROM PUBLIC');
     // Fail-closed-Probe: kein TCP-Horcher (listen_addresses=''), Verwaltung nur ueber den Socket.
     const tcp = spawnSync('runuser', ['-u', 'postgres', '--', 'psql', '-h', '127.0.0.1', '-p', String(lauf.port), '-X', '-c', 'SELECT 1', '-d', 'postgres'],
         { encoding: 'utf8', env: { PATH: KIND_PATH }, timeout: 15000 });
@@ -384,26 +404,29 @@ function clusterAnlegen(id) {
 // W-E2/A-5), Rollenvorgaben zurueck (ALTER ROLE … SET ueberlebte — Befund
 // B3), dann die frische gymdocu_test.
 const SYSTEM_DATENBANKEN = ['postgres', 'template0', 'template1'];
+const SYSTEM_DATENBANKEN_SQL = SYSTEM_DATENBANKEN.map((d) => `'${d}'`).join(',');
 function datenbankFrisch() {
-    // Alle Nicht-System-Datenbanken, auch als Template markierte (die Rolle
-    // darf IS_TEMPLATE setzen — gemessen 30.09.2026 auf PG 16; ein Template
-    // laesst sich nicht droppen, erst IS_TEMPLATE false). Bezeichner
-    // gequotet, IMMER gedroppt — keine Ausnahme fuer exotische Namen.
-    const liste = psqlVerwaltung(`SELECT datname || E'\\t' || datistemplate::text FROM pg_database WHERE datname NOT IN (${SYSTEM_DATENBANKEN.map((d) => `'${d}'`).join(',')}) ORDER BY 1`);
-    const anweisungen = [];
-    for (const zeile of liste.split('\n').filter(Boolean)) {
-        const trenner = zeile.lastIndexOf('\t');
-        const name = trenner === -1 ? zeile : zeile.slice(0, trenner);
-        const istVorlage = trenner !== -1 && zeile.slice(trenner + 1) === 'true';
-        if (istVorlage) anweisungen.push(`ALTER DATABASE ${sqlBezeichner(name)} IS_TEMPLATE false`);
-        anweisungen.push(`DROP DATABASE IF EXISTS ${sqlBezeichner(name)} WITH (FORCE)`);
+    // Alle Nicht-System-Datenbanken weg, auch als Template markierte (die
+    // Rolle darf IS_TEMPLATE setzen — gemessen 30.09.2026 auf PG 16; ein
+    // Template laesst sich nicht droppen, erst IS_TEMPLATE false). Die
+    // Anweisungen baut der SERVER mit format('%I') (Runde 3 Befund 1): ein
+    // Name mit Zeilenumbruch ("template1\nx") wurde clientseitig zeilenweise
+    // in "template1" zerlegt — DROP auf die Systemdatenbank, danach jeder
+    // Lauf umgebung-fehler (gemessen). Hier parst der Client keinen Namen.
+    const skript = psqlVerwaltung(
+        `SELECT string_agg(CASE WHEN datistemplate THEN format('ALTER DATABASE %I IS_TEMPLATE false;', datname) || E'\\n' ELSE '' END`
+        + ` || format('DROP DATABASE IF EXISTS %I WITH (FORCE);', datname), E'\\n' ORDER BY datname)`
+        + ` FROM pg_database WHERE datname NOT IN (${SYSTEM_DATENBANKEN_SQL})`).trim();
+    psqlVerwaltungSkript(`${skript ? skript + '\n' : ''}ALTER ROLE ${DB_ROLLE} RESET ALL;\nCREATE DATABASE ${DB_NAME} OWNER ${DB_ROLLE};\n`);
+    // Large Objects in postgres (verbindbar, die Rolle darf lo_create) und —
+    // fail-closed — in template1 abraeumen (Runde 3 Befund 2); danach muss
+    // die Zahl 0 sein.
+    for (const db of ['template1', 'postgres']) {
+        psqlVerwaltungIn(db, 'SELECT count(lo_unlink(oid)) FROM pg_largeobject_metadata');
+        const rest = psqlVerwaltungIn(db, 'SELECT count(*) FROM pg_largeobject_metadata').trim();
+        if (rest !== '0') throw new Error(`Large Objects in ${db} nach dem Abraeumen: ${rest}`);
     }
-    anweisungen.push(`ALTER ROLE ${DB_ROLLE} RESET ALL`);
-    anweisungen.push(`CREATE DATABASE ${DB_NAME} OWNER ${DB_ROLLE}`);
-    psqlVerwaltung(...anweisungen);
-    // Fail-closed: genau die System-Datenbanken plus die frische gymdocu_test
-    // — was die Liste oben nicht erfasst hat (etwa ein Name mit
-    // Zeilenumbruch), faellt hier auf.
+    // Fail-closed: genau die System-Datenbanken plus die frische gymdocu_test.
     const soll = [...SYSTEM_DATENBANKEN, DB_NAME].sort().join(',');
     const ist = psqlVerwaltung("SELECT string_agg(datname, ',' ORDER BY datname) FROM pg_database").trim();
     if (ist !== soll) throw new Error(`Datenbanken nach dem Frischmachen: ${JSON.stringify(ist)}, erwartet ${JSON.stringify(soll)}`);
@@ -445,7 +468,7 @@ async function einrichten(optionen) {
     // Der Node-BAUM (z. B. /opt/node22, nicht nur /opt/node22/bin) wird ro
     // eingehaengt, statt ganz /opt (Befund W-E1).
     const nodeBaum = path.basename(nodeBin) === 'bin' ? path.dirname(nodeBin) : nodeBin;
-    for (const skript of [optionen.aufbauSkript || AUFBAU_SKRIPT, SELBSTMESSUNG_SKRIPT]) {
+    for (const skript of [optionen.aufbauSkript || AUFBAU_SKRIPT, SELBSTMESSUNG_SKRIPT, MANIFEST_SKRIPT]) {
         if (!fs.existsSync(skript)) throw new Error(`--ausfuehren: ${skript} fehlt`);
     }
     const wurzel = fs.realpathSync(optionen.wurzel);
@@ -483,11 +506,13 @@ async function einrichten(optionen) {
             grundlauf: new Map(),
             kindAktuell: null,
             isolation: { abgebrochen: false, aufruf: null, grund: null },
+            werkzeugBefund: null,   // Kanarie mit Stufe 26: kein Isolationsbruch, aber keine Ausfuehrung (Runde 3 Befund 7)
             zaehler: { aufrufe: 0, ausfuehrungen: 0, mutationen: 0, ablehnungen: 0, verworfeneZeilen: 0, ausfuehrungMs: 0 },
         };
         const werkzeugDir = path.join(dir, 'werkzeug');
         fs.mkdirSync(werkzeugDir, { mode: 0o755 });
         fs.copyFileSync(SELBSTMESSUNG_SKRIPT, path.join(werkzeugDir, 'ausfuehr-selbstmessung.js'));
+        fs.copyFileSync(MANIFEST_SKRIPT, path.join(werkzeugDir, 'ausfuehr-manifest.sh'));
         clusterAnlegen(id);
         return { dir, cluster: lauf.cluster, port: lauf.port, tests: tests.length, kanarie, reste, head };
     } catch (e) {
@@ -598,13 +623,15 @@ function mutationAnwenden(kopie, mutation) {
 // (Typ + Pfad) und sha256 aller regulaeren Dateien — dieselben Kommandos,
 // die ausfuehr-aufbau.sh im Kind wiederholt (cwd = Kopie, Pfade "./…").
 function manifestSchreiben(kopie, ergebnisDir) {
-    // %l: das Symlink-ZIEL (Befund 2, Runde 2) — dieselbe Zeile wie im Kind.
-    const liste = laufen('bash', ['-c', "find . -path ./node_modules -prune -o -printf '%y %p %l\\n' | LC_ALL=C sort"], { cwd: kopie });
+    // Datei-Liste ueber DASSELBE Skript wie im Kind (NUL-terminierte,
+    // laengenpraefixierte Saetze mit Symlink-Ziel; Runde 2 Befund 2, Runde 3
+    // Befund 3) — ein Kommando an einem Ort, kein zweites zum Nachziehen.
+    const liste = laufen('bash', [MANIFEST_SKRIPT, kopie]);
     const summen = laufen('bash', ['-c', 'set -o pipefail; find . -path ./node_modules -prune -o -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum'], { cwd: kopie });
     if (!liste.trim() || !summen.trim()) throw new Error('Manifest leer');
     fs.writeFileSync(path.join(ergebnisDir, 'manifest.liste'), liste, { mode: 0o644 });
     fs.writeFileSync(path.join(ergebnisDir, 'manifest.sha256'), summen, { mode: 0o644 });
-    return { eintraege: liste.trim().split('\n').length, dateien: summen.trim().split('\n').length };
+    return { eintraege: liste.split('\0').length - 1, dateien: summen.trim().split('\n').length };
 }
 
 // ===================== Ein Kind-Lauf =====================
@@ -627,13 +654,13 @@ function passZahlErmitteln(text) {
 // Stufencodes, dann die Uhr fuer 124/137 (Befunde F-B6/F-B2). Liefert
 // zusaetzlich, ob die Isolation als gebrochen gilt. Keine Dauer als Zahl
 // im Grund (Befund B11).
-// Vorrang (Befund 4, Runde 2): ein gerissener Erfassungsdeckel macht ein
-// TESTERGEBNIS ungueltig, ueberdeckt aber weder einen Isolationsabbruch
-// (21/24) noch manipuliert, vorbereitung-gescheitert oder signaltod — die
-// sind aus dem Exit belegt, gleich wie viel Ausgabe verloren ging.
+// Vorrang (Befund 4, Runde 2; Befund 5, Runde 3): ein gerissener
+// Erfassungsdeckel macht ein TESTERGEBNIS ungueltig, ueberdeckt aber nichts,
+// was aus dem Exit-Vertrag belegt ist — Isolationsabbruch (21/24), jeden
+// Stufencode (20/22/23/25/26/30), zeitlimit und signaltod.
 function statusAusExit(parameter) {
     const basis = statusAusExitBasis(parameter);
-    const bleibt = basis.isolation || ['manipuliert', 'vorbereitung-gescheitert', 'signaltod'].includes(basis.status);
+    const bleibt = basis.isolation || basis.stufe === true || ['manipuliert', 'vorbereitung-gescheitert', 'signaltod', 'zeitlimit'].includes(basis.status);
     if ((parameter.erfassungVerworfen || 0) > 0 && !bleibt) return { status: 'erfassung-gerissen', grund: 'Erfassungsdeckel gerissen — Ausgabe unvollstaendig, Ergebnis ungueltig', isolation: false };
     return basis;
 }
@@ -653,13 +680,16 @@ function statusAusExitBasis({ code, signal, testExit, waechter, dauerMs, tSekund
         if (testExit >= 129) return { status: 'signaltod', grund: `Teststufe durch Signal ${testExit - 128} beendet (Exit ${testExit})`, isolation: false };
         return { status: 'umgebung-fehler', grund: `Teststufe Exit ${testExit} (unbekannt, nur 0/1 sind Testergebnisse; kein Zeitlimit — die Teststufe hat geendet)`, isolation: false };
     }
-    if (code === STUFE.AUFBAU) return { status: 'umgebung-fehler', grund: 'Aufbau der Sandbox oder ein Werkzeugschritt gescheitert (Stufe 20)', isolation: false };
-    if (code === STUFE.SELBSTMESSUNG) return { status: 'umgebung-fehler', grund: 'Selbstmessung ROT oder Prozess der Selbstmessung ueberlebt (Stufe 21)', isolation: true };
-    if (code === STUFE.VORBEREITUNG) return { status: 'vorbereitung-gescheitert', grund: 'test/db-vorbereiten.js endete != 0 (Stufe 22)', isolation: false };
-    if (code === STUFE.UMGEBUNG) return { status: 'umgebung-fehler', grund: 'test/umgebung.sh gescheitert (Stufe 23)', isolation: false };
-    if (code === STUFE.UMGEBUNGSNAMEN) return { status: 'umgebung-fehler', grund: 'Umgebungsnamen weichen von der Literalliste ab — Werkzeug-Befund (Stufe 24)', isolation: true };
-    if (code === STUFE.MANIFEST) return { status: 'manipuliert', grund: 'Manifest verletzt oder Prozess ueberlebt: Vorbereitung oder Umgebung haben die Kopie veraendert oder Prozesse hinterlassen (Stufe 25)', isolation: false };
-    if (code === STUFE.SIGNAL) return { status: 'umgebung-fehler', grund: 'PID 1 des Kindes bekam ein Signal (Stufe 30)', isolation: false };
+    if (code === STUFE.AUFBAU) return { status: 'umgebung-fehler', grund: 'Aufbau der Sandbox oder ein Werkzeugschritt gescheitert (Stufe 20)', isolation: false, stufe: true };
+    if (code === STUFE.SELBSTMESSUNG) return { status: 'umgebung-fehler', grund: 'Selbstmessung ROT oder Prozess der Selbstmessung ueberlebt (Stufe 21)', isolation: true, stufe: true };
+    if (code === STUFE.VORBEREITUNG) return { status: 'vorbereitung-gescheitert', grund: 'test/db-vorbereiten.js endete != 0 (Stufe 22)', isolation: false, stufe: true };
+    if (code === STUFE.UMGEBUNG) return { status: 'umgebung-fehler', grund: 'test/umgebung.sh gescheitert (Stufe 23)', isolation: false, stufe: true };
+    if (code === STUFE.UMGEBUNGSNAMEN) return { status: 'umgebung-fehler', grund: 'Umgebungsnamen weichen von der Literalliste ab — Werkzeug-Befund (Stufe 24)', isolation: true, stufe: true };
+    if (code === STUFE.MANIFEST) return { status: 'manipuliert', grund: 'Manifest verletzt, Prozess ueberlebt oder Ablagen unleerbar: Vorbereitung oder Umgebung haben die Kopie veraendert, Prozesse oder Fremdes hinterlassen (Stufe 25)', isolation: false, stufe: true };
+    // Werkzeug-Befund der Selbstmessung (Host-Anordnung ausserhalb der
+    // Literal-Praefixe): kein Isolationsbruch, aber auch kein Lauf (Runde 3 Befund 7).
+    if (code === STUFE.WERKZEUG) return { status: 'umgebung-fehler', grund: 'Selbstmessung meldet einen Werkzeug-Befund: Host-Anordnung (Node-Baum/Browserpfad) ausserhalb der Literal-Praefixe (Stufe 26) — Isolation intakt', isolation: false, stufe: true, werkzeug: true };
+    if (code === STUFE.SIGNAL) return { status: 'umgebung-fehler', grund: 'PID 1 des Kindes bekam ein Signal (Stufe 30)', isolation: false, stufe: true };
     const uhrAbgelaufen = dauerMs >= tSekunden * 1000;
     if (code === 124) {
         if (uhrAbgelaufen) return { status: 'zeitlimit', grund: 'von timeout beendet nach Ablauf der eigenen Uhr, Teststufe nie geendet', isolation: false };
@@ -809,6 +839,7 @@ async function kindLaufen({ testdatei, mutation = null, zweck }) {
             status: abbildung.status,
             grund: abbildung.grund,
             isolationGebrochen: abbildung.isolation,
+            werkzeugBefund: abbildung.werkzeug === true,
             exit: testExit !== null ? testExit : code,
             kindExit: code,
             signal,
@@ -909,6 +940,7 @@ function ungueltigerAufruf() {
 
 function deckelPruefen() {
     if (lauf.isolation.abgebrochen) return abbruchMarker();
+    if (lauf.werkzeugBefund) return `${lauf.werkzeugBefund} — keine Ausfuehrung in diesem Lauf`;
     if (lauf.zaehler.aufrufe > MAX_AUFRUFE) return `Deckel: hoechstens ${MAX_AUFRUFE} Ausfuehrungs-Aufrufe je Lauf (dies war Nr. ${lauf.zaehler.aufrufe})`;
     // Harter Zeitdeckel (Befund S8): ein Lauf startet nur, wenn Testzeitlimit
     // plus Kill-Frist noch in die 45 Minuten passen.
@@ -932,7 +964,12 @@ async function kanarieSicherstellen() {
     const r = await kindLaufenSicher({ testdatei: k.datei, zweck: 'kanarie' });
     k.ergebnis = r;
     k.gruen = r.gueltigerGrundlauf;
-    if (!k.gruen) isolationAbbrechen(`Kanarie ${k.datei} nicht gruen: ${r.status} (${r.grund})`);
+    if (!k.gruen && r.werkzeugBefund) {
+        // Isolation intakt, das Werkzeug passt nur nicht auf diesen Host:
+        // kein Abbruchmarker, aber keine Ausfuehrung in diesem Lauf.
+        lauf.werkzeugBefund = `WERKZEUG-BEFUND der Kanarie ${k.datei}: ${r.grund}`;
+        console.error(`[ausfuehr-spur] ${lauf.werkzeugBefund} — keine Ausfuehrung, Isolation intakt.`);
+    } else if (!k.gruen) isolationAbbrechen(`Kanarie ${k.datei} nicht gruen: ${r.status} (${r.grund})`);
     else console.error(`[ausfuehr-spur] Kanarie gruen: ${r.selbstmessungZeile}; ${k.datei} ${r.status}`);
     return k.gruen;
 }
@@ -1033,6 +1070,7 @@ function zusammenfassungZeilen() {
     const zeilen = [`Ausfuehrungen: ${z.ausfuehrungen}  Mutationen: ${z.mutationen}  Ausfuehrungs-Aufrufe: ${z.aufrufe}  Ausfuehrungs-Ablehnungen: ${z.ablehnungen}  verworfene Zeilen (Riegel): ${z.verworfeneZeilen}  Ausfuehrungszeit: ${Math.round(z.ausfuehrungMs / 1000)} s`];
     zeilen.push(`Kanarie: ${lauf.kanarie.datei} — ${lauf.kanarie.gefahren ? (lauf.kanarie.gruen ? 'gruen' : 'NICHT GRUEN') : 'nicht gefahren (kein Ausfuehrungsaufruf)'}`);
     if (lauf.isolation.abgebrochen) zeilen.push(abbruchMarker());
+    if (lauf.werkzeugBefund) zeilen.push(lauf.werkzeugBefund);
     return zeilen;
 }
 
@@ -1113,7 +1151,7 @@ function fixtureAnlegen(basis) {
     schreiben('test_exit2.js', "console.log('  ✓ x');\nprocess.exit(2);\n");
     schreiben('test_exit124.js', "console.log('  ✓ x');\nprocess.exit(124);\n");
     schreiben('test_exit127.js', "process.exit(127);\n");
-    schreiben('test_zustand.js', ok + "const fs = require('node:fs');\nconst { spawnSync } = require('node:child_process');\nconst spuren = ['zustand-in-der-kopie.txt', '/var/tmp/dsv1-zustand.txt', '/tmp/dsv1-zustand.txt', '/dev/shm/dsv1-zustand.txt'];\nfor (const s of spuren) ok('keine Spur aus einem frueheren Lauf: ' + s, !fs.existsSync(s));\nconst z = (sql) => spawnSync('psql', [process.env.DATABASE_URL, '-X', '-tA', '-c', sql], { encoding: 'utf8' });\nok('keine Tabelle zustand aus einem frueheren Lauf', z(\"SELECT count(*) FROM pg_tables WHERE tablename = 'zustand'\").stdout.trim() === '0');\nok('keine Nebendatenbank dsv1_neben aus einem frueheren Lauf', z(\"SELECT count(*) FROM pg_database WHERE datname = 'dsv1_neben'\").stdout.trim() === '0');\nok('keine Rollenvorgabe (ALTER ROLE … SET) aus einem frueheren Lauf', z('SELECT count(*) FROM pg_db_role_setting').stdout.trim() === '0');\nok('keine Datenbank \"Foo\" (Grossbuchstabe) oder dsv1_vorlage (Template) aus einem frueheren Lauf', z(\"SELECT count(*) FROM pg_database WHERE datname IN ('Foo','dsv1_vorlage')\").stdout.trim() === '0');\nfor (const s of spuren) fs.writeFileSync(s, 'dsv1');\nok('Tabelle zustand angelegt', z('CREATE TABLE zustand(a int)').status === 0);\nok('Nebendatenbank dsv1_neben angelegt (Rolle hat CREATEDB)', z('CREATE DATABASE dsv1_neben').status === 0);\nok('Rollenvorgabe gesetzt', z(\"ALTER ROLE nobody SET work_mem = '7MB'\").status === 0);\nok('Datenbank \"Foo\" angelegt (Bezeichner mit Grossbuchstabe)', z('CREATE DATABASE \"Foo\"').status === 0);\nok('Datenbank dsv1_vorlage als Template angelegt (die Rolle darf das: gemessen 30.09.2026 auf PG 16)', z('CREATE DATABASE dsv1_vorlage IS_TEMPLATE true').status === 0);\nok('Positivkontrolle: im selben Lauf sind die Spuren jetzt da', spuren.every((s) => fs.existsSync(s)) && z(\"SELECT count(*) FROM pg_tables WHERE tablename = 'zustand'\").stdout.trim() === '1' && z(\"SELECT count(*) FROM pg_database WHERE datname = 'dsv1_neben'\").stdout.trim() === '1' && z('SELECT count(*) FROM pg_db_role_setting').stdout.trim() === '1' && z(\"SELECT count(*) FROM pg_database WHERE datname IN ('Foo','dsv1_vorlage')\").stdout.trim() === '2');\nschluss();\n");
+    schreiben('test_zustand.js', ok + "const fs = require('node:fs');\nconst { spawnSync } = require('node:child_process');\nconst spuren = ['zustand-in-der-kopie.txt', '/var/tmp/dsv1-zustand.txt', '/tmp/dsv1-zustand.txt', '/dev/shm/dsv1-zustand.txt'];\nfor (const s of spuren) ok('keine Spur aus einem frueheren Lauf: ' + s, !fs.existsSync(s));\nconst z = (sql) => spawnSync('psql', [process.env.DATABASE_URL, '-X', '-tA', '-c', sql], { encoding: 'utf8' });\nok('keine Tabelle zustand aus einem frueheren Lauf', z(\"SELECT count(*) FROM pg_tables WHERE tablename = 'zustand'\").stdout.trim() === '0');\nok('keine Nebendatenbank dsv1_neben aus einem frueheren Lauf', z(\"SELECT count(*) FROM pg_database WHERE datname = 'dsv1_neben'\").stdout.trim() === '0');\nok('keine Rollenvorgabe (ALTER ROLE … SET) aus einem frueheren Lauf', z('SELECT count(*) FROM pg_db_role_setting').stdout.trim() === '0');\nok('keine Datenbank \"Foo\" (Grossbuchstabe) oder dsv1_vorlage (Template) aus einem frueheren Lauf', z(\"SELECT count(*) FROM pg_database WHERE datname IN ('Foo','dsv1_vorlage')\").stdout.trim() === '0');\nok('keine Datenbank mit Zeilenumbruch im Namen (\"template1\\\\nx\", \"postgres\\\\nx\") aus einem frueheren Lauf, template1 und postgres unberuehrt', z(\"SELECT count(*) FROM pg_database WHERE datname LIKE E'%\\\\n%'\").stdout.trim() === '0' && z(\"SELECT count(*) FROM pg_database WHERE datname IN ('template1','postgres')\").stdout.trim() === '2');\nconst zp = (sql) => spawnSync('psql', [process.env.DATABASE_URL.replace('/gymdocu_test?', '/postgres?'), '-X', '-tA', '-c', sql], { encoding: 'utf8' });\nok('kein Large Object in postgres aus einem frueheren Lauf', zp('SELECT count(*) FROM pg_largeobject_metadata').stdout.trim() === '0');\nfor (const s of spuren) fs.writeFileSync(s, 'dsv1');\nok('Tabelle zustand angelegt', z('CREATE TABLE zustand(a int)').status === 0);\nok('Nebendatenbank dsv1_neben angelegt (Rolle hat CREATEDB)', z('CREATE DATABASE dsv1_neben').status === 0);\nok('Rollenvorgabe gesetzt', z(\"ALTER ROLE nobody SET work_mem = '7MB'\").status === 0);\nok('Datenbank \"Foo\" angelegt (Bezeichner mit Grossbuchstabe)', z('CREATE DATABASE \"Foo\"').status === 0);\nok('Datenbank dsv1_vorlage als Template angelegt (die Rolle darf das: gemessen 30.09.2026 auf PG 16)', z('CREATE DATABASE dsv1_vorlage IS_TEMPLATE true').status === 0);\nok('Datenbank \"template1\\\\nx\" (Zeilenumbruch im Namen) angelegt', z('CREATE DATABASE \"template1\\nx\"').status === 0);\nok('Datenbank \"postgres\\\\nx\" angelegt', z('CREATE DATABASE \"postgres\\nx\"').status === 0);\nok('Large Object in postgres angelegt (lo_create als Rolle)', zp('SELECT lo_create(0)').status === 0);\nok('Positivkontrolle: im selben Lauf sind die Spuren jetzt da', spuren.every((s) => fs.existsSync(s)) && z(\"SELECT count(*) FROM pg_tables WHERE tablename = 'zustand'\").stdout.trim() === '1' && z(\"SELECT count(*) FROM pg_database WHERE datname = 'dsv1_neben'\").stdout.trim() === '1' && z('SELECT count(*) FROM pg_db_role_setting').stdout.trim() === '1' && z(\"SELECT count(*) FROM pg_database WHERE datname IN ('Foo','dsv1_vorlage')\").stdout.trim() === '2' && z(\"SELECT count(*) FROM pg_database WHERE datname LIKE E'%\\\\n%'\").stdout.trim() === '2' && zp('SELECT count(*) FROM pg_largeobject_metadata').stdout.trim() === '1');\nschluss();\n");
     schreiben('test_umgebung.js', ok + "const namen = Object.keys(process.env).sort();\nconst soll = ['BELEHRUNGEN_UPLOAD_DIR','CI','DATABASE_URL','DEFECT_PHOTO_DIR','DOKUMENTE_DIR','EINWEISUNG_NACHWEIS_DIR','EXPORT_DIR','GYMDOCU_BOOT_SMOKE_STARTPFAD','HOME','LAGEPLAN_UPLOAD_DIR','NODE_OPTIONS','OFFBOARDING_QUEUE_DIR','PATH','PDF_ROOT','PLAYWRIGHT_BROWSERS_PATH','PRUEFBERICHT_DIR','PUBLIC_BASE_DOMAIN','QR_VERBRAUCH','SESSION_SECRET','TZ'];\nok('Umgebungsnamen = Literalliste', JSON.stringify(namen) === JSON.stringify(soll), namen);\nok('CI=true, TZ=UTC, HOME=/tmp', process.env.CI === 'true' && process.env.TZ === 'UTC' && process.env.HOME === '/tmp');\nok('SESSION_SECRET ist das CI-Literal', process.env.SESSION_SECRET === 'ci-isolation-session-secret-0123456789abcdef');\nok('DATABASE_URL zeigt auf den Socket-Ordner /dsv1/pg und gymdocu_test und ist fuer new URL() gueltig', /^postgresql:\\/\\/nobody@localhost\\/gymdocu_test\\?host=\\/dsv1\\/pg&port=\\d+$/.test(process.env.DATABASE_URL) && new URL(process.env.DATABASE_URL).pathname === '/gymdocu_test', process.env.DATABASE_URL);\nok('Vorladung ueber NODE_OPTIONS wirkt', globalThis.dsv1Vorgeladen === true);\nok('PDF_ROOT liegt unter /tmp/gymdocu-suite-', String(process.env.PDF_ROOT).startsWith('/tmp/gymdocu-suite-'));\nok('cwd ist /dsv1/kopie', process.cwd() === '/dsv1/kopie');\nschluss();\n");
     schreiben('test_geheimnis.js', ok + "console.log('token = \"' + 'gh' + 'p_' + 'X'.repeat(36) + '\"');\nok('eine Zeile mit Attrappe ausgegeben', true);\nschluss();\n");
     // PEM-Rahmen zur Laufzeit zusammengesetzt (kein Literal im Quelltext).
@@ -1126,6 +1164,7 @@ function fixtureAnlegen(basis) {
     // haette den Marker laengst geschrieben) und prueft Kopie und Ablagen.
     schreiben('test_marker.js', ok + "const fs = require('node:fs');\nAtomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1500);\nok('kein Marker eines ueberlebenden Prozesses der Vorbereitung in der Kopie', !fs.existsSync('marker-w-e3'));\nfor (const s of ['/tmp/w-e3-vorbereitung', '/var/tmp/w-e3-vorbereitung', '/dev/shm/w-e3-vorbereitung']) ok('Ablage der Vorbereitung geleert: ' + s, !fs.existsSync(s));\nschluss();\n");
     fs.symlinkSync('lib/wert.js', path.join(w, 'zeiger.js'));
+    fs.symlinkSync('lib/wert.js', path.join(w, 'zeiger2.js'));   // zweiter Symlink fuer die Zeilenumbruch-Tarnung (Runde 3 Befund 3)
     fs.mkdirSync(path.join(w, 'node_modules'));
     fs.writeFileSync(path.join(w, 'node_modules', 'README'), 'leer\n');
     g(['add', '-A']);
@@ -1171,13 +1210,13 @@ async function selbsttestSpur(pruefen) {
         const t1 = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
         pruefen(`TESTE GRUEN: status bestanden, exit 0, pass-zeilen 1, Kanarie vorher gefahren (Ausfuehrungen ${zaehler().ausfuehrungen}); Text: ${t1.text.split('\n')[0]}`,
             t1.status === 'bestanden' && /^status: bestanden\nexit: 0\n/.test(t1.text) && t1.text.includes('\npass-zeilen: 1\n') && lauf.kanarie.gruen && zaehler().ausfuehrungen === 2);
-        pruefen('KANARIE: Selbstmessung im Kind restlos gruen — literal "SELBSTMESSUNG: 32 ✓ / 0 ✗", Zeitzone UTC trotz TZ=Europe/Berlin im Elternprozess',
-            lauf.kanarie.ergebnis.selbstmessungZeile === 'SELBSTMESSUNG: 32 ✓ / 0 ✗' && lauf.kanarie.ergebnis.protokoll.stufen.selbstmessung.includes('✓ Zeitzone des Node-Prozesses = UTC'));
+        pruefen('KANARIE: Selbstmessung im Kind restlos gruen — literal "SELBSTMESSUNG: 34 ✓ / 0 ✗", Zeitzone UTC trotz TZ=Europe/Berlin im Elternprozess',
+            lauf.kanarie.ergebnis.selbstmessungZeile === 'SELBSTMESSUNG: 34 ✓ / 0 ✗' && lauf.kanarie.ergebnis.protokoll.stufen.selbstmessung.includes('✓ Zeitzone des Node-Prozesses = UTC'));
         pruefen('KANARIE: Selbstmessung belegt hidepid, Einhaengemenge, /opt-Teilbaeume, rlimits (Literale und Ueberschreiten), lo_import, zweite sha256 (test/umgebung.sh im Grundlauf)',
-            ['✓ /proc mit hidepid', '✓ Einhaengemenge = Literalliste', '✓ /opt enthaelt nur', '✓ rlimits (soft/hart): nproc 512, fsize 67108864, cpu 600', '✓ nproc wirkt', '✓ fsize wirkt', '✓ cpu wirkt', '✓ serverseitiges lo_import scheitert', '✓ CREATE TABLE in template1 als 65534 scheitert', '✓ CREATE TABLE in postgres als 65534 scheitert', '✓ hostabhaengige Einhaengungen', '✓ sha256 der zweiten Datei test/umgebung.sh (unmutiert, Grundlauf)']
+            ['✓ /proc mit hidepid', '✓ Einhaengemenge = Literalliste', '✓ /opt enthaelt nur', '✓ rlimits (soft/hart): nproc 512, fsize 67108864, cpu 600', '✓ nproc wirkt', '✓ fsize wirkt', '✓ cpu wirkt', '✓ serverseitiges lo_import scheitert', '✓ Verbindung zu template1 als 65534 scheitert', '✓ CREATE TABLE in postgres als 65534 scheitert', '✓ kein Large Object in der frischen gymdocu_test', '✓ kein Large Object in postgres', '✓ hostabhaengige Einhaengungen', '✓ sha256 der zweiten Datei test/umgebung.sh (unmutiert, Grundlauf)']
                 .every((s) => lauf.kanarie.ergebnis.protokoll.stufen.selbstmessung.includes(s)));
         pruefen('ERGEBNIS traegt die PASS-Zeile der Teststufe und die Selbstmessungszeile im Kopf',
-            t1.text.includes('1 PASS / 0 FAIL') && t1.text.includes('\nselbstmessung: SELBSTMESSUNG: 32 ✓ / 0 ✗\n'));
+            t1.text.includes('1 PASS / 0 FAIL') && t1.text.includes('\nselbstmessung: SELBSTMESSUNG: 34 ✓ / 0 ✗\n'));
         pruefen('PROTOKOLL: Eintrag je Ausfuehrung mit typ, status, stufen, Manifest-Zahlen und Volltext',
             protokollEintraege.length === 2 && protokollEintraege.every((p) => p.typ === 'ausfuehrung' && typeof p.ausgabe === 'string' && p.stufen && p.stufen.selbstmessung.includes('✓') && p.manifest.dateien > 20 && p.manifest.eintraege > p.manifest.dateien));
 
@@ -1224,6 +1263,16 @@ async function selbsttestSpur(pruefen) {
         const ms = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/schema.js', alt: "module.exports = 'CREATE TABLE", neu: "require('node:fs').unlinkSync('zeiger.js'); require('node:fs').symlinkSync('lib/doppelt.js', 'zeiger.js');\nmodule.exports = 'CREATE TABLE", testdatei: 'test_gruen.js' });
         pruefen('MANIPULIERT: die Vorbereitung haengt den versionierten Symlink zeiger.js um (lib/wert.js -> lib/doppelt.js): Typ und Pfad gleich, das Ziel in der Datei-Liste weicht ab',
             ms.status === 'manipuliert' && ms.text.includes('Datei-Liste der Kopie weicht ab') && ms.text.includes('zeiger.js') && ms.text.includes('lib/doppelt.js'));
+        // ----- template1 nicht verbindbar (Runde 3 Befund 2): die Vorbereitung versucht lo_create dort -----
+        // Die Fixture bricht ab, wenn lo_create in template1 GELINGT — mit dem
+        // Schutz gelingt es nicht, die Vorbereitung laeuft weiter, der Test besteht.
+        const mlo = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/schema.js', alt: "module.exports = 'CREATE TABLE", neu: "const lo = require('node:child_process').spawnSync('psql', [process.env.DATABASE_URL.replace('/gymdocu_test?', '/template1?'), '-X', '-tA', '-c', 'SELECT lo_create(0)'], { encoding: 'utf8' });\nif (lo.status === 0) { console.error('lo_create in template1 GELUNGEN: ' + lo.stdout); process.exit(1); }\nconsole.error('template1: ' + lo.stderr.trim().split('\\n').pop());\nmodule.exports = 'CREATE TABLE", testdatei: 'test_gruen.js' });
+        pruefen('TEMPLATE1 GESPERRT: die Vorbereitung kann in template1 kein Large Object anlegen (Verbindung verweigert), der Lauf besteht; ohne Sperre braeche die Fixture mit Exit 1 ab',
+            mlo.status === 'bestanden' && mlo.text.includes('1 PASS / 0 FAIL'));
+        // ----- Zeilenumbruch im Symlink-Ziel tarnt eine Loeschung (Runde 3 Befund 3) -----
+        const mz = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/schema.js', alt: "module.exports = 'CREATE TABLE", neu: "const fz = require('node:fs'); fz.unlinkSync('zeiger2.js'); fz.unlinkSync('zeiger.js'); fz.symlinkSync('lib/wert.js\\nl ./zeiger2.js lib/wert.js', 'zeiger.js');\nmodule.exports = 'CREATE TABLE", testdatei: 'test_gruen.js' });
+        pruefen('MANIPULIERT: zeiger2.js geloescht und das Ziel von zeiger.js mit Zeilenumbruch auf die alte Zeile von zeiger2.js getrimmt -> die NUL-terminierte Datei-Liste weicht trotzdem ab',
+            mz.status === 'manipuliert' && mz.text.includes('Datei-Liste der Kopie weicht ab') && mz.text.includes('zeiger'));
         // ----- Vorrang: Vorbereitung faellt UND reisst den Erfassungsdeckel (Befund 4, Runde 2) -----
         const mf5 = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/schema.js', alt: "module.exports = 'CREATE TABLE", neu: "process.stdout.write('V'.repeat(5 * 1024 * 1024));\nthrow new Error('Vorbereitung faellt nach 5 MiB');\nmodule.exports = 'CREATE TABLE", testdatei: 'test_gruen.js' });
         pruefen('VORRANG: Vorbereitung faellt (Exit 22) und reisst zugleich den 4-MiB-Erfassungsdeckel -> vorbereitung-gescheitert bleibt erkennbar, der Riss steht als Hinweis',
@@ -1346,13 +1395,16 @@ async function selbsttestSpur(pruefen) {
             ['bestanden', 'gescheitert', 'ohne-nachweis', 'manipuliert', 'erfassung-gerissen', 'signaltod', 'zeitlimit', 'vorbereitung-gescheitert', 'umgebung-fehler', 'abgelehnt', 'grundlauf-rot', 'grundlauf-unvollstaendig', 'ausgabe-verworfen']
                 .every((s) => STATUS_KATALOG[s] && vorspannAbsatz().includes(`- ${s}:`)) && !vorspannAbsatz().includes('Wirkungsnachweis'));
 
-        pruefen('STATUS-ABBILDUNG VORRANG: gerissene Erfassung ueberdeckt weder Isolationsabbruch (21/24) noch manipuliert (25), vorbereitung-gescheitert (22) oder signaltod (139) — nur Testergebnisse werden erfassung-gerissen',
+        pruefen('STATUS-ABBILDUNG VORRANG: gerissene Erfassung ueberdeckt weder Isolationsabbruch (21/24) noch Stufencodes (20/22/23/25/26/30), zeitlimit oder signaltod — nur Testergebnisse (0+PASS, ohne Testexit) werden erfassung-gerissen',
             [21, 24].every((c) => { const r = statusAusExit({ code: c, signal: null, testExit: null, waechter: false, dauerMs: 1, tSekunden: 300, erfassungVerworfen: 1 }); return r.isolation === true && r.status === 'umgebung-fehler'; })
             && statusAusExit({ code: 25, signal: null, testExit: null, waechter: false, dauerMs: 1, tSekunden: 300, erfassungVerworfen: 1 }).status === 'manipuliert'
             && statusAusExit({ code: 22, signal: null, testExit: null, waechter: false, dauerMs: 1, tSekunden: 300, erfassungVerworfen: 1 }).status === 'vorbereitung-gescheitert'
             && statusAusExit({ code: 139, signal: null, testExit: 139, waechter: true, dauerMs: 1, tSekunden: 300, erfassungVerworfen: 1 }).status === 'signaltod'
+            && [20, 23, 30].every((c) => statusAusExit({ code: c, signal: null, testExit: null, waechter: false, dauerMs: 1, tSekunden: 300, erfassungVerworfen: 1 }).status === 'umgebung-fehler')
+            && (() => { const r = statusAusExit({ code: 26, signal: null, testExit: null, waechter: false, dauerMs: 1, tSekunden: 300, erfassungVerworfen: 1 }); return r.status === 'umgebung-fehler' && r.isolation === false && r.werkzeug === true; })()
+            && statusAusExit({ code: 124, signal: null, testExit: null, waechter: true, dauerMs: 300000, tSekunden: 300, erfassungVerworfen: 1 }).status === 'zeitlimit'
             && statusAusExit({ code: 0, signal: null, testExit: 0, waechter: true, dauerMs: 1, tSekunden: 300, passZahl: 3, erfassungVerworfen: 1 }).status === 'erfassung-gerissen'
-            && statusAusExit({ code: 23, signal: null, testExit: null, waechter: false, dauerMs: 1, tSekunden: 300, erfassungVerworfen: 1 }).status === 'erfassung-gerissen');
+            && statusAusExit({ code: 1, signal: null, testExit: null, waechter: true, dauerMs: 1, tSekunden: 300, erfassungVerworfen: 1 }).status === 'erfassung-gerissen');
         pruefen('STATUS-ABBILDUNG KONSISTENZ: weicht der Exit von PID 1 vom Inhalt von test-exit ab (Trap-Rennen: 30 gegen 0, oder 1 gegen 0) -> umgebung-fehler, kein Testergebnis; gleich -> Testergebnis',
             statusAusExit({ code: 30, signal: null, testExit: 0, waechter: true, dauerMs: 1, tSekunden: 300, passZahl: 3 }).status === 'umgebung-fehler'
             && statusAusExit({ code: 1, signal: null, testExit: 0, waechter: true, dauerMs: 1, tSekunden: 300, passZahl: 3 }).status === 'umgebung-fehler'
@@ -1365,8 +1417,8 @@ async function selbsttestSpur(pruefen) {
         // ----- Kein Zustand, Umgebungsvertrag, Riegel, Deckel -----
         const z1 = await werkzeugAufrufen('teste', { testdatei: 'test_zustand.js' });
         const z2 = await werkzeugAufrufen('teste', { testdatei: 'test_zustand.js' });
-        pruefen('KEIN ZUSTAND: Datei in Kopie, /tmp, /var/tmp, /dev/shm, Tabelle, Nebendatenbank (CREATEDB), Datenbank "Foo" (gequotet), Template-Datenbank und ALTER-ROLE-Vorgabe aus Lauf n sind in n+1 weg (beide Laeufe bestanden, 14 PASS, Positivkontrolle im Test selbst)',
-            z1.status === 'bestanden' && z2.status === 'bestanden' && z2.text.includes('Positivkontrolle: im selben Lauf sind die Spuren jetzt da') && z2.text.includes('14 PASS / 0 FAIL') && z2.text.includes('"Foo"'));
+        pruefen('KEIN ZUSTAND: Datei in Kopie, /tmp, /var/tmp, /dev/shm, Tabelle, Nebendatenbank (CREATEDB), Datenbank "Foo" (gequotet), Template-Datenbank, Datenbanken "template1\\nx"/"postgres\\nx" (serverseitig gequotet, Systemdatenbanken unberuehrt), Large Object in postgres und ALTER-ROLE-Vorgabe aus Lauf n sind in n+1 weg (beide Laeufe bestanden, 19 PASS, Positivkontrolle im Test selbst)',
+            z1.status === 'bestanden' && z2.status === 'bestanden' && z2.text.includes('Positivkontrolle: im selben Lauf sind die Spuren jetzt da') && z2.text.includes('19 PASS / 0 FAIL') && z2.text.includes('"Foo"') && z2.text.includes('Zeilenumbruch im Namen'));
         const tu = await werkzeugAufrufen('teste', { testdatei: 'test_umgebung.js' });
         pruefen(`UMGEBUNGSVERTRAG im Kind: Namen = Literalliste, CI/TZ/HOME, SESSION_SECRET-Literal, DATABASE_URL auf /dsv1/pg, Vorladung wirkt, cwd (${tu.status})`,
             tu.status === 'bestanden' && tu.text.includes('7 PASS / 0 FAIL'));
@@ -1488,6 +1540,38 @@ async function selbsttestSpur(pruefen) {
         pruefen('SCAN W-E3: ohne kill findet der /proc-Scan den ueberlebenden Prozess -> Exit 25, manipuliert, Meldung PROZESSE UEBRIG nach der Vorbereitung',
             mpScan.status === 'manipuliert' && mpScan.text.includes('exit: 25') && mpScan.text.includes('PROZESSE UEBRIG nach der Vorbereitung'));
         aufraeumen();
+
+        // ----- Fremdes Mountziel unter /tmp nach der Selbstmessung (Runde 3 Befund 6, Exit 25 statt 20: Befund 8) -----
+        const vorbereitungZeile = 'stufe "Stufe Vorbereitung (test/db-vorbereiten.js)"';
+        pruefen('GEGENPROBE-VORBEREITUNG: die Vorbereitungs-Stufenzeile kommt im Aufbauskript genau einmal vor', fundstellenZaehlen(aufbauOriginal, vorbereitungZeile) === 1);
+        const aufbauFremdesMount = path.join(basis, 'aufbau-fremdes-mount.sh');
+        fs.writeFileSync(aufbauFremdesMount, aufbauOriginal.replace(vorbereitungZeile, 'mkdir -p /tmp/fremd && mount -n -t tmpfs tmpfs /tmp/fremd   # Selbsttest: rw-Mount nach der Selbstmessung\n' + vorbereitungZeile));
+        await einrichten({ wurzel: fx.wurzel, istHartGesperrt, tSekunden: T_KURZ, aufbauSkript: aufbauFremdesMount });
+        const tfm = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
+        pruefen('FREMDES MOUNTZIEL: ein rw-Mount unter /tmp, der nach der Selbstmessung erscheint, laesst das Leeren der Ablagen scheitern -> Exit 25, manipuliert (nicht 20), Meldung nennt das Ziel',
+            tfm.abgelehnt && lauf.kanarie.ergebnis.status === 'manipuliert' && lauf.kanarie.ergebnis.exit === 25 && lauf.kanarie.ergebnis.ausgabe.includes('fremdes Mountziel unter den Ablagen (nicht ro): /tmp/fremd'));
+        aufraeumen();
+
+        // ----- Host-Anordnung ausserhalb der Literal-Praefixe: Werkzeug-Befund, KEIN Isolationsabbruch (Runde 3 Befund 7) -----
+        const fremdBasis = fs.mkdtempSync('/tmp/fremd-anordnung-');
+        fs.chmodSync(fremdBasis, 0o755);
+        const fremdBrowser = path.join(fremdBasis, 'browser', 'chromium-9999', 'chrome-linux');
+        fs.mkdirSync(fremdBrowser, { recursive: true });
+        fs.writeFileSync(path.join(fremdBrowser, 'chrome'), '#!/bin/sh\necho chrome-attrappe\n', { mode: 0o755 });
+        process.env.PLAYWRIGHT_BROWSERS_PATH = path.join(fremdBasis, 'browser');
+        try {
+            await einrichten({ wurzel: fx.wurzel, istHartGesperrt, tSekunden: T_KURZ });
+            const twb = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
+            const kw = lauf.kanarie.ergebnis;
+            pruefen(`WERKZEUG-BEFUND: Browserpfad ausserhalb der Literal-Praefixe -> Kanarie umgebung-fehler mit Exit 26 ohne isolation, KEIN Abbruchmarker, jeder Aufruf mit WERKZEUG-BEFUND abgelehnt, Zusammenfassung nennt ihn (${kw.status}, exit ${kw.exit})`,
+                twb.abgelehnt && twb.text.includes('WERKZEUG-BEFUND') && kw.status === 'umgebung-fehler' && kw.exit === 26 && kw.isolationGebrochen === false && kw.werkzeugBefund === true
+                && !istAbgebrochen() && abbruchMarker() === null && zusammenfassungZeilen().some((z) => z.startsWith('WERKZEUG-BEFUND der Kanarie'))
+                && kw.protokoll.stufen.selbstmessung.includes('✗ WERKZEUG-BEFUND: hostabhaengige Einhaengungen'));
+            aufraeumen();
+        } finally {
+            process.env.PLAYWRIGHT_BROWSERS_PATH = fx.browser;
+            fs.rmSync(fremdBasis, { recursive: true, force: true });
+        }
 
         // ----- Infrastrukturfehler wird ein Status, kein Wurf (Befund F-B5); Runde 2: Kategorie, Aufraeumen, kein Zwischenspeicher -----
         const infraEintraege = [];

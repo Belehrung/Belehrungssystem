@@ -19,9 +19,12 @@
 #   23  test/umgebung.sh liefert return 1                      -> umgebung-fehler
 #   24  Umgebungsnamen nach umgebung.sh weichen von der         -> Isolationsabbruch
 #       Literalliste unten ab (Werkzeug-Befund)
-#   25  Manifest verletzt ODER Prozess ueberlebt: Vorbereitung   -> manipuliert
-#       oder Umgebung haben die Kopie veraendert (Datei-Liste mit
-#       Symlink-Ziel oder sha256) oder Prozesse hinterlassen
+#   25  Manifest verletzt ODER Prozess ueberlebt ODER Ablagen     -> manipuliert
+#       nicht leerbar: Vorbereitung oder Umgebung haben die Kopie
+#       veraendert (Datei-Liste mit Symlink-Ziel oder sha256), Prozesse
+#       hinterlassen oder in /tmp, /var/tmp, /dev/shm etwas Fremdes
+#   26  Selbstmessung meldet einen WERKZEUG-Befund (Host-Anordnung  -> umgebung-fehler,
+#       ausserhalb der Literal-Praefixe), Isolation selbst intakt      KEIN Isolationsabbruch
 #   30  dieses Skript selbst bekam TERM/INT/HUP                  -> umgebung-fehler
 #   sonst: der Exit der TESTSTUFE. Massgeblich ist dafuer NICHT der Exit
 #   dieses Skripts, sondern die Datei /dsv1/ergebnis/test-exit, die root NACH
@@ -49,9 +52,11 @@
 # aller Eintraege ausser node_modules, sha256 aller regulaeren Dateien; bei
 # einer Mutation ist deren Zielhash bereits enthalten), und root prueft es
 # hier NACH der Vorbereitung und NACH umgebung.sh, bevor die Teststufe
-# startet. Jede Abweichung ist Exit 25. Die Liste traegt das Symlink-ZIEL
-# (%l, Runde 2 Befund 2): ein umgehaengter Symlink hat weder neuen Typ noch
-# neuen Pfad, und sha256 laeuft nur ueber regulaere Dateien.
+# startet. Jede Abweichung ist Exit 25. Die Liste (tools/ausfuehr-manifest.sh,
+# DIESELBE Datei fuer Eltern und Kind, hier unter /dsv1/werkzeug) traegt das
+# Symlink-ZIEL (Runde 2 Befund 2) als NUL-terminierte, laengenpraefixierte
+# Saetze (Runde 3 Befund 3: ein Zeilenumbruch im Ziel konnte sonst eine
+# geloeschte Zeile vortaeuschen); sha256 laeuft nur ueber regulaere Dateien.
 #
 # PROZESSE (Befund W-E3): ein in der Vorbereitung abgekoppelter Prozess
 # ueberlebt seine Stufe und koennte NACH der Manifestpruefung die Kopie
@@ -174,10 +179,10 @@ ip link set lo up || scheitern "lo"
 [ -s /dsv1/ergebnis/manifest.liste ] && [ -s /dsv1/ergebnis/manifest.sha256 ] || scheitern "Manifest fehlt"
 manifest_pruefen() {
     local stufe_name="$1"
-    ( cd /dsv1/kopie && find . -path ./node_modules -prune -o -printf '%y %p %l\n' | LC_ALL=C sort ) > /dsv1/ergebnis/manifest.liste-jetzt 2>/dev/null
+    bash /dsv1/werkzeug/ausfuehr-manifest.sh /dsv1/kopie > /dsv1/ergebnis/manifest.liste-jetzt 2>/dev/null
     if ! cmp -s /dsv1/ergebnis/manifest.liste /dsv1/ergebnis/manifest.liste-jetzt; then
-        echo "[dsv1] MANIFEST VERLETZT nach $stufe_name — Datei-Liste der Kopie weicht ab:" >&2
-        diff /dsv1/ergebnis/manifest.liste /dsv1/ergebnis/manifest.liste-jetzt | head -n 20 >&2
+        echo "[dsv1] MANIFEST VERLETZT nach $stufe_name — Datei-Liste der Kopie weicht ab (Saetze, NUL als Zeilenumbruch gezeigt):" >&2
+        diff <(tr '\0' '\n' < /dsv1/ergebnis/manifest.liste) <(tr '\0' '\n' < /dsv1/ergebnis/manifest.liste-jetzt) | head -n 20 >&2
         return 1
     fi
     if ! ( cd /dsv1/kopie && sha256sum --check --quiet --strict /dsv1/ergebnis/manifest.sha256 ) > /dsv1/ergebnis/manifest.pruefung 2>&1; then
@@ -221,16 +226,19 @@ prozesse_beenden() {
 # ein ro-Bind liegen (Browserpfad des Selbsttests und der CI) — der und
 # seine Elternverzeichnisse bleiben, alles andere muss danach weg sein
 # (gemessen 30.09.2026: ohne -xdev scheiterte find am ro-Bind mit EROFS).
+# Ausgenommen sind NUR ro-Einhaengungen (Option ro laut findmnt, Runde 3
+# Befund 6); jedes andere Mountziel unter den drei Ablagen ist ein Fehler.
 ablagen_leeren() {
-    local erlaubt="" ziel rest
+    local erlaubt="" ziel optionen rest
     find /tmp /var/tmp /dev/shm -mindepth 1 -xdev -delete 2>/dev/null
-    while read -r ziel; do
+    while read -r ziel optionen; do
         case "$ziel" in /tmp/*|/var/tmp/*|/dev/shm/*) ;; *) continue ;; esac
+        case "$optionen" in ro|ro,*) ;; *) echo "[dsv1] fremdes Mountziel unter den Ablagen (nicht ro): $ziel ($optionen)" >&2; return 1 ;; esac
         while [ "$ziel" != /tmp ] && [ "$ziel" != /var/tmp ] && [ "$ziel" != /dev/shm ] && [ "$ziel" != / ] && [ -n "$ziel" ]; do
             erlaubt="$erlaubt$ziel"$'\n'
             ziel=${ziel%/*}
         done
-    done < <(findmnt -rn -o TARGET)
+    done < <(findmnt -rn -o TARGET,OPTIONS)
     rest=$(find /tmp /var/tmp /dev/shm -mindepth 1 -xdev | grep -vxF -f <(printf '%s' "$erlaubt"))
     if [ -n "$rest" ]; then
         echo "[dsv1] Ablagen nach dem Leeren nicht leer:" >&2
@@ -261,6 +269,13 @@ stufe "Stufe Selbstmessung"
 als_nobody node /dsv1/werkzeug/ausfuehr-selbstmessung.js /dsv1/werkzeug/lauf.conf > /dsv1/ergebnis/selbstmessung.txt 2>&1
 rc=$?
 tail -n 1 /dsv1/ergebnis/selbstmessung.txt
+if [ "$rc" -eq 2 ]; then
+    # Nur Werkzeug-Befunde (Host-Anordnung ausserhalb der Literal-Praefixe),
+    # alle Isolationspunkte gruen: kein Isolationsabbruch (Runde 3 Befund 7).
+    cat /dsv1/ergebnis/selbstmessung.txt
+    echo "[dsv1] SELBSTMESSUNG: WERKZEUG-BEFUND (Host-Anordnung) — keine Ausfuehrung, Isolation intakt" >&2
+    exit 26
+fi
 if [ "$rc" -ne 0 ]; then
     cat /dsv1/ergebnis/selbstmessung.txt
     echo "[dsv1] SELBSTMESSUNG ROT (Exit $rc) — keine Ausfuehrung" >&2
@@ -279,7 +294,9 @@ fi
 prozesse_beenden "der Vorbereitung" || exit 25
 # Ablagen der Vorbereitung leeren (Befund W-E3 / Kimi 10), BEVOR umgebung.sh
 # seine eigenen Verzeichnisse dort anlegt.
-ablagen_leeren || scheitern "Leeren von /tmp, /var/tmp, /dev/shm"
+# Nicht leerbar oder fremdes Mountziel: die Vorbereitung ist die Ursache,
+# also 25 wie beim ueberlebenden Prozess (Runde 3 Befund 8), nicht 20.
+ablagen_leeren || { echo "[dsv1] ABLAGEN NICHT LEERBAR nach der Vorbereitung — manipuliert" >&2; exit 25; }
 manifest_pruefen "der Vorbereitung" || exit 25
 
 stufe "Stufe Umgebung (test/umgebung.sh)"

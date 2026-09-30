@@ -17,7 +17,7 @@
 // des Originalbaums, Proxy-Adresse, Node-Baum und Browserpfad als die zwei
 // hostabhaengigen Einhaengungen).
 //
-// Gemessen wird (29 Punkte, Sollzahl steht literal im Selbsttest von
+// Gemessen wird (34 Punkte, Sollzahl steht literal im Selbsttest von
 // ausfuehr-spur.js): Identitaet und no_new_privs; /proc mit hidepid;
 // schreibbare Verzeichnisse, Einhaengemenge, /opt-Teilbaeume; Umgebungs-
 // namen; Originalbaum unerreichbar; sha256 der Testdatei und einer zweiten
@@ -70,6 +70,12 @@ try {
 
 let gruen = 0;
 let rot = 0;
+// Werkzeug-Befunde (Host-Anordnung ausserhalb der Literal-Praefixe) zaehlen
+// getrennt: sie brechen die Isolation nicht. Exit 2, wenn NUR solche rot sind.
+let werkzeugRot = 0;
+function okWerkzeug(text, bedingung) {
+    if (bedingung) { gruen++; console.log(`  ✓ ${text}`); } else { werkzeugRot++; console.log(`  ✗ WERKZEUG-BEFUND: ${text}`); }
+}
 function ok(bezeichnung, bedingung, detail) {
     if (bedingung) { gruen++; console.log(`  ✓ ${bezeichnung}`); }
     else { rot++; console.log(`  ✗ ${bezeichnung}${detail === undefined ? '' : ' — ' + String(detail).slice(0, 400)}`); }
@@ -184,19 +190,25 @@ async function main() {
     // Verzeichnisse, die auf diesem Host echte Verzeichnisse sind.
     const erwarteteMounts = new Set(MOUNTS_SOLL);
     for (const extra of [konf.NODE_BAUM, konf.BROWSER]) if (extra && !extra.startsWith('/usr/')) erwarteteMounts.add(extra);
-    for (const m of MERGED_USR) { try { if (!fs.lstatSync(m).isSymbolicLink() && mountZiele.includes(m)) erwarteteMounts.add(m); } catch (e) { /* fehlt */ } }
+    // Erwartung fuer merged-usr aus dem Dateityp (lstat), nicht aus der
+    // gemessenen Einhaengemenge (Runde 3 Befund 4): ein echtes Verzeichnis
+    // MUSS eingehaengt sein, ein Verweis darf es nicht.
+    for (const m of MERGED_USR) { try { if (!fs.lstatSync(m).isSymbolicLink()) erwarteteMounts.add(m); } catch (e) { /* fehlt */ } }
     const erwartetSortiert = [...erwarteteMounts].sort();
     ok(`Einhaengemenge = Literalliste (+ Node-Baum, Browserpfad): ${JSON.stringify(mountZiele)}`,
         mounts.status === 0 && JSON.stringify(mountZiele) === JSON.stringify(erwartetSortiert));
     // 5b. Jede Einhaengung ausserhalb der Literalliste ist entweder merged-usr
     // (Literalliste) oder einer der hoechstens zwei hostabhaengigen Baeume —
     // und der liegt unter einem Literal-Praefix (Befund 9, Runde 2).
+    // WERKZEUG-Befund, kein Isolationsbruch (Runde 3 Befund 7): die
+    // Einhaengemenge ist oben schon exakt geprueft; hier geht es um die
+    // Host-Anordnung. Die merged-usr-Klausel von Runde 2 war tautologisch
+    // (Menge mit dem Praedikat gebildet, das sie pruefen sollte) — gestrichen,
+    // Pruefung 5 traegt sie ueber die lstat-Erwartung.
     const extras = mountZiele.filter((z) => !MOUNTS_SOLL.includes(z) && !MERGED_USR.includes(z));
-    const mergedGemessen = mountZiele.filter((z) => MERGED_USR.includes(z));
-    ok(`hostabhaengige Einhaengungen ${JSON.stringify(extras)}: hoechstens ${MAX_EXTRA_MOUNTS}, jede = Node-Baum oder Browserpfad UND unter einem Literal-Praefix ${JSON.stringify(EXTRA_PRAEFIXE_SOLL)}; merged-usr ${JSON.stringify(mergedGemessen)} nur aus der Literalliste`,
+    okWerkzeug(`hostabhaengige Einhaengungen ${JSON.stringify(extras)}: hoechstens ${MAX_EXTRA_MOUNTS}, jede = Node-Baum oder Browserpfad UND unter einem Literal-Praefix ${JSON.stringify(EXTRA_PRAEFIXE_SOLL)}`,
         extras.length <= MAX_EXTRA_MOUNTS
-        && extras.every((e) => [konf.NODE_BAUM, konf.BROWSER].includes(e) && EXTRA_PRAEFIXE_SOLL.some((pr) => e.startsWith(pr)))
-        && mergedGemessen.every((m) => MERGED_USR.includes(m)));
+        && extras.every((e) => [konf.NODE_BAUM, konf.BROWSER].includes(e) && EXTRA_PRAEFIXE_SOLL.some((pr) => e.startsWith(pr))));
 
     // 6. /opt nur mit den benoetigten Teilbaeumen; verbotene Pfade fehlen
     let optEintraege = [];
@@ -329,11 +341,26 @@ async function main() {
     // public beim Anlegen des Clusters ausdruecklich zurueck (PG >= 15 tut
     // das von sich aus; gemessen 30.09.2026 auf 16.13: "permission denied
     // for schema public").
-    for (const db of ['template1', 'postgres']) {
-        const t = psql(url.replace(/\/gymdocu_test\?/, `/${db}?`), 'CREATE TABLE dsv1_probe(a int)');
-        ok(`CREATE TABLE in ${db} als ${KIND_UID} scheitert (${t.stderr.split('\n')[0] || 'ANGELEGT!'})`,
-            t.status !== 0 && /permission denied/i.test(t.stderr));
-    }
+    // Runde 3 Befund 2: template1 ist fuer die Rolle nicht einmal verbindbar
+    // (REVOKE CONNECT beim Anlegen des Clusters) — Objekte ohne Schemazwang
+    // (Large Objects) in template1 wuerden in jede frische gymdocu_test
+    // kopiert (gemessen 30.09.2026: lo_create in template1, danach 1 LO in
+    // der Kopie). postgres bleibt verbindbar (ein Test des Zielrepos legt
+    // darueber Datenbanken an), dort entzieht das Werkzeug CREATE auf public
+    // und raeumt Large Objects vor jedem Lauf ab.
+    const urlFuer = (db) => url.replace(/\/gymdocu_test\?/, `/${db}?`);
+    const t1 = psql(urlFuer('template1'), 'SELECT 1');
+    ok(`Verbindung zu template1 als ${KIND_UID} scheitert (${t1.stderr.split('\n').pop() || 'VERBUNDEN!'})`,
+        t1.status !== 0 && /permission denied for database/i.test(t1.stderr));
+    const tp = psql(urlFuer('postgres'), 'CREATE TABLE dsv1_probe(a int)');
+    ok(`CREATE TABLE in postgres als ${KIND_UID} scheitert (${tp.stderr.split('\n')[0] || 'ANGELEGT!'})`,
+        tp.status !== 0 && /permission denied/i.test(tp.stderr));
+    const loTest = psql(url, 'SELECT count(*) FROM pg_largeobject_metadata');
+    ok(`kein Large Object in der frischen gymdocu_test (aus template1 kopiert waere eines; gezaehlt ${loTest.stdout || loTest.stderr})`,
+        loTest.status === 0 && loTest.stdout === '0');
+    const loPostgres = psql(urlFuer('postgres'), 'SELECT count(*) FROM pg_largeobject_metadata');
+    ok(`kein Large Object in postgres aus einem frueheren Lauf (gezaehlt ${loPostgres.stdout || loPostgres.stderr})`,
+        loPostgres.status === 0 && loPostgres.stdout === '0');
     // Dieselbe URL, nur die Rolle getauscht (Textersatz: die Socket-Form
     // traegt keinen Rechnernamen, den ein URL-Parser verlangt).
     let alsPostgres = { status: 0, stderr: 'keine URL ableitbar' };
@@ -345,8 +372,8 @@ async function main() {
     ok(`Haupt-Socket ${HAUPT_SOCKET_ORDNER} unerreichbar (${haupt.stderr.split('\n').pop() || 'VERBUNDEN!'}; Ordner existiert: ${fs.existsSync(HAUPT_SOCKET_ORDNER)})`,
         haupt.status !== 0 && !fs.existsSync(HAUPT_SOCKET_ORDNER));
 
-    console.log(`SELBSTMESSUNG: ${gruen} ✓ / ${rot} ✗`);
-    process.exitCode = rot ? 1 : 0;
+    console.log(`SELBSTMESSUNG: ${gruen} ✓ / ${rot + werkzeugRot} ✗${werkzeugRot ? ` (davon ${werkzeugRot} Werkzeug-Befund)` : ''}`);
+    process.exitCode = rot ? 1 : (werkzeugRot ? 2 : 0);
 }
 
 main().catch((e) => {
