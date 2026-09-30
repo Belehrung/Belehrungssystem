@@ -79,7 +79,28 @@ Eigene Lesung des Diffs (`tools/ausfuehr-aufbau.sh` ganz):
 
 | Nr | Befund | Nachgemessen | Entscheidung |
 |---|---|---|---|
-| W-E3 | **blockierend**: Zwischen den Stufen (Selbstmessung, Vorbereitung, Umgebung) werden übriggebliebene Prozesse von 65534 NICHT beendet (`grep kill` findet nur den Signal-Trap `:84`). Ein abgekoppelter Prozess aus der Vorbereitung (Modellcode in `core/db.js`/Migrationen) kann warten, bis die Manifestprüfung vorbei ist, und dann die Testdatei umschreiben. Das Ergebnis wäre gefälscht, und mehr als EINE Änderung würde wirken. | Quelltext `:199-270` | Nacharbeit: nach jeder Stufe `kill -KILL -1` aus PID 1 und Nachweis, dass kein 65534-Prozess übrig ist, VOR der Manifestprüfung. `/tmp`, `/var/tmp` und `/dev/shm` nach der Vorbereitung frisch einhängen. Angriffsspur misst es. |
+| W-E3 | **sollte** (s. unten): Zwischen den Stufen (Selbstmessung, Vorbereitung, Umgebung) werden übriggebliebene Prozesse von 65534 NICHT beendet (`grep kill` findet nur den Signal-Trap `:84`). Ein abgekoppelter Prozess aus der Vorbereitung (Modellcode in `core/db.js`/Migrationen) kann warten, bis die Manifestprüfung vorbei ist, und dann die Testdatei umschreiben. Das Ergebnis wäre gefälscht, und mehr als EINE Änderung würde wirken. | Quelltext `:199-270` | Nacharbeit: nach jeder Stufe `kill -KILL -1` aus PID 1 und Nachweis, dass kein 65534-Prozess übrig ist, VOR der Manifestprüfung. `/tmp`, `/var/tmp` und `/dev/shm` nach der Vorbereitung frisch einhängen. Angriffsspur misst es. |
 
-Spuren Runde 2: flash (Repo-Werkzeuge auf `/workspace/belehrung-w`), kimi (Diff und beide Kernskripte), ausführende
-Angriffsspur (eigener Arbeitsbaum). Ergebnisse folgen.
+Spuren Runde 2: flash (Repo-Werkzeuge auf `/workspace/belehrung-w`), kimi (Diff und beide Kernskripte).
+
+**Die ausführende Angriffsspur hat NICHTS geliefert.** Ein Sicherheitsklassifikator hat ihren ersten Bauschritt
+(Angriffsmutationen) angehalten, und sie hat korrekt abgebrochen. Ergebnis: ungeprüft, nicht „kein Befund“. Die
+Angriffe werden NICHT auf anderem Weg nachgeholt; das wäre ein Umgehen dieses Stopps. Ersatz:
+
+- die zwei Lesespuren;
+- ABWEHRENDE Selbsttests im Werkzeug. Beispiel: eine Fixtur, die in der Vorbereitung einen abgekoppelten
+  Schlafprozess startet; zugesichert wird, dass er vor der Manifestprüfung beendet ist.
+
+Beim Lesen notiert (Quelltext, nicht gemessen):
+
+- Die Hashsummen des Manifests decken nur `-type f` ab; Symlinks stehen nur in der Liste. Hardlinks sind ungemessen.
+- Der sha256 der Testdatei wird nur vor der Vorbereitung verglichen.
+
+**Benannte Grenze (grundsätzlich):** Der mutierte Code läuft in der Teststufe mit denselben Rechten wie der Test. Er
+kann dort PASS-Zeilen und Exit 0 selbst erzeugen. Das Ergebnis der Spur ist deshalb nie ein Beweis, sondern eine
+Behauptung, die der Haupt-Agent vor jeder Verwendung selbst nachmisst; das entspricht der Hausregel für alle
+Prüfspuren.
+
+W-E3 bleibt trotzdem nötig. Das Manifest soll gerade verhindern, dass die VORBEREITUNG die Kopie verändert; ohne das
+Beenden der Reste ist diese Prüfung umgehbar und damit eine Zusicherung, die nicht rot werden kann. Neu eingestuft
+als „sollte“.
