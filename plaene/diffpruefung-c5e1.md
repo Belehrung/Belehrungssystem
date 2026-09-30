@@ -42,3 +42,16 @@ Die tragenden Befunde sind gemessen. Nr. 1 ist ein Regress: eine negative Zusich
 | C9 | P3 | Keine Fixtur für einen verknüpften Worktree. | Nacharbeit |
 | C10 | P3 | `unzip -t` wird auch aus falschem Grund rot. | Nacharbeit: Positivkontrolle |
 | — | Anmerkung | `ops/boot-smoke.js` lädt server.js im eigenen Prozess, steht aber nicht im Lader-Inventar. | Nacharbeit: als benannte Ausnahme aufnehmen |
+
+## Runde 2 (Lesespur flash über Nacharbeit 1, `d1b0bab..747a299`, nur Testhelfer)
+
+Keiner der Befunde blockiert. Da der Zweig ohnehin master hereinnehmen und die Suite neu fahren muss, gehen sie in dieselbe Runde (Nacharbeit 2).
+
+| Nr | Schwere | Befund | Entscheidung |
+|---|---|---|---|
+| R2-1 | sollte | Kindprozesse erben die Attrappenwerte. Ohne Netz-Sperre geht ein echter Request mit ungültigem Token hinaus (401, kein Alarm). Der Grenzkommentar nennt das falsch. | Nacharbeit 2: Kommentar berichtigen |
+| R2-2 | sollte | `--exclude-per-directory`: nicht nur `.git/info/exclude`, auch der Benutzerausschluss wird wieder gelesen. | Nacharbeit 2: Kommentar |
+| R2-3 | sollte | Die http(s)-Attrappe wirft synchron. Die echte API meldet über das `'error'`-Ereignis, und `routes/webhooks.js:512` hängt den Handler danach an. Folge: eine ungefangene Ablehnung und falsch rot. | Nacharbeit 2: `ClientRequest`-Attrappe mit `'error'` auf nextTick |
+| R2-4 | Anmerkung | Hostnamen werden nicht normalisiert (`localhost.`, Port). | Nacharbeit 2: `normalisiereHost()` aus der Netz-Attrappe |
+| R2-5 | Anmerkung | Bei `redirect: 'error'` wird ein fremdes Ziel gezählt, bevor der TypeError fällt. | Nacharbeit 2: Reihenfolge |
+| R2-6 | Anmerkung | Das Lader-Inventar kommt aus Dateisystem plus `run.sh`, nicht aus `git ls-files`. | Nacharbeit 2 |
