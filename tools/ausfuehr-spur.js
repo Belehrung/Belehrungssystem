@@ -938,9 +938,19 @@ function ungueltigerAufruf() {
     lauf.zaehler.ablehnungen++;
 }
 
-function deckelPruefen() {
+// Warum keine Ausfuehrung mehr: Abbruchmarker (Isolation gebrochen) oder
+// Werkzeug-Befund der Kanarie (Isolation intakt, Host passt nicht) — sonst null.
+// Gemessen 30.09.2026: nach einer Kanarie mit Stufe 26 lautete die Ablehnung
+// sonst "unbekannter Grund" (abbruchMarker() ist dann null).
+function keineAusfuehrungGrund() {
     if (lauf.isolation.abgebrochen) return abbruchMarker();
     if (lauf.werkzeugBefund) return `${lauf.werkzeugBefund} — keine Ausfuehrung in diesem Lauf`;
+    return null;
+}
+
+function deckelPruefen() {
+    const grund = keineAusfuehrungGrund();
+    if (grund) return grund;
     if (lauf.zaehler.aufrufe > MAX_AUFRUFE) return `Deckel: hoechstens ${MAX_AUFRUFE} Ausfuehrungs-Aufrufe je Lauf (dies war Nr. ${lauf.zaehler.aufrufe})`;
     // Harter Zeitdeckel (Befund S8): ein Lauf startet nur, wenn Testzeitlimit
     // plus Kill-Frist noch in die 45 Minuten passen.
@@ -994,7 +1004,7 @@ async function werkzeugTeste(argumente) {
     if (deckel) return ablehnen(deckel);
     const fehler = testdateiPruefen(argumente.testdatei);
     if (fehler) return ablehnen(fehler);
-    if (!await kanarieSicherstellen()) return ablehnen(abbruchMarker());
+    if (!await kanarieSicherstellen()) return ablehnen(keineAusfuehrungGrund());
     const r = await kindLaufenSicher({ testdatei: argumente.testdatei, zweck: 'teste' });
     if (ECHTE_TESTERGEBNISSE.includes(r.status) && !lauf.grundlauf.has(argumente.testdatei)) lauf.grundlauf.set(argumente.testdatei, r);
     return ergebnisObjekt(r, [`pass-zeilen: ${r.passZahl}${r.hatSkip ? ' (Uebersprungen-Zeile vorhanden)' : ''}`]);
@@ -1013,7 +1023,7 @@ async function werkzeugMutiereUndTeste(argumente) {
         if (e instanceof Ablehnung) return ablehnen(e.message);
         throw e;
     }
-    if (!await kanarieSicherstellen()) return ablehnen(abbruchMarker());
+    if (!await kanarieSicherstellen()) return ablehnen(keineAusfuehrungGrund());
     let grundlauf = lauf.grundlauf.get(argumente.testdatei);
     let grundlaufHerkunft = 'aus dem Zwischenspeicher dieses Laufs';
     if (!grundlauf) {
