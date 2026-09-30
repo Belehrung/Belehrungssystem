@@ -166,3 +166,7 @@ Diff selbst gelesen. R5-1 ist gegengelesen: `kindLaufenSicher` (`tools/ausfuehr-
 R5-1 bis R5-5 sind umgesetzt, jede Stelle mit Gegenprobe (K19–K23 rot). Selbsttest der Ausführung: 145 ✓ / 0 ✗. Gegen `/workspace/gymdocu-w` gemessen: Kanarie 34/0, Mutation gescheitert 81/9. Eine sechste Runde gibt es nicht. Beide Einordnungen (Werkzeug-Befund oder Isolationsabbruch) sind fail-closed, das heisst: in diesem Lauf wird nichts ausgeführt, und kein Ergebnis gilt.
 
 `w-bau` ist in den Zweig gemergt (`090e642`). Der einzige Konflikt lag in `ASTRA-LAEUFE.md`, beide Seiten sind behalten, die Marke steht genau einmal da. Offen ist der CI-Job `ausfuehr-spur`.
+
+CI im Belehrungssystem: Auf `090e642` war der Job `ausfuehr-spur` rot, 144 ✓ / 1 ✗. Der Fall MANIFEST-SKRIPT endete als 65534 mit Exit 126, weil der Checkout-Pfad des Runners für 65534 nicht durchquerbar ist. Behoben mit `7ff4816`: der Test ruft eine Kopie des Skripts unter `basis` auf. Lokal gegengemessen in einem Arbeitsbaum unter `/tmp/claude-0` (für 65534 nicht durchquerbar): 145 ✓, EXIT 0. CI-Lauf 1231 `success`.
+
+**Teil W ist damit fertig.** Offen bleibt der Einführungsschritt der Betreiber-Entscheidung vom 26.09.: EIN gemessener A/B gegen die Claude-Spur an einem echten Diff (`ASTRA-LAEUFE.md`).

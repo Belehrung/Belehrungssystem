@@ -641,3 +641,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Q Runde 3 (flash): 8 Befunde, davon 3 „sollte“. Nacharbeit 3 läuft, R3-8 steht auf der Sammelliste.
   - W Runde 5 (flash): 5 Befunde, Nacharbeit 5 läuft.
 - 30.09.2026 20:45 UTC: **C5-B ausgeliefert.** Deploy-Lauf 459 (`d9eec8b`) `success`. `tools/live-check.sh` EXIT 0, fünf Punkte ✓, zwei ℹ wie immer.
+- 30.09.2026 21:15 UTC:
+  - **Teil W (ausführende DeepSeek-Spur) fertig.** Fünf Prüfrunden, in den Zweig gemergt, Belehrungssystem-CI grün (Lauf 1231). Die CI-Rötung dazwischen kam aus der Prüfumgebung: 65534 kann den Checkout-Pfad nicht durchqueren. Behoben mit `7ff4816`. Nächster Schritt ist der A/B gegen die Claude-Spur an einem echten Diff.
+  - **C5-A:** Suite grün auf `d5722ab` (428 = 428, Lint 0), PR offen, die CI läuft.
+  - **C5-E1:** Suite rot, 1 FAIL: `qr_journal` F3, ein Flake, der vom Stand der Studio-ID-Folge abhängt. Nacharbeit 3 läuft.
