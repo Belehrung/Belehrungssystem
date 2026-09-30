@@ -348,6 +348,7 @@ sondern falsch.
 | 30.09.2026 | Diffpruefung D Lesespur (deepseek-flash) | **abgebrochen** (Geheimnis-Riegel auf dem Eingabediff): Diff 1441 Zeilen, Suchen 0, Lesungen 0, Token rein 0, Token raus 0, Runden 0 | — | — | — | 0,00 $ |
 | 30.09.2026 | Diffpruefung D Lesespur (nach Nacharbeit) (deepseek-flash) | Diff 1459 Zeilen, Suchen 9, Lesungen 20, Token rein 1286731, Token raus 67583, Runden 13 | — | — | — | 0,47 $ |
 | 30.09.2026 | Diffpruefung Teil W Lesespur (deepseek-flash) | Diff 2135 Zeilen, Suchen 8, Lesungen 13, Token rein 975885, Token raus 85787, Runden 7 | — | — | — | 0,40 $ |
+| 30.09.2026 | Diffpruefung Teil W vierte Spur (sol) (gpt-6-sol) | Diff 2135 Zeilen, Suchen 5, Lesungen 33, Token rein 1269002, Token raus 26899, Runden 10 | — | — | — | 5,48 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
