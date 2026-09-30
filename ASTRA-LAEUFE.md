@@ -366,6 +366,9 @@ sondern falsch.
 | 30.09.2026 | C5 Zustandspruefung t13-19 (deepseek-flash) | Diff 1 Zeilen, Suchen 48, Lesungen 59, Token rein 2764563, Token raus 61379, Runden 30 | — | — | — | 0,90 $ |
 | 30.09.2026 | C5 Zustandspruefung t20-27 (deepseek-flash) | Diff 1 Zeilen, Suchen 55, Lesungen 55, Token rein 2293752, Token raus 79539, Runden 23 | — | — | — | 0,78 $ |
 | 30.09.2026 | Planpruefung c5c (flash) (deepseek-flash) | Diff 128 Zeilen, Suchen 31, Lesungen 40, Token rein 2722779, Token raus 55511, Runden 30 | — | — | — | 0,88 $ |
+| 30.09.2026 | Planpruefung c5d (flash) (deepseek-flash) | Diff 102 Zeilen, Suchen 43, Lesungen 24, Token rein 1792786, Token raus 42689, Runden 30 | — | — | — | 0,59 $ |
+| 30.09.2026 | Planpruefung c5g (flash) (deepseek-flash) | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 127 Zeilen, Suchen 61, Lesungen 92, Token rein 2357112, Token raus 53967, Runden 17 | — | — | — | 0,77 $ |
+| 30.09.2026 | Planpruefung q (flash) (deepseek-flash) | Diff 57 Zeilen, Suchen 35, Lesungen 31, Token rein 2108313, Token raus 51108, Runden 30 | — | — | — | 0,69 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
