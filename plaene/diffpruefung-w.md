@@ -18,6 +18,18 @@ Stand `w-bau` `b88d585` (lokal). Spuren: Lesespur `deepseek-flash` (`scratchpad/
 | F-B8 | zwei `ok()` mit Konstante | trägt | Nacharbeit |
 | F-B9 | `istHartGesperrt` im Selbsttest unbelegt | trägt | Nacharbeit |
 
-(Kimi- und Angriffsspur folgen.)
+Angriffsspur (Claude, ausführend, `scratchpad/dsv1-angriff/`, zwei volle Läufe, danach sauber):
+
+| Nr | Befund | Nachgemessen | Entscheidung |
+|---|---|---|---|
+| A-7 | **kritisch**: Mutation in einer vorgeladenen Datei (`test/helfer/netz-sperre.js` via `NODE_OPTIONS`) mit `process.exit(0)` ⇒ Test läuft nie, Werkzeug meldet `bestanden` (PASS-/SKIP-Prüfung nur im Grundlauf) | Bericht wörtlich; Quelltext bestätigt (Gültigkeit nur für Grundlauf) | Nacharbeit: Mutationslauf ohne PASS-Zeile ⇒ eigener Status; PASS-Zahl Grundlauf/Mutation im Kopf |
+| A-5 | Extra-DB überlebt zwischen Aufrufen (gemessen `dsv1_probe_marker`) | gemessen | = W-E2 |
+| A-6 | Kopie liegt ungedeckelt auf der Host-Platte (`dd` 50 MB gelungen), `ulimit -f` unbegrenzt, `nproc` 64303 | gemessen | Nacharbeit: Schreibmenge hart begrenzen, rlimits (nproc, fsize, cpu) |
+| A-4 | unprivilegierte User-Namensräume im Kind möglich (`unshare -r` ⇒ uid 0 im eigenen NS); kein demonstrierter Ausbruch | gemessen; `setpriv` 2.39.3 kann kein seccomp, kein libseccomp vorhanden | benannte Grenze (Sammelliste), Kernelangriffsfläche |
+| A-1a | `/proc/1/cmdline` zeigt Host-Pfad und Lauf-ID | gemessen | Nacharbeit: `hidepid=2` |
+| A-1b | ganz `/etc` ro sichtbar, heute nichts Geheimes für 65534 lesbar | gemessen | benannte Grenze |
+| A-3, A-2, A-4b | Schreiben ausserhalb, Netz, Signale, `/proc/sys`, Wächterdatei fälschen, `lauf.conf` ändern | alle gescheitert | — |
+
+(Kimi- und sol-Spur folgen.)
 
 -- Ende --
