@@ -648,3 +648,5 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
 - 30.09.2026 21:25 UTC: **Fable-Guthaben aufgebraucht** (HTTP 429 „out of usage credits“, Modell `claude-fable-5-1`). Zwei Bauende sind daran abgebrochen:
   - Q N3: vorher committet und gepusht (`53c126d`). Die Suite des Toten läuft weiter, Runde 4 (flash) läuft.
   - C5-G1: Zwischenstand `1865fae` („Gegenproben und volle Suite stehen aus“), gepusht. Übernommen hat ein Standard-Executer (Sonnet). **Modellwechsel mitten im Beitrag.** Wird G1 schwächer, kommt dafür diese Ursache in Frage; Auftrag und Modell haben sich gleichzeitig geändert.
+- 30.09.2026 21:27 UTC: **C5-A gemergt** (#493, squash `f8de600`, CI 6/6 grün, kein Bot-Befund, Botschaft zurückgelesen). Die Deploy-Prüfung folgt um 21:44. Alle laufenden Bauenden haben den Hinweis bekommen, vor ihrer letzten Suite master hereinzunehmen.
+  - C5-D N1 ist fertig (`68bc08d`, Suite grün 424 = 424, Lint 0). Runde 2 (flash) läuft, weil sich das Verhalten beim Verbandbuch geändert hat.
