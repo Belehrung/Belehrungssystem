@@ -32,6 +32,11 @@ das nötige minimum."
   möglich, im Zweifel gar nicht. Und: „Nutze so viel wie geht DeepSeek" — Lese-, Prüf- und Recherchearbeit zuerst an
   DeepSeek (`deepseek-flash`), Claude-Agenten nur, wo DeepSeek es nicht kann (Bauen, Ausführen). DeepSeeks Ergebnisse prüft der Haupt-Agent
   weiterhin selbst (Betreiber, selber Tag).
+- Verschärft 30.09.2026 mittags (Betreiber): „Für mich ist das Wichtigste, dass deine Token so lange halten wie möglich
+  … vor allem wegen DeepSeek und Kimi. Das ist tatsächlich nur eine Frage des Geldes.“ Folge: Lesen, Prüfen,
+  Recherchieren und Zusammenfassen gehen an DeepSeek (`deepseek-flash`), Kimi und `gpt-6-sol` — auch parallel und
+  mehrfach, Kosten sind kein Grund dagegen. Lange Prüfberichte lässt der Haupt-Agent vorher von einem dieser Modelle
+  auf die Befundtabelle verdichten; selbst nachgemessen werden die tragenden Befunde, nicht jeder Satz.
 
 ## Eine benannte Grenze ist kein Endzustand
 
