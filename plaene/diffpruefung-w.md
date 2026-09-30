@@ -160,3 +160,9 @@ Diff selbst gelesen. R5-1 ist gegengelesen: `kindLaufenSicher` (`tools/ausfuehr-
 | R5-3 | Anmerkung | `mktemp` im Manifest-Skript hat kein `trap`. Beim Elternaufruf liegen Reste im Host-`/tmp`. | Nacharbeit 5: `trap … EXIT` |
 | R5-4 | Anmerkung | `printf %b` erzeugt aus `\x0a` einen echten Zeilenumbruch. Die zeilenweise Erlaubnisliste wird damit offen. Eine Einhängung kann nur die Vorbereitung anlegen, nicht das Modell. | Nacharbeit 5: Ziele mit Zeilenumbruch abweisen (`return 1`) |
 | R5-5 | Anmerkung | Die Kette Manifest-Exit → Aufbau → „MANIFEST NICHT ERMITTELBAR“ hat keinen Fall im Kindlauf. | Nacharbeit 5: Fall mit verkrüppeltem Manifest-Skript |
+
+## Nacharbeit 5 (`440f83f..14968c7`), selbst gelesen, und Merge
+
+R5-1 bis R5-5 sind umgesetzt, jede Stelle mit Gegenprobe (K19–K23 rot). Selbsttest der Ausführung: 145 ✓ / 0 ✗. Gegen `/workspace/gymdocu-w` gemessen: Kanarie 34/0, Mutation gescheitert 81/9. Eine sechste Runde gibt es nicht. Beide Einordnungen (Werkzeug-Befund oder Isolationsabbruch) sind fail-closed, das heisst: in diesem Lauf wird nichts ausgeführt, und kein Ergebnis gilt.
+
+`w-bau` ist in den Zweig gemergt (`090e642`). Der einzige Konflikt lag in `ASTRA-LAEUFE.md`, beide Seiten sind behalten, die Marke steht genau einmal da. Offen ist der CI-Job `ausfuehr-spur`.
