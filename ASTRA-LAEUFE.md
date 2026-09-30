@@ -359,6 +359,7 @@ sondern falsch.
 | 30.09.2026 | C5 Zustandspruefung b6 (deepseek-flash) | Diff 1 Zeilen, Suchen 78, Lesungen 68, Token rein 1163980, Token raus 82424, Runden 14 | — | — | — | 0,45 $ |
 | 30.09.2026 | C5 Zustandspruefung b1 (deepseek-flash) | Diff 1 Zeilen, Suchen 51, Lesungen 52, Token rein 1601670, Token raus 83302, Runden 13 | — | — | — | 0,58 $ |
 | 30.09.2026 | C5 Zustandspruefung b3a (deepseek-flash) | Diff 1 Zeilen, Suchen 82, Lesungen 65, Token rein 2587593, Token raus 87799, Runden 20 | — | — | — | 0,88 $ |
+| 30.09.2026 | C5 Zustandspruefung b4a3 (deepseek-flash) | Diff 1 Zeilen, Suchen 35, Lesungen 18, Token rein 1195057, Token raus 45748, Runden 17 | — | — | — | 0,41 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
