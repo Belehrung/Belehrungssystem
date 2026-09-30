@@ -24,3 +24,21 @@ Spuren: Lesespur `deepseek-flash` mit dem Baum `/workspace/gymdocu-c5e1-lese` un
 | F6 | Anmerkung | Die Lader-Menge wird per Textmuster erhoben. | Nacharbeit: Muster erweitern |
 | F7 | Anmerkung | Ein verschluckter ROLLBACK gibt den Client in den Pool zurück. | Nacharbeit: `release(true)` |
 | F8 | Anmerkung | „unabhängig gelesen“ liest dieselbe Datei wie der Helfer. | Nacharbeit: Beschriftung |
+
+## Ausführende Claude-Spur (26 Mutationen/Messungen, 10 Befunde)
+
+Die tragenden Befunde sind gemessen. Nr. 1 ist ein Regress: eine negative Zusicherung hat eine Zahlengrenze bekommen, auf master war sie rot.
+
+| Nr | Schwere | Befund | Entscheidung |
+|---|---|---|---|
+| C1 | P2 (Regress) | `nichtSynchron` in `korrektur_dokumente_static` hat die Zahlengrenze 2850. Ein synchroner Aufruf weiter hinten im Handler bleibt grün. | Nacharbeit: negative Muster an die Routengrenze binden, ohne Zahl |
+| C2 | P2 | Nach dem ersten Verstoß ist ein Kind in einer synchronen Schleife SIGTERM-immun; `spawnSync` mit Zeitlimit hängt. | Nacharbeit (mit F4): nach dem Quittieren abhängen |
+| C3 | P3 | Reihenfolge der Hörer: `once`/signal-exit werden überstimmt. | Nacharbeit: `prependListener` |
+| C4 | P3 | Zwei Mutationen am Haken überleben. | Nacharbeit |
+| C5 | P3 | `istEingesetzt()` ohne createTransport überlebt. | Nacharbeit |
+| C6 | P3 | `fremderVersand()===0` wird ohne Zugangsdaten nie rot. | Nacharbeit: Attrappenwerte für `GYMDOCU_TG_*` |
+| C7 | P3 | Redirect nach aussen (wie F3). | Nacharbeit |
+| C8 | P3 | Globale Git-Ausschlüsse ändern die Ignoriermenge (wie F5). | Nacharbeit |
+| C9 | P3 | Keine Fixtur für einen verknüpften Worktree. | Nacharbeit |
+| C10 | P3 | `unzip -t` wird auch aus falschem Grund rot. | Nacharbeit: Positivkontrolle |
+| — | Anmerkung | `ops/boot-smoke.js` lädt server.js im eigenen Prozess, steht aber nicht im Lader-Inventar. | Nacharbeit: als benannte Ausnahme aufnehmen |
