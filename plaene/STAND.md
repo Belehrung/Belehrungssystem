@@ -650,3 +650,8 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-G1: Zwischenstand `1865fae` („Gegenproben und volle Suite stehen aus“), gepusht. Übernommen hat ein Standard-Executer (Sonnet). **Modellwechsel mitten im Beitrag.** Wird G1 schwächer, kommt dafür diese Ursache in Frage; Auftrag und Modell haben sich gleichzeitig geändert.
 - 30.09.2026 21:27 UTC: **C5-A gemergt** (#493, squash `f8de600`, CI 6/6 grün, kein Bot-Befund, Botschaft zurückgelesen). Die Deploy-Prüfung folgt um 21:44. Alle laufenden Bauenden haben den Hinweis bekommen, vor ihrer letzten Suite master hereinzunehmen.
   - C5-D N1 ist fertig (`68bc08d`, Suite grün 424 = 424, Lint 0). Runde 2 (flash) läuft, weil sich das Verhalten beim Verbandbuch geändert hat.
+- 30.09.2026 23:45 UTC:
+  - **C5-A ausgeliefert.** Deploy 460 (`f8de600`) `success`, live-check EXIT 0 (5 ✓).
+  - Ab 21:30 brachen alle Claude-Bauenden an der Sitzungsgrenze ab (Rücksetzung 23:00), danach startete der Container neu. Befund nach dem Neustart: in keinem Baum ein Marker, alle Zweige gepusht. C5-D stand mitten im Merge von C5-A: Konflikte in `core/geraete-alter.js` und im P2-Wächter.
+  - Um 23:4x habe ich alle sieben Bauenden fortgesetzt: C5-C, C5-D, C5-E1, C5-E2, C5-G1, C5-G2, Q.
+  - C5-C Diffprüfung Runde 1 (flash) läuft.
