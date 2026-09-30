@@ -39,6 +39,11 @@ const MOUNTS_SOLL = ['/', '/dev', '/dev/null', '/dev/random', '/dev/shm', '/dev/
     '/dsv1/ergebnis', '/dsv1/kopie', '/dsv1/kopie/node_modules', '/dsv1/pg', '/dsv1/werkzeug',
     '/etc', '/proc', '/run', '/tmp', '/usr', '/var/tmp'];
 const MERGED_USR = ['/bin', '/sbin', '/lib', '/lib32', '/lib64', '/libx32'];
+// Hostabhaengige Einhaengungen (Node-Baum, Browserpfad) nur unter diesen
+// Literal-Praefixen (Runde 2, Befund 9): dieser Host, der CI-Werkzeugcache,
+// die Fixture des Selbsttests. Hoechstens zwei davon.
+const EXTRA_PRAEFIXE_SOLL = ['/opt/node', '/opt/pw-browsers', '/opt/hostedtoolcache/', '/tmp/ausfuehr-spur-selbsttest-'];
+const MAX_EXTRA_MOUNTS = 2;
 const OPT_VERBOTEN = ['/opt/claude-code', '/opt/env-runner'];
 const UMGEBUNG_SOLL = ['CI', 'DATABASE_URL', 'HOME', 'PATH', 'PLAYWRIGHT_BROWSERS_PATH', 'SESSION_SECRET', 'TZ'];
 const ZEITZONE_SOLL = 'UTC';
@@ -183,6 +188,15 @@ async function main() {
     const erwartetSortiert = [...erwarteteMounts].sort();
     ok(`Einhaengemenge = Literalliste (+ Node-Baum, Browserpfad): ${JSON.stringify(mountZiele)}`,
         mounts.status === 0 && JSON.stringify(mountZiele) === JSON.stringify(erwartetSortiert));
+    // 5b. Jede Einhaengung ausserhalb der Literalliste ist entweder merged-usr
+    // (Literalliste) oder einer der hoechstens zwei hostabhaengigen Baeume —
+    // und der liegt unter einem Literal-Praefix (Befund 9, Runde 2).
+    const extras = mountZiele.filter((z) => !MOUNTS_SOLL.includes(z) && !MERGED_USR.includes(z));
+    const mergedGemessen = mountZiele.filter((z) => MERGED_USR.includes(z));
+    ok(`hostabhaengige Einhaengungen ${JSON.stringify(extras)}: hoechstens ${MAX_EXTRA_MOUNTS}, jede = Node-Baum oder Browserpfad UND unter einem Literal-Praefix ${JSON.stringify(EXTRA_PRAEFIXE_SOLL)}; merged-usr ${JSON.stringify(mergedGemessen)} nur aus der Literalliste`,
+        extras.length <= MAX_EXTRA_MOUNTS
+        && extras.every((e) => [konf.NODE_BAUM, konf.BROWSER].includes(e) && EXTRA_PRAEFIXE_SOLL.some((pr) => e.startsWith(pr)))
+        && mergedGemessen.every((m) => MERGED_USR.includes(m)));
 
     // 6. /opt nur mit den benoetigten Teilbaeumen; verbotene Pfade fehlen
     let optEintraege = [];
@@ -309,6 +323,17 @@ async function main() {
     const lo_import = psql(url, "SELECT lo_import('/etc/passwd')");
     ok(`serverseitiges lo_import scheitert (${lo_import.stderr.split('\n')[0] || 'kein Fehler!'})`,
         lo_import.status !== 0 && /permission denied|must be superuser/i.test(lo_import.stderr));
+    // template1 und postgres bleiben unbeschreibbar (Befund 5, Runde 2): aus
+    // template1 entsteht jede frische gymdocu_test — eine Tabelle dort waere
+    // Zustand ueber Laeufe hinweg. Das Werkzeug zieht das CREATE-Recht auf
+    // public beim Anlegen des Clusters ausdruecklich zurueck (PG >= 15 tut
+    // das von sich aus; gemessen 30.09.2026 auf 16.13: "permission denied
+    // for schema public").
+    for (const db of ['template1', 'postgres']) {
+        const t = psql(url.replace(/\/gymdocu_test\?/, `/${db}?`), 'CREATE TABLE dsv1_probe(a int)');
+        ok(`CREATE TABLE in ${db} als ${KIND_UID} scheitert (${t.stderr.split('\n')[0] || 'ANGELEGT!'})`,
+            t.status !== 0 && /permission denied/i.test(t.stderr));
+    }
     // Dieselbe URL, nur die Rolle getauscht (Textersatz: die Socket-Form
     // traegt keinen Rechnernamen, den ein URL-Parser verlangt).
     let alsPostgres = { status: 0, stderr: 'keine URL ableitbar' };

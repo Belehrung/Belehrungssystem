@@ -13,13 +13,15 @@
 # EXIT-VERTRAG (die Zahlen sind Teil der Schnittstelle zu ausfuehr-spur.js;
 # wer sie aendert, aendert dort statusAusExit() mit):
 #   20  Aufbau (Einhaengen, pivot_root, lo, Kopie) gescheitert  -> umgebung-fehler
-#   21  Selbstmessung (als 65534) ROT                           -> Isolationsabbruch
+#   21  Selbstmessung (als 65534) ROT, oder ein Prozess von ihr   -> Isolationsabbruch
+#       ueberlebt sie
 #   22  test/db-vorbereiten.js != 0                            -> vorbereitung-gescheitert
 #   23  test/umgebung.sh liefert return 1                      -> umgebung-fehler
 #   24  Umgebungsnamen nach umgebung.sh weichen von der         -> Isolationsabbruch
 #       Literalliste unten ab (Werkzeug-Befund)
-#   25  Manifest verletzt: Vorbereitung oder Umgebung haben     -> manipuliert
-#       die Kopie veraendert (Datei-Liste oder sha256)
+#   25  Manifest verletzt ODER Prozess ueberlebt: Vorbereitung   -> manipuliert
+#       oder Umgebung haben die Kopie veraendert (Datei-Liste mit
+#       Symlink-Ziel oder sha256) oder Prozesse hinterlassen
 #   30  dieses Skript selbst bekam TERM/INT/HUP                  -> umgebung-fehler
 #   sonst: der Exit der TESTSTUFE. Massgeblich ist dafuer NICHT der Exit
 #   dieses Skripts, sondern die Datei /dsv1/ergebnis/test-exit, die root NACH
@@ -47,7 +49,17 @@
 # aller Eintraege ausser node_modules, sha256 aller regulaeren Dateien; bei
 # einer Mutation ist deren Zielhash bereits enthalten), und root prueft es
 # hier NACH der Vorbereitung und NACH umgebung.sh, bevor die Teststufe
-# startet. Jede Abweichung ist Exit 25.
+# startet. Jede Abweichung ist Exit 25. Die Liste traegt das Symlink-ZIEL
+# (%l, Runde 2 Befund 2): ein umgehaengter Symlink hat weder neuen Typ noch
+# neuen Pfad, und sha256 laeuft nur ueber regulaere Dateien.
+#
+# PROZESSE (Befund W-E3): ein in der Vorbereitung abgekoppelter Prozess
+# ueberlebt seine Stufe und koennte NACH der Manifestpruefung die Kopie
+# aendern (er wartet auf die Waechterdatei). Deshalb toetet PID 1 nach JEDER
+# Stufe alle uebrigen Prozesse (kill -KILL -1) und weist ueber /proc nach,
+# dass keiner mehr laeuft — VOR der Manifestpruefung; bleibt einer, ist das
+# Exit 25 (nach der Selbstmessung: 21). Nach der Vorbereitung werden
+# ausserdem /tmp, /var/tmp und /dev/shm geleert, bevor umgebung.sh laeuft.
 #
 # Die Sollwerte hier (ERWARTETE_NAMEN, SESSION_SECRET-Literal, uid 65534,
 # rlimits, tmpfs-Groessen) sind von Hand geschrieben. Die Selbstmessung
@@ -162,7 +174,7 @@ ip link set lo up || scheitern "lo"
 [ -s /dsv1/ergebnis/manifest.liste ] && [ -s /dsv1/ergebnis/manifest.sha256 ] || scheitern "Manifest fehlt"
 manifest_pruefen() {
     local stufe_name="$1"
-    ( cd /dsv1/kopie && find . -path ./node_modules -prune -o -printf '%y %p\n' | LC_ALL=C sort ) > /dsv1/ergebnis/manifest.liste-jetzt 2>/dev/null
+    ( cd /dsv1/kopie && find . -path ./node_modules -prune -o -printf '%y %p %l\n' | LC_ALL=C sort ) > /dsv1/ergebnis/manifest.liste-jetzt 2>/dev/null
     if ! cmp -s /dsv1/ergebnis/manifest.liste /dsv1/ergebnis/manifest.liste-jetzt; then
         echo "[dsv1] MANIFEST VERLETZT nach $stufe_name — Datei-Liste der Kopie weicht ab:" >&2
         diff /dsv1/ergebnis/manifest.liste /dsv1/ergebnis/manifest.liste-jetzt | head -n 20 >&2
@@ -178,6 +190,32 @@ manifest_pruefen() {
 # Positivkontrolle des Manifests: VOR jeder Stufe muss es stimmen — sonst
 # ist das Manifest selbst falsch (Aufbaufehler), nicht die Kopie manipuliert.
 manifest_pruefen "dem Aufbau (Positivkontrolle)" || scheitern "Manifest passt nicht zur frischen Kopie"
+
+# Nach jeder Stufe (Befund W-E3): alles ausser PID 1 toeten, dann ueber /proc
+# nachweisen, dass nichts mehr laeuft. Nur bash-Builtins im Scan (der Glob
+# und read forken nicht — ein cut oder ls stuende selbst in /proc). Zombies
+# (Zustand Z) laufen nicht mehr; PID 1 sammelt sie ein. Gemessen
+# 30.09.2026: ein abgekoppelter sleep von 65534 ist nach dem kill binnen
+# 0,1 s aus /proc verschwunden.
+prozesse_beenden() {
+    local stufe_name="$1" i rest d p line st
+    kill -KILL -- -1 2>/dev/null || true   # alle ausser PID 1
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+        rest=""
+        for d in /proc/[0-9]*; do
+            p=${d#/proc/}
+            [ "$p" = 1 ] && continue
+            read -r line < "$d/stat" 2>/dev/null || continue
+            st=${line##*) }
+            [ "${st:0:1}" = Z ] && continue
+            rest="$rest $p"
+        done
+        [ -z "$rest" ] && return 0
+        sleep 0.1
+    done
+    echo "[dsv1] PROZESSE UEBRIG nach $stufe_name — PID${rest} leben nach kill -KILL -1 weiter" >&2
+    return 1
+}
 
 # ===== 4. Stufen als 65534, jede einzeln, unter rlimits =====
 SESSION_SECRET_LITERAL='ci-isolation-session-secret-0123456789abcdef'   # ci.yml:114 des Zielrepos
@@ -205,6 +243,7 @@ if [ "$rc" -ne 0 ]; then
     echo "[dsv1] SELBSTMESSUNG ROT (Exit $rc) — keine Ausfuehrung" >&2
     exit 21
 fi
+prozesse_beenden "der Selbstmessung" || exit 21
 
 stufe "Stufe Vorbereitung (test/db-vorbereiten.js)"
 als_nobody node test/db-vorbereiten.js > /dsv1/ergebnis/vorbereiten.txt 2>&1
@@ -214,6 +253,10 @@ if [ "$rc" -ne 0 ]; then
     echo "[dsv1] VORBEREITUNG GESCHEITERT (Exit $rc)" >&2
     exit 22
 fi
+prozesse_beenden "der Vorbereitung" || exit 25
+# Ablagen der Vorbereitung leeren (Befund W-E3 / Kimi 10), BEVOR umgebung.sh
+# seine eigenen Verzeichnisse dort anlegt.
+find /tmp /var/tmp /dev/shm -mindepth 1 -delete || scheitern "Leeren von /tmp, /var/tmp, /dev/shm"
 manifest_pruefen "der Vorbereitung" || exit 25
 
 stufe "Stufe Umgebung (test/umgebung.sh)"
@@ -227,6 +270,7 @@ if [ "$rc" -ne 0 ]; then
     echo "[dsv1] UMGEBUNG GESCHEITERT (Exit $rc)" >&2
     exit 23
 fi
+prozesse_beenden "der Umgebung" || exit 25
 manifest_pruefen "der Umgebung" || exit 25
 # Namen der Kind-Umgebung = Literalliste (Allowlist oben + was
 # test/umgebung.sh setzt). PWD/SHLVL/OLDPWD/_ setzt bash selbst; sie werden

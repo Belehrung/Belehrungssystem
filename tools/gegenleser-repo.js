@@ -4426,9 +4426,12 @@ async function selbsttestAusfuehrung() {
     // in der Schleife + 7, Endungen/Stufen 22-23 x5, Status x10,
     // Zustand/Umgebung/Riegel/Deckel x11, Deckel x5, HEAD x2, Abbruch Stufe
     // 24 x3, Stufe 21 x3, Stufe 20 x2, Infrastruktur x1, Reste x3,
-    // Sperr-Halter x2, Einrichten-Ablehnungen x2) = 113. Unten durch den
+    // Sperr-Halter x2, Einrichten-Ablehnungen x2) = 113; Runde 2 der
+    // Diffpruefung (30.09.2026) dazu 16 abwehrende Faelle (Prozesse nach der
+    // Stufe, Symlink-Ziel, Vorrang, Konsistenz, Kopfzeilen, Steuerzeichen im
+    // Pfad x2, W-E3-Positivkontrollen x3, Infrastruktur x4, Klammer-comm) = 129. Unten durch den
     // tatsaechlichen Lauf bestaetigt.
-    const ERWARTETE_FAELLE = 113;
+    const ERWARTETE_FAELLE = 129;
     if (process.getuid() !== 0) {
         if (process.env.CI === 'true') {
             console.log(`  ✗ FEHLT: --selbsttest-ausfuehrung braucht root (uid 0, gefunden ${process.getuid()}) -- unter CI=true ist das ROT, kein SKIP.`);
