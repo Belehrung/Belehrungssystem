@@ -419,6 +419,8 @@ OpenRouter-Schlüssel liegt zusätzlich in `/tmp/claude-0/.openrouter-key` (Rech
 Kimi-Probe ging durch); ungenutzt, nicht im Prüfwerkzeug. Vor der nächsten Planprüfung Kimi-Guthaben über
 `/v1/users/me/balance` prüfen.
 
+Stand 30.09.2026 02:47 UTC: **SG ausgeliefert** (Deploy 450 success auf `2daed4b`, live-check EXIT 0, 5 ✓ / 2 ℹ wie immer).
+
 Stand 30.09.2026 02:40 UTC (Takt): C2 fertig geprüft (`c0989d9`, master mit SG eingemergt, Suite 0, 408 = 408, Lint 0),
 PR angelegt, CI läuft. Im Bau: QR-J N7 (Fassung 3), GH (Teil A + Hauptserver). SG-Deploy-Prüfung 02:45 UTC.
 
