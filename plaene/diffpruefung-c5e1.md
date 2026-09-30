@@ -55,3 +55,13 @@ Keiner der Befunde blockiert. Da der Zweig ohnehin master hereinnehmen und die S
 | R2-4 | Anmerkung | Hostnamen werden nicht normalisiert (`localhost.`, Port). | Nacharbeit 2: `normalisiereHost()` aus der Netz-Attrappe |
 | R2-5 | Anmerkung | Bei `redirect: 'error'` wird ein fremdes Ziel gezählt, bevor der TypeError fällt. | Nacharbeit 2: Reihenfolge |
 | R2-6 | Anmerkung | Das Lader-Inventar kommt aus Dateisystem plus `run.sh`, nicht aus `git ls-files`. | Nacharbeit 2 |
+
+## Nacharbeit 2 (`4e895d8..158e7d5`), selbst gelesen
+
+Ich habe den Diff selbst gelesen. Eine dritte Runde gibt es nicht. R2-3 ändert zwar Verhalten: ein fremdes http(s)-Ziel wirft nicht mehr, es wird gezählt und über `'error'` gemeldet. Ich habe aber nachgesehen, dass alle vier Aufrufer des Helfers am Ende `fremderVersand() === 0` zusichern:
+- `test_feature_csp_bericht_kette.js:115`
+- `test_feature_csp_crawler.js:1257`
+- `test_feature_deprovision_route_queue.js:138`
+- `test_feature_pentest_p1_struktur.js:665`
+
+Ein Aufrufer, der den Fehler schluckt, macht den Lauf deshalb trotzdem rot. R2-1, R2-2 und R2-6 sind Kommentar- und Testarbeit, R2-4 und R2-5 sind Einstufungen mit Fällen in beide Richtungen.
