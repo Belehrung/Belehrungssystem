@@ -1,6 +1,6 @@
 # Auftrag C5-A — Datenbank-Integrität (Extrarunde aus den Sammellisten)
 
-Fassung 1, 30.09.2026. Repo GymDocu, Stand master `13448c8`. Zustandsprüfung: `deepseek-flash` mit Lesewerkzeugen
+Fassung 2, 30.09.2026 (Planprüfung: flash mit Repo-Lesewerkzeugen + kimi-k3 mit Codebündel, `scratchpad/c5plan/`; tragende Befunde selbst nachgemessen — u. a. 13 Bestandsmigrationen ohne `studio_id`-FK, `test_feature_pdf_jobs_static.js:40`). Repo GymDocu, Stand master `13448c8`. Zustandsprüfung: `deepseek-flash` mit Lesewerkzeugen
 (`scratchpad/c5b2/antwort.txt`); die tragenden Belege hat der Haupt-Agent selbst am Quelltext nachgelesen
 (0062:80-82, `routes/archiv.js:1098/1114/1124`, `routes/admin/geraete.js:5951-5962`, `core/storage-replica.js:554`,
 `core/db.js:2036`).
@@ -145,6 +145,93 @@ bleibt dauerhaft `degraded` (`core/pdf-jobs.js:368`).
 - **V15-2:** nach Entscheidung 24.09. umgesetzt.
 - **C3a-S-FK:** nur noch Doku. Die fehlende ON-DELETE-Klausel ist der gewollte NO-ACTION-Schutz; das kommt als ein
   Kommentarsatz an die Tabelle in `core/db.js`.
+
+## Fassung 2 — verbindliche Änderungen aus der Planprüfung (gehen dem Text oben vor)
+
+**Zu 1 (Reinigungen):**
+- **FK-Paar.** Statt `(aufgabe_id, studio_id)` wird `(aufgabe_id, anlage_id) → getraenkeanlage_aufgaben(id, anlage_id)`
+  angelegt, dazu `(anlage_id, studio_id) → getraenkeanlagen(id, studio_id)`, beide RESTRICT. Grund: Sonst bleibt
+  eine Reinigung mit der Aufgabe einer ANDEREN Anlage desselben Studios legal. Das PDF druckt dann die falsche
+  Kombination, und das CASCADE beim Anlagen-Löschen läuft neu in 23503.
+- **Alter FK.** `…_anlage_id_fkey` bleibt stehen, weil sein NAME tragend ist (`routes/getraenkeanlage.js:892`,
+  Test `…reinigungen_integritaet.js:68`). Die Boot-Schleife legt ihn NICHT wieder an; die Begründung oben war falsch.
+- **Handler.** Der 23503-Fang in `routes/getraenkeanlage.js:879-899` erkennt die neuen Constraintnamen ebenfalls und
+  antwortet mit 409 statt 500. Test: eine Altzeile mit Querbezug (in der Test-DB, NOT VALID) blockiert das Löschen
+  der Anlage mit 409.
+- **Endbeweis.** Der zweispaltige FK wird über BEIDE attnums in `conkey`, dazu `confrelid` und
+  `confdeltype = 'r'` bewiesen, je Constraint eigens. Übernimmt man den einspaltigen Beweis aus 0062, wird er vom
+  alten FK erfüllt: falsches Grün. Gegenprobe: den neuen Constraint weglassen ⇒ Beweis ROT.
+- **Migrationsdetails.** Idempotenz über einen DO-Block mit `pg_constraint`-Prüfung (Muster 0062;
+  `ADD CONSTRAINT … IF NOT EXISTS` gibt es nicht). Die neue Datei kommt in die Sollwertliste von
+  `test_feature_migrationen_unveraendert.js` (die Datei druckt den nötigen Eintrag).
+
+**Zu 2 (V01-4):**
+- `consumeVerifyCode` bleibt VOR dem INSERT; die Reihenfolge ist durch
+  `test_feature_korrektur_dokumente_static.js:47` festgeschrieben.
+- DELETE und INSERT kommen in eine `db.tx`. Sie nehmen denselben Advisory-Lock `monthly_pdfs:<studio>` wie
+  `generateMonthlyPDFs.js:149-153`: `pdf_archiv` hat kein UNIQUE, zwei Läufe erzeugen sonst zwei Zeilen. Vorher messen,
+  ob der Lock dort sitzungs- oder transaktionsweit ist, und dieselbe Art nehmen.
+- **Restfenster.** Die Datei am deterministischen Pfad ist vor der Transaktion schon ersetzt. Scheitert die
+  Transaktion, steht der ALTE Eintrag auf der NEUEN Datei, Hash und Prüfcode passen nicht mehr. Das darf nicht still
+  bleiben: im Fehlerweg kommt ein `melde()` mit genau dieser Aussage und den Kennungen dazu, das Restfenster steht im
+  Bericht.
+
+**Zu 3 (V05-3):**
+- **Rückkanal je Zeile.** `_gimpParseCSV` bekommt einen Warnungskanal je Zeile (heute nur `{ok, eintraege}`). Ein
+  formal gültiger, aber nicht existenter Tag erzeugt in der VORSCHAU eine sichtbare Warnung mit dem Originalwert. Der
+  Commit nimmt weiter das Ersatzdatum, aber nicht mehr still. „Leer“ und „ungültig“ werden getrennt.
+- **Test.** Er prüft die Warnung in der Vorschau-Antwort, nicht `faelligkeit === null`; das wäre grün aus dem falschen
+  Grund.
+- **Geschwisterstelle.** `routes/wartung.js:1173-1179` (`pruef_datum`) bekommt denselben Helfer. Im Handformular
+  wird ein gespeicherter ungültiger Altwert als Fehler angezeigt; der Verhaltenswechsel kommt in den Bericht.
+
+**Zu 4 (V15-1r):**
+- ALLE Schreibwege von `freigeschaltet_am` setzen den Wert AUSDRÜCKLICH mit
+  `to_char(clock_timestamp() AT TIME ZONE 'Europe/Berlin','YYYY-MM-DD HH24:MI:SS.US')`: Erstanlage, beide
+  `DO UPDATE` und jeder weitere gefundene Schreiber.
+- Der DEFAULT bleibt unverändert. Eine SCHEMA-Änderung erreicht Bestands-DBs nicht, und der Drift-Wächter aus 5 würde
+  sie dauerhaft melden.
+- `clock_timestamp()` statt `now()`: zwei Schreibungen in EINER Transaktion müssen verschieden sein.
+- Vorher alle Leser, Sortierungen und Vergleiche auflisten. Ein lexikografischer Vergleich zwischen „…:SS“ und
+  „…:SS.US“ muss dabei korrekt bleiben (Beleg).
+- **Test.** Der Wert liegt zwischen den Berliner Zeitstempeln vor und nach dem Aufruf; die Uhrzeit wird geparst,
+  nicht nur ein Muster geprüft. Zwei Schreibungen in einer Transaktion ergeben verschiedene Werte.
+
+**Zu 5 (DBI-1):**
+- Die Weißliste `LAUFZEIT_TABELLEN` (`session`) gilt in ALLEN neuen Zweigen. Testfall: ein PK nur in LIVE auf
+  `session` ⇒ keine Meldung.
+- `convalidated` gehört zum Vergleich. NOT VALID in LIVE gegen gültig in SOLL ist eine Abweichung.
+- **Schwere: WARN, nicht KRITISCH.** Der Wächter darf kein Deploy-Blocker werden (rc 2 löst einen Rollback aus).
+- Tragender Beleg ist der Positivtest mit literaler Meldungsmenge. Der Gleichheitslauf ergänzt ihn nur.
+
+**Zu 6 (DBI-2):**
+- **Stichtag.** Die Regel gilt für Migrationen mit Nummer > 0064 und für neue `CREATE TABLE` im SCHEMA-String von
+  `core/db.js`.
+- **Bestand.** Die heutigen Tabellen ohne `studio_id`-FK stehen literal in einer Bestandsliste mit Quelle. Aus
+  Migrationen gemessen sind es 0003, 0005, 0006, 0017, 0020, 0025, 0027 (2), 0035, 0039, 0048 (2), 0051; die
+  SCHEMA-Tabellen erhebt der Bauende selbst.
+- **Geprüft wird je `CREATE TABLE`-Anweisung**, nicht je Datei: Spalte `studio_id` ⇒ FK genau über `(studio_id)` auf
+  `studios(id)`, in derselben Anweisung oder einem begleitenden `ALTER TABLE`.
+- **Gegenproben:**
+  - Fixture-Tabelle ohne FK ⇒ ROT.
+  - Mit FK ⇒ GRÜN.
+  - FK über eine andere Spalte ⇒ ROT.
+  - Ein Eintrag der Bestandsliste gestrichen ⇒ ROT; es muss ein Eintrag sein, der tatsächlich greift.
+
+**Zu 7 (C3b-S2) — Entscheidung: LÖSCHEN statt neuem Status.**
+- Ein neuer Endstatus bräuchte eine Migration, die Wiederbelebungslogik (`core/storage-replica.js:966-970`) und
+  jeden Statusvergleich. Löschen braucht nichts davon, ein späterer Neu-Upsert plant wieder normal.
+- **Ort und Bedingungen.** `DELETE` nur in `core/storage-replica.js` (nicht im Queue-Modul), im bestehenden Reaper.
+  Es trifft genau `job_type = 'storage_replicate'`, Status `dead`, fehlende `storage_replica`-Zeile und Tod älter
+  als 7 Tage. Datumsquelle: das Feld, das den Tod markiert; ohne dieses Feld der Rückfall auf `updated_at`,
+  begründet.
+- **Statische Zusicherung.**
+  - Bestehend: `test_feature_pdf_jobs_static.js:40` verbietet `DELETE FROM pdf_jobs` im Queue-Modul und bleibt.
+  - Neu: `DELETE FROM pdf_jobs` kommt repoweit genau EINMAL vor, in `core/storage-replica.js`, mit den vier
+    Bedingungen literal.
+- **Meldung.** EIN `melde()` je Lauf mit Anzahl und Beispiel-IDs.
+- **Tests.** Drei Gegenproben, je eine Bedingung entfernt (Alter, Typ, Zeile) ⇒ jeweils ROT. Positivfall: danach
+  `healthMetrics().status === 'ok'`. Neu-Upsert nach dem Abräumen ⇒ genau ein pending Job.
 
 ## Regeln
 

@@ -351,6 +351,8 @@ sondern falsch.
 | 30.09.2026 | Diffpruefung Teil W vierte Spur (sol) (gpt-6-sol) | Diff 2135 Zeilen, Suchen 5, Lesungen 33, Token rein 1269002, Token raus 26899, Runden 10 | — | — | — | 5,48 $ |
 | 30.09.2026 | C5 Zustandspruefung b2 (deepseek-flash) | Diff 1 Zeilen, Suchen 48, Lesungen 44, Token rein 2846976, Token raus 62965, Runden 26 | — | — | — | 0,93 $ |
 | 30.09.2026 | C5 Zustandspruefung b5 (deepseek-flash) | Diff 1 Zeilen, Suchen 42, Lesungen 35, Token rein 1944015, Token raus 76030, Runden 21 | — | — | — | 0,67 $ |
+| 30.09.2026 | Planpruefung c5a-db (flash) (deepseek-flash) | Diff 158 Zeilen, Suchen 42, Lesungen 59, Token rein 2357020, Token raus 57983, Runden 29 | — | — | — | 0,78 $ |
+| 30.09.2026 | Planpruefung c5b-sperren-melden (flash) (deepseek-flash) | Diff 177 Zeilen, Suchen 45, Lesungen 53, Token rein 2583165, Token raus 71229, Runden 26 | — | — | — | 0,86 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht

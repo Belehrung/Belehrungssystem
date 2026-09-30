@@ -1,6 +1,6 @@
 # Auftrag C5-B — Sperren, Replikation und Meldewege (Extrarunde aus den Sammellisten)
 
-Fassung 1, 30.09.2026. Repo GymDocu, Stand master `13448c8`. Zustandsprüfung: `deepseek-flash` mit Lesewerkzeugen
+Fassung 2, 30.09.2026 (Planprüfung: flash mit Repo-Lesewerkzeugen + kimi-k3 mit Codebündel, `scratchpad/c5plan/`; tragende Befunde selbst nachgemessen — u. a. `workers/pdf-job-worker.js:5-11` gegen `core/error-tracker.js:59-74`). Repo GymDocu, Stand master `13448c8`. Zustandsprüfung: `deepseek-flash` mit Lesewerkzeugen
 (`scratchpad/b5/antwort.txt`). Die Belege hat der Haupt-Agent selbst nachgelesen:
 
 - `core/retention.js:896-938`
@@ -164,6 +164,105 @@ In `workers/pdf-job-worker.js:187-198` ruft der Handler nur `worker.stop()`.
 
 **Offen für den Betreiber (nicht in diesem Auftrag):** C2-S12 bei SIGKILL/OOM. Nur persistente Fenster würden das
 lösen; die Einzelfälle stehen im Server-Log.
+
+## Fassung 2 — verbindliche Änderungen aus der Planprüfung (gehen dem Text oben vor)
+
+**Zu 1 (Sperr-1):**
+- **Blockgrösse 100.** Gemessen ≈ 1,6 ms je Zeile ⇒ ≈ 160–260 ms je Block, deutlich unter der 1000-ms-Schwelle.
+  Die Schwelle entscheidet also nicht ein knapp gewähltes n.
+- **Zähler und Cleanup je Block.** Der Zähler (`geloescht`) wird je Block aufsummiert. Der Datei-Cleanup
+  (`core/retention.js:1022-1028`) läuft je Block direkt nach dessen Commit, damit ein Wurf in Block k+1 keine
+  committeten Zeilen ohne Dateiaufräumen hinterlässt. Der `catch` meldet die bis dahin tatsächlich gelöschte Zahl,
+  nicht 0 (`:1133-1142`).
+- **Zählmetrik.** Deterministisch gezählt wird die ANZAHL der `auditTx`-Transaktionen, NICHT die der
+  `pg_advisory_xact_lock`-Anweisungen: `auditAppend` nimmt den Lock je Zeile erneut (`core/integritaet.js:209`), das
+  wäre grün aus dem falschen Grund.
+- **Überlappung im Zeittest erzwingen.** Ein Haken nach Block 1 startet den Konkurrenten, der nachweislich während
+  eines mittleren Blocks wartet. Ohne nachgewiesene Überlappung gilt der Test als ungültig, nicht als grün.
+- **Kommentar.** `:896-900` beschreibt danach den Blockbetrieb.
+
+**Zu 2 (Sperr-2/3):**
+- Verschachtelte `auditTx` ist zur LAUFZEIT schon verboten (`AUDIT_TX_IN_TX`, `core/integritaet.js:157-162`,
+  eigener Test), und die Inventur weist sie als `verschachtelt` aus. Sperr-2 wird deshalb NICHT statisch gebaut,
+  sondern in der Sammelliste mit diesem Beleg erledigt.
+- Die `(x || db)`-Regel bleibt. VOR der Einführung wird die vollständige Ist-Trefferliste erhoben (in den Bericht),
+  die Ausnahmeliste enthält genau diese Treffer mit Begründung.
+
+**Zu 3 (Sperr-4):**
+- **Ort der Fensterprüfung.**
+  - CLI-Zweig UND injizierbar in `fuehreRotationAus({ …, jetzt, ausserhalbWartungsfenster })`.
+  - Die bestehenden Tests in `test_feature_schluessel_rotation.js` übergeben künftig eine Uhr im Fenster.
+  - Die Anleitung `ops/schluessel-rotieren.md` beschreibt den Schalter.
+- **Welche Modi betroffen sind.**
+  - Das Fenster gilt NUR für den scharfen Modus (`--wirklich`).
+  - Trockenlauf und `--fingerabdruecke` bleiben jederzeit erlaubt, je ein Testfall.
+
+**Zu 4 (C3a-S3):**
+- **Zwillingsweg.** Der Wiederholer deckt BEIDE Claim-Wege: `geraete_defekte` UND den Wartungsweg
+  `sendeWartungsDefektMail` über `geraete_sperren.mail_gesendet_am` (`core/defekt_mailer.js:363-375`). Tests je
+  Tabelle.
+- **Welche Fälle.**
+  - Nur offene Fälle; die Statuswerte misst der Bauende (`core/db.js:1385-1387`).
+  - Nur Studios mit hinterlegtem Empfänger. Sonst claimt und gibt der Wiederholer endlos zurück.
+  - Test: ein reparierter/ausgemusterter Defekt bekommt keine Mail; ein Studio ohne Empfänger erzeugt keinen
+    Claim-Versuch.
+- **Befundtext berichtigen.** Es gibt heute ZWEI Auslöser: den Foto-Abschluss (`routes/sichtpruefung.js:5696`) und
+  den Mangel-Nachtrag (`:4731`). Mit `FOTOS_AKTIV=false` bekommt ein Defekt heute gar keine Mail; der Wiederholer
+  schliesst das mit.
+- **Mindestalter.**
+  - Richtig ist es nur durch den Claim; das Mindestalter senkt lediglich die Konkurrenz.
+  - `erstellt_am` ist Berliner TEXT und kann die Client-Zeit sein. Deshalb gilt das Hausmuster
+    `to_char(now() AT TIME ZONE 'Europe/Berlin', …)`, kein Cast über die Sitzungszeitzone.
+  - Testfall: Defekt jünger als das Mindestalter ⇒ keine Mail. Gegenprobe: Mindestalter 0 ⇒ ROT.
+- **Cron.** Welcher Cron es ist, steht im Bericht (`server.js`, Zeile).
+
+**Zu 5 (C3b-S1):**
+- `test_feature_storage_replica_static.js:61-65` pinnt `'15 * * * *'` wörtlich und wird auf den neuen Takt
+  mitgezogen.
+- Texte mitziehen: „stündlich“, „~75 min“ und „stündlichen Reaper“ in `core/storage-replica.js:775-777`, `:792`,
+  `:961-966` und `server.js:1646`. Eine Text-Inventur im Test verbietet die alten Aussagen an diesen Stellen.
+- **Selbstüberlappung.** Die Laufzeit des Reapers wird gemessen. Überlappt ein Lauf den nächsten, kommt eine
+  einfache Laufsperre dazu (im Prozess; kein neuer globaler Advisory-Lock, CLAUDE.md „Transaktionen und Sperren“).
+
+**Zu 6 (C3b3-4):**
+- Mit `null` fällt im Fall „Datei weg“ die bisherige (veraltete) Zeile weg. Der innere `catch (e2)` bekommt deshalb
+  ein `melde()`, damit keine stille Backup-Lücke entsteht.
+- **Test.**
+  - Eine vorher `succeeded`-Zeile fällt nach Änderung der Datei korrekt auf `pending` mit NEUEM Hash.
+  - Datei weg ⇒ Meldung.
+- `dateiHash` wird injiziert oder in einem `mktemp`-Verzeichnis gearbeitet.
+
+**Zu 7 (C2-S12):**
+- Die Inventur umfasst `tools/` und `ops/`; die `melde()`-Reichweite wird transitiv bestimmt (z. B.
+  `core/datei-entfernen.js`, `core/foto-reaper.js`, `core/migrate.js`). Bekannte Kandidaten:
+  - `tools/mutationsprobe.js`
+  - `ops/seed-performance-data.js`
+  - `ops/pdf-loeschung-probelauf.js`
+  - `tools/ausmusterung-gegenproben.js`
+- Der Wächter verlangt `await leereSammlungBegrenzt()` als AWAIT vor jedem `process.exit`. Gegenprobe: `await`
+  entfernen ⇒ ROT.
+- Ein Kindprozess-Test mit `node` ist zulässig; es gibt Vorbild und Bestand in
+  `test_feature_error_tracking_sammelstufe.js`. Die Telegram-Attrappe kommt auf demselben Weg wie dort hinein.
+
+**Zu 8 (C2-S13):**
+- Leeren und `worker.stop()` laufen NEBENEINANDER (`Promise.all` o. ä.), nicht nacheinander. Der Drain darf nicht um
+  den 5-s-Deckel verzögert werden; der Worker hat `kill_timeout` 120000, bestätigt am 30.09.
+- **Zuerst messen und in den Bericht:** Kann `melde()` aus dem Worker überhaupt zustellen? Der Worker löscht die
+  TG-Variablen (`workers/pdf-job-worker.js:5-11`), `ladeCreds()` liest aber `/etc/environment` nach
+  (`core/error-tracker.js:59-74`).
+- Dieser Widerspruch zur Absicht „keine Zustellgeheimnisse im Worker“ wird NICHT in diesem Auftrag aufgelöst. Er kommt
+  als neuer Punkt auf die Sammelliste.
+
+**Zu 9 (C2-S15):**
+- **Zustandsdatei.**
+  - Über einen injizierten Leser/Schreiber (Muster `ops/gymdocu-rechtsstand-watch.js:78, :489-499`).
+  - Vorgabepfad unter `/var/log` per Umgebungsvariable, AUSSERHALB der Erntemenge.
+  - Tests benutzen nur den injizierten Schreiber, kein echtes Dateisystem.
+- **Umfang.** Die Lauf-Meldung (`:401-413`) wird entprellt. Für die Je-Studio-Meldung (`:377-381`) entscheidet der
+  Bauende nach demselben Prinzip; die Entscheidung kommt in den Bericht.
+- **Merkmal „geändert“.** Fehlername plus Anzahlen. Pfade gehen nur als Anhang mit, sonst meldet jeder Tag neu.
+  Testfall: gleiche Anzahl, andere Pfade an Tag 2 ⇒ keine Meldung.
+- **Uhr.** Die Uhr ist injizierbar.
 
 ## Regeln
 
