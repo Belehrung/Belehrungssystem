@@ -47,3 +47,18 @@ Die tragenden Befunde sind mit Proben an echten Routen gegen beide Stände gemes
 - F6: Löschfrist der Ersthelfer-Nachweise ab Deaktivierung? Betreiberfrage, Bestand.
 - Altdaten mit Randleerraum in `mitarbeiter.name`: Bereinigung braucht eine Migration, nicht in C5.
 - Wartungsprüfung ohne Idempotenz (Bestand).
+
+## Runde 2 (Lesespur flash über Nacharbeit 1, `529671a..eaca30d`)
+
+Selbst gelesen: `loesePerson` in `routes/verbandbuch.js` und die beiden UPDATE-Zweige in `routes/webhooks.js`. Blockierend war nichts.
+
+| Nr | Schwere | Befund | Entscheidung |
+|---|---|---|---|
+| R2-1 | sollte (Regress) | `String(content.name \|\| …).trim()`: wird erst nach dem `\|\|` getrimmt. Ein `name` aus reinem Leerraum ergibt `''`, und das Ereignis bricht ab, obwohl Vor- und Nachname da sind. | Nacharbeit 2: erst trimmen, dann ausweichen |
+| R2-2 | sollte | Eine Umbenennung zwischen Seitenaufruf und Absenden ergibt mit ID `NULL`. | Entschieden, KEIN Befund: der Namensvergleich schützt davor, dass eine veraltete versteckte ID an einem von Hand geänderten Namen hängt. Die Umbenennung fällt in dieses Minutenfenster und ist selten; der Name steht trotzdem im Eintrag. |
+| R2-3 | sollte | Die Zusicherung zum zweiten INACTIVE kann grün sein, ohne dass das Ereignis verarbeitet wurde (der Test setzt den Zustand selbst). | Nacharbeit 2: `pin_generation` bzw. das Ergebnis `updated` zusichern |
+| R2-4 | sollte | Der 409-Text rät „bitte erneut senden“. Ein erneuter Klick setzt den Schutz zurück und schickt eine zweite Mail. | Teilweise: der Rat hängt schon am Ausbleiben einer Bestätigung. Nacharbeit 2 macht sie greifbar: WO sieht der Trainer, dass die Mail raus ist? Das gehört in den Text. |
+| R2-5 | sollte | `routes/mitarbeiter-auth.js:322` loggt die Adresse unmaskiert (N1-H1). Die Zusicherung prüft nur die Import-Zeilen. | Nacharbeit 2: an der Quelle maskieren (gemeinsamer Helfer), die Zusicherung über alle Logzeilen des Laufs. N1-H1 fällt damit von der Sammelliste. |
+| R2-6 | Anmerkung | Der Kommentar sagt „nie 'unbekannt'“, der Code setzt es als Rückfall. | Nacharbeit 2 |
+| R2-7 | Anmerkung | Ein Test-UPDATE ohne `studio_id`. | Nacharbeit 2 |
+| R2-8 | Anmerkung | `setTimeout(res, 200)` hängt an der Zeit. | Nacharbeit 2: deterministisch warten |
