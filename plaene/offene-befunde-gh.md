@@ -1,6 +1,6 @@
 # Offene Befunde GH (Workflow-Härtung, 30.09.2026)
 
-- **GH-S1:** `appleboy/ssh-action` lädt zur Laufzeit drone-ssh 1.8.2 per curl OHNE Prüfsumme (entrypoint.sh) — das
+- ~~**GH-S1:**~~ ERLEDIGT 30.09.2026 durch D (#490, Deploy 457): `appleboy/ssh-action` ersetzt durch OpenSSH des Runners. `appleboy/ssh-action` lädt zur Laufzeit drone-ssh 1.8.2 per curl OHNE Prüfsumme (entrypoint.sh) — das
   Festnageln der Aktion nagelt das Binär nicht fest. Gemessene sha256 heute: `1e10a9972eef…6bb24`. Entscheidung:
   eigener Prüfschritt oder eigene Aktion.
 - ~~**GH-S2:**~~ ERLEDIGT 30.09.2026: erster Deploy nach dem Merge (#486, Lauf 453, `deddcd9`) — SSH-Schritt grün mit
