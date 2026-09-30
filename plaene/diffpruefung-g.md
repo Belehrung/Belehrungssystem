@@ -18,4 +18,9 @@ den Vergleich je Testdatei (412 Dateien, nur der umgestellte Wächter weicht ab)
 | G-B7 | `tools/mutationsprobe.js` baut seine Umgebung selbst | trägt (vorbestehend) | Sammelliste |
 | G-A4 | `NODE_OPTIONS`-Zeilen unbewacht | trägt NICHT: `test_feature_netzsperre.js` (a) prüft den Preload-Marker zur Laufzeit, `test_feature_dateisperre.js` ebenso | — |
 
+Nacharbeit `001ff65`: G-B1..B6 umgesetzt, 21 Gegenproben (Basis 71/0), Suite 412 = 412 EXIT 0, eslint sauber. Von mir
+gelesen: DB-Prüfung in `umgebung.sh` (Name nach letztem `/`, ohne `?`/`#`, `*_test|*_e2e`, sonst `return 1` vor jedem
+Export); übrige Dateien nur Kommentare/Beschreibungstexte. Offen, Sammelliste: G-B7; die Auswertelogik der DB-Prüfung ist
+nur per Handprobe belegt (kein Verhaltenstest).
+
 -- Ende --
