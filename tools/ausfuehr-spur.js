@@ -1467,7 +1467,12 @@ async function selbsttestSpur(pruefen) {
         const mfTmp = path.join(basis, 'manifest-tmp');
         fs.mkdirSync(mfTmp);
         fs.chmodSync(mfTmp, 0o1777);   // mkdirSync unterliegt der umask (gemessen: 1755 -> mktemp als 65534 scheiterte)
-        const alsNobody = (dir) => spawnSync('setpriv', ['--reuid=65534', '--regid=65534', '--clear-groups', 'bash', MANIFEST_SKRIPT, dir], { encoding: 'utf8', env: { PATH: KIND_PATH, TMPDIR: mfTmp } });
+        // Das Skript als Kopie unter basis: der Checkout-Pfad ist fuer 65534 nicht
+        // ueberall durchquerbar (CI-Runner: /home/runner, gemessen 30.09.2026 Exit 126).
+        const mfSkript = path.join(basis, 'ausfuehr-manifest.sh');
+        fs.copyFileSync(MANIFEST_SKRIPT, mfSkript);
+        fs.chmodSync(mfSkript, 0o755);
+        const alsNobody = (dir) => spawnSync('setpriv', ['--reuid=65534', '--regid=65534', '--clear-groups', 'bash', mfSkript, dir], { encoding: 'utf8', env: { PATH: KIND_PATH, TMPDIR: mfTmp } });
         const mfRot = alsNobody(mfDir);
         fs.chmodSync(path.join(mfDir, 'geheim'), 0o755); fs.chmodSync(path.join(mfDir, 'geheim', 'b'), 0o644);
         const mfGruen = alsNobody(mfDir);
