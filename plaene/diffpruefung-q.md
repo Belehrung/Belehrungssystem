@@ -35,3 +35,27 @@ Spuren:
 | F7 | Anmerkung | Validierungs-Zweig nur als Literal geprüft | gelesen | — |
 | F8 | Anmerkung | Rat „erneut hochladen“ ist bei geschlossen/max/defekt unausführbar | gelesen, trägt | — |
 | F9 | Anmerkung | Äusserer Sync-catch etikettiert jeden Wurf (z. B. synchron in `sendeSitzung` bei beschädigtem Eintrag) als Speicherausfall | gelesen, trägt | — |
+
+## Ausführende Claude-Spur (11 Befunde, 11 überlebende Mutationen)
+
+Die tragenden Befunde sind nachgemessen bzw. gegengelesen:
+- B1 (Regress gegenüber master) ist mit der Harness gemessen: nach 10× 502 bleibt der Eintrag im Konflikt, und nach der Erholung kommen 0 POSTs. Auf master bleibt der Eintrag offen, 1 POST, und die Queue ist danach leer.
+- Die Tablet-Sperre ist selbst gelesen (`server.js:838-864`). Ohne JSON-Accept kommt eine 302 auf `/tablet/sperre`; mit `Accept: …json` kommt 401 JSON.
+- B4 ist dasselbe wie F3, jetzt im Live-Pfad an echter Route und DB gemessen.
+- CSRF hängt an Origin/Referer (`core/csrf-schutz.js`), nicht an einem Token. Ein veraltetes Token in der Queue gibt es also nicht.
+
+| Nr | Schwere | Befund | Entscheidung |
+|---|---|---|---|
+| C1 | blockierend (Regress) | Der Deckel zählt HTML-Antworten (nginx 5xx, Wartung 503, Sperre-302) als „Server lehnt ab“. Nach 10 Zyklen entsteht eine Sackgasse. | Nacharbeit |
+| C2 | blockierend | Deckel nach gespeicherter Sitzung ⇒ „bitte manuell nachtragen“ ⇒ Doppel-Defekte | Nacharbeit |
+| C3 | sollte | `speicherFehler` blendet bis zum Neuladen alles aus | Nacharbeit |
+| C4 | sollte (Bestand) | Positions-Index gegen Formular-Index: ein Foto hängt am falschen Defekt | Nacharbeit (Server) |
+| C5 | sollte | 11 Mutationen überleben (M5, M8b, M8c, M9b, M10, M12, M17, M18, M19, M21) | Nacharbeit |
+| C6 | Anmerkung | A11 findet die innere Kette; der finally-Kommentar ist falsch | Nacharbeit |
+| C7 | Anmerkung | Der Rat „erneut hochladen“ ist je nach Code eine Sackgasse | Nacharbeit |
+| C8 | Anmerkung | Die Live-Meldung ist doppelt formuliert | Nacharbeit |
+| C9 | Anmerkung | Der PP2-K4b-Kommentar behauptet für sendeFoto einen master-Zustand, den es nicht gab | Nacharbeit |
+| C10 | Anmerkung | `art 'fotos'` hält alle Formularfelder samt Unterschriftbild dauerhaft auf dem geteilten Tablet | Nacharbeit |
+| C11 | – | Die Kamera-Behebung trägt | – |
+
+Eine zweite Prüfrunde ist nötig, weil die Behebung Verhalten ändert (Deckel, Serverantwort, Badge).
