@@ -121,3 +121,19 @@ als „sollte“.
 | R2-10 | `mutation.relativ` nicht neutralisiert | kimi 13 | Nr. 10 |
 | R2-11 | Schnitt am ersten `)` in der Shell | flash 6 | Nr. 11 |
 | R2-G | Mutierter Code kann PASS und Exit 0 selbst drucken | kimi 3 | benannte Grenze (Kopfkommentar); jedes Ergebnis wird vor Verwendung selbst nachgemessen |
+
+## Runde 3 (Lesespur flash über Nacharbeit 2, `7899b49..1a26be4`)
+
+Den Diff habe ich selbst gelesen (Aufbauskript, `ausfuehr-spur.js`). Die tragenden Befunde sind am Code nachvollzogen:
+
+| Nr | Schwere | Befund | Entscheidung |
+|---|---|---|---|
+| R3-1 | sollte | `datenbankFrisch` parst die Namen zeilenweise auf dem Client. Ein Name mit Zeilenumbruch (`"template1\nx"`) erzeugt `DROP` auf einer System-DB. Die Folge ist ein Fehler, und alle weiteren Läufe bleiben dauerhaft `umgebung-fehler` (DoS der Spur, kein Leck). | Nacharbeit 3: die Anweisungen baut der Server (`format('%I')`) |
+| R3-2 | sollte | Large Objects (und künftige Objekte ohne Schema) in template1 überleben und werden in jede frische `gymdocu_test` kopiert. Nur `CREATE` auf `public` ist entzogen, `CONNECT` nicht. | Nacharbeit 3: `REVOKE CONNECT` auf template1/postgres, Selbstmessung dazu |
+| R3-3 | sollte | Manifest: `%p`/`%l` stehen unmaskiert zeilenweise in der Liste. Ein Symlink-Ziel mit `\n` kann eine gelöschte Zeile vortäuschen. | Nacharbeit 3: NUL-getrennt vergleichen |
+| R3-4 | Anmerkung | Die merged-usr-Klausel in 5b ist tautologisch. | Nacharbeit 3: streichen |
+| R3-5 | Anmerkung | `zeitlimit` wird von `erfassung-gerissen` überdeckt. | Nacharbeit 3 |
+| R3-6 | Anmerkung | Die Ablagen-Ausnahme erlaubt jedes Mountziel. | Nacharbeit 3: auf erwartete ro-Ziele begrenzen |
+| R3-7 | Anmerkung | Eine Host-Anordnung ausserhalb der Präfixliste führt zu einem Isolationsabbruch, obwohl nichts gebrochen ist. | Nacharbeit 3: als Werkzeug-Befund ohne `isolation` führen |
+| R3-8 | Anmerkung | Ablagen nicht leerbar ergibt Exit 20 statt 25. | Nacharbeit 3 |
+| R3-9 | Anmerkung | Kopfzahlen veraltet (29 statt 32). | Nacharbeit 3 |
