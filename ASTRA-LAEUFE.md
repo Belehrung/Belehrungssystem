@@ -373,6 +373,7 @@ sondern falsch.
 | 30.09.2026 | Planpruefung c5f (flash) (deepseek-flash) | Diff 55 Zeilen, Suchen 52, Lesungen 53, Token rein 2264193, Token raus 106504, Runden 18 | — | — | — | 0,81 $ |
 | 30.09.2026 | Planpruefung c5g (flash, knapp) (deepseek-flash) | Diff 127 Zeilen, Suchen 36, Lesungen 38, Token rein 1954447, Token raus 29981, Runden 28 | — | — | — | 0,62 $ |
 | 30.09.2026 | Diffpruefung W Runde 2 (flash) (deepseek-flash) | Diff 2110 Zeilen, Suchen 17, Lesungen 17, Token rein 1314328, Token raus 105393, Runden 9 | — | — | — | 0,52 $ |
+| 30.09.2026 | Diffpruefung C5-B (flash) (deepseek-flash) | Diff 4015 Zeilen, Suchen 28, Lesungen 30, Token rein 4408724, Token raus 90849, Runden 25 | — | — | — | 1,43 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
