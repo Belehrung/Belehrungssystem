@@ -26,3 +26,8 @@ Stand 25.09.2026. Verweise statt Kopien; jeder Punkt bekommt eine eigene Extraru
 - **QJ8-B3** (Runde 8, Lesespur B3): `--art-laut-meldung` ist nur an Wert, unlesbaren Typ und (charge) Länge 1–2
   gebunden, nicht an eine tatsächlich erzeugte Meldung. Option: Seitendatei der Werkzeugmeldungen (K, Art, Zeilenhash)
   und Abgleich — scheitert aber gerade bei vollem Datenträger. Extrarunde oder Betreiber-Entscheidung.
+- **QJ9-A** (Runde 9, R9-L1): die Schreibfehler-Meldung bindet den Bereich ab `groesseVorher` nicht an die eigenen
+  Bytes; ein Schreiber OHNE den Lock `qr-charge-nummer` (nur Handeingriff) kann K zu einer fremden Zeile machen.
+  Härtung: Präfix des eigenen Eintrags gegen die Bereichs-Bytes halten oder Schreibbeginn aus `eintragAnhaengen`.
+- **QJ9-B** (Runde 9, R9-T1): tote Zweige (`k === null`, Rückfall `if (schreibfehler)` in `schreibfehlerEinordnen`),
+  Test-Hook-Wurf verdeckt den Schreibfehler (nur Tests), Kommentar zu `commitUngewiss` (sitzt jetzt an der Hülle).

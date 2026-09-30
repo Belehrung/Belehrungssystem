@@ -264,3 +264,18 @@ Suite auf `e82d858`: EXIT 0, 410 = 410, eslint EXIT 0. Lesespur `deepseek-flash`
 | — | cc M17 | Verwerfen-Frischprüfung `korrekturJetzt` überlebt | äquivalent (zweiter Riegel `erlJetzt`) | keine |
 
 Z1/Z2 der ausführenden Spur: kein offenes Tor am unmutierten Baum; eine Wiederholung durch S1 deckt S2 nirgends.
+
+## Runde 9 (30.09.2026, Nacharbeit 8 `e82d858..3716cff`, Kopf nach master-Merge `4f8450b`)
+
+Suite auf `4f8450b`: EXIT 0, 411 = 411, Journal 1214/0, Wege 243/0, eslint EXIT 0. Lesespur `deepseek-flash`
+(`scratchpad/qrjr9/antwort-lese.txt`, 1,01 $): nichts Blockierendes. Ausführende Spur (`scratchpad/qrjr9/cc/befunde.md`):
+36 Mutationen, 20 getötet, 16 überlebt; Produktlogik jedes Mal richtig, fünf Überlebende zeigen fehlende Zusicherungen.
+
+| Nr | Quelle | Befund | Nachmessung | Folge |
+|---|---|---|---|---|
+| R9-C1 | cc U4 | `reduce` Maximum der Untergrenzen ungetestet (Minimum → `--bis` zu tief angenommen) | Beleg-Testblock der Spur, unmutiert grün | N9 §1 |
+| R9-C2 | cc R3f | Frischprüfung „Plan U1, jetzt U2“ ungetestet | Beleg-Testblock | N9 §2 |
+| R9-C3 | cc R4b/R4d | „Grösse unter dem Lock gemessen“ an keiner Zusicherung (Freigabe, chargeAnlegen) | Beleg-Testblock | N9 §3 |
+| R9-C4 | cc R1i1 | vollständige Chargenzeile im Bereich ungetestet | Beleg-Testblock | N9 §4 |
+| R9-L1 | Lese 1, cc Z1 | Datei wächst zwischen Grössenmessung und Schreiben durch einen Schreiber OHNE Lock → K kann fremd sein | getragen; nur Handeingriff erreichbar | Sammelliste QJ9-A |
+| R9-T1 | cc R1e, R3k; Lese 2–4 | toter Zweig `k === null`, toter Rückfall in `schreibfehlerEinordnen`, Wurf aus Test-Hook, `commitUngewiss` jetzt an der Hülle (Kommentar `tools/qr-journal.js` veraltet) | getragen | Sammelliste QJ9-B |
