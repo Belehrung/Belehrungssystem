@@ -246,3 +246,21 @@ B2 = R7-L1; B3 lesbares Studio des Bruchstücks nicht erzwungen, drei Freigabewe
 B4 lesbare Spanne nicht als Untergrenze (trägt: N6 liest nr_von/nr_bis bewusst nicht); B5 = R7-L2; B6 Reihenfolge im
 Hinweis (gering); B7 = R7-L9; B8 Text; B9 Überlebende (Präfixrand, R26 nur Zufallsstrom, Texte, R55). K04–K14 Bestand →
 Sammelliste. → `plaene/auftrag-qrj-nacharbeit7.md`.
+
+## Runde 8 (30.09.2026, Nacharbeit 7 `6c67018..e12309f`, Kopf nach master-Merge `e82d858`)
+
+Suite auf `e82d858`: EXIT 0, 410 = 410, eslint EXIT 0. Lesespur `deepseek-flash` (`scratchpad/qrjr8/antwort-lese.txt`,
+0,53 $), ausführende Spur (`scratchpad/qrjr8/cc/befunde.md`, 21+3 Mutationen, Grundlauf 1163/0, 243/0).
+
+| Nr | Quelle | Befund | Nachmessung | Folge |
+|---|---|---|---|---|
+| R8-H1 | eigene | `schreibfehlerBruchstueck` nimmt die letzte Zeile: Riss nach genau `"\n"` meldet ein ÄLTERES Bruchstück als das der neuen Zeile, samt `--art-laut-meldung`-Befehl | getragen (`scratchpad/qrjn7/sf1.js`) | N8 §1 |
+| R8-L1 | Lese B1 („blockierend“) | Frischprüfung der Korrektur erhebt die Untergrenze aus Bruchstücken nicht neu | getragen am Quelltext; Schwere gering: fail-closed, S bleibt über das neue Bruchstück gesperrt, keine Doppelvergabe | N8 §2 |
+| R8-L2 | Lese B2 | Meldung wird nach dem Rollback ausserhalb des Locks gebildet | getragen am Quelltext (Catch ausserhalb `auditTx`) | N8 §1 |
+| R8-L3 | Lese B3 | `--art-laut-meldung` nicht technisch an eine erzeugte Meldung gebunden | getragen; bewusste Grenze | Sammelliste QJ8-B3 |
+| R8-C1 | cc M5 | Untergrenzen-Filter im `wiederholt_fuer`-Block: Journal-Test 1163/0, nur gesäter Fuzz fängt | Logs gesichtet | N8 §3 |
+| R8-C2 | cc M18b/M18c | Frischprüfung von MAX(qr_token) und Blocklage ohne Zusicherung (1163/0, 243/0) | Logs gesichtet; nur per Handeingriff erreichbar | N8 §3 |
+| R8-C3 | cc M16 | Hash-Vergleich späterer Bruchstücke ungeprüft (Richtung fail-closed) | Logs gesichtet | N8 §3 |
+| — | cc M17 | Verwerfen-Frischprüfung `korrekturJetzt` überlebt | äquivalent (zweiter Riegel `erlJetzt`) | keine |
+
+Z1/Z2 der ausführenden Spur: kein offenes Tor am unmutierten Baum; eine Wiederholung durch S1 deckt S2 nirgends.

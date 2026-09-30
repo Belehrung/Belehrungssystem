@@ -23,3 +23,6 @@ Stand 25.09.2026. Verweise statt Kopien; jeder Punkt bekommt eine eigene Extraru
   Erledigungen, nicht die DB-Sicht; (5) Handzeile mit `nr_bis` unter der Untergrenze; (6) `KORREKTUR_Z_BEFEHL` nennt
   `--abschnitt=<i>`, wenn der Abschnitt von Z nicht eindeutig ist; (7) ungetestet laut Bericht: R29/R29b, R46c, R49b,
   R58; (8) (v)-Text nennt `--abschnitt=5` statt des Abschnitts. Extrarunde nach dem Merge.
+- **QJ8-B3** (Runde 8, Lesespur B3): `--art-laut-meldung` ist nur an Wert, unlesbaren Typ und (charge) Länge 1–2
+  gebunden, nicht an eine tatsächlich erzeugte Meldung. Option: Seitendatei der Werkzeugmeldungen (K, Art, Zeilenhash)
+  und Abgleich — scheitert aber gerade bei vollem Datenträger. Extrarunde oder Betreiber-Entscheidung.
