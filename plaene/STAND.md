@@ -419,6 +419,14 @@ OpenRouter-Schlüssel liegt zusätzlich in `/tmp/claude-0/.openrouter-key` (Rech
 Kimi-Probe ging durch); ungenutzt, nicht im Prüfwerkzeug. Vor der nächsten Planprüfung Kimi-Guthaben über
 `/v1/users/me/balance` prüfen.
 
+Stand 30.09.2026 03:30 UTC: **Neue Advisories** machen `npm audit` in GymDocu und Hauptserver rot (nodemailer <=10.0.8
+high, u. a. „cross-tenant SMTP credential disclosure"; brace-expansion via eslint) → Auftrag
+`plaene/auftrag-dep-nodemailer.md`, Bau läuft (beide Repos). Bis dahin ist jeder PR am Audit-Job rot. GH: GymDocu
+gebaut (`a68f3a7`, Suite + Lesespur laufen, PR erst nach DEP), Hauptserver-PR angelegt (Audit rot, kommentiert),
+Belehrungssystem-ci.yml selbst festgenagelt (CI grün). Fingerprint (ECDSA, aus Bildschirmfoto) erst durch den ersten
+Deploy belegbar. /dev/null war ~02:40 kurz eine reguläre Datei (GH-Agent, gitleaks `--report-path /dev/null` als root) —
+wiederhergestellt, geprüft.
+
 Stand 30.09.2026 03:11 UTC: **C2 ausgeliefert** (#484, squash `a3b19c7`, Botschaft zurückgelesen; Deploy 451 success auf
 `a3b19c7`, live-check EXIT 0). Offen aus C2 für den Betreiber: C2-S18 (`pm2 describe` zeigt kill_timeout 15 s?).
 
