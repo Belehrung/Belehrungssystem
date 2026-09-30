@@ -77,8 +77,8 @@ kodierte Ausgaben), nie tragend. Benannte Grenze: der versionierte Arbeitsstand 
   (`/dsv1/werkzeug`); den Socket-Ordner (`/dsv1/pg`); tmpfs `/tmp`, `/dev/shm`, `/run`; frisches `/proc`; ein minimales
   `/dev` (null, zero, random, urandom, shm). Kein Host-Verzeichnis ist beschreibbar oder sichtbar, das nicht in dieser
   Liste steht (gemessen am Host heute weltbeschreibbar: `/tmp`, `/var/tmp`, `/run/lock`, `/dev/shm` — auf anderen
-  Hosts mehr; deshalb Neuaufbau statt Überdecken). `ip link set lo up`; `cd /dsv1/kopie`; `setpriv --reuid=65534 --regid=65534 --clear-groups --no-new-privs env -i <Allowlist> bash -c '. test/umgebung.sh &&
-  node test/db-vorbereiten.js && node <testdatei>'`.
+  Hosts mehr; deshalb Neuaufbau statt Überdecken). `ip link set lo up`; `cd /dsv1/kopie`; `setpriv --reuid=65534 --regid=65534 --clear-groups --no-new-privs env -i <Allowlist> bash`, die Stufen einzeln in der Reihenfolge von `test/run.sh`: `node test/db-vorbereiten.js`, dann
+  `. test/umgebung.sh` (prüft selbst, dass `DATABASE_URL` auf eine `_test`-DB zeigt), dann `node <testdatei>`.
 - **Kind-Umgebung:** `PATH=<dirname(execPath)>:/usr/bin:/bin`, `HOME=/tmp`, `CI=true`, `TZ=UTC`,
   `SESSION_SECRET=<Literal aus ci.yml:114>` (kein Geheimnis, versioniert), `PLAYWRIGHT_BROWSERS_PATH`,
   `DATABASE_URL=postgresql://nobody@/gymdocu_test?host=/dsv1/pg&port=<Clusterport>`, dazu was `umgebung.sh` setzt.
@@ -141,12 +141,15 @@ Nachinstallation nur, wenn der erste CI-Lauf des PR sie als nötig zeigt. Lokal 
 
 ## Messung (Bericht Teil W)
 
-Echter Lauf gegen einen GymDocu-Baum mit Teil G (`test_feature_db_init_schema_stand.js`): Kanarie, Grundlauf, bekannte
+Messziel: `/workspace/gymdocu-w` (GymDocu mit Teil G, `001ff65`). Echter Lauf der Werkzeugfunktionen
+(`test_feature_db_init_schema_stand.js`): Kanarie, Grundlauf, bekannte
 Mutation (`SET LOCAL lock_timeout` entfernt → `gescheitert`), wörtlich. Grundlauf-Ergebnis für die 6 DB-anlegenden
 Kandidaten, `test_feature_netzsperre.js`, `test_feature_dateisperre.js`, `ops/boot-smoke.js` und eine Chromium-Datei
 (je Status wörtlich). Vorher-/Nachher-Schnappschuss (`pg_lsclusters`, DB-Liste Haupt-Cluster, `ls /workspace /run
 /var/tmp /dev/shm /var/lib/dsv1`): Differenz leer. Selbstmessung wörtlich. Erster CI-Lauf mit dem neuen Job
-(Voraussetzungsausdruck wörtlich).
+(Voraussetzungsausdruck wörtlich). Dazu EIN kurzer Ende-zu-Ende-Lauf mit dem echten Modell (`--modell=deepseek-flash`,
+Schlüssel NUR über `DEEPSEEK_KEY_DATEI`, kleiner Auftrag: „fahre `teste` auf Datei X und berichte den Status“),
+Protokoll und `ASTRA-LAEUFE.md`-Zeile im Bericht.
 
 ## Zustandsfrage
 
