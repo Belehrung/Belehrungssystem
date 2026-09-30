@@ -360,6 +360,12 @@ sondern falsch.
 | 30.09.2026 | C5 Zustandspruefung b1 (deepseek-flash) | Diff 1 Zeilen, Suchen 51, Lesungen 52, Token rein 1601670, Token raus 83302, Runden 13 | — | — | — | 0,58 $ |
 | 30.09.2026 | C5 Zustandspruefung b3a (deepseek-flash) | Diff 1 Zeilen, Suchen 82, Lesungen 65, Token rein 2587593, Token raus 87799, Runden 20 | — | — | — | 0,88 $ |
 | 30.09.2026 | C5 Zustandspruefung b4a3 (deepseek-flash) | Diff 1 Zeilen, Suchen 35, Lesungen 18, Token rein 1195057, Token raus 45748, Runden 17 | — | — | — | 0,41 $ |
+| 30.09.2026 | C5 Zustandspruefung b4a2 (deepseek-flash) | Diff 1 Zeilen, Suchen 38, Lesungen 41, Token rein 1493817, Token raus 49168, Runden 17 | — | — | — | 0,51 $ |
+| 30.09.2026 | C5 Zustandspruefung b4a1 (deepseek-flash) | Diff 1 Zeilen, Suchen 55, Lesungen 47, Token rein 1965880, Token raus 56101, Runden 22 | — | — | — | 0,66 $ |
+| 30.09.2026 | C5 Zustandspruefung v07-11-12 (deepseek-flash) | Diff 1 Zeilen, Suchen 41, Lesungen 38, Token rein 821824, Token raus 59740, Runden 11 | — | — | — | 0,32 $ |
+| 30.09.2026 | C5 Zustandspruefung t13-19 (deepseek-flash) | Diff 1 Zeilen, Suchen 48, Lesungen 59, Token rein 2764563, Token raus 61379, Runden 30 | — | — | — | 0,90 $ |
+| 30.09.2026 | C5 Zustandspruefung t20-27 (deepseek-flash) | Diff 1 Zeilen, Suchen 55, Lesungen 55, Token rein 2293752, Token raus 79539, Runden 23 | — | — | — | 0,78 $ |
+| 30.09.2026 | Planpruefung c5c (flash) (deepseek-flash) | Diff 128 Zeilen, Suchen 31, Lesungen 40, Token rein 2722779, Token raus 55511, Runden 30 | — | — | — | 0,88 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
