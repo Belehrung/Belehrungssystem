@@ -389,6 +389,7 @@ sondern falsch.
 | 30.09.2026 | diff-q-r3 (deepseek-flash) | Diff 452 Zeilen, Suchen 8, Lesungen 15, Token rein 881112, Token raus 75553, Runden 13 | — | — | — | 0,35 $ |
 | 30.09.2026 | Ende-zu-Ende Teil W: teste auf test_feature_db_init_schema_stand.js (deepseek-flash) | Diff 19 Zeilen, Suchen 0, Lesungen 0, Token rein 9294, Token raus 1808, Runden 2, Ausfuehrungen 2, Mutationen 0, Ausfuehrungs-Ablehnungen 0 | — | — | — | 0,00 $ |
 | 30.09.2026 | diff-q-r4 (deepseek-flash) | Diff 491 Zeilen, Suchen 12, Lesungen 15, Token rein 1158991, Token raus 79904, Runden 14 | — | — | — | 0,44 $ |
+| 30.09.2026 | diff-c5d-r2 (deepseek-flash) | Diff 896 Zeilen, Suchen 22, Lesungen 30, Token rein 1179665, Token raus 86660, Runden 10 | — | — | — | 0,46 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
