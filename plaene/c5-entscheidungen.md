@@ -1,4 +1,6 @@
-# C5/C6 — Punkte, die ich bewusst NICHT bauen würde (Entscheidungsvorlage, 30.09.2026)
+# C5/C6 — Punkte, die bewusst NICHT gebaut werden (Betreiber-Entscheidung 30.09.2026)
+
+**ENTSCHIEDEN 30.09.2026: „Alle 18 so lassen“ (Betreiber). Server-Schritte H2-D8/P2-S1: „Später“ — bleiben offen.**
 
 Nach CLAUDE.md bleibt kein bekannter Befund ohne Behebung oder ohne ausdrückliche Entscheidung des Betreibers.
 Diese Liste enthält die Punkte, bei denen eine Behebung mehr Risiko als Nutzen bringt oder die Ursache ausserhalb
