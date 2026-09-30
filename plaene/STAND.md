@@ -419,6 +419,9 @@ OpenRouter-Schlüssel liegt zusätzlich in `/tmp/claude-0/.openrouter-key` (Rech
 Kimi-Probe ging durch); ungenutzt, nicht im Prüfwerkzeug. Vor der nächsten Planprüfung Kimi-Guthaben über
 `/v1/users/me/balance` prüfen.
 
+Stand 30.09.2026 02:40 UTC (Takt): C2 fertig geprüft (`c0989d9`, master mit SG eingemergt, Suite 0, 408 = 408, Lint 0),
+PR angelegt, CI läuft. Im Bau: QR-J N7 (Fassung 3), GH (Teil A + Hauptserver). SG-Deploy-Prüfung 02:45 UTC.
+
 Stand 30.09.2026 02:15 UTC: **SG gemergt** (#483, squash `2daed4b`, Botschaft zurückgelesen; erster echter
 Semgrep-Hinweis-Lauf am eigenen PR lokal nachgestellt: „keine neuen Funde.“ + Probe-Zeile + 5 Geheimnis-Treffer in
 Testdateien ausgeblendet). Deploy-Prüfung 02:45 UTC. GH-Bau gestartet (Teil A + Hauptserver; Belehrungssystem-ci.yml
