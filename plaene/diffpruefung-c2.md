@@ -124,3 +124,24 @@ Zahlen: CC 9 Befunde + 5 Anmerkungen, DS 7; 15 Zeilen, keiner gefallen. Beide + 
 (Prüfung blind), -5..-8, -10, -12, -14, -15. Nur DS: C2R4-9, -11 (Nachbar-try). Grün (CC): Altersgrenzen ±1 s, nichts
 Veröffentlichtes gelöscht (auch Hardlink), keine Löschung ausserhalb bei fünf Symlink-Aufbauten (zwei Riegel), Event-Loop
 bei 200.000 Dateien 3–5 ms, Blattmodul lädt pdfkit nicht. Nacharbeit 4: `plaene/auftrag-c2-nacharbeit4.md`.
+
+## Runde 5 (Nacharbeit 4, Kopf `52a7d4f`; Claude-Spur `scratchpad/c2r5cc/` + Lesespur `deepseek-flash`)
+
+Nichts gelöscht, was bleiben muss; kein Studio vertauscht; jeder Fehler von `a1a41d7` kommt an (Ausnahmen benannt).
+Mutationen: 27, davon 14 grün. Befunde (CC = Claude-Spur, DS = Lesespur):
+
+| Nr | Spur | Befund | Schwere |
+|---|---|---|---|
+| C2R5-1 | CC | Wegfall des Wartens auf den Versand (Signal, Absturz, CLI) fällt keinem Test auf — Attrappe schreibt beim Aufruf, nicht beim Abschluss (K5, K6, G1 grün) | mittel |
+| C2R5-2 | CC | Signal wird zu Exit-Code 130/143 statt Signaltod: Strg+C bricht `test/run.sh` nicht mehr ab (4 Tests laden `server.js`); Prämisse meines Auftrags („wie Nodes Standard“) falsch | mittel |
+| C2R5-3 | CC | synchron hängender Webprozess reagiert nicht mehr auf SIGINT (7861 ms statt 4 ms) → pm2 wartet `kill_timeout` 120 s | niedrig–mittel |
+| C2R5-4 | CC | `regenerierePdfMonat.js` catch-Weg ohne Leeren unbemerkt (G2) | niedrig |
+| C2R5-5 | CC | Deckel 5 s und zweites Signal ungeprüft (K3, K4) | niedrig |
+| C2R5-6 | CC | Löschfehler in der Quarantäne-Ernte still möglich, ohne dass ein Test fällt (R8) | mittel |
+| C2R5-7 | CC | `laufendeSendungen` Leck unbemerkt (K1) | niedrig |
+| C2R5-8 | CC | Ernte-Regeln nur gegen fremde Namen geprüft, nicht gegen fast-richtige (R2, R6, R4, S1) | niedrig |
+| C2R5-9 | CC | FIFO/Nicht-Datei und mtime in der Zukunft unter `_quarantaene/` still | niedrig |
+| C2R5-10 | CC | `MAX_GENANNT` 10 widerspricht „mindestens so vollständig“ | Entscheidung: alle nennen bis zur Textgrenze |
+| C2R5-11 | DS | Fenster ohne Zeitgeber bleibt stehen, wenn das Setzen des Zeitgebers wirft | niedrig |
+| C2R5-12 | DS | `_reset()` lässt `laufendeSendungen` stehen | niedrig |
+| C2R5-13 | DS | Probelauf-Ping-Zusicherung (`test_feature_pdf_reste_ernte.js:178`) ohne Positivkontrolle | niedrig |

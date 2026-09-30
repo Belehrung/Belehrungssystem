@@ -34,3 +34,6 @@ Verweist auf `plaene/planpruefung-c2.md` (Nachmessung dort).
 - **C2-S14** Zähler, die nach dem Halten eines Studios auflaufen, erscheinen erst im nächsten Fenster; die Summenbildung
   gehaltener Zähler ist über `melde()` nicht erreichbar und damit ungetestet.
 - **C2-S15** `ERNTE_FEHLER` meldet täglich, solange eine Anomalie liegen bleibt (gewollt laut, aber Dauerrauschen möglich).
+- **C2-S16** (Runde 5, C2R5-3): ein synchron hängender Webprozess reagiert mit JS-Signal-Handler nicht mehr sofort auf
+  SIGINT; Abhilfe `kill_timeout` 15 s für den Webprozess (Nacharbeit 5) — ob `pm2 reload` den Wert übernimmt, ist hier
+  nicht messbar. Betreiber kann es mit `pm2 show gymdocu` prüfen.
