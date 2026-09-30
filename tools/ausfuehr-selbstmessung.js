@@ -114,7 +114,7 @@ function limitLesen(name) {
 // senken): zeigt, dass der Mechanismus wirkt; die Literale oben zeigen, dass
 // das Kind mit den vorgesehenen Werten laeuft.
 function prlimitProbe(schalter, skript) {
-    const r = spawnSync('prlimit', [schalter, 'node', '-e', skript], { encoding: 'utf8', timeout: 20000 });
+    const r = spawnSync('prlimit', [schalter, 'sh', '-c', skript], { encoding: 'utf8', timeout: 20000 });
     return { status: r.status, signal: r.signal, stdout: (r.stdout || '').trim(), stderr: (r.stderr || '').trim().split('\n').pop() };
 }
 
@@ -269,11 +269,16 @@ async function main() {
         !!lNproc && !!lFsize && !!lCpu && lNproc.soft === String(RLIMIT_NPROC_SOLL) && lNproc.hart === String(RLIMIT_NPROC_SOLL)
         && lFsize.soft === String(RLIMIT_FSIZE_SOLL) && lFsize.hart === String(RLIMIT_FSIZE_SOLL)
         && lCpu.soft === String(RLIMIT_CPU_SOLL) && lCpu.hart === String(RLIMIT_CPU_SOLL));
-    const nprocSkript = 'const {spawn}=require("node:child_process");let ok=0,fehl=0;const k=[];for(let i=0;i<6;i++){const c=spawn("sleep",["3"]);c.on("error",()=>{fehl++});c.on("spawn",()=>{ok++});k.push(c);}setTimeout(()=>{console.log("ok="+ok+" fehl="+fehl);for(const c of k)try{c.kill("SIGKILL")}catch(e){}process.exit(0)},700)';
+    // Die Sonde ist eine sh, kein node: RLIMIT_NPROC zaehlt alle Tasks des
+    // Benutzers (Threads eingeschlossen), und ein node unter --nproc=3 stirbt
+    // schon an seinem ersten pthread_create statt sauber zu berichten
+    // (gemessen: Absturzspur statt Zaehlzeile). Die sh forkt sechs sleeps;
+    // unter dem engen Deckel meldet sie "Cannot fork" und endet (dash: 2).
+    const nprocSkript = 'p=""; n=0; for i in 1 2 3 4 5 6; do sleep 3 & p="$p $!"; n=$((n+1)); done; echo "gestartet=$n"; kill $p 2>/dev/null; wait; exit 0';
     const nprocEng = prlimitProbe('--nproc=3', nprocSkript);
     const nprocWeit = prlimitProbe('--nproc=64', nprocSkript);
-    ok(`nproc wirkt: unter --nproc=3 scheitern Starts (${nprocEng.stdout || nprocEng.stderr}), unter --nproc=64 gelingen alle sechs (${nprocWeit.stdout || nprocWeit.stderr})`,
-        /fehl=[1-9]/.test(nprocEng.stdout) && nprocWeit.stdout === 'ok=6 fehl=0');
+    ok(`nproc wirkt: unter --nproc=3 scheitern Starts (${nprocEng.stdout || nprocEng.stderr}, Exit ${nprocEng.status}), unter --nproc=64 gelingen alle sechs (${nprocWeit.stdout || nprocWeit.stderr})`,
+        nprocEng.status !== 0 && !/gestartet=6/.test(nprocEng.stdout) && nprocWeit.status === 0 && nprocWeit.stdout === 'gestartet=6');
     const fsizeSkript = 'const fs=require("node:fs");try{fs.writeFileSync("/tmp/.dsv1-fsize-probe",Buffer.alloc(Number(process.argv[1])));console.log("GESCHRIEBEN")}catch(e){console.log("FEHLER "+e.code)}finally{try{fs.unlinkSync("/tmp/.dsv1-fsize-probe")}catch(e){}}';
     const fsizeEng = spawnSync('prlimit', ['--fsize=65536', 'node', '-e', fsizeSkript, '200000'], { encoding: 'utf8', timeout: 20000 });
     const fsizeWeit = spawnSync('prlimit', ['--fsize=65536', 'node', '-e', fsizeSkript, '50000'], { encoding: 'utf8', timeout: 20000 });
@@ -282,9 +287,11 @@ async function main() {
     ok(`fsize wirkt: 200000 Bytes unter --fsize=65536 scheitern (${fsizeEng.signal || (fsizeEng.stdout || '').trim()}), 50000 Bytes gelingen (${(fsizeWeit.stdout || '').trim()})`,
         fsizeEngScheitert && (fsizeWeit.stdout || '').trim() === 'GESCHRIEBEN');
     const cpuSkript = 'const t=Date.now();while(Date.now()-t<Number(process.argv[1])){}console.log("FERTIG")';
-    const cpuEng = spawnSync('prlimit', ['--cpu=1', 'node', '-e', cpuSkript, '6000'], { encoding: 'utf8', timeout: 20000 });
+    // weich 1 s, hart 3 s: bei weich = hart liefert der Kernel sofort SIGKILL
+    // (gemessen), erst der Abstand macht das SIGXCPU der weichen Grenze sichtbar.
+    const cpuEng = spawnSync('prlimit', ['--cpu=1:3', 'node', '-e', cpuSkript, '6000'], { encoding: 'utf8', timeout: 20000 });
     const cpuWeit = spawnSync('prlimit', ['--cpu=5', 'node', '-e', cpuSkript, '150'], { encoding: 'utf8', timeout: 20000 });
-    ok(`cpu wirkt: 6 s Rechnen unter --cpu=1 wird beendet (${cpuEng.signal || 'Exit ' + cpuEng.status}), 0,15 s unter --cpu=5 gelingen (${(cpuWeit.stdout || '').trim()})`,
+    ok(`cpu wirkt: 6 s Rechnen unter --cpu=1:3 wird beendet (${cpuEng.signal || 'Exit ' + cpuEng.status}), 0,15 s unter --cpu=5 gelingen (${(cpuWeit.stdout || '').trim()})`,
         cpuEng.signal === 'SIGXCPU' && cpuEng.status === null && (cpuWeit.stdout || '').trim() === 'FERTIG');
 
     // 24.-29. Datenbank
