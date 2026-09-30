@@ -59,3 +59,17 @@ Die tragenden Befunde sind nachgemessen bzw. gegengelesen:
 | C11 | – | Die Kamera-Behebung trägt | – |
 
 Eine zweite Prüfrunde ist nötig, weil die Behebung Verhalten ändert (Deckel, Serverantwort, Badge).
+
+## Runde 2 (Lesespur flash über Nacharbeit 1, `a5ac198..8c15e73`)
+
+Selbst gelesen: `antwortLesen()`, `formularIndizes()`, die Zuordnung live und beim Replay (`defekte[i].idx`, 1:1 mit `neueDefektIds`). Der Befund zu 413/400 deckt sich mit meiner eigenen Lesung des Berichts (offener Punkt b).
+
+| Nr | Schwere | Befund | Entscheidung |
+|---|---|---|---|
+| R2-1 | blockierend (Regress) | JSON-Antworten der App ohne `ok` (413, 404, 400-Typ, 500 `{error}`) gelten als vorübergehend und zählen nie. Ein Eintrag mit zu grossem Body kreist ewig; der Text sagt „wird automatisch gesendet“. Auf master wurde er nach 10 Versuchen zum Konflikt. | Nacharbeit 2: vorübergehend sind NUR Netzfehler, Nicht-JSON (Proxy-HTML), Wartung 503 und auth. Jede andere App-Antwort zählt. |
+| R2-2 | blockierend | Ein vorübergehender Fehler hält die ganze Kette an. Ein hängender Eintrag blockiert alle folgenden. | Nacharbeit 2: ein eintragsbezogener (gezählter) Fehler setzt die Kette fort; nur Netz, Wartung und Proxy halten sie an. |
+| R2-3 | sollte | `speicherFehler` wird schon durch einen reinen Lese-Erfolg zurückgesetzt. | Nacharbeit 2: Rücksetzen nur nach einem erfolgreichen Schreiben oder Löschen |
+| R2-4 | sollte | Die Replay-Zuordnung prüft nur die Anzahl, nicht die Indexmenge. | Sammelliste (braucht eine gespeicherte Formularindex-Spalte, also eine Migration). Der reguläre Client erzeugt den Fall nicht. |
+| R2-5 | sollte | `art='fotos'` bleibt stehen, wenn `konfliktSetzen` ohne `art` gerufen wird. | Nacharbeit 2 |
+| R2-6/7/8 | Anmerkung | `ok(true)` in B6l; 404 fehlt in der Liste; Kommentar zu 413 | Nacharbeit 2 |
+| E2E | Bestand | `test/e2e-durchlauf.js` ist auf master rot (5 FAIL, Abbruch bei `:332`), das Skript ist gegenüber der App gedriftet. | Sammelliste |
