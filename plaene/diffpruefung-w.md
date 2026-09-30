@@ -137,3 +137,14 @@ Den Diff habe ich selbst gelesen (Aufbauskript, `ausfuehr-spur.js`). Die tragend
 | R3-7 | Anmerkung | Eine Host-Anordnung ausserhalb der Präfixliste führt zu einem Isolationsabbruch, obwohl nichts gebrochen ist. | Nacharbeit 3: als Werkzeug-Befund ohne `isolation` führen |
 | R3-8 | Anmerkung | Ablagen nicht leerbar ergibt Exit 20 statt 25. | Nacharbeit 3 |
 | R3-9 | Anmerkung | Kopfzahlen veraltet (29 statt 32). | Nacharbeit 3 |
+
+## Runde 4 (Lesespur flash über Nacharbeit 3, `1a26be4..0440275`)
+
+Selbst gelesen: `tools/ausfuehr-manifest.sh` (längenpräfixierte Felder, NUL-getrennt, `n % 3`) und den serverseitigen DROP über `format('%I')` mit `psql -f -`. Den Widerspruch des Bauenden zu REVOKE CONNECT auf `postgres` nehme ich an; er ist gemessen, ein Test des Zielrepos verbindet dorthin.
+
+| Nr | Schwere | Befund | Entscheidung |
+|---|---|---|---|
+| R4-1 | sollte | Die Large Objects werden erst NACH `CREATE DATABASE gymdocu_test` geräumt; ein LO in template1 wird mitgeklont. Die Nachzählung kann bauartbedingt nicht fehlschlagen. | Nacharbeit 4: vor dem Klonen zählen und räumen |
+| R4-2 | sollte | Ein Werkzeug-Befund beendet den Gegenleser-Lauf nicht; er endet regulär, obwohl nie ein Test lief. Der Kopf in `gegenleser-repo.js` sagt Exit 7. | Nacharbeit 4: eigener Marker, Exit ≠ 0, Kopf angleichen |
+| R4-3 | Anmerkung | Der Exit von `find` in `ausfuehr-manifest.sh` wird nicht geprüft (dasselbe Muster wie `diffpruefung-t2.md:41`). | Nacharbeit 4 |
+| R4-4 | Anmerkung | Ein Mountziel mit Leerzeichen löst einen Fehlalarm aus (sichere Richtung). | Nacharbeit 4, falls billig; sonst benannte Grenze |
