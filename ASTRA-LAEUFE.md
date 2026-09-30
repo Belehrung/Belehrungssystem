@@ -336,6 +336,10 @@ sondern falsch.
 | 30.09.2026 | Variante 1 Planpruefung Spur a (deepseek-flash) | Diff 70 Zeilen, Suchen 15, Lesungen 17, Token rein 882354, Token raus 62872, Runden 15 | — | — | — | 0,34 $ |
 | 30.09.2026 | Variante 1 Planpruefung R2 Spur a (deepseek-flash) | Diff 89 Zeilen, Suchen 23, Lesungen 20, Token rein 839165, Token raus 60590, Runden 16 | — | — | — | 0,32 $ |
 | 30.09.2026 | Variante 1 Planpruefung R2 Spur b (deepseek-flash) | Diff 89 Zeilen, Suchen 17, Lesungen 19, Token rein 1065308, Token raus 68403, Runden 14 | — | — | — | 0,40 $ |
+| 30.09.2026 | Planpruefung Variante 1 Fassung 3 Runde 3 Spur B (GymDocu-Suite) (deepseek-flash) | Diff 151 Zeilen, Suchen 28, Lesungen 26, Token rein 1288602, Token raus 79829, Runden 12 | — | — | — | 0,48 $ |
+| 30.09.2026 | Planpruefung Variante 1 Fassung 3 Runde 3 Spur A (Werkzeugcode) (deepseek-flash) | Diff 151 Zeilen, Suchen 10, Lesungen 18, Token rein 1307631, Token raus 90402, Runden 17 | — | — | — | 0,50 $ |
+| 30.09.2026 | Planpruefung D Deploy-SSH Spur B (Vorgeschichte) (deepseek-flash) | Diff 75 Zeilen, Suchen 31, Lesungen 14, Token rein 966493, Token raus 60808, Runden 15 | — | — | — | 0,36 $ |
+| 30.09.2026 | Planpruefung D Deploy-SSH Spur A (GymDocu) (deepseek-flash) | Diff 75 Zeilen, Suchen 15, Lesungen 15, Token rein 488196, Token raus 62689, Runden 8 | — | — | — | 0,22 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht

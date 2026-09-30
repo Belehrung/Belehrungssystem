@@ -1,151 +1,150 @@
-# Auftrag DeepSeek „Variante 1“ — ausführende Prüfspur mit festen Werkzeugen (30.09.2026, Fassung 3)
+# Auftrag DeepSeek „Variante 1“ — ausführende Prüfspur mit festen Werkzeugen (30.09.2026, Fassung 4)
 
-Fassung 3 nach Planprüfung Runde 2 (`scratchpad/dsv1p/antwort2-{a,b}.txt`, 35 Befunde, selbst nachgemessen — Tabelle
-am Ende). Betreiber-Entscheidung 26.09.2026 (CLAUDE.md, „begrenzte Ausführung für DeepSeek“). Repos: Belehrungssystem
-(`tools/gegenleser-repo.js`, neues Modul erlaubt) und GymDocu (nur Punkt 6). Einordnung: **sehr komplex** —
-Sicherheitsgrenze (fremdes Modell löst Codeausführung aus), und ein falsch grünes oder falsch rotes Werkzeug entwertet
-jede spätere Prüfung.
+Fassung 4 nach Planprüfung Runde 3 (`scratchpad/dsv1p/antwort3-{a,b}.txt`; Auswertung am Ende). Betreiber-Entscheidung
+26.09.2026 (CLAUDE.md, „begrenzte Ausführung für DeepSeek“: genau eine Stelle ändern, EINE registrierte Testdatei gegen
+eine eigene `_test`-DB, unprivilegiert, Ausgabe durch den Riegel, automatisch zurücksetzen) und 27.09.2026 (DeepSeek nur
+`deepseek-flash`). Zwei Beiträge, nacheinander:
+
+- **Teil G (GymDocu, zuerst):** reine Auslagerung, Gate-Verhalten gleich. Einordnung: Standard.
+- **Teil W (Belehrungssystem):** das Werkzeug. Einordnung: **sehr komplex** — Sicherheitsgrenze (fremdes Modell löst
+  Codeausführung aus), und ein falsch grünes oder falsch rotes Werkzeug entwertet jede spätere Prüfung.
 
 ## 0. Grundsatz
 
-Eine Mutation IST Code des Modells, und jede versionierte Datei, die der Test lädt, ist mutierbar — die Werkzeugliste
-ist KEINE Fähigkeitsgrenze, die Grenze ist allein die Sandbox. Sie lautet: **der ausgeführte Prozess sieht weder die
-Schlüsselablage noch die Umgebung des Werkzeugs, hat kein Netz, und alles, was er schreiben kann, ist nach dem Aufruf
-weg.** Der Geheimnis-Riegel bleibt zweite Schicht (blind für kodierte Ausgaben) und erscheint in keiner Zusicherung als
-tragend. Benannte Grenze: versionierte Dateien des Zielbaums gelten als geheimnisfrei (abgesichert durch den
-gitleaks-Hinweis in GymDocu, nicht durch dieses Werkzeug). Jede Isolationseigenschaft wird zur LAUFZEIT im Kind
-gemessen; fehlt eine, wird NICHT ausgeführt (fail-closed).
+Eine Mutation IST Code des Modells, jede versionierte Datei, die der Test lädt, ist mutierbar — die Grenze ist allein
+die Sandbox: **der ausgeführte Prozess sieht weder die Schlüsselablage noch die Umgebung des Werkzeugs, hat kein Netz,
+und alles, was er schreiben kann, ist nach dem Lauf weg.** Der Geheimnis-Riegel bleibt zweite Schicht (blind für
+kodierte Ausgaben), nie tragend. Benannte Grenze: der versionierte Arbeitsstand des Zielbaums gilt als geheimnisfrei
+(gitleaks-Hinweis in GymDocu); die Historie liegt nicht in der Kopie. Das Werkzeug spiegelt das **CI-Gate**
+(`ci.yml`: `CI=true`, ubuntu, UTC) — was die Sandbox nicht bieten kann, wird dadurch im Grundlauf ROT, nie still
+übersprungen.
 
-## 1. Werkzeuge (nur mit Schalter `--ausfuehren`, nur wenn `istDeepseekModell()`; sonst Exit 2)
+## Teil G — `test/umgebung.sh` und `test/db-vorbereiten.js` (GymDocu)
 
-- Zielbaum ist `--wurzel` (EINE Wurzel für Lesen und Ausführen, kein zweiter Wurzelzustand). Er muss sauber sein
-  (`git status --porcelain` leer), sonst Abbruch vor der ersten Runde — Lesen und Ausführen sehen denselben Stand.
-- `teste(testdateien[1..3])` und `mutiere_und_teste(datei, alt, neu, testdateien[1..3])`. Testdateien müssen in der
-  `TESTS=(`-Liste von `test/run.sh` stehen (gelesen, nicht gestartet). `datei` aus `git ls-files`, Endung `.js`,
-  `.cjs`, `.json` oder `.sh`, `istHartGesperrt` gilt, und NICHT: eine der übergebenen Testdateien, `test/run.sh`,
-  `test/umgebung.sh`. Genau EINE Fundstelle von `alt`, sonst Ablehnung. Syntaxprüfung je Endung (`node --check`,
-  `sh -n`, `JSON.parse`), vor dem Bau an je einer echten GymDocu-Datei gemessen.
-- **Grundlauf Pflicht:** `mutiere_und_teste` fährt jede Testdatei zuerst UNMUTIERT (Ergebnis je Lauf und Datei
-  zwischengespeichert). Ist der Grundlauf nicht `bestanden`, wird nicht mutiert: Status `grundlauf-rot`.
-- **Status je Testdatei, maschinenlesbar** und nur aus Exit-Code und Zeitlimit abgeleitet (nie aus Text der Ausgabe):
-  `bestanden` (Exit 0), `gescheitert` (Exit ≠ 0), `zeitlimit`, `umgebung-fehler` (Kind-Aufbau oder Selbstmessung
-  gescheitert), `abgelehnt`, `grundlauf-rot`. Der Vorspann sagt: nur `gescheitert` nach `bestanden`em Grundlauf ist ein
-  Wirkungsnachweis; `zeitlimit`/`umgebung-fehler`/`grundlauf-rot` sind keiner. Das Ergebnis nennt Datei, sha256 des
-  Mutations-Diffs, gelaufene Testdateien.
-- **Kein Zustand zwischen Aufrufen:** je Aufruf eine FRISCHE Kopie (aus einem je Lauf einmal angelegten
-  `git clone --no-local` des Zielbaums, kein Worktree, im Klon wird nie committet), danach gelöscht; `node_modules` als
-  Bind-Mount ro.
+- `test/run.sh:395-592` (alle Exporte vor der Testschleife ausser `DATABASE_URL`: `PUBLIC_BASE_DOMAIN`,
+  `GYMDOCU_BOOT_SMOKE_STARTPFAD`, die 11 `mktemp -d`-Wurzeln samt Erfolgsprüfung, `QR_VERBRAUCH`, beide
+  `NODE_OPTIONS`-Vorladungen) wandern nach `test/umgebung.sh`. Sie wird von `bash` gesourct (in `run.sh` wie im Kind),
+  erwartet als cwd die Repo-Wurzel und prüft das selbst (sonst `return 1`). `run.sh` sourct sie an derselben Stelle, HINTER dem
+  Sperrblock (`test_feature_suite_laufsperre.js:97-104` kopiert dessen Kopf wörtlich).
+- Die Migrations-Vorbereitung (`test/run.sh`, `node -e` mit `db.init()` + `runMigrations`) wird `test/db-vorbereiten.js`;
+  `run.sh` ruft sie auf. Aufräumen der `mktemp`-Verzeichnisse bleibt, wo es ist.
+- `test_feature_run_sh_wegwerf_variablen_static.js` liest ab jetzt `test/umgebung.sh` (Literalliste unverändert);
+  neuer Wächter: `run.sh` sourct `umgebung.sh` und ruft `db-vorbereiten.js`; `umgebung.sh` setzt kein `DATABASE_URL`.
+- Nachweis: volle Suite, Dateizahl-Ritual, Summe PASS/FAIL gegen den Lauf auf `origin/master` (gleich, bis auf die
+  neuen Wächterfälle); Gegenprobe je neuem Wächter.
 
-## 2. Isolation
+## Teil W — Werkzeug
 
-Ablauf je Testdatei: `timeout -k 5 <T> unshare --mount --net --pid --ipc --uts --fork --kill-child --mount-proc
-<aufbau.sh>` — `aufbau.sh` liegt im Belehrungssystem (nie im mutierbaren Baum), läuft als root im neuen Namensraum:
-Mounts, `ip link set lo up`, dann `setpriv --reuid=65534 --regid=65534 --clear-groups --no-new-privs env -i <Liste>
-sh -c '. test/umgebung.sh; <DB-Variablen setzen>; exec node <testdatei>'`.
+### 1. Werkzeuge (nur mit `--ausfuehren`, nur mit `--modell=deepseek-flash`; sonst Exit 2)
 
-- **Mounts:** tmpfs über `/workspace`, `/home`, `/root`, `/tmp`, `/var/tmp`, `/dev/shm`, `/var/www`, `/run`,
-  `/var/lib/postgresql`, `/etc/postgresql`, `/srv`, `/mnt`, `/media`, `/var/spool`; eingebunden nur Aufruf-Kopie (rw),
-  `node_modules` (ro), Socket-Ordner des eigenen Clusters.
-- **Umgebung konstruktiv (`env -i`, nichts geerbt):** `PATH=<dirname(process.execPath)>:/usr/bin:/bin`,
-  `HOME=<tmpfs-Pfad>`, `NODE_ENV` wie im Gate, danach nur was `test/umgebung.sh` IM KIND setzt (seine `mktemp -d`
-  entstehen damit im tmpfs-`/tmp`), danach `DATABASE_URL`/`PGHOST`/`PGPORT`/`PGUSER`/`PGDATABASE` auf die Aufruf-DB
-  ÜBERSCHRIEBEN. `TZ` wird nicht gesetzt — wie im Gate (`test/run.sh` setzt keine; gemessen).
-- **Selbstmessung im Kind** (einmal je Lauf im Kanarien-Aufruf, Punkt 4; fail-closed, jede mit ROT/GRÜN-Paar im
-  Selbsttest): uid/gid 65534, keine Zusatzgruppen; `/proc` zeigt nur Namensraum-PIDs; **Menge der für 65534
-  schreibbaren Verzeichnisse = Sollliste** (Kopie + tmpfs-Pfade; `find` über `/` ohne `/proc`,`/sys`,`/dev`-Rest) —
-  statt einzelner Pfadproben; `/workspace` enthält nur die Kopie, der Originalbaum ist nicht erreichbar; Umgebung =
-  genau die Allowlist plus die Namen aus `test/umgebung.sh` (Verbotsliste `*_KEY*`, `*_TOKEN*`, `*PASSWOR*`,
-  `OPENROUTER*`, `TELEGRAM*`, `DEEPSEEK*` leer, Selbsttest setzt `DEEPSEEK_API_KEY` im Elternprozess); TCP nach aussen
-  und zum Proxy scheitert, `127.0.0.1` gegen einen im Kind gestarteten Horcher gelingt (gemessen: ohne `lo up`
-  ENETUNREACH); `node -e 0` als 65534 gelingt; Zeitzone des Node-Prozesses = die des Elternprozesses (Literal im
-  Protokoll).
-- **Zeitlimit von aussen mit KILL:** gemessen 30.09.: `timeout 2 unshare --pid --fork … sleep 30` endet erst nach
-  30 014 ms (PID 1 ignoriert SIGTERM), mit `timeout -k 1 2` nach 3 005 ms. Selbsttest „Test schläft ewig“ belegt:
-  Kind nach ≤ T+6 s weg, Status `zeitlimit`.
+- Zielbaum = `--wurzel` (EINE Wurzel). Er muss sauber sein und `test/umgebung.sh` + `test/db-vorbereiten.js` haben,
+  sonst Abbruch vor der ersten Runde.
+- `teste(testdatei)` und `mutiere_und_teste(datei, alt, neu, testdatei)` — GENAU EINE Testdatei, aus der
+  `TESTS=(`-Liste von `test/run.sh` (gelesen, nicht gestartet). `datei` aus `git ls-files`, Endung `.js`/`.cjs`/
+  `.json`/`.sh`/`.sql`, `istHartGesperrt` gilt, nicht die Testdatei, nicht `test/run.sh`/`test/umgebung.sh`. Genau EINE
+  Fundstelle von `alt`. Syntaxprüfung je Endung (`.sql` ohne), vor dem Bau an echten Dateien gemessen.
+- **Grundlauf Pflicht:** `mutiere_und_teste` fährt die Testdatei erst UNMUTIERT (je Lauf und Datei zwischengespeichert);
+  nicht `bestanden` ⇒ keine Mutation, Status `grundlauf-rot`.
+- **Status aus einem Exit-Vertrag, nie aus Ausgabetext:** `aufbau.sh` endet mit 0/1 = Test bestanden/gescheitert,
+  mit 100+Stufe bei eigenem Fehler (Mount, lo, setpriv, Selbstmessung, DB-Vorbereitung); `timeout` 124 UND 137 =
+  `zeitlimit`. Status: `bestanden`, `gescheitert`, `zeitlimit`, `umgebung-fehler`, `abgelehnt`, `grundlauf-rot`,
+  `ausgabe-verworfen` (Status bleibt, nur Zeilen fallen). Nur `gescheitert` nach bestandenem Grundlauf ist ein
+  Wirkungsnachweis — so im Vorspann. Jeder Wert mit ROT/GRÜN-Fall.
+- **Vorbereitung je Testlauf** (Grundlauf und Mutation getrennt): frische Kopie (aus einem je Lauf angelegten
+  `git clone --no-local --depth 1`, danach `chown -R 65534:65534`), frische DB (Punkt 3), `test/db-vorbereiten.js` IM
+  Kind aus der Kopie — Init-/Migrations-Mutationen wirken also wie im Gate. Danach Kopie und DB weg.
 
-## 3. Datenbank: eigener Postgres-Cluster
+### 2. Isolation
 
-Je Lauf `pg_createcluster 16 dsv1<zufall> --socketdir /run/dsv1-<zufall>`, `listen_addresses = ''`, `pg_hba.conf`
-geschrieben mit GENAU `local all postgres peer` und `local all nobody peer`. Rolle `nobody`: LOGIN, ohne SUPERUSER,
-CREATEDB, CREATEROLE, ohne `pg_execute_server_program`/`pg_read_server_files`/`pg_write_server_files`. Vorlage: von
-`nobody` gebaut (init + runMigrations wie `test/run.sh`, Objekte gehören `nobody`), danach vom Verwalter
-`ALTER DATABASE … OWNER TO postgres ALLOW_CONNECTIONS false IS_TEMPLATE true`. Je Aufruf erzeugt der Verwalter
-`CREATE DATABASE … TEMPLATE … OWNER nobody`, danach `DROP DATABASE … WITH (FORCE)`. Am Lauf-Ende Cluster gelöscht.
-Selbstmessung im Kind (je ROT/GRÜN): `rolsuper` false; Verbindung als `postgres` scheitert; Verbindung zur Vorlage
-scheitert; `COPY … TO PROGRAM` scheitert; `current_database()` = Aufruf-DB; Haupt-Socket nicht erreichbar. Tests, die
-selbst Datenbanken anlegen (Textsuche trifft 6 Dateien, davon 4 `_static` — welche wirklich anlegen, misst der Bau per
-Grundlauf und nennt sie im Bericht), laufen als `grundlauf-rot` auf — das ist korrekt, nicht zu umgehen.
+- Der Spawn von `timeout` bekommt schon eine konstruierte Umgebung (Allowlist, kein Erbe). Kette:
+  `timeout -k 5 300 unshare --mount --net --pid --ipc --uts --fork --kill-child --mount-proc aufbau.sh`. `aufbau.sh`
+  liegt im Belehrungssystem, ist PID 1 (wartet auf den Test, `exec`t nicht), als root: `mount --make-rprivate /`,
+  Kopie und Socket-Ordner zuerst von ihrem Ort ausserhalb aller überdeckten Bäume (`/var/lib/dsv1/<lauf>/…`) an feste
+  Einhängepunkte (`/dsv1/kopie`, `/dsv1/pg`) binden, DANN tmpfs über `/workspace`, `/home`, `/root`, `/tmp`,
+  `/var/tmp`, `/dev/shm`, `/var/www`, `/run`, `/var/lib/postgresql`, `/var/lib/dsv1`, `/etc/postgresql`, `/srv`, `/mnt`,
+  `/media`, `/var/spool`; `node_modules` und `$PLAYWRIGHT_BROWSERS_PATH` ro; `ip link set lo up`; `cd /dsv1/kopie`;
+  `setpriv --reuid=65534 --regid=65534 --clear-groups --no-new-privs env -i <Allowlist> bash -c '. test/umgebung.sh &&
+  node test/db-vorbereiten.js && node <testdatei>'`.
+- **Kind-Umgebung:** `PATH=<dirname(execPath)>:/usr/bin:/bin`, `HOME=/tmp`, `CI=true`, `PLAYWRIGHT_BROWSERS_PATH`,
+  `DATABASE_URL=postgresql://nobody@/gymdocu_test?host=/dsv1/pg&port=<Clusterport>`, dazu was `umgebung.sh` setzt. Kein `TZ`.
+- **Selbstmessung** (fail-closed, eigene Stufe vor der DB-Vorbereitung; Sollwerte sind HANDGESCHRIEBENE Literale im
+  Werkzeug, nie aus der Mount-Liste oder aus `umgebung.sh` gebildet): uid/gid 65534; `/proc` nur Namensraum-PIDs;
+  Menge der für 65534 schreibbaren Verzeichnisse = Literalliste; Namen der Kind-Umgebung = Literalliste (weicht
+  `umgebung.sh` ab, ist das ein Werkzeug-Befund, Abbruch); `/workspace` leer, Originalbaum unerreichbar; sha256 der
+  Testdatei und der mutierten Datei = Erwartung aus dem Elternprozess; `/proc/1/environ` für 65534 nicht lesbar;
+  TCP nach aussen und zum Proxy scheitert, `127.0.0.1` gegen einen eigenen Horcher gelingt; Zeitzone des Node-Prozesses
+  = `UTC` (Literal: die des CI-Gates; der Host setzt sie heute ebenso, gemessen).
+- Zeitlimit von aussen mit KILL (gemessen 30.09.: SIGTERM allein 30 014 ms, `-k` 3 005 ms). Selbsttest „schläft ewig“
+  belegt ≤ 306 s und Status `zeitlimit`.
 
-## 4. Deckel und Ausgabe
+### 3. Datenbank: eigener Cluster, frische DB je Testlauf
 
-- Kanarienvogel: der erste Aufruf je Lauf fährt die Selbstmessung plus einen trivialen registrierten Test; nicht grün
-  ⇒ keine weitere Ausführung.
-- Je Testdatei T = 300 s; höchstens 30 Werkzeugaufrufe und 45 min Ausführungszeit je Lauf — wer zuerst greift; beide
-  mit eigenem ROT/GRÜN-Fall (kleine Werte über Selbsttest-Schalter). `--max-runden` wird NICHT verändert.
-- In den Modellkontext je Aufruf höchstens 8 KB (Bytes, auf UTF-8-Grenze gekürzt, mit „gekürzt“-Hinweis): Status,
-  Exit, erste und letzte Fehlerzeilen, keine Dauer als Zahl. Ausführungsausgaben zählen in den bestehenden
-  600-KB-Gesamtdeckel; dessen Verhalten (lauter Abbruch) bleibt. Zusicherung am aufgezeichneten Anfragekörper: kein
-  Werkzeugergebnis > 8 KB.
-- Geheimnis-Riegel auf die Ausführungsausgabe: ein Treffer verwirft NUR dieses Ergebnis („Ausgabe verworfen:
-  Riegel“), nie den Lauf.
-- Protokoll: Volltext je Aufruf höchstens 1 MB (Rest gezählt, verworfen).
-- Zähler `ausfuehrungen`, `mutationen`, Ausführungs-Ablehnungen getrennt in Laufprotokollzeile, Zusammenfassung und
-  `ASTRA-LAEUFE.md`.
-- Bricht die Isolation ab: keine weitere Ausführung, aber eine letzte Runde ohne Werkzeuge mit Marker
-  „AUSFÜHRUNG ABGEBROCHEN — Belege nach Aufruf N fehlen“; Exit ≠ 0.
+Je Lauf `pg_createcluster 16 dsv1<zufall>`, Socket-Ordner unter `/var/lib/dsv1/<lauf>/pg` (vom Werkzeug angelegt,
+postgres schreibt, 65534 darf durchqueren), `listen_addresses=''`, `pg_hba.conf` genau `local all postgres peer` und
+`local all nobody peer`. Rolle `nobody`: LOGIN, CREATEDB, ohne SUPERUSER, CREATEROLE und ohne die Rollen
+`pg_execute_server_program`/`pg_read_server_files`/`pg_write_server_files`. Vor JEDEM Testlauf: `DROP DATABASE IF EXISTS
+gymdocu_test WITH (FORCE)`, `CREATE DATABASE gymdocu_test OWNER nobody` (Name wegen `core/db.js:330` und
+`test_feature_migration_0060_loeschauftrag.js:32-33`). Am Lauf-Ende Cluster gelöscht. Selbstmessung (je ROT/GRÜN):
+`rolsuper` false; Verbindung als `postgres` scheitert; `COPY … TO PROGRAM` scheitert; Haupt-Socket unerreichbar.
 
-## 5. Aufräumen
+### 4. Deckel und Ausgabe
 
-Ein Ausführungslauf zur Zeit: `flock` auf `/var/lock/dsv1.lock` über den ganzen Lauf (nicht wartend, sonst Abbruch).
-Mit gehaltener Sperre sind Reste früherer Läufe (Cluster `dsv1*`, `/workspace/dsv1-*`, `/run/dsv1-*`) tot: melden,
-entfernen. Der Lauf führt eine Besitzliste (Cluster, Socketdir, Klon, Kopien) und räumt nur diese; nach dem Lauf und
-bei SIGINT/SIGTERM des Werkzeugs (Kindaufrufe asynchron, damit der Handler greift): alles entfernen; Aufräumfehler laut.
+- Kanarie: der erste Aufruf je Lauf fährt Selbstmessung + einen trivialen registrierten Test; nicht grün ⇒ keine
+  Ausführung mehr.
+- Höchstens 30 Werkzeugaufrufe und 45 min Ausführungszeit je Lauf, wer zuerst greift (ein Aufruf = bis 2 × 306 s); je
+  eigener ROT/GRÜN-Fall. `--max-runden` bleibt unberührt.
+- Je Werkzeugergebnis höchstens 8 KB in den Modellkontext (Bytes, UTF-8-Grenze, Status und Exit immer vollständig), keine
+  Dauer als Zahl; zählt in den 600-KB-Gesamtdeckel (Verhalten dort unverändert). Zusicherung am aufgezeichneten
+  Anfragekörper. Riegel-Treffer: nur die Zeilen fallen (`ausgabe-verworfen`), gezählt. Protokoll-Volltext ≤ 1 MB je
+  Aufruf.
+- Zähler `ausfuehrungen`, `mutationen`, Ausführungs-Ablehnungen in Protokollzeile, Zusammenfassung, `ASTRA-LAEUFE.md`.
+- Isolationsabbruch: keine Ausführung mehr, letzte Runde ohne Werkzeuge mit Marker „AUSFÜHRUNG ABGEBROCHEN — Belege nach
+  Aufruf N fehlen“, Exit ≠ 0.
 
-## 6. Umgebung wie im Gate (GymDocu, kleiner eigener Beitrag)
+### 5. Aufräumen
 
-Die Umleitungen (`PDF_ROOT`, `QR_VERBRAUCH`, `LAGEPLAN_UPLOAD_DIR` u. a., samt ihren `mktemp -d`) aus `test/run.sh` in
-`test/umgebung.sh` auslagern; `test/run.sh` sourct sie (EIN Ort). `DATABASE_URL` und alles DB-Bezogene bleibt in
-`test/run.sh`. Wächter: `test/run.sh` bindet `test/umgebung.sh` ein, und `test/umgebung.sh` setzt kein `DATABASE_URL`.
-Aufräumen der `mktemp`-Verzeichnisse bleibt, wo es heute ist (Gate-Verhalten unverändert; volle Suite + Dateizahl).
+`flock -n` auf `/var/lock/dsv1.lock` über den ganzen Lauf (belegt ⇒ Abbruch). Mit gehaltener Sperre sind Reste früherer
+Läufe (Cluster `dsv1*`, `/var/lib/dsv1/*`) tot: melden, entfernen. Besitzliste je Lauf; nach dem Lauf und bei
+SIGINT/SIGTERM des Werkzeugs (Kinder asynchron, damit der Handler greift) alles entfernen; Aufräumfehler laut.
 
-## 7. Zusicherungen und CI
+### 6. Zusicherungen und CI
 
-`--selbsttest-ausfuehrung` (neu; `--selbsttest` behält seine literale Fallzahl). Je Riegel ROT/GRÜN; Sicherheitsfälle
-mit ECHTEM Kind. Werkzeug-NAMEN literal (ohne Schalter `suche,lies`, mit `suche,lies,teste,mutiere_und_teste`) gegen
-den aufgezeichneten Anfragekörper, plus je Name ein Aufruf durch den echten Dispatch (nie „unbekannte Funktion“).
-Nicht-DeepSeek-Modell oder fehlendes `--modell` mit `--ausfuehren` ⇒ Exit 2. Mutationsziel = Testdatei ⇒ Ablehnung.
-Kein Zustand: Datei in der Kopie UND in `/var/tmp` aus Aufruf n ist in n+1 weg; Vorlagen-Änderung aus Aufruf n
-unmöglich. Aufräumen nach echtem SIGKILL + Neustart. **CI:** eigener Job in `ci.yml`, erster Schritt misst und druckt
-die Voraussetzungen (`psql --version`, `pg_createcluster`, `unshare`, `setpriv`, sudo ohne Passwort); `sudo` nur in
-den Schritten, die es brauchen; fehlt etwas bei `CI=true` → ROT mit Namen der Voraussetzung, nie SKIP; eine
-Nachinstallation nur, wenn der erste CI-Lauf des PR sie als nötig zeigt (Ergebnis in den Bericht). Lokal ohne root →
-sichtbares SKIP mit Zahl.
+`--selbsttest-ausfuehrung` mit eigener literaler Fallzahl (`--selbsttest` behält seine). Werkzeug-NAMEN literal (ohne
+Schalter `suche,lies`, mit `suche,lies,teste,mutiere_und_teste`) gegen den aufgezeichneten Anfragekörper, plus je Name ein
+Aufruf durch den echten Dispatch. Modell ≠ `deepseek-flash` mit `--ausfuehren` ⇒ Exit 2. Mutationsziel = Testdatei ⇒
+Ablehnung. Kein Zustand: Datei in Kopie und `/var/tmp` sowie eine Tabelle aus Testlauf n sind in n+1 weg. Zusätzliche
+schreibbare Stelle (tmpfs-Pfad gestrichen) ⇒ Selbstmessung ROT. Aufräumen nach echtem SIGKILL + Neustart. **CI:**
+eigener Job in `ci.yml`, erster Schritt druckt die Voraussetzungen (`psql --version`, `pg_createcluster`, `unshare`,
+`setpriv`, sudo ohne Passwort); `sudo` nur, wo nötig; fehlt etwas bei `CI=true` ⇒ ROT mit Namen, nie SKIP;
+Nachinstallation nur, wenn der erste CI-Lauf des PR sie als nötig zeigt. Lokal ohne root ⇒ sichtbares SKIP mit Zahl.
 
-## Messung (Bericht)
+## Messung (Bericht Teil W)
 
-Echter Lauf gegen `/workspace/gymdocu-dbinit` (`test_feature_db_init_schema_stand.js`): Kanarie, Grundlauf, bekannte
-Mutation (`SET LOCAL lock_timeout` entfernt → `gescheitert`), wörtlich. Vorher-/Nachher-Schnappschuss: `pg_lsclusters`,
-DB-Liste des Haupt-Clusters, `ls /workspace`, `/run`, `/var/tmp`, `/dev/shm` — Differenz leer. Selbstmessung aus dem
-Kind wörtlich. Der erste CI-Lauf des Belehrungssystem-PR mit dem neuen Job (Voraussetzungsausdruck wörtlich).
+Echter Lauf gegen einen GymDocu-Baum mit Teil G (`test_feature_db_init_schema_stand.js`): Kanarie, Grundlauf, bekannte
+Mutation (`SET LOCAL lock_timeout` entfernt → `gescheitert`), wörtlich. Grundlauf-Ergebnis für die 6 DB-anlegenden
+Kandidaten, `test_feature_netzsperre.js`, `test_feature_dateisperre.js`, `ops/boot-smoke.js` und eine Chromium-Datei
+(je Status wörtlich). Vorher-/Nachher-Schnappschuss (`pg_lsclusters`, DB-Liste Haupt-Cluster, `ls /workspace /run
+/var/tmp /dev/shm /var/lib/dsv1`): Differenz leer. Selbstmessung wörtlich. Erster CI-Lauf mit dem neuen Job
+(Voraussetzungsausdruck wörtlich).
 
 ## Zustandsfrage
 
 Welcher Zustand entsteht, den es vorher nicht gab — und welcher Weg bleibt dem Modell, etwas zu lesen oder
-hinauszuschicken, das über „eine registrierte Testdatei gegen eine Wegwerf-DB im eigenen Cluster“ hinausgeht?
+hinauszuschicken, oder ein Ergebnis zu erzeugen, das vom CI-Gate abweicht?
 
-## Planprüfung Runde 2 — Auswertung (selbst gemessen 30.09.2026)
+## Planprüfung Runde 3 — Auswertung (30.09.2026)
 
-Übernommen: A-B1 (Testdatei als Mutationsziel), A-B2/B-B8 (Status aus Exit, Grundlauf), A-B3/B-B10 (umgebung.sh im
-Kind; gemessen: `test/run.sh` legt 11 Verzeichnisse per `mktemp -d` an), A-B4/B-B3 (`/var/tmp`, `/dev/shm` 1777 — gemessen; statt Liste
-die Schreibmenge messen), A-B5/B-B2 (Env konstruktiv; Schlüssel liegt im Normalfall in `process.env`,
-`gegenleser-repo.js:471`), A-B6 (lo — gemessen ENETUNREACH ohne `lo up`; `--ipc`), B-B4 (PID 1 — gemessen 30 014 ms),
-B-B1/A-B8/B-B5 (pg_hba, Rechte, Vorlage), A-B9/B-Fr4 (8-KB-Kappung als Messung), A-B10/B-B11 (Sperre, Besitzliste),
-A-B11 (`VORGABE_MAX_RUNDEN` ist schon 40 — Anheben gestrichen), A-B12, A-B13, A-B14/B-B9 (eine Wurzel, sauberer Baum),
-A-B16, A-B17, A-B19, B-B12 (PATH/HOME), B-B14, B-Fr4.1 (Namen + Dispatch), A-F4c (Vorher-Schnappschuss).
-Anders gelöst: A-B7 (keine Fehlrechnung — beide Deckel gelten, wer zuerst greift; je eigener Fall); B-B6 (Zeitzone:
-`test/run.sh` setzt keine, das Werkzeug spiegelt das Gate statt Berlin zu setzen; eine wählbare Zeitzone für die
-TZ-Fallenklasse → Sammelliste); B-B15 (Geheimnisse im Zielbaum: benannte Grenze, gitleaks); A-B18/B-B13 (Messung der
-Runner-Ausstattung im ersten CI-Lauf des PR). Nur vermerkt: A-B20 (Repo-Hooks gelten für diesen Weg nicht; Löschregel
-steht im Modul, Punkt 5).
+Übernommen: A-F1 (Einhänge-Reihenfolge, feste Punkte, `cd`, sha256 im Kind), A-F2 (Umgebung schon am Spawn), A-F3
+(Exit-Vertrag, 137), A-F4 (`--depth 1`), A-F5a (`chown`), A-F6/B-Koll.2 (CREATEDB im Wegwerf-Cluster), A-F7 (EINE
+Testdatei, nur `deepseek-flash` — Betreibertext), A-F8/B-F3 (keine Vorlage mehr: frische DB und
+`db-vorbereiten.js` aus der Kopie vor JEDEM Testlauf — Vorbild `tools/mutationsprobe.js:543-571`), A-F9 (eigene
+Fallzahl), A-F10, A-Fr4a/B-Fr4 (Sollwerte als Literale), B-F1 (Wächter umstellen, hinter dem Sperrblock), B-F2
+(`gymdocu_test`), B-F4/F5 (NODE_OPTIONS, PUBLIC_BASE_DOMAIN, BOOT_SMOKE ⇒ ganzer Block 395–592), B-F6 (`CI=true`,
+Browserpfad ro). Anders gelöst: A-F5b/B-F8 (Zeitzone: Literal `UTC` des CI-Gates statt Elternprozess). Entfallen:
+B-F7 (keine Vorlage mehr), A-Fr4b (ohne `--modell` gilt `gpt-6-sol` ⇒ fällt unter „≠ deepseek-flash“).
+
+Runde 2 (Fassung 3): übernommen bzw. gelöst wie in Fassung 3 beschrieben (Testdatei nicht mutierbar, Status aus Exit,
+`/var/tmp`+`/dev/shm`, Env konstruktiv, lo, PID 1, pg_hba/Rechte, 8-KB-Kappung, Sperre+Besitzliste, kein Anheben von
+`--max-runden`, Zähler, Protokolldeckel, eine Wurzel, Riegel je Ergebnis, PATH/HOME).
 
 -- Ende des Auftrags --
