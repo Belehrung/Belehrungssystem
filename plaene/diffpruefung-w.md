@@ -104,3 +104,20 @@ Prüfspuren.
 W-E3 bleibt trotzdem nötig. Das Manifest soll gerade verhindern, dass die VORBEREITUNG die Kopie verändert; ohne das
 Beenden der Reste ist diese Prüfung umgehbar und damit eine Zusicherung, die nicht rot werden kann. Neu eingestuft
 als „sollte“.
+
+**Runde 2, Ergebnisse** (flash `scratchpad/w2/flash.txt`, kimi `scratchpad/w2/kimi.md`), gegen den Quelltext gelesen:
+
+| Nr | Befund | Quelle | Entscheidung |
+|---|---|---|---|
+| W-E3 | überlebende Prozesse zwischen Stufen | eigene Lesung, flash 1, kimi 1 (unabhängig) | Nacharbeit 2, Nr. 1 (dazu Leeren der tmpfs, kimi 10) |
+| R2-2 | Manifest ohne Symlink-Ziel (`%y %p`, sha nur `-type f`) | flash 2, kimi 2 | Nacharbeit 2, Nr. 2 |
+| R2-3 | Rückfall aus F-B5: `umgebung-fehler` wird als Grundlauf gecacht | flash 3 | Nr. 3 |
+| R2-4 | `erfassung-gerissen` geht vor den Isolationsstufen | kimi 4 | Nr. 4 |
+| R2-5 | `datenbankFrisch` wirft bei exotischem Namen, bevor gedroppt wird; Template-/postgres-Reste | kimi 5, 6, flash 5 | Nr. 5 |
+| R2-6 | Fehlerweg räumt Verzeichnisse nicht ab | kimi 7 | Nr. 6 |
+| R2-7 | Host-Pfade im Fehlertext gehen zum Modell | kimi 8 | Nr. 7 |
+| R2-8 | Rennen Trap gegen `test-exit` | kimi 9 | Nr. 8 |
+| R2-9 | Einhängemenge teils aus demselben Sollwert | kimi 12, flash 4 | Nr. 9 |
+| R2-10 | `mutation.relativ` nicht neutralisiert | kimi 13 | Nr. 10 |
+| R2-11 | Schnitt am ersten `)` in der Shell | flash 6 | Nr. 11 |
+| R2-G | Mutierter Code kann PASS und Exit 0 selbst drucken | kimi 3 | benannte Grenze (Kopfkommentar); jedes Ergebnis wird vor Verwendung selbst nachgemessen |
