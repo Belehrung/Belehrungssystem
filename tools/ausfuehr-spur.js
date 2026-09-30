@@ -1465,7 +1465,8 @@ async function selbsttestSpur(pruefen) {
         fs.chmodSync(path.join(mfDir, 'lib'), 0o755); fs.chmodSync(path.join(mfDir, 'lib', 'a'), 0o644);
         fs.chmodSync(path.join(mfDir, 'geheim'), 0o000);
         const mfTmp = path.join(basis, 'manifest-tmp');
-        fs.mkdirSync(mfTmp, { mode: 0o1777 });
+        fs.mkdirSync(mfTmp);
+        fs.chmodSync(mfTmp, 0o1777);   // mkdirSync unterliegt der umask (gemessen: 1755 -> mktemp als 65534 scheiterte)
         const alsNobody = (dir) => spawnSync('setpriv', ['--reuid=65534', '--regid=65534', '--clear-groups', 'bash', MANIFEST_SKRIPT, dir], { encoding: 'utf8', env: { PATH: KIND_PATH, TMPDIR: mfTmp } });
         const mfRot = alsNobody(mfDir);
         fs.chmodSync(path.join(mfDir, 'geheim'), 0o755); fs.chmodSync(path.join(mfDir, 'geheim', 'b'), 0o644);
