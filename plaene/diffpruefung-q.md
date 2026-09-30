@@ -21,3 +21,17 @@ Spuren:
   - Begründung: Die Hausregel verlangt für Einzelläufe eine eigene `_test`-DB. Der Riegel liess nur die Suite-DB zu und machte Punkt 8 damit unprüfbar.
   - Danach läuft Punkt 8 einmal gegen eine eigene DB.
 - Die Spurbefunde folgen unten, jeder selbst nachgemessen.
+
+## Lesespur flash (9 Befunde), nachgemessen
+
+| Nr | Schwere | Befund | Nachgemessen | Deckt sich mit |
+|---|---|---|---|---|
+| F1 | blockierend | Foto-Rest nach gespeicherter Sitzung zählt gegen den Deckel; `wiederholt` ist Sackgasse | gelesen, trägt | Q-E1/Q-E2 |
+| F2 | sollte | `wiederholt` zeigt „nicht übernommen / bitte manuell nachtragen“ trotz gespeicherter Sitzung | gelesen, trägt | Q-E2 |
+| F3 | **blockierend (Bestand)** | Server liefert `defekt_ids` mit POSITION (`routes/sichtpruefung.js:2909`, Replay `:2405`), Client sucht nach FORMULAR-Index (`map[foto.idx]`). Nach Löschen einer Defektzeile hängt ein Foto still am falschen Gerät. | gelesen: Server `neueDefektIds.map((id, i) => ({ idx: i, id }))` über sortierte Formular-Indizes; Client `data-gd-fotos` = Formular-Index | eigen |
+| F4 | sollte | `speicherFehler` nie zurückgesetzt, blendet Konflikte aus; Verwerfen-Ergebnis ungeprüft | gelesen, trägt | Q-E3 |
+| F5 | Anmerkung | Statische Zusicherung A11 (catch vor finally) wird schon von der inneren Kette erfüllt | plausibel, Spur misst | — |
+| F6 | Anmerkung | `ok(true, …)` nach wurfendem `warte()` — ABBRUCH statt FAIL | gelesen | — |
+| F7 | Anmerkung | Validierungs-Zweig nur als Literal geprüft | gelesen | — |
+| F8 | Anmerkung | Rat „erneut hochladen“ ist bei geschlossen/max/defekt unausführbar | gelesen, trägt | — |
+| F9 | Anmerkung | Äusserer Sync-catch etikettiert jeden Wurf (z. B. synchron in `sendeSitzung` bei beschädigtem Eintrag) als Speicherausfall | gelesen, trägt | — |
