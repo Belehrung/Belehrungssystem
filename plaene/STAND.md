@@ -645,3 +645,6 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - **Teil W (ausführende DeepSeek-Spur) fertig.** Fünf Prüfrunden, in den Zweig gemergt, Belehrungssystem-CI grün (Lauf 1231). Die CI-Rötung dazwischen kam aus der Prüfumgebung: 65534 kann den Checkout-Pfad nicht durchqueren. Behoben mit `7ff4816`. Nächster Schritt ist der A/B gegen die Claude-Spur an einem echten Diff.
   - **C5-A:** Suite grün auf `d5722ab` (428 = 428, Lint 0), PR offen, die CI läuft.
   - **C5-E1:** Suite rot, 1 FAIL: `qr_journal` F3, ein Flake, der vom Stand der Studio-ID-Folge abhängt. Nacharbeit 3 läuft.
+- 30.09.2026 21:25 UTC: **Fable-Guthaben aufgebraucht** (HTTP 429 „out of usage credits“, Modell `claude-fable-5-1`). Zwei Bauende sind daran abgebrochen:
+  - Q N3: vorher committet und gepusht (`53c126d`). Die Suite des Toten läuft weiter, Runde 4 (flash) läuft.
+  - C5-G1: Zwischenstand `1865fae` („Gegenproben und volle Suite stehen aus“), gepusht. Übernommen hat ein Standard-Executer (Sonnet). **Modellwechsel mitten im Beitrag.** Wird G1 schwächer, kommt dafür diese Ursache in Frage; Auftrag und Modell haben sich gleichzeitig geändert.
