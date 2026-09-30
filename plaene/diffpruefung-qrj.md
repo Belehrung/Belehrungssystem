@@ -221,3 +221,22 @@ gangbar).
 | — | weitere Überlebende: T18 (mit `--ausserhalb-bloecke` ungemessen), C19 (Zweig nur per Handzeile) — gleichwertig: T02, T03, C18 | sollte / keine |
 
 -- Ende Runde 6 --
+
+## Runde 7 (30.09.2026, Nacharbeit 6 `33d35c3..66c0601`, Kopf nach master-Merge `7b1a49a`)
+
+Lesespur `deepseek-flash` (`scratchpad/qrjr7/antwort-lese.txt`, 0,46 $). Selbst nachgemessen am Quelltext:
+
+| Befund | Nachmessung | trägt? | Folge |
+|---|---|---|---|
+| R7-L1 `befehlVerwerfen` prüft frisch nur Hash/`erledigt_durch`, nicht den Erledigungsstand — eine zwischen Prüfung und Lock geschriebene Korrektur hebelt die neue (v)-Sperre aus | `tools/qr-journal.js:1195` gegen `:1474` (Freigabe vergleicht `erledigungenStand`) | ja | N7 |
+| R7-L2 Nachher-Lesen in `befehlKorrigieren` (`:1089-1095`) ohne `try` — ein Lesefehler nach dem Commit meldet einen geschriebenen Erfolg als Fehlschlag | gelesen | ja | N7 |
+| R7-L3 (k)-Text für Korrektur-Bruchstück nennt `--eigentuemer=<id>` ohne `--studio` → (b) | `:1346` gegen `:1387` | ja (Anmerkung) | N7 |
+| R7-L4 `keine_aufkleber`-Erklärung (Bestand/Handzeile) auf einem Korrektur-Bruchstück blockt `--eigentuemer`, obwohl sie nicht trägt | `:1291` gegen `core/qr-verbrauch.js:596` | ja (Anmerkung) | N7 |
+| R7-L5 `widerlegendeZeilen` zählt Abschnitte, in denen das Verwerfen nie trug | `:456-459` | ja (Anzeige) | N7 |
+| R7-L6 Korrektur-Bruchstück HINTER einem Chargen-Anfang: Kandidat genau S, das im Bruchstück genannte Studio bleibt frei | Kopf `core/qr-verbrauch.js:237-241` | ja, = QJ6-MU31 | Sammelliste präzisiert |
+| R7-L7 Test `:2808` `.message` ohne `instanceof` — Absturz statt FAIL | gelesen | ja (gering) | N7 |
+| R7-L8 J9/T10 Negativprüfung redundant | gelesen | trägt, keine Wirkung | keine |
+| R7-L9 Handzeilen-Korrektur mit `abschnitt` ≥ Abschnittszahl: Weg nennt verwerfen, (v) lehnt ab | vermutet, nur Handzeile | offen | Sammelliste |
+| Frage 3.2 „gibt niemanden frei" widerspricht WIDERLEGT | der Satz stimmt (niemand wird frei), WIDERLEGT folgt | nein | keine |
+
+Ausführende Spur: läuft (`scratchpad/qrjr7/cc/`).
