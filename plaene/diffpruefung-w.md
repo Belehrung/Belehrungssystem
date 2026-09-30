@@ -68,3 +68,18 @@ sol-Spur (`gpt-6-sol`, Diff + Nachbarn, `scratchpad/wsol/`):
 Nacharbeit: EIN Auftrag an den Bauenden (alle Zeilen „Nacharbeit“ oben). Benannte Grenzen: `offene-befunde-w.md`.
 
 -- Ende --
+
+## Runde 2 (Nacharbeit `d620cf0`, `53a51b5`, `7899b49`, w-bau lokal)
+
+Bauender meldet: `--selbsttest-ausfuehrung` 113 ✓ / 0 ✗, `--selbsttest` 138 ✓. 24 Gegenproben ROT, alle
+zurückgenommen (`scratchpad/gp2/`). Die Messung gegen `/workspace/gymdocu-w` endete mit Exit 0.
+`ops/boot-smoke.js` ist jetzt `ohne-nachweis` (nur ✅-Zeilen, keine PASS-Zeile); das folgt aus Nr. 2/6.
+
+Eigene Lesung des Diffs (`tools/ausfuehr-aufbau.sh` ganz):
+
+| Nr | Befund | Nachgemessen | Entscheidung |
+|---|---|---|---|
+| W-E3 | **blockierend**: Zwischen den Stufen (Selbstmessung, Vorbereitung, Umgebung) werden übriggebliebene Prozesse von 65534 NICHT beendet (`grep kill` findet nur den Signal-Trap `:84`). Ein abgekoppelter Prozess aus der Vorbereitung (Modellcode in `core/db.js`/Migrationen) kann warten, bis die Manifestprüfung vorbei ist, und dann die Testdatei umschreiben. Das Ergebnis wäre gefälscht, und mehr als EINE Änderung würde wirken. | Quelltext `:199-270` | Nacharbeit: nach jeder Stufe `kill -KILL -1` aus PID 1 und Nachweis, dass kein 65534-Prozess übrig ist, VOR der Manifestprüfung. `/tmp`, `/var/tmp` und `/dev/shm` nach der Vorbereitung frisch einhängen. Angriffsspur misst es. |
+
+Spuren Runde 2: flash (Repo-Werkzeuge auf `/workspace/belehrung-w`), kimi (Diff und beide Kernskripte), ausführende
+Angriffsspur (eigener Arbeitsbaum). Ergebnisse folgen.
