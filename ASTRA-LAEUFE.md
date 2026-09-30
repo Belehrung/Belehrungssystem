@@ -318,6 +318,9 @@ sondern falsch.
 | 30.09.2026 | SG Diffpruefung Runde 2 Lesespur (deepseek-flash) | Diff 1692 Zeilen, Suchen 16, Lesungen 19, Token rein 1973169, Token raus 88551, Runden 15 | 8 | 7 (einzig: „nichts zu prüfen“ übergeht errors/Fixpoint; Falltabelle ohne Sollzahl; Probedatei-PR rot) | 0 (B4 vermutet, Nacharbeit prüft) | 0,70 $ |
 | 30.09.2026 | QR-J Runde 7 Diff (Lesespur flash) (deepseek-flash) | Diff 1537 Zeilen, Suchen 6, Lesungen 14, Token rein 1230224, Token raus 77424, Runden 10 | — | — | — | 0,46 $ |
 | 30.09.2026 | SG Runde 3 Diff (Lesespur flash) (deepseek-flash) | Diff 351 Zeilen, Suchen 5, Lesungen 11, Token rein 471167, Token raus 60573, Runden 8 | — | — | — | 0,21 $ |
+| 30.09.2026 | QR-J N7 Planpruefung Spur a (flash) (deepseek-flash) | Diff 74 Zeilen, Suchen 18, Lesungen 21, Token rein 3109628, Token raus 87211, Runden 23 | — | — | — | 1,04 $ |
+| 30.09.2026 | C2 Runde 6 Diff (Lesespur flash) (deepseek-flash) | Diff 907 Zeilen, Suchen 23, Lesungen 35, Token rein 2419734, Token raus 97290, Runden 17 | — | — | — | 0,84 $ |
+| 30.09.2026 | QR-J N7 Planpruefung Spur b (flash) (deepseek-flash) | Diff 74 Zeilen, Suchen 16, Lesungen 21, Token rein 1497412, Token raus 121837, Runden 12 | — | — | — | 0,60 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
