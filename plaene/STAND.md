@@ -419,6 +419,9 @@ OpenRouter-Schlüssel liegt zusätzlich in `/tmp/claude-0/.openrouter-key` (Rech
 Kimi-Probe ging durch); ungenutzt, nicht im Prüfwerkzeug. Vor der nächsten Planprüfung Kimi-Guthaben über
 `/v1/users/me/balance` prüfen.
 
+Stand 30.09.2026 01:40 UTC (Takt): Im Bau C2 N5, SG N4 (Baumlauf las Laufzeitdaten, blockierend); läuft QR-J Runde 7
+ausführende Spur. Nichts sonst.
+
 Stand 30.09.2026 01:18 UTC: **C3b ausgeliefert** (#482, squash `ce01d92`, Botschaft zurückgelesen; Deploy 449
 success auf `ce01d92`, Migration 0063 durch Health-Gate belegt; live-check EXIT 0, 2 × ℹ wie immer). Im Bau: C2 N5,
 SG N3 (Runde 3: F1 Ordner-Ausnahme → Datei), QR-J Runde 7 (Lesespur nachgemessen, ausführende Spur läuft; Suite auf
