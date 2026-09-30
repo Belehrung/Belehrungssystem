@@ -601,3 +601,15 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
     - W N2: Bauender wartet auf eigenen Gegenprobenlauf.
   - Q hatte einen blockierenden Regress: 10× HTML-5xx (Deploy, Wartung, Tablet-Sperre) machte eine unterschriebene Prüfung zur Sackgasse. Dazu ein Befund im Bestand: `defekt_ids` nach Position statt Formularindex, dadurch hängt ein Foto am falschen Defekt.
   - C5-F gebaut (`c5f-ci-doku` `3be1a39`, Suite 0, 413 = 413, Lint 0). Die Lesespur ist ausgewertet (`diffpruefung-c5f.md`), die ausführende Spur läuft; offen ist, ob ein übersprungener Deploy-Lauf die Job-Gruppe berührt.
+- 30.09.2026 17:40 UTC (Takt): läuft
+  - Bau: C5-C (PDF/QR).
+  - Nacharbeit, alle Befunde in `diffpruefung-*.md`:
+    - C5-A N1: 13 Punkte.
+    - C5-B N2: Runde 2, 8 Berichtigungen.
+    - C5-D N1: blockierend war das Verbandbuch — ein Eintrag samt Unterschrift ging bei einer mehrdeutigen Person verloren. Jetzt wird immer gespeichert.
+    - C5-F N1: `queue: max` am Deploy-Job, GitHub-Doku selbst geprüft.
+    - Q N1: blockierender Regress bei 10× HTML-5xx.
+    - W N3: Runde 3; Datenbanknamen mit `\n`, Large Objects in template1, Manifest mit `\n` im Symlink-Ziel.
+  - C5-E1 gebaut (`d1b0bab`, Suite 0, 419 = 419). Die Lesespur ist ausgewertet (8 Befunde), die ausführende Spur läuft.
+  - Sammellisten neu: `offene-befunde-c5a.md`, `-c5d.md`, `-c5e.md`.
+  - C5-E2 und C5-G starten, sobald Plätze frei sind; C5-G erst nach dem Merge von C5-B.
