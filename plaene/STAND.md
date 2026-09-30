@@ -592,3 +592,12 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - W: Runde 2 ausgewertet (`diffpruefung-w.md`: W-E3 überlebende Prozesse, Symlink-Ziel im Manifest u. a.), Nacharbeit 2 im Bau. Die ausführende Angriffsspur wurde vom Sicherheitsklassifikator gestoppt; das bleibt ungeprüft und wird nicht umgangen.
   - Aufträge C5-E (Tests), C5-F (CI/Doku), C5-G (G1 Fable/G2) in Fassung 2 bereit; Start, sobald Plätze frei sind (C5-G nach dem Merge von C5-B).
   - Alte Arbeitsbäume aufgeräumt (Platte 57 %).
+- 30.09.2026 16:40 UTC (Takt): läuft
+  - Bau: C5-C (PDF/QR), C5-D (Routen), C5-E1 (Test-Helfer).
+  - Nacharbeit:
+    - C5-A N1: 13 Punkte, `diffpruefung-c5a.md`, Sammelliste `offene-befunde-c5a.md`.
+    - C5-B N1.
+    - Q N1: 13 Punkte, `diffpruefung-q.md`.
+    - W N2: Bauender wartet auf eigenen Gegenprobenlauf.
+  - Q hatte einen blockierenden Regress: 10× HTML-5xx (Deploy, Wartung, Tablet-Sperre) machte eine unterschriebene Prüfung zur Sackgasse. Dazu ein Befund im Bestand: `defekt_ids` nach Position statt Formularindex, dadurch hängt ein Foto am falschen Defekt.
+  - C5-F gebaut (`c5f-ci-doku` `3be1a39`, Suite 0, 413 = 413, Lint 0). Die Lesespur ist ausgewertet (`diffpruefung-c5f.md`), die ausführende Spur läuft; offen ist, ob ein übersprungener Deploy-Lauf die Job-Gruppe berührt.
