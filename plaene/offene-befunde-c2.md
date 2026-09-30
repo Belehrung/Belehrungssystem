@@ -37,3 +37,8 @@ Verweist auf `plaene/planpruefung-c2.md` (Nachmessung dort).
 - **C2-S16** (Runde 5, C2R5-3): ein synchron hängender Webprozess reagiert mit JS-Signal-Handler nicht mehr sofort auf
   SIGINT; Abhilfe `kill_timeout` 15 s für den Webprozess (Nacharbeit 5) — ob `pm2 reload` den Wert übernimmt, ist hier
   nicht messbar. Betreiber kann es mit `pm2 show gymdocu` prüfen.
+- **C2-S17** (Runde 6, B2): `test/helfer/datei-sperre.js:257-267` wertet Verstösse über `process.on('exit')` aus; ein
+  per Signal beendeter Testprozess (server.js-ladende Tests, Kindprozesse der Sammelstufe) durchläuft den Haken nicht.
+  Gegenüber master unverändert (Signaltod auch dort). Extrarunde: signal-unabhängige Meldung in der Sperre.
+- **C2-S18** (Runde 6, B5): ob `pm2 reload ecosystem.config.js --update-env` das neue `kill_timeout` (Web 15 s) auf den
+  laufenden Prozess übernimmt, ist nur auf dem Server messbar (`pm2 describe gymdocu | grep kill`). Betreiber-Messung.
