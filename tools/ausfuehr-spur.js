@@ -1459,15 +1459,18 @@ async function selbsttestSpur(pruefen) {
         aufraeumen();
 
         // ----- Positivkontrollen zu W-E3 am Aufbauskript: ohne Beenden entsteht der Marker, ohne kill bleibt der Prozess dem Scan -----
-        const beendenZeile = 'prozesse_beenden "der Vorbereitung" || exit 25';
+        // BEIDE Beenden-Zeilen (Vorbereitung und Umgebung) fallen: gemessen
+        // 30.09.2026 faengt sonst das Beenden nach der Umgebung den Schlaefer
+        // der Vorbereitung ab, und der Marker entsteht trotzdem nie.
+        const beendenZeilen = ['prozesse_beenden "der Vorbereitung" || exit 25', 'prozesse_beenden "der Umgebung" || exit 25'];
         const killZeile = 'kill -KILL -- -1 2>/dev/null || true   # alle ausser PID 1';
-        pruefen('GEGENPROBE-VORBEREITUNG: die Beenden-Zeile nach der Vorbereitung und die kill-Zeile des Scans kommen im Aufbauskript genau einmal vor',
-            fundstellenZaehlen(aufbauOriginal, beendenZeile) === 1 && fundstellenZaehlen(aufbauOriginal, killZeile) === 1);
+        pruefen('GEGENPROBE-VORBEREITUNG: die Beenden-Zeilen nach Vorbereitung und Umgebung und die kill-Zeile des Scans kommen im Aufbauskript je genau einmal vor',
+            beendenZeilen.every((z) => fundstellenZaehlen(aufbauOriginal, z) === 1) && fundstellenZaehlen(aufbauOriginal, killZeile) === 1);
         const aufbauOhneBeenden = path.join(basis, 'aufbau-ohne-beenden.sh');
-        fs.writeFileSync(aufbauOhneBeenden, aufbauOriginal.replace(beendenZeile, ': # Selbsttest: kein Beenden'));
+        fs.writeFileSync(aufbauOhneBeenden, beendenZeilen.reduce((t, z) => t.replace(z, ': # Selbsttest: kein Beenden'), aufbauOriginal));
         await einrichten({ wurzel: fx.wurzel, istHartGesperrt, tSekunden: T_KURZ, aufbauSkript: aufbauOhneBeenden });
         const mpOhne = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/schema.js', alt: "module.exports = 'CREATE TABLE", neu: schlaeferNeu, testdatei: 'test_marker.js' });
-        pruefen('POSITIVKONTROLLE W-E3: ohne das Beenden ueberlebt der Schlafprozess, schreibt nach der Waechterdatei den Marker in die Kopie -> test_marker.js gescheitert',
+        pruefen('POSITIVKONTROLLE W-E3: ohne das Beenden (nach Vorbereitung UND Umgebung) ueberlebt der Schlafprozess, schreibt nach der Waechterdatei den Marker in die Kopie -> test_marker.js gescheitert',
             mpOhne.status === 'gescheitert' && mpOhne.text.includes('✗ FAIL: kein Marker'));
         aufraeumen();
         const aufbauOhneKill = path.join(basis, 'aufbau-ohne-kill.sh');

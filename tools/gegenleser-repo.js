@@ -4448,7 +4448,10 @@ async function selbsttestAusfuehrung() {
         console.log(`${bedingung ? '  ✓' : '  ✗ FEHLT'} ${bezeichnung}`);
         if (!bedingung) fehler++;
     };
-    const basis = fs.mkdtempSync(path.join(os.tmpdir(), 'gegenleser-selbsttest-ausfuehrung-'));
+    // Praefix wie der Selbsttest der Spur: die Selbstmessung im Kind laesst
+    // hostabhaengige Einhaengungen (hier die Browser-Attrappe) nur unter
+    // Literal-Praefixen zu, und '/tmp/ausfuehr-spur-selbsttest-' ist einer.
+    const basis = fs.mkdtempSync(path.join(os.tmpdir(), 'ausfuehr-spur-selbsttest-'));
     fs.chmodSync(basis, 0o755);
     const alteUmgebung = {
         ASTRA_LAUFPROTOKOLL: process.env.ASTRA_LAUFPROTOKOLL, DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY,
