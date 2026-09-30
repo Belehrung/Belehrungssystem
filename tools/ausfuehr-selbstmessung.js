@@ -100,6 +100,12 @@ async function main() {
         && process.geteuid() === KIND_UID && process.getegid() === KIND_GID
         && process.getgroups().every((g) => g === KIND_GID));
 
+    // 1b. no_new_privs: setuid-Programme in den ro-Binds koennen nichts mehr
+    // anheben (zusaetzlich zu nosuid auf jeder Einhaengung).
+    let noNewPrivs = null;
+    try { const m = /^NoNewPrivs:\s*(\d)/m.exec(fs.readFileSync('/proc/self/status', 'utf8')); noNewPrivs = m ? m[1] : null; } catch (e) { noNewPrivs = null; }
+    ok(`NoNewPrivs = 1 in /proc/self/status (gefunden ${noNewPrivs})`, noNewPrivs === '1');
+
     // 2. /proc zeigt nur den eigenen Namensraum
     let pids = [];
     try { pids = fs.readdirSync('/proc').filter((n) => /^\d+$/.test(n)).map(Number); } catch (e) { pids = null; }
@@ -212,20 +218,20 @@ async function main() {
     // 13. Datenbank
     const url = process.env.DATABASE_URL || '';
     const rolle = psql(url, "SELECT current_user || '|' || rolsuper::text || '|' || rolcreaterole::text FROM pg_roles WHERE rolname = current_user");
+    // boolean::text liefert "false"/"true" (gemessen), nicht das "f"/"t" der psql-Anzeige.
     ok(`DB-Rolle ist nobody ohne SUPERUSER und ohne CREATEROLE (${rolle.stdout || rolle.stderr || rolle.error})`,
-        rolle.status === 0 && rolle.stdout === 'nobody|f|f');
+        rolle.status === 0 && rolle.stdout === 'nobody|false|false');
     const server = psql(url, `SELECT count(*) FROM pg_roles r WHERE r.rolname IN (${SERVER_ROLLEN.map((r) => `'${r}'`).join(',')}) AND pg_has_role(current_user, r.oid, 'member')`);
     ok(`keine der Serverrollen ${SERVER_ROLLEN.join('/')} (Mitgliedschaften: ${server.stdout || server.stderr})`,
         server.status === 0 && server.stdout === '0');
     const copy = psql(url, "COPY (SELECT 1) TO PROGRAM 'id'");
     ok(`COPY … TO PROGRAM scheitert (${copy.stderr.split('\n')[0] || 'kein Fehler!'})`,
         copy.status !== 0 && /permission denied/i.test(copy.stderr));
+    // Dieselbe URL, nur die Rolle getauscht (Textersatz: die Socket-Form
+    // traegt keinen Rechnernamen, den ein URL-Parser verlangt).
     let alsPostgres = { status: 0, stderr: 'keine URL ableitbar' };
-    try {
-        const u = new URL(url);
-        u.username = 'postgres';
-        alsPostgres = psql(u.toString(), 'SELECT 1');
-    } catch (e) { alsPostgres = { status: 0, stderr: e.message }; }
+    const urlPostgres = url.replace(/^(postgres(?:ql)?:\/\/)nobody@/, '$1postgres@');
+    if (urlPostgres !== url) alsPostgres = psql(urlPostgres, 'SELECT 1');
     ok(`Verbindung als postgres ueber denselben Socket scheitert (peer): ${alsPostgres.stderr.split('\n').pop() || 'VERBUNDEN!'}`,
         alsPostgres.status !== 0 && /peer authentication failed/i.test(alsPostgres.stderr));
     const haupt = psql(`postgresql://nobody@/postgres?host=${HAUPT_SOCKET_ORDNER}&port=5432`, 'SELECT 1');

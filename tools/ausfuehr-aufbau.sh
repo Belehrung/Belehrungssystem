@@ -61,23 +61,23 @@ stufe() { echo "[dsv1] $*"; }
 scheitern() { echo "[dsv1] AUFBAU GESCHEITERT: $*" >&2; exit 20; }
 
 bind_ro() {
-    mount --bind "$1" "$2" || return 1
-    mount -o remount,bind,ro,nosuid,nodev "$2"
+    mount -n --bind "$1" "$2" || return 1
+    mount -n -o remount,bind,ro,nosuid,nodev "$2"
 }
 bind_rw() {
-    mount --bind "$1" "$2" || return 1
-    mount -o remount,bind,rw,nosuid,nodev "$2"
+    mount -n --bind "$1" "$2" || return 1
+    mount -n -o remount,bind,rw,nosuid,nodev "$2"
 }
 bind_rw_noexec() {
-    mount --bind "$1" "$2" || return 1
-    mount -o remount,bind,rw,nosuid,nodev,noexec "$2"
+    mount -n --bind "$1" "$2" || return 1
+    mount -n -o remount,bind,rw,nosuid,nodev,noexec "$2"
 }
 
 # ===== 1. Neue Wurzel zusammensetzen =====
-mount --make-rprivate / || scheitern "make-rprivate"
+mount -n --make-rprivate / || scheitern "make-rprivate"
 R="$LAUF/wurzel"
 [ -d "$R" ] || scheitern "Einhaengepunkt $R fehlt"
-mount -t tmpfs -o size=256m,mode=755,nosuid,nodev tmpfs "$R" || scheitern "tmpfs Wurzel"
+mount -n -t tmpfs -o size=256m,mode=755,nosuid,nodev tmpfs "$R" || scheitern "tmpfs Wurzel"
 mkdir -p "$R/usr" "$R/etc" "$R/opt" "$R/proc" "$R/dev" "$R/tmp" "$R/run" "$R/var/tmp" \
          "$R/dsv1/kopie" "$R/dsv1/werkzeug" "$R/dsv1/ergebnis" "$R/dsv1/pg" "$R/oldroot" || scheitern "mkdir"
 bind_ro /usr "$R/usr" || scheitern "bind /usr"
@@ -92,8 +92,29 @@ for l in bin sbin lib lib32 lib64 libx32; do
         mkdir "$R/$l" && bind_ro "/$l" "$R/$l" || scheitern "bind /$l"
     fi
 done
+bind_rw "$KOPIE" "$R/dsv1/kopie" || scheitern "bind Kopie"
+[ -d "$R/dsv1/kopie/node_modules" ] || scheitern "node_modules-Einhaengepunkt fehlt in der Kopie"
+bind_ro "$NODE_MODULES" "$R/dsv1/kopie/node_modules" || scheitern "bind node_modules"
+bind_ro "$WERKZEUG" "$R/dsv1/werkzeug" || scheitern "bind Werkzeug"
+bind_rw_noexec "$ERGEBNIS" "$R/dsv1/ergebnis" || scheitern "bind Ergebnis"
+bind_rw_noexec "$PG" "$R/dsv1/pg" || scheitern "bind Socket-Ordner"
+mount -n -t tmpfs -o size=1g,mode=1777,nosuid,nodev tmpfs "$R/tmp" || scheitern "tmpfs /tmp"
+mount -n -t tmpfs -o size=256m,mode=1777,nosuid,nodev tmpfs "$R/var/tmp" || scheitern "tmpfs /var/tmp"
+mount -n -t tmpfs -o size=16m,mode=755,nosuid,nodev tmpfs "$R/run" || scheitern "tmpfs /run"
+mount -n -t tmpfs -o size=64m,mode=755,nosuid,noexec tmpfs "$R/dev" || scheitern "tmpfs /dev"
+mkdir "$R/dev/shm" || scheitern "mkdir /dev/shm"
+mount -n -t tmpfs -o size=512m,mode=1777,nosuid,nodev tmpfs "$R/dev/shm" || scheitern "tmpfs /dev/shm"
+for d in null zero random urandom; do
+    : > "$R/dev/$d" && mount -n --bind "/dev/$d" "$R/dev/$d" || scheitern "Geraet /dev/$d"
+done
+ln -s /proc/self/fd "$R/dev/fd" && ln -s /proc/self/fd/0 "$R/dev/stdin" \
+    && ln -s /proc/self/fd/1 "$R/dev/stdout" && ln -s /proc/self/fd/2 "$R/dev/stderr" || scheitern "Verweise /dev"
+mount -n -t proc proc "$R/proc" || scheitern "proc"
 # Node-Verzeichnis und Browserpfad, falls sie nicht schon unter /usr oder
-# /opt liegen (CI-Werkzeugcache, eigene Installation): ro am selben Pfad.
+# /opt liegen (CI-Werkzeugcache, eigene Installation, Fixture des
+# Selbsttests): ro am selben Pfad. NACH den tmpfs-Einhaengungen, sonst
+# verdeckt ein tmpfs auf /tmp einen Pfad darunter (gemessen 30.09.2026:
+# die Browser-Attrappe des Selbsttests unter /tmp war im Kind unsichtbar).
 for extra in "$NODE_BIN" "$BROWSER"; do
     case "$extra" in
         /usr/*|/opt/*) ;;
@@ -101,24 +122,6 @@ for extra in "$NODE_BIN" "$BROWSER"; do
         *) scheitern "kein absoluter Pfad: $extra" ;;
     esac
 done
-bind_rw "$KOPIE" "$R/dsv1/kopie" || scheitern "bind Kopie"
-[ -d "$R/dsv1/kopie/node_modules" ] || scheitern "node_modules-Einhaengepunkt fehlt in der Kopie"
-bind_ro "$NODE_MODULES" "$R/dsv1/kopie/node_modules" || scheitern "bind node_modules"
-bind_ro "$WERKZEUG" "$R/dsv1/werkzeug" || scheitern "bind Werkzeug"
-bind_rw_noexec "$ERGEBNIS" "$R/dsv1/ergebnis" || scheitern "bind Ergebnis"
-bind_rw_noexec "$PG" "$R/dsv1/pg" || scheitern "bind Socket-Ordner"
-mount -t tmpfs -o size=1g,mode=1777,nosuid,nodev tmpfs "$R/tmp" || scheitern "tmpfs /tmp"
-mount -t tmpfs -o size=256m,mode=1777,nosuid,nodev tmpfs "$R/var/tmp" || scheitern "tmpfs /var/tmp"
-mount -t tmpfs -o size=16m,mode=755,nosuid,nodev tmpfs "$R/run" || scheitern "tmpfs /run"
-mount -t tmpfs -o size=64m,mode=755,nosuid,noexec tmpfs "$R/dev" || scheitern "tmpfs /dev"
-mkdir "$R/dev/shm" || scheitern "mkdir /dev/shm"
-mount -t tmpfs -o size=512m,mode=1777,nosuid,nodev tmpfs "$R/dev/shm" || scheitern "tmpfs /dev/shm"
-for d in null zero random urandom; do
-    : > "$R/dev/$d" && mount --bind "/dev/$d" "$R/dev/$d" || scheitern "Geraet /dev/$d"
-done
-ln -s /proc/self/fd "$R/dev/fd" && ln -s /proc/self/fd/0 "$R/dev/stdin" \
-    && ln -s /proc/self/fd/1 "$R/dev/stdout" && ln -s /proc/self/fd/2 "$R/dev/stderr" || scheitern "Verweise /dev"
-mount -t proc proc "$R/proc" || scheitern "proc"
 
 # ===== 2. Hineinwechseln, alte Wurzel restlos loesen =====
 cd "$R" || scheitern "cd Wurzel"

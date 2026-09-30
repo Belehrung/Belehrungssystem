@@ -316,8 +316,19 @@ function datenbankFrisch() {
     psqlVerwaltung(`DROP DATABASE IF EXISTS ${DB_NAME} WITH (FORCE)`, `CREATE DATABASE ${DB_NAME} OWNER ${DB_ROLLE}`);
 }
 
+// Die URL, wie sie das KIND sieht: der Socket-Ordner liegt dort unter
+// /dsv1/pg (ausfuehr-aufbau.sh), nicht unter dem Host-Pfad. "localhost" im
+// Rechnerteil ist ein Platzhalter, den der Query-Parameter host= ueberschreibt
+// -- GEMESSEN 30.09.2026 an libpq (psql verbindet ueber den Socket,
+// inet_server_addr() ist NULL) und pg-connection-string (host = /dsv1/pg).
+// Die Form OHNE Rechnerteil ("postgresql://nobody@/gymdocu_test?…"), die
+// der Auftrag nannte, ist fuer den WHATWG-Parser UNGUELTIG (new URL() wirft
+// "Invalid URL"); core/db.js und test_feature_migration_0060_loeschauftrag.js
+// des Zielrepos lesen den Datenbanknamen aber genau damit -- mit jener Form
+// waere jeder DB-Test aus einem Werkzeuggrund rot gewesen.
+const KIND_PG_DIR = '/dsv1/pg';
 function datenbankUrl() {
-    return `postgresql://${DB_ROLLE}@/${DB_NAME}?host=${lauf.pgDir}&port=${lauf.port}`;
+    return `postgresql://${DB_ROLLE}@localhost/${DB_NAME}?host=${KIND_PG_DIR}&port=${lauf.port}`;
 }
 
 // ===================== Einrichten und Aufraeumen =====================
@@ -869,16 +880,17 @@ function fixtureAnlegen(basis) {
     schreiben('test_exit2.js', "console.log('  ✓ x');\nprocess.exit(2);\n");
     schreiben('test_exit127.js', "process.exit(127);\n");
     schreiben('test_zustand.js', ok + "const fs = require('node:fs');\nconst { spawnSync } = require('node:child_process');\nconst spuren = ['zustand-in-der-kopie.txt', '/var/tmp/dsv1-zustand.txt', '/tmp/dsv1-zustand.txt', '/dev/shm/dsv1-zustand.txt'];\nfor (const s of spuren) ok('keine Spur aus einem frueheren Lauf: ' + s, !fs.existsSync(s));\nconst z = (sql) => spawnSync('psql', [process.env.DATABASE_URL, '-X', '-tA', '-c', sql], { encoding: 'utf8' });\nok('keine Tabelle zustand aus einem frueheren Lauf', z(\"SELECT count(*) FROM pg_tables WHERE tablename = 'zustand'\").stdout.trim() === '0');\nfor (const s of spuren) fs.writeFileSync(s, 'dsv1');\nok('Tabelle zustand angelegt', z('CREATE TABLE zustand(a int)').status === 0);\nok('Positivkontrolle: im selben Lauf sind die Spuren jetzt da', spuren.every((s) => fs.existsSync(s)) && z(\"SELECT count(*) FROM pg_tables WHERE tablename = 'zustand'\").stdout.trim() === '1');\nschluss();\n");
-    schreiben('test_umgebung.js', ok + "const namen = Object.keys(process.env).sort();\nconst soll = ['BELEHRUNGEN_UPLOAD_DIR','CI','DATABASE_URL','DEFECT_PHOTO_DIR','DOKUMENTE_DIR','EINWEISUNG_NACHWEIS_DIR','EXPORT_DIR','GYMDOCU_BOOT_SMOKE_STARTPFAD','HOME','LAGEPLAN_UPLOAD_DIR','NODE_OPTIONS','OFFBOARDING_QUEUE_DIR','PATH','PDF_ROOT','PLAYWRIGHT_BROWSERS_PATH','PRUEFBERICHT_DIR','PUBLIC_BASE_DOMAIN','QR_VERBRAUCH','SESSION_SECRET','TZ'];\nok('Umgebungsnamen = Literalliste', JSON.stringify(namen) === JSON.stringify(soll), namen);\nok('CI=true, TZ=UTC, HOME=/tmp', process.env.CI === 'true' && process.env.TZ === 'UTC' && process.env.HOME === '/tmp');\nok('SESSION_SECRET ist das CI-Literal', process.env.SESSION_SECRET === 'ci-isolation-session-secret-0123456789abcdef');\nok('DATABASE_URL zeigt auf den Socket-Ordner /dsv1/pg und gymdocu_test', /^postgresql:\\/\\/nobody@\\/gymdocu_test\\?host=\\/dsv1\\/pg&port=\\d+$/.test(process.env.DATABASE_URL), process.env.DATABASE_URL);\nok('Vorladung ueber NODE_OPTIONS wirkt', globalThis.dsv1Vorgeladen === true);\nok('PDF_ROOT liegt unter /tmp/gymdocu-suite-', String(process.env.PDF_ROOT).startsWith('/tmp/gymdocu-suite-'));\nok('cwd ist /dsv1/kopie', process.cwd() === '/dsv1/kopie');\nschluss();\n");
+    schreiben('test_umgebung.js', ok + "const namen = Object.keys(process.env).sort();\nconst soll = ['BELEHRUNGEN_UPLOAD_DIR','CI','DATABASE_URL','DEFECT_PHOTO_DIR','DOKUMENTE_DIR','EINWEISUNG_NACHWEIS_DIR','EXPORT_DIR','GYMDOCU_BOOT_SMOKE_STARTPFAD','HOME','LAGEPLAN_UPLOAD_DIR','NODE_OPTIONS','OFFBOARDING_QUEUE_DIR','PATH','PDF_ROOT','PLAYWRIGHT_BROWSERS_PATH','PRUEFBERICHT_DIR','PUBLIC_BASE_DOMAIN','QR_VERBRAUCH','SESSION_SECRET','TZ'];\nok('Umgebungsnamen = Literalliste', JSON.stringify(namen) === JSON.stringify(soll), namen);\nok('CI=true, TZ=UTC, HOME=/tmp', process.env.CI === 'true' && process.env.TZ === 'UTC' && process.env.HOME === '/tmp');\nok('SESSION_SECRET ist das CI-Literal', process.env.SESSION_SECRET === 'ci-isolation-session-secret-0123456789abcdef');\nok('DATABASE_URL zeigt auf den Socket-Ordner /dsv1/pg und gymdocu_test und ist fuer new URL() gueltig', /^postgresql:\\/\\/nobody@localhost\\/gymdocu_test\\?host=\\/dsv1\\/pg&port=\\d+$/.test(process.env.DATABASE_URL) && new URL(process.env.DATABASE_URL).pathname === '/gymdocu_test', process.env.DATABASE_URL);\nok('Vorladung ueber NODE_OPTIONS wirkt', globalThis.dsv1Vorgeladen === true);\nok('PDF_ROOT liegt unter /tmp/gymdocu-suite-', String(process.env.PDF_ROOT).startsWith('/tmp/gymdocu-suite-'));\nok('cwd ist /dsv1/kopie', process.cwd() === '/dsv1/kopie');\nschluss();\n");
     schreiben('test_geheimnis.js', ok + "console.log('token = \"' + 'gh' + 'p_' + 'X'.repeat(36) + '\"');\nok('eine Zeile mit Attrappe ausgegeben', true);\nschluss();\n");
     schreiben('test_laut.js', ok + "for (let i = 0; i < 2000; i++) console.log('Zeile ' + String(i).padStart(5, '0') + ' ' + 'x'.repeat(50));\nok('laut, aber gruen', true);\nschluss();\n");
     fs.symlinkSync('lib/wert.js', path.join(w, 'zeiger.js'));
-    fs.writeFileSync(path.join(w, 'nicht_versioniert.js'), 'module.exports = 0;\n');
     fs.mkdirSync(path.join(w, 'node_modules'));
     fs.writeFileSync(path.join(w, 'node_modules', 'README'), 'leer\n');
     g(['add', '-A']);
     g(['commit', '-q', '-m', 'Fixture']);
-    fs.rmSync(path.join(w, 'nicht_versioniert.js'));
+    // ERST NACH dem Commit angelegt und per .gitignore verdeckt: eine Datei,
+    // die "git ls-files" nicht kennt (git status bleibt sauber).
+    fs.appendFileSync(path.join(w, '.git', 'info', 'exclude'), 'nicht_versioniert.js\n');
     fs.writeFileSync(path.join(w, 'nicht_versioniert.js'), 'module.exports = 0;\n');
     // Browser-Attrappe: ein ausfuehrbares Programm an der Stelle, an der die
     // Selbstmessung eines sucht.
@@ -990,6 +1002,14 @@ async function selbsttestSpur(pruefen) {
             mu.status === 'umgebung-fehler' && /^status: umgebung-fehler\nexit: 23\n/.test(mu.text) && mu.text.includes('Schalter verlangt Abbruch') && !istAbgebrochen());
 
         // ----- Die uebrigen Status -----
+        // Der Deckel von MAX_AUFRUFE zaehlt JEDEN Ausfuehrungsaufruf, auch
+        // abgelehnte (Absicht: das Modell soll ihn nicht mit Ablehnungen
+        // umgehen koennen, und er gilt je Lauf). Dieser Selbsttest macht mehr
+        // Aufrufe als ein Lauf -- der Zaehler wird hier deshalb ausdruecklich
+        // zurueckgesetzt; der Deckel selbst wird weiter unten eigens gemessen.
+        pruefen(`DECKEL ZAEHLT AUCH ABLEHNUNGEN: nach ${lauf.zaehler.aufrufe} Aufrufen (davon ${zaehler().ablehnungen} abgelehnt) steht der Zaehler ueber der Zahl der Kind-Laeufe`,
+            lauf.zaehler.aufrufe > zaehler().ausfuehrungen && lauf.zaehler.aufrufe === zaehler().ausfuehrungen - 1 + zaehler().ablehnungen);
+        lauf.zaehler.aufrufe = 0;
         const ts = await werkzeugAufrufen('teste', { testdatei: 'test_signal.js' });
         pruefen(`SIGNALTOD: SIGSEGV in der Teststufe -> signaltod, exit 139 (gemessen ${ts.text.split('\n')[1]})`, ts.status === 'signaltod' && ts.text.includes('exit: 139'));
         const te2 = await werkzeugAufrufen('teste', { testdatei: 'test_exit2.js' });
@@ -1074,7 +1094,7 @@ async function selbsttestSpur(pruefen) {
 
         // ----- Selbstmessung ROT (Stufe 21) mit gestrichenem tmpfs-Pfad — nur ueber die Selbsttest-Option aufbauSkript -----
         const aufbauOriginal = fs.readFileSync(AUFBAU_SKRIPT, 'utf8');
-        const tmpZeile = 'mount -t tmpfs -o size=256m,mode=1777,nosuid,nodev tmpfs "$R/var/tmp" || scheitern "tmpfs /var/tmp"';
+        const tmpZeile = 'mount -n -t tmpfs -o size=256m,mode=1777,nosuid,nodev tmpfs "$R/var/tmp" || scheitern "tmpfs /var/tmp"';
         const aufbauOhneVarTmp = path.join(basis, 'aufbau-ohne-var-tmp.sh');
         fs.writeFileSync(aufbauOhneVarTmp, aufbauOriginal.replace(tmpZeile, ': # tmpfs /var/tmp gestrichen (Selbsttest)'));
         pruefen('GEGENPROBE-VORBEREITUNG: die tmpfs-Zeile fuer /var/tmp kommt im Aufbauskript genau einmal vor',
@@ -1089,7 +1109,7 @@ async function selbsttestSpur(pruefen) {
         aufraeumen();
 
         // ----- Aufbau gescheitert (Stufe 20) -----
-        const procZeile = 'mount -t proc proc "$R/proc" || scheitern "proc"';
+        const procZeile = 'mount -n -t proc proc "$R/proc" || scheitern "proc"';
         const aufbauOhneProc = path.join(basis, 'aufbau-ohne-proc.sh');
         fs.writeFileSync(aufbauOhneProc, aufbauOriginal.replace(procZeile, 'scheitern "proc (Selbsttest)"'));
         pruefen('GEGENPROBE-VORBEREITUNG: die proc-Zeile kommt genau einmal vor', fundstellenZaehlen(aufbauOriginal, procZeile) === 1);

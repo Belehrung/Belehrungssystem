@@ -4386,13 +4386,13 @@ async function selbsttestAusfuehrung() {
     // Koerper, mutiere-Ergebnis im Koerper, Exit 0 + Zusammenfassung,
     // ASTRA-Zeile), LAUF E2 Isolationsabbruch x3 (kein tools-Feld + Marker
     // im Hinweis, Exit 7 + Marker in der Ausgabe, ASTRA-Zeile abgebrochen))
-    // + 74 Faelle in selbsttestSpur() (Einrichten x4, teste/Kanarie x4,
+    // + 75 Faelle in selbsttestSpur() (Einrichten x4, teste/Kanarie x4,
     // Mutation/Grundlauf/Muster x8, Ablehnungen 17 in der Schleife + 4,
-    // Endungen/Stufen 22-23 x5, Status x8, Zustand/Umgebung/Riegel/8KB x7,
-    // Deckel x4, Abbruch Stufe 24 x2, Aufraeumen x1, Stufe 21 x3, Stufe 20
-    // x2, Reste x3, Einrichten-Ablehnungen x2) = 86. Unten durch den
-    // tatsaechlichen Lauf bestaetigt.
-    const ERWARTETE_FAELLE = 86;
+    // Endungen/Stufen 22-23 x5, Zaehler-Zwischenstand x1, Status x8,
+    // Zustand/Umgebung/Riegel/8KB x7, Deckel x4, Abbruch Stufe 24 x2,
+    // Aufraeumen x1, Stufe 21 x3, Stufe 20 x2, Reste x3, Einrichten-
+    // Ablehnungen x2) = 87. Unten durch den tatsaechlichen Lauf bestaetigt.
+    const ERWARTETE_FAELLE = 87;
     if (process.getuid() !== 0) {
         if (process.env.CI === 'true') {
             console.log(`  ✗ FEHLT: --selbsttest-ausfuehrung braucht root (uid 0, gefunden ${process.getuid()}) -- unter CI=true ist das ROT, kein SKIP.`);
@@ -4508,8 +4508,8 @@ async function selbsttestAusfuehrung() {
             pruefen(`LAUF E2 Exit ${code} (7), Marker in der Ausgabe, Bericht als Text ohne Belege gekennzeichnet, Spur aufgeraeumt`,
                 code === 7 && ausgabeZeilen.some((z) => z.includes('AUSFÜHRUNG ABGEBROCHEN') && z.includes('OHNE Belege')) && !ausfuehrSpur.istAktiv());
             const zeile = fs.readFileSync(protokollDatei, 'utf8').split('\n').find((z) => z.includes('Selbsttest E2'));
-            pruefen(`LAUF E2 ASTRA-Zeile: abgebrochen (Isolationsabbruch), Ausfuehrungen 2 (Kanarie + Grundlauf-Mutation), Mutationen 1`,
-                !!zeile && zeile.includes('**abgebrochen** (Isolationsabbruch der ausfuehrenden Spur)') && zeile.includes('Ausfuehrungen 2, Mutationen 1'));
+            pruefen(`LAUF E2 ASTRA-Zeile: abgebrochen (Isolationsabbruch), Ausfuehrungen 3 (Kanarie + Grundlauf + Mutation), Mutationen 1`,
+                !!zeile && zeile.includes('**abgebrochen** (Isolationsabbruch der ausfuehrenden Spur)') && zeile.includes('Ausfuehrungen 3, Mutationen 1'));
         }
         https.request = echtesHttpsRequest;
         console.error = echtesError;

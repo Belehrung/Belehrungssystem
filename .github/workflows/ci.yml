@@ -60,3 +60,44 @@ jobs:
 
       - name: SessionStart-Hook pruefen (PostgreSQL-Cluster)
         run: sh test/session-start-hook-pruefen.sh
+
+      - name: Syntax-Check tools/ausfuehr-aufbau.sh
+        run: bash -n tools/ausfuehr-aufbau.sh
+
+  # Selbsttest der AUSFUEHRENDEN Pruefspur (tools/ausfuehr-spur.js, Auftrag
+  # "DeepSeek Variante 1" Teil W, 30.09.2026). Eigener Job, weil er root
+  # braucht (Namensraeume, pivot_root, pg_createcluster, chown) und einen
+  # eigenen Wegwerf-Cluster anlegt -- nichts davon gehoert in den Job oben.
+  # Der erste Schritt druckt die Voraussetzungen, damit ein roter Erstlauf
+  # NAMENTLICH zeigt, was fehlt (der Selbsttest selbst meldet unter CI=true
+  # ROT mit Namen, nie SKIP); Nachinstallation nur, wenn dieser Ausdruck sie
+  # als noetig zeigt. sudo nur an den Stellen, die es brauchen.
+  ausfuehr-spur:
+    name: Ausfuehr-Spur Selbsttest (root, Wegwerf-Cluster, Namensraeume)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Voraussetzungen drucken (kein Gate, nur Befund)
+        run: |
+          set +e
+          echo "psql:               $(psql --version 2>&1)"
+          echo "pg_createcluster:   $(command -v pg_createcluster || echo FEHLT)"
+          echo "pg_lsclusters:";     pg_lsclusters 2>&1 | sed 's/^/                    /'
+          echo "PostgreSQL unter /usr/lib/postgresql: $(ls /usr/lib/postgresql 2>&1 | tr '\n' ' ')"
+          echo "unshare:            $(unshare --version 2>&1)"
+          echo "setpriv:            $(setpriv --version 2>&1)"
+          echo "pivot_root:         $(command -v pivot_root || echo FEHLT)"
+          echo "runuser/flock/timeout/findmnt/ip: $(command -v runuser || echo FEHLT) $(command -v flock || echo FEHLT) $(command -v timeout || echo FEHLT) $(command -v findmnt || echo FEHLT) $(command -v ip || echo FEHLT)"
+          echo "sudo ohne Passwort: $(sudo -n true 2>&1 && echo ja || echo NEIN)"
+          echo "pivot_root-Faehigkeit als root: $(sudo -n unshare --mount --pid --fork --mount-proc sh -c 'mount -t tmpfs tmpfs /mnt && cd /mnt && mkdir alt && pivot_root . alt && echo ja' 2>&1)"
+          echo "node:               $(node --version) ($(command -v node))"
+          echo "uid ohne sudo:      $(id -u)"
+
+      - name: Selbsttest der ausfuehrenden Spur (als root, CI=true)
+        # PATH mitgeben: sudo setzt secure_path, node des Runners liegt
+        # womoeglich ausserhalb davon.
+        run: sudo -n env CI=true PATH="$PATH" node tools/gegenleser-repo.js --selbsttest-ausfuehrung
