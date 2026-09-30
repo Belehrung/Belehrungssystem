@@ -376,6 +376,7 @@ sondern falsch.
 | 30.09.2026 | Diffpruefung C5-B (flash) (deepseek-flash) | Diff 4015 Zeilen, Suchen 28, Lesungen 30, Token rein 4408724, Token raus 90849, Runden 25 | — | — | — | 1,43 $ |
 | 30.09.2026 | Diffpruefung C5-A (flash) (deepseek-flash) | Diff 3152 Zeilen, Suchen 25, Lesungen 34, Token rein 4356434, Token raus 63555, Runden 29 | — | — | — | 1,38 $ |
 | 30.09.2026 | diff-q (deepseek-flash) | Diff 1213 Zeilen, Suchen 25, Lesungen 30, Token rein 2824327, Token raus 80938, Runden 24 | — | — | — | 0,94 $ |
+| 30.09.2026 | diff-c5f (deepseek-flash) | Diff 444 Zeilen, Suchen 31, Lesungen 34, Token rein 1929702, Token raus 99488, Runden 16 | — | — | — | 0,70 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
