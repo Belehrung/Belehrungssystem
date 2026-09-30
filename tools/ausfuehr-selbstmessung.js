@@ -1,10 +1,11 @@
 'use strict';
 // tools/ausfuehr-selbstmessung.js — Selbstmessung IM Kind der ausfuehrenden
-// Pruefspur (Auftrag "DeepSeek Variante 1", Teil W). Laeuft als Benutzer
-// 65534 in der neuen Wurzel, mit der Kind-Umgebung, cwd = /dsv1/kopie,
-// BEVOR Vorbereitung und Test laufen (tools/ausfuehr-aufbau.sh, Stufe 3).
-// Exit 0 nur, wenn JEDE Messung gruen ist — fail-closed: eine Messung, die
-// nicht durchfuehrbar ist, ist ROT, nicht uebersprungen.
+// Pruefspur (Auftrag "DeepSeek Variante 1", Teil W; Nacharbeit 30.09.2026).
+// Laeuft als Benutzer 65534 in der neuen Wurzel, mit der Kind-Umgebung,
+// cwd = /dsv1/kopie, BEVOR Vorbereitung und Test laufen
+// (tools/ausfuehr-aufbau.sh, Stufe 4). Exit 0 nur, wenn JEDE Messung gruen
+// ist — fail-closed: eine Messung, die nicht durchfuehrbar ist, ist ROT,
+// nicht uebersprungen.
 //
 // ALLE Sollwerte hier sind von Hand geschriebene Literale. Sie werden
 // ausdruecklich NICHT aus der Einhaengeliste von ausfuehr-aufbau.sh, aus
@@ -12,19 +13,19 @@
 // derselbe Defekt Sollwert und Istwert zugleich verschieben (CLAUDE.md,
 // "eine Zusicherung, die ihren Sollwert aus dem bezieht, was sie bewachen
 // soll, ist keine"). Aus der Laufkonfiguration kommen nur ERWARTUNGEN, die
-// der Elternprozess unabhaengig bestimmt hat (sha256 der Testdatei und der
-// mutierten Datei, Pfad des Originalbaums, Proxy-Adresse).
+// der Elternprozess unabhaengig bestimmt hat (sha256 zweier Dateien, Pfad
+// des Originalbaums, Proxy-Adresse, Node-Baum und Browserpfad als die zwei
+// hostabhaengigen Einhaengungen).
 //
-// Gemessen wird (je Punkt ROT/GRUEN-Fall im Selbsttest von ausfuehr-spur.js):
-//   1 uid/gid/Gruppen = 65534           8 TCP nach aussen und zum Proxy scheitert
-//   2 /proc nur Namensraum-PIDs          9 127.0.0.1 gegen eigenen Horcher gelingt
-//   3 schreibbare Verzeichnisse = Liste 10 Zeitzone des Node-Prozesses = UTC
-//   4 Namen der Kind-Umgebung = Liste   11 Browser-Programm ausfuehrbar
-//   5 Originalbaum/Host unerreichbar    12 node_modules ro (findmnt UND Schreibprobe)
-//   6 sha256 Testdatei/mutierte Datei   13 Datenbank: Rolle ohne Superuser/
-//   7 /proc/1/environ nicht lesbar         Serverrollen, COPY TO PROGRAM scheitert,
-//                                          postgres-Kanal (peer) scheitert,
-//                                          Haupt-Socket unerreichbar
+// Gemessen wird (29 Punkte, Sollzahl steht literal im Selbsttest von
+// ausfuehr-spur.js): Identitaet und no_new_privs; /proc mit hidepid;
+// schreibbare Verzeichnisse, Einhaengemenge, /opt-Teilbaeume; Umgebungs-
+// namen; Originalbaum unerreichbar; sha256 der Testdatei und einer zweiten
+// Datei; environ/shadow/Werkzeug/Ergebnis; TCP nach aussen, zum Proxy
+// (oder zu einer unroutbaren Adresse), 127.0.0.1; Zeitzone; Browser;
+// node_modules ro; rlimits (Literale und je ein Ueberschreiten, das
+// scheitert, mit Positivkontrolle); Datenbank: Rolle, Serverrollen,
+// COPY TO PROGRAM, lo_import, postgres-Kanal, Haupt-Socket.
 const fs = require('node:fs');
 const path = require('node:path');
 const net = require('node:net');
@@ -34,11 +35,20 @@ const { spawnSync } = require('node:child_process');
 const KIND_UID = 65534;
 const KIND_GID = 65534;
 const SCHREIBBAR_SOLL = ['/dev/shm', '/dsv1/kopie', '/tmp', '/var/tmp'];
+const MOUNTS_SOLL = ['/', '/dev', '/dev/null', '/dev/random', '/dev/shm', '/dev/urandom', '/dev/zero',
+    '/dsv1/ergebnis', '/dsv1/kopie', '/dsv1/kopie/node_modules', '/dsv1/pg', '/dsv1/werkzeug',
+    '/etc', '/proc', '/run', '/tmp', '/usr', '/var/tmp'];
+const MERGED_USR = ['/bin', '/sbin', '/lib', '/lib32', '/lib64', '/libx32'];
+const OPT_VERBOTEN = ['/opt/claude-code', '/opt/env-runner'];
 const UMGEBUNG_SOLL = ['CI', 'DATABASE_URL', 'HOME', 'PATH', 'PLAYWRIGHT_BROWSERS_PATH', 'SESSION_SECRET', 'TZ'];
 const ZEITZONE_SOLL = 'UTC';
-const MAX_PIDS = 12;
+const MAX_PIDS = 8;
 const HAUPT_SOCKET_ORDNER = '/var/run/postgresql';
 const SERVER_ROLLEN = ['pg_execute_server_program', 'pg_read_server_files', 'pg_write_server_files'];
+const RLIMIT_NPROC_SOLL = 512;
+const RLIMIT_FSIZE_SOLL = 67108864;
+const RLIMIT_CPU_SOLL = 600;
+const UNROUTBAR = { host: '10.255.255.1', port: 3128 };
 
 const konfPfad = process.argv[2];
 const konf = {};
@@ -92,6 +102,21 @@ function eigenerHorcherGelingt() {
         });
     });
 }
+function limitLesen(name) {
+    try {
+        const zeile = fs.readFileSync('/proc/self/limits', 'utf8').split('\n').find((z) => z.startsWith(name));
+        if (!zeile) return null;
+        const teile = zeile.slice(25).trim().split(/\s+/);
+        return { soft: teile[0], hart: teile[1] };
+    } catch (e) { return null; }
+}
+// Probe unter einem SELBST gesenkten Limit (prlimit darf als 65534 nur
+// senken): zeigt, dass der Mechanismus wirkt; die Literale oben zeigen, dass
+// das Kind mit den vorgesehenen Werten laeuft.
+function prlimitProbe(schalter, skript) {
+    const r = spawnSync('prlimit', [schalter, 'node', '-e', skript], { encoding: 'utf8', timeout: 20000 });
+    return { status: r.status, signal: r.signal, stdout: (r.stdout || '').trim(), stderr: (r.stderr || '').trim().split('\n').pop() };
+}
 
 async function main() {
     // 1. Identitaet
@@ -100,25 +125,35 @@ async function main() {
         && process.geteuid() === KIND_UID && process.getegid() === KIND_GID
         && process.getgroups().every((g) => g === KIND_GID));
 
-    // 1b. no_new_privs: setuid-Programme in den ro-Binds koennen nichts mehr
+    // 2. no_new_privs: setuid-Programme in den ro-Binds koennen nichts mehr
     // anheben (zusaetzlich zu nosuid auf jeder Einhaengung).
     let noNewPrivs = null;
     try { const m = /^NoNewPrivs:\s*(\d)/m.exec(fs.readFileSync('/proc/self/status', 'utf8')); noNewPrivs = m ? m[1] : null; } catch (e) { noNewPrivs = null; }
     ok(`NoNewPrivs = 1 in /proc/self/status (gefunden ${noNewPrivs})`, noNewPrivs === '1');
 
-    // 2. /proc zeigt nur den eigenen Namensraum
-    let pids = [];
-    try { pids = fs.readdirSync('/proc').filter((n) => /^\d+$/.test(n)).map(Number); } catch (e) { pids = null; }
-    let pid1Comm = null;
-    try { pid1Comm = fs.readFileSync('/proc/1/comm', 'utf8').trim(); } catch (e) { pid1Comm = `(${e.code})`; }
-    ok(`/proc zeigt nur Namensraum-PIDs: hoechstens ${MAX_PIDS}, PID 1 ist bash (gefunden ${pids ? pids.length : 'unlesbar'}: ${pids ? pids.join(',') : '-'}; PID 1 = ${pid1Comm})`,
-        Array.isArray(pids) && pids.length >= 2 && pids.length <= MAX_PIDS && pids.includes(1) && pid1Comm === 'bash');
+    // 3. /proc mit hidepid=2: nur eigene Prozesse sichtbar, PID 1 (root) nicht.
+    let pids = null;
+    let fremde = [];
+    try {
+        pids = fs.readdirSync('/proc').filter((n) => /^\d+$/.test(n)).map(Number);
+        for (const p of pids) {
+            try {
+                const m = /^Uid:\s*(\d+)/m.exec(fs.readFileSync(`/proc/${p}/status`, 'utf8'));
+                if (!m || Number(m[1]) !== KIND_UID) fremde.push(p);
+            } catch (e) { fremde.push(p); }
+        }
+    } catch (e) { pids = null; }
+    const cmdline1 = fehlerCode(() => fs.readFileSync('/proc/1/cmdline'));
+    ok(`/proc mit hidepid: nur eigene PIDs sichtbar (gefunden ${pids ? pids.length : 'unlesbar'}: ${pids ? pids.join(',') : '-'}, fremde ${JSON.stringify(fremde)}), hoechstens ${MAX_PIDS}, /proc/1/cmdline nicht lesbar (${cmdline1})`,
+        Array.isArray(pids) && pids.length >= 1 && pids.length <= MAX_PIDS && !pids.includes(1) && fremde.length === 0
+        && (cmdline1 === 'EACCES' || cmdline1 === 'ENOENT'));
 
-    // 3. Menge der schreibbaren Verzeichnisse = Literalliste
+    // 4. Menge der schreibbaren Verzeichnisse = Literalliste
     const kandidaten = new Set(['/']);
     const mounts = spawnSync('findmnt', ['-rno', 'TARGET'], { encoding: 'utf8' });
-    for (const z of (mounts.stdout || '').split('\n')) if (z.startsWith('/')) kandidaten.add(z);
-    for (const basis of ['/', '/dev', '/var', '/dsv1', '/dsv1/kopie/node_modules']) {
+    const mountZiele = (mounts.stdout || '').split('\n').filter((z) => z.startsWith('/')).sort();
+    for (const z of mountZiele) kandidaten.add(z);
+    for (const basis of ['/', '/dev', '/var', '/dsv1', '/opt', '/dsv1/kopie/node_modules']) {
         try {
             for (const e of fs.readdirSync(basis)) {
                 const p = path.join(basis, e);
@@ -139,61 +174,70 @@ async function main() {
     ok(`fuer ${KIND_UID} schreibbare Verzeichnisse = ${JSON.stringify(SCHREIBBAR_SOLL)} (gemessen ${JSON.stringify(schreibbar)} aus ${kandidaten.size} Kandidaten; findmnt Exit ${mounts.status})`,
         mounts.status === 0 && JSON.stringify(schreibbar) === JSON.stringify(SCHREIBBAR_SOLL));
 
-    // 4. Namen der Kind-Umgebung = Literalliste
+    // 5. Einhaengemenge = Literalliste + die zwei hostabhaengigen Baeume
+    // (Node-Baum, Browserpfad, sofern nicht unter /usr) + merged-usr-
+    // Verzeichnisse, die auf diesem Host echte Verzeichnisse sind.
+    const erwarteteMounts = new Set(MOUNTS_SOLL);
+    for (const extra of [konf.NODE_BAUM, konf.BROWSER]) if (extra && !extra.startsWith('/usr/')) erwarteteMounts.add(extra);
+    for (const m of MERGED_USR) { try { if (!fs.lstatSync(m).isSymbolicLink() && mountZiele.includes(m)) erwarteteMounts.add(m); } catch (e) { /* fehlt */ } }
+    const erwartetSortiert = [...erwarteteMounts].sort();
+    ok(`Einhaengemenge = Literalliste (+ Node-Baum, Browserpfad): ${JSON.stringify(mountZiele)}`,
+        mounts.status === 0 && JSON.stringify(mountZiele) === JSON.stringify(erwartetSortiert));
+
+    // 6. /opt nur mit den benoetigten Teilbaeumen; verbotene Pfade fehlen
+    let optEintraege = [];
+    try { optEintraege = fs.readdirSync('/opt').map((e) => '/opt/' + e); } catch (e) { optEintraege = []; }
+    const erlaubterPraefix = (p) => [konf.NODE_BAUM, konf.BROWSER].some((b) => b && (b === p || b.startsWith(p + '/')));
+    ok(`/opt enthaelt nur Praefixe von Node-Baum und Browserpfad (${JSON.stringify(optEintraege)}); ${OPT_VERBOTEN.join(' und ')} existieren nicht`,
+        optEintraege.every(erlaubterPraefix) && OPT_VERBOTEN.every((p) => !fs.existsSync(p)));
+
+    // 7. Namen der Kind-Umgebung = Literalliste
     const namen = Object.keys(process.env).sort();
     ok(`Namen der Kind-Umgebung = ${JSON.stringify(UMGEBUNG_SOLL)} (gefunden ${JSON.stringify(namen)})`,
         JSON.stringify(namen) === JSON.stringify(UMGEBUNG_SOLL));
 
-    // 5. Originalbaum und Host unerreichbar
+    // 8. Originalbaum und Host unerreichbar
     const orig = konf.ORIGINALWURZEL || '';
     ok(`Originalbaum ${orig || '(unbekannt)'} sowie /workspace, /home, /var/lib, /root existieren nicht (cwd ${process.cwd()})`,
         orig.startsWith('/') && !fs.existsSync(orig) && !fs.existsSync('/workspace') && !fs.existsSync('/home')
         && !fs.existsSync('/var/lib') && !fs.existsSync('/root') && process.cwd() === '/dsv1/kopie');
 
-    // 6. sha256 der Testdatei und der mutierten Datei = Erwartung des Elternprozesses
+    // 9./10. sha256 der Testdatei und der zweiten Datei (mutierte Datei bzw.
+    // test/umgebung.sh im Grundlauf) = Erwartung des Elternprozesses
     let shaTest = null;
-    let shaMut = null;
+    let shaZweite = null;
     try { shaTest = sha256(konf.TESTDATEI); } catch (e) { shaTest = `(${e.code})`; }
     ok(`sha256 der Testdatei ${konf.TESTDATEI} = Erwartung des Elternprozesses (${(konf.SHA_TESTDATEI || '').slice(0, 12)}…)`,
         /^[0-9a-f]{64}$/.test(konf.SHA_TESTDATEI || '') && shaTest === konf.SHA_TESTDATEI);
-    if (konf.MUTIERTE_DATEI) {
-        try { shaMut = sha256(konf.MUTIERTE_DATEI); } catch (e) { shaMut = `(${e.code})`; }
-        ok(`sha256 der mutierten Datei ${konf.MUTIERTE_DATEI} = Erwartung des Elternprozesses (${(konf.SHA_MUTIERT || '').slice(0, 12)}…)`,
-            /^[0-9a-f]{64}$/.test(konf.SHA_MUTIERT || '') && shaMut === konf.SHA_MUTIERT);
-    } else {
-        ok('keine mutierte Datei in diesem Lauf (Grundlauf oder teste): kein zweiter sha256-Vergleich noetig', konf.SHA_MUTIERT === undefined || konf.SHA_MUTIERT === '');
-    }
+    try { shaZweite = sha256(konf.ZWEITE_DATEI); } catch (e) { shaZweite = `(${e.code})`; }
+    ok(`sha256 der zweiten Datei ${konf.ZWEITE_DATEI} (${konf.MUTIERTE_DATEI ? 'mutiert' : 'unmutiert, Grundlauf'}) = Erwartung des Elternprozesses (${(konf.SHA_ZWEITE || '').slice(0, 12)}…)`,
+        /^[0-9a-f]{64}$/.test(konf.SHA_ZWEITE || '') && shaZweite === konf.SHA_ZWEITE && konf.ZWEITE_DATEI !== konf.TESTDATEI);
 
-    // 7. /proc/1/environ fuer 65534 nicht lesbar; /etc/shadow ebenso; Werkzeug und Ergebnis nicht beschreibbar
+    // 11.-13. /proc/1/environ, /etc/shadow, Werkzeug (ro) und Ergebnis (root)
     const environCode = fehlerCode(() => fs.readFileSync('/proc/1/environ'));
-    ok(`/proc/1/environ fuer ${KIND_UID} nicht lesbar (${environCode})`, environCode === 'EACCES');
+    ok(`/proc/1/environ fuer ${KIND_UID} nicht lesbar (${environCode})`, environCode === 'EACCES' || environCode === 'ENOENT');
     const shadowCode = fehlerCode(() => fs.readFileSync('/etc/shadow'));
     ok(`/etc/shadow nicht lesbar (${shadowCode})`, shadowCode === 'EACCES');
     const werkzeugCode = fehlerCode(() => fs.writeFileSync('/dsv1/werkzeug/.dsv1-probe', ''));
-    const ergebnisCode = fehlerCode(() => fs.writeFileSync('/dsv1/ergebnis/test-gestartet', ''));
-    ok(`/dsv1/werkzeug nur lesbar (${werkzeugCode}) und /dsv1/ergebnis nicht beschreibbar — die Waechterdatei kann 65534 nicht anlegen (${ergebnisCode})`,
+    const ergebnisCode = fehlerCode(() => fs.writeFileSync('/dsv1/ergebnis/schreibprobe', ''));
+    ok(`/dsv1/werkzeug nur lesbar (${werkzeugCode}) und /dsv1/ergebnis nicht beschreibbar (${ergebnisCode}) — Waechterdatei und test-exit kann 65534 nicht anlegen`,
         werkzeugCode === 'EROFS' && ergebnisCode === 'EACCES');
 
-    // 8. TCP nach aussen und zum Proxy scheitert
+    // 14.-16. Netz
     const aussen = await verbindungScheitert('1.1.1.1', 443);
     ok(`TCP nach aussen (1.1.1.1:443) scheitert sofort (${aussen.grund})`, aussen.scheitert);
-    if (konf.PROXY_HOST && konf.PROXY_PORT) {
-        const proxy = await verbindungScheitert(konf.PROXY_HOST, Number(konf.PROXY_PORT));
-        ok(`TCP zum Egress-Proxy ${konf.PROXY_HOST}:${konf.PROXY_PORT} scheitert (${proxy.grund})`, proxy.scheitert);
-    } else {
-        ok('kein Egress-Proxy im Elternprozess konfiguriert: keine Proxy-Probe noetig (Aussenprobe oben traegt)', true);
-    }
-
-    // 9. 127.0.0.1 gegen eigenen Horcher gelingt
+    const proxyZiel = (konf.PROXY_HOST && konf.PROXY_PORT) ? { host: konf.PROXY_HOST, port: Number(konf.PROXY_PORT), name: 'Egress-Proxy' } : { ...UNROUTBAR, name: 'unroutbare Adresse (kein Proxy konfiguriert)' };
+    const proxy = await verbindungScheitert(proxyZiel.host, proxyZiel.port);
+    ok(`TCP zu ${proxyZiel.name} ${proxyZiel.host}:${proxyZiel.port} scheitert (${proxy.grund})`, proxy.scheitert);
     const lo = await eigenerHorcherGelingt();
     ok(`127.0.0.1 gegen eigenen Horcher gelingt (${lo.grund})`, lo.ok);
 
-    // 10. Zeitzone
+    // 17. Zeitzone
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     ok(`Zeitzone des Node-Prozesses = ${ZEITZONE_SOLL} (Intl ${tz}, Offset ${new Date().getTimezoneOffset()} min)`,
         tz === ZEITZONE_SOLL && new Date().getTimezoneOffset() === 0);
 
-    // 11. Browser-Programm ausfuehrbar
+    // 18. Browser-Programm ausfuehrbar
     let browserProgramm = null;
     try {
         const basis = process.env.PLAYWRIGHT_BROWSERS_PATH;
@@ -208,14 +252,42 @@ async function main() {
     } catch (e) { browserProgramm = null; }
     ok(`Browser-Programm unter PLAYWRIGHT_BROWSERS_PATH ausfuehrbar (${browserProgramm || 'keines gefunden'})`, browserProgramm !== null);
 
-    // 12. node_modules ro: findmnt UND Schreibprobe
+    // 19. node_modules ro: findmnt UND Schreibprobe
     const nm = spawnSync('findmnt', ['-rno', 'OPTIONS', '/dsv1/kopie/node_modules'], { encoding: 'utf8' });
     const nmOptionen = (nm.stdout || '').trim();
     const nmSchreibCode = fehlerCode(() => fs.writeFileSync('/dsv1/kopie/node_modules/.dsv1-probe', ''));
     ok(`node_modules der Kopie laut findmnt ro (${nmOptionen.split(',')[0] || '(kein Eintrag)'}) und Schreibprobe scheitert (${nmSchreibCode})`,
         nm.status === 0 && nmOptionen.split(',')[0] === 'ro' && nmSchreibCode === 'EROFS');
 
-    // 13. Datenbank
+    // 20.-23. rlimits: Literale aus /proc/self/limits, dazu je Deckel ein
+    // Ueberschreiten unter selbst gesenktem Limit (scheitert) und eine
+    // Positivkontrolle darunter (gelingt).
+    const lNproc = limitLesen('Max processes');
+    const lFsize = limitLesen('Max file size');
+    const lCpu = limitLesen('Max cpu time');
+    ok(`rlimits (soft/hart): nproc ${RLIMIT_NPROC_SOLL}, fsize ${RLIMIT_FSIZE_SOLL}, cpu ${RLIMIT_CPU_SOLL} (gefunden ${JSON.stringify({ nproc: lNproc, fsize: lFsize, cpu: lCpu })})`,
+        !!lNproc && !!lFsize && !!lCpu && lNproc.soft === String(RLIMIT_NPROC_SOLL) && lNproc.hart === String(RLIMIT_NPROC_SOLL)
+        && lFsize.soft === String(RLIMIT_FSIZE_SOLL) && lFsize.hart === String(RLIMIT_FSIZE_SOLL)
+        && lCpu.soft === String(RLIMIT_CPU_SOLL) && lCpu.hart === String(RLIMIT_CPU_SOLL));
+    const nprocSkript = 'const {spawn}=require("node:child_process");let ok=0,fehl=0;const k=[];for(let i=0;i<6;i++){const c=spawn("sleep",["3"]);c.on("error",()=>{fehl++});c.on("spawn",()=>{ok++});k.push(c);}setTimeout(()=>{console.log("ok="+ok+" fehl="+fehl);for(const c of k)try{c.kill("SIGKILL")}catch(e){}process.exit(0)},700)';
+    const nprocEng = prlimitProbe('--nproc=3', nprocSkript);
+    const nprocWeit = prlimitProbe('--nproc=64', nprocSkript);
+    ok(`nproc wirkt: unter --nproc=3 scheitern Starts (${nprocEng.stdout || nprocEng.stderr}), unter --nproc=64 gelingen alle sechs (${nprocWeit.stdout || nprocWeit.stderr})`,
+        /fehl=[1-9]/.test(nprocEng.stdout) && nprocWeit.stdout === 'ok=6 fehl=0');
+    const fsizeSkript = 'const fs=require("node:fs");try{fs.writeFileSync("/tmp/.dsv1-fsize-probe",Buffer.alloc(Number(process.argv[1])));console.log("GESCHRIEBEN")}catch(e){console.log("FEHLER "+e.code)}finally{try{fs.unlinkSync("/tmp/.dsv1-fsize-probe")}catch(e){}}';
+    const fsizeEng = spawnSync('prlimit', ['--fsize=65536', 'node', '-e', fsizeSkript, '200000'], { encoding: 'utf8', timeout: 20000 });
+    const fsizeWeit = spawnSync('prlimit', ['--fsize=65536', 'node', '-e', fsizeSkript, '50000'], { encoding: 'utf8', timeout: 20000 });
+    try { fs.unlinkSync('/tmp/.dsv1-fsize-probe'); } catch (e) { /* schon weg */ }
+    const fsizeEngScheitert = fsizeEng.signal === 'SIGXFSZ' || /FEHLER EFBIG/.test(fsizeEng.stdout || '');
+    ok(`fsize wirkt: 200000 Bytes unter --fsize=65536 scheitern (${fsizeEng.signal || (fsizeEng.stdout || '').trim()}), 50000 Bytes gelingen (${(fsizeWeit.stdout || '').trim()})`,
+        fsizeEngScheitert && (fsizeWeit.stdout || '').trim() === 'GESCHRIEBEN');
+    const cpuSkript = 'const t=Date.now();while(Date.now()-t<Number(process.argv[1])){}console.log("FERTIG")';
+    const cpuEng = spawnSync('prlimit', ['--cpu=1', 'node', '-e', cpuSkript, '6000'], { encoding: 'utf8', timeout: 20000 });
+    const cpuWeit = spawnSync('prlimit', ['--cpu=5', 'node', '-e', cpuSkript, '150'], { encoding: 'utf8', timeout: 20000 });
+    ok(`cpu wirkt: 6 s Rechnen unter --cpu=1 wird beendet (${cpuEng.signal || 'Exit ' + cpuEng.status}), 0,15 s unter --cpu=5 gelingen (${(cpuWeit.stdout || '').trim()})`,
+        cpuEng.signal === 'SIGXCPU' && cpuEng.status === null && (cpuWeit.stdout || '').trim() === 'FERTIG');
+
+    // 24.-29. Datenbank
     const url = process.env.DATABASE_URL || '';
     const rolle = psql(url, "SELECT current_user || '|' || rolsuper::text || '|' || rolcreaterole::text FROM pg_roles WHERE rolname = current_user");
     // boolean::text liefert "false"/"true" (gemessen), nicht das "f"/"t" der psql-Anzeige.
@@ -227,6 +299,9 @@ async function main() {
     const copy = psql(url, "COPY (SELECT 1) TO PROGRAM 'id'");
     ok(`COPY … TO PROGRAM scheitert (${copy.stderr.split('\n')[0] || 'kein Fehler!'})`,
         copy.status !== 0 && /permission denied/i.test(copy.stderr));
+    const lo_import = psql(url, "SELECT lo_import('/etc/passwd')");
+    ok(`serverseitiges lo_import scheitert (${lo_import.stderr.split('\n')[0] || 'kein Fehler!'})`,
+        lo_import.status !== 0 && /permission denied|must be superuser/i.test(lo_import.stderr));
     // Dieselbe URL, nur die Rolle getauscht (Textersatz: die Socket-Form
     // traegt keinen Rechnernamen, den ein URL-Parser verlangt).
     let alsPostgres = { status: 0, stderr: 'keine URL ableitbar' };
@@ -234,7 +309,7 @@ async function main() {
     if (urlPostgres !== url) alsPostgres = psql(urlPostgres, 'SELECT 1');
     ok(`Verbindung als postgres ueber denselben Socket scheitert (peer): ${alsPostgres.stderr.split('\n').pop() || 'VERBUNDEN!'}`,
         alsPostgres.status !== 0 && /peer authentication failed/i.test(alsPostgres.stderr));
-    const haupt = psql(`postgresql://nobody@/postgres?host=${HAUPT_SOCKET_ORDNER}&port=5432`, 'SELECT 1');
+    const haupt = psql(`postgresql://nobody@localhost/postgres?host=${HAUPT_SOCKET_ORDNER}&port=5432`, 'SELECT 1');
     ok(`Haupt-Socket ${HAUPT_SOCKET_ORDNER} unerreichbar (${haupt.stderr.split('\n').pop() || 'VERBUNDEN!'}; Ordner existiert: ${fs.existsSync(HAUPT_SOCKET_ORDNER)})`,
         haupt.status !== 0 && !fs.existsSync(HAUPT_SOCKET_ORDNER));
 

@@ -102,8 +102,17 @@ const { StringDecoder } = require('node:string_decoder');
 const { pruefeGeheimnisse, entferneGeheimnisse, zeileEntferntMarker } = require('./geheimnis-riegel');
 // Die ausfuehrende Spur (teste/mutiere_und_teste) lebt in einem eigenen
 // Modul; hier stehen nur Schalter, Werkzeugdefinition im Request, Dispatch,
-// Zaehler und Vorspann.
-const ausfuehrSpur = require('./ausfuehr-spur');
+// Zaehler und Vorspann. Das Modul wird ERST bei --ausfuehren (bzw. im
+// Selbsttest der Spur) geladen (Befund S12): die reine Lesespur haengt
+// nicht davon ab, und spurAktiv() ist ohne Laden schlicht false.
+let ausfuehrSpurModul = null;
+function spur() {
+    if (!ausfuehrSpurModul) ausfuehrSpurModul = require('./ausfuehr-spur');
+    return ausfuehrSpurModul;
+}
+function spurAktiv() {
+    return ausfuehrSpurModul !== null && ausfuehrSpurModul.istAktiv();
+}
 
 const ENDPUNKT_OPENAI = 'https://api.openai.com/v1/responses';
 // ZWEITER ANBIETER, DeepSeek (Auftrag "DeepSeek als zweiter Anbieter",
@@ -395,14 +404,14 @@ const WERKZEUG_ABSATZ = "DU HAST WERKZEUGE. Behaupte nichts, was du nachsehen ka
 function auftragstextBauen(briefInhalt) {
     // Mit --ausfuehren kommt der Absatz ueber die ausfuehrenden Werkzeuge
     // samt Status-Katalog dazu (ausfuehr-spur.js, vorspannAbsatz()).
-    const ausfuehrung = ausfuehrSpur.istAktiv() ? '\n\n' + ausfuehrSpur.vorspannAbsatz() : '';
+    const ausfuehrung = spurAktiv() ? '\n\n' + spur().vorspannAbsatz() : '';
     return BRIEF_KOPF + briefInhalt.trim() + '\n\n' + PRUEFPUNKTE_ALLGEMEIN + '\n' + WERKZEUG_ABSATZ + ausfuehrung;
 }
 
 // Die Werkzeugliste im Request: suche/lies immer, teste/mutiere_und_teste
 // NUR, wenn die ausfuehrende Spur eingerichtet ist (--ausfuehren).
 function werkzeugeFuerAnfrage() {
-    return ausfuehrSpur.istAktiv() ? WERKZEUGE.concat(ausfuehrSpur.WERKZEUGE_AUSFUEHRUNG) : WERKZEUGE;
+    return spurAktiv() ? WERKZEUGE.concat(spur().WERKZEUGE_AUSFUEHRUNG) : WERKZEUGE;
 }
 
 // FLACH, ohne "function"-Unterobjekt -- so verlangt es /v1/responses (siehe
@@ -675,7 +684,7 @@ function werkzeugAufrufen(name, argumente) {
     // main() wartet mit await, was auf die synchronen Ergebnisse von
     // suche/lies wirkungslos ist. Ohne --ausfuehren ist der Name unbekannt
     // wie jeder andere: das Modell kann die Ausfuehrung nicht erraten.
-    if ((name === 'teste' || name === 'mutiere_und_teste') && ausfuehrSpur.istAktiv()) return ausfuehrSpur.werkzeugAufrufen(name, argumente);
+    if ((name === 'teste' || name === 'mutiere_und_teste') && spurAktiv()) return spur().werkzeugAufrufen(name, argumente);
     return { text: `abgelehnt: unbekannte Funktion "${name}"`, abgelehnt: true };
 }
 
@@ -1423,8 +1432,8 @@ async function main(argvUeberschreibung) {
     // 27.09.2026, "nur noch ueber das flash model bis auf Widerruf"): ein
     // anderes Modell darf keine Codeausfuehrung ausloesen -- Exit 2, bevor
     // ein Schluessel gebraucht wird, damit der Fall ohne Netz pruefbar ist.
-    if (optionen.ausfuehren && optionen.modell !== ausfuehrSpur.ERLAUBTES_MODELL) {
-        console.error(`ABBRUCH: --ausfuehren ist nur mit --modell=${ausfuehrSpur.ERLAUBTES_MODELL} erlaubt (angegeben: ${optionen.modell}).`);
+    if (optionen.ausfuehren && optionen.modell !== spur().ERLAUBTES_MODELL) {
+        console.error(`ABBRUCH: --ausfuehren ist nur mit --modell=${spur().ERLAUBTES_MODELL} erlaubt (angegeben: ${optionen.modell}).`);
         return 2;
     }
     if (optionen.kanarie && !optionen.ausfuehren) {
@@ -1488,25 +1497,30 @@ async function main(argvUeberschreibung) {
     // der Handler kommt also zum Zug).
     let signalHandler = null;
     if (optionen.ausfuehren) {
+        // Handler VOR dem Einrichten (Befund S11): ein Signal waehrend des
+        // Cluster-Aufbaus raeumt sonst nichts auf. aufraeumen() ohne
+        // eingerichtete Spur ist ein No-op mit true.
+        signalHandler = (signal) => {
+            console.error(`[ausfuehr-spur] ${signal} -- raeume auf.`);
+            const sauber = spur().aufraeumen();
+            process.exit(sauber ? 1 : 8);
+        };
+        process.on('SIGINT', signalHandler);
+        process.on('SIGTERM', signalHandler);
         try {
-            const e = await ausfuehrSpur.einrichten({
+            const e = await spur().einrichten({
                 wurzel: optionen.wurzel,
                 kanarie: optionen.kanarie,
                 istHartGesperrt,
                 protokoll: (eintrag) => protokollSchreiben(eintrag),
             });
-            console.error(`[ausfuehr-spur] eingerichtet: Cluster ${e.cluster} (Port ${e.port}), ${e.tests} registrierte Tests, Kanarie ${e.kanarie}, Laufverzeichnis ${e.dir}`);
+            console.error(`[ausfuehr-spur] eingerichtet: Cluster ${e.cluster} (Port ${e.port}), ${e.tests} registrierte Tests, Kanarie ${e.kanarie}, HEAD ${e.head.slice(0, 12)}, Laufverzeichnis ${e.dir}`);
         } catch (e) {
             console.error(`ABBRUCH: ausfuehrende Spur nicht einrichtbar -- ${e.message}`);
+            process.off('SIGINT', signalHandler);
+            process.off('SIGTERM', signalHandler);
             return 2;
         }
-        signalHandler = (signal) => {
-            console.error(`[ausfuehr-spur] ${signal} -- raeume auf.`);
-            const sauber = ausfuehrSpur.aufraeumen();
-            process.exit(sauber ? 1 : 8);
-        };
-        process.on('SIGINT', signalHandler);
-        process.on('SIGTERM', signalHandler);
     }
 
     // Vor den Diff gezogen (bis 13.09.2026 standen sie danach): der
@@ -1568,7 +1582,7 @@ async function main(argvUeberschreibung) {
             const kern = `Diff ${zeilenAus(diffInhalt).length} Zeilen, Suchen ${sucheAnzahl}, Lesungen ${liesAnzahl}, `
                 + `Token rein ${promptTokenSumme}, Token raus ${completionTokenSumme}, Runden ${runde}`
                 // Zaehler der ausfuehrenden Spur (leer ohne --ausfuehren).
-                + ausfuehrSpur.protokollMaterialZusatz();
+                + (spurAktiv() ? spur().protokollMaterialZusatz() : '');
             return abbruchGrund ? `**abgebrochen** (${abbruchGrund}): ${kern}` : kern;
         };
         const protokollKostenText = () => {
@@ -1600,6 +1614,19 @@ async function main(argvUeberschreibung) {
             laufEingetragen = true;
             return ergebnis;
         };
+        // EIN Abschluss fuer jeden regulaeren Rueckgabeweg (Befund S4): die
+        // ausfuehrende Spur raeumt VOR der Protokollzeile auf; bleiben
+        // Reste, wird aus jedem Code Exit 8 und die ASTRA-Zeile ein
+        // abgebrochener Lauf -- nie ein regulaerer Abschluss mit Exit 0.
+        const abschliessen = (code, abbruchGrund) => {
+            if (spurAktiv() && !spur().aufraeumen()) {
+                console.error('[ausfuehr-spur] AUFRAEUMEN UNVOLLSTAENDIG -- Reste von Hand pruefen (pg_lsclusters, /var/lib/dsv1). Exit 8.');
+                protokollLaufEintragen((abbruchGrund ? abbruchGrund + '; ' : '') + 'Aufraeumen der ausfuehrenden Spur unvollstaendig');
+                return 8;
+            }
+            protokollLaufEintragen(abbruchGrund);
+            return code;
+        };
 
         // BEWUSST weiterhin ein ABBRUCH, nicht Schwaerzen wie bei suche()/lies():
         // den Diff liefert der Auftraggeber. Steht darin ein Geheimnis, ist das
@@ -1611,8 +1638,7 @@ async function main(argvUeberschreibung) {
             console.error('ABBRUCH: Der Diff enthaelt etwas, das wie ein Geheimnis aussieht — '
                 + diffPruefung.treffer.map((t) => t.name).join(', ') + '.');
             console.error('Es wurde NICHTS gesendet.');
-            protokollLaufEintragen('Geheimnis-Riegel auf dem Eingabediff');
-            return 3;
+            return abschliessen(3, 'Geheimnis-Riegel auf dem Eingabediff');
         }
 
         const auftragstext = auftragstextBauen(briefInhalt);
@@ -1662,7 +1688,7 @@ async function main(argvUeberschreibung) {
                 }
             }
             console.log(`Suchen: ${sucheAnzahl}  Lesungen: ${liesAnzahl}  Ablehnungen: ${ablehnungenAnzahl}`);
-            for (const z of ausfuehrSpur.zusammenfassungZeilen()) console.log(z);
+            for (const z of (spurAktiv() ? spur().zusammenfassungZeilen() : [])) console.log(z);
             console.log(`Runden: ${runde}  Token rein: ${promptTokenSumme}  Token raus: ${completionTokenSumme}`);
             const kosten = kostenSchaetzen(optionen.modell, promptTokenSumme, completionTokenSumme);
             console.log(kosten === null
@@ -1677,8 +1703,7 @@ async function main(argvUeberschreibung) {
                 console.error(`ABBRUCH: Rundenlimit (${optionen.maxRunden}) erreicht — der Bericht ist UNVOLLSTAENDIG.`);
                 runde--;
                 zusammenfassungAusgeben();
-                protokollLaufEintragen('Rundenlimit erreicht');
-                return 4;
+                return abschliessen(4, 'Rundenlimit erreicht');
             }
 
             // Stufe (a)+(b)+(c): das Rundenbudget wird SICHTBAR, statt dass das
@@ -1691,9 +1716,9 @@ async function main(argvUeberschreibung) {
             // Isolationsabbruch der ausfuehrenden Spur: diese Runde ist die
             // letzte, OHNE Werkzeuge (auch ohne suche/lies), mit dem Marker --
             // das Modell liefert nur noch Text, und der Lauf endet mit Exit 7.
-            const isolationAbgebrochen = ausfuehrSpur.istAbgebrochen();
+            const isolationAbgebrochen = spurAktiv() && spur().istAbgebrochen();
             let rundenHinweis = rundenHinweisBauen(runde, optionen.maxRunden, istLetzteZweiRunden || isolationAbgebrochen, ist70Prozent);
-            if (isolationAbgebrochen) rundenHinweis += ` ${ausfuehrSpur.abbruchMarker()}. Nenne in deinem Bericht, welche Belege dir deshalb fehlen.`;
+            if (isolationAbgebrochen) rundenHinweis += ` ${spur().abbruchMarker()}. Nenne in deinem Bericht, welche Belege dir deshalb fehlen.`;
             verlauf.push({ role: 'user', content: rundenHinweis });
             protokollSchreiben({ typ: 'rundenhinweis', runde, istLetzteZweiRunden, ist70Prozent, isolationAbgebrochen, text: rundenHinweis });
 
@@ -1738,15 +1763,13 @@ async function main(argvUeberschreibung) {
                 if (!text || !text.trim()) {
                     console.error('ABBRUCH: Das Modell hat am Ende keinen Text geliefert — kein sauberes Ergebnis.');
                     zusammenfassungAusgeben();
-                    protokollLaufEintragen('kein Text vom Modell am Ende');
-                    return 5;
+                    return abschliessen(5, 'kein Text vom Modell am Ende');
                 }
                 console.log(text);
                 if (isolationAbgebrochen) {
-                    console.log(`\n[${ausfuehrSpur.abbruchMarker()} -- der Bericht ist ein Text OHNE Belege aus der Ausfuehrung. NICHT als Pruefung werten.]`);
+                    console.log(`\n[${spur().abbruchMarker()} -- der Bericht ist ein Text OHNE Belege aus der Ausfuehrung. NICHT als Pruefung werten.]`);
                     zusammenfassungAusgeben();
-                    protokollLaufEintragen('Isolationsabbruch der ausfuehrenden Spur');
-                    return 7;
+                    return abschliessen(7, 'Isolationsabbruch der ausfuehrenden Spur');
                 }
                 // WICHTIG (Auftrag Teil 2): ein unter Rundendruck erzeugter
                 // Bericht ist NICHT dasselbe wie ein regulaerer und muss als
@@ -1756,8 +1779,7 @@ async function main(argvUeberschreibung) {
                     ? `\n[BERICHT UNTER RUNDENDRUCK -- erzwungen in Runde ${runde} von ${optionen.maxRunden}, Werkzeuge waren bereits abgeschaltet. NICHT als vollstaendige Pruefung werten.]`
                     : '\n[Bericht regulaer erstellt, Rundenlimit nicht erreicht.]');
                 zusammenfassungAusgeben();
-                protokollLaufEintragen(null);
-                return 0;
+                return abschliessen(0, null);
             }
 
             for (const aufruf of funktionsaufrufe) {
@@ -1767,6 +1789,9 @@ async function main(argvUeberschreibung) {
                     try {
                         werkzeugArgumente = JSON.parse(aufruf.arguments || '{}');
                     } catch (e) {
+                        // Ein Ausfuehrungsaufruf mit unlesbaren Argumenten
+                        // zaehlt trotzdem gegen den 30er-Deckel (Befund S9).
+                        if ((aufruf.name === 'teste' || aufruf.name === 'mutiere_und_teste') && spurAktiv()) spur().ungueltigerAufruf(aufruf.name);
                         ergebnis = { text: `abgelehnt: ungueltige Argumente (${e.message})`, abgelehnt: true };
                     }
                     if (!ergebnis) {
@@ -1829,8 +1854,7 @@ async function main(argvUeberschreibung) {
                 if (ausgabeBytes > MAX_AUSGABE_BYTES) {
                     console.error(`ABBRUCH: Gesamtausgabemenge ueber ${MAX_AUSGABE_BYTES} Bytes (${ausgabeBytes}) — der Bericht ist UNVOLLSTAENDIG.`);
                     zusammenfassungAusgeben();
-                    protokollLaufEintragen('Ausgabemenge ueber dem Limit');
-                    return 4;
+                    return abschliessen(4, 'Ausgabemenge ueber dem Limit');
                 }
 
                 // Das Werkzeugergebnis geht mit demselben call_id zurueck, NICHT
@@ -1860,8 +1884,11 @@ async function main(argvUeberschreibung) {
             process.off('SIGINT', signalHandler);
             process.off('SIGTERM', signalHandler);
         }
-        if (ausfuehrSpur.istAktiv() && !ausfuehrSpur.aufraeumen()) {
+        // Regulaere Rueckgabewege haben schon in abschliessen() aufgeraeumt
+        // (Exit 8 bei Resten); hier bleibt das Sicherheitsnetz fuer Wuerfe.
+        if (spurAktiv() && !spur().aufraeumen()) {
             console.error('[ausfuehr-spur] AUFRAEUMEN UNVOLLSTAENDIG -- Reste von Hand pruefen (pg_lsclusters, /var/lib/dsv1).');
+            process.exitCode = 8;
         }
     }
 }
@@ -4386,13 +4413,17 @@ async function selbsttestAusfuehrung() {
     // Koerper, mutiere-Ergebnis im Koerper, Exit 0 + Zusammenfassung,
     // ASTRA-Zeile), LAUF E2 Isolationsabbruch x3 (kein tools-Feld + Marker
     // im Hinweis, Exit 7 + Marker in der Ausgabe, ASTRA-Zeile abgebrochen))
-    // + 75 Faelle in selbsttestSpur() (Einrichten x4, teste/Kanarie x4,
-    // Mutation/Grundlauf/Muster x8, Ablehnungen 17 in der Schleife + 4,
-    // Endungen/Stufen 22-23 x5, Zaehler-Zwischenstand x1, Status x8,
-    // Zustand/Umgebung/Riegel/8KB x7, Deckel x4, Abbruch Stufe 24 x2,
-    // Aufraeumen x1, Stufe 21 x3, Stufe 20 x2, Reste x3, Einrichten-
-    // Ablehnungen x2) = 87. Unten durch den tatsaechlichen Lauf bestaetigt.
-    const ERWARTETE_FAELLE = 87;
+    // Nacharbeit (Diffpruefung 30.09.2026): hier dazu LAUF E3 (ungueltiges
+    // JSON zaehlt) x1, LAUF E4 (Exit 8, ASTRA-Zeile abgebrochen) x2, LAZY
+    // (Modul nicht/doch geladen) x2 = 17.
+    // + 95 Faelle in selbsttestSpur() (Einrichten x4, teste/Kanarie x5,
+    // Mutation/Grundlauf/Muster x9, Manifest/vorgeladen x3, Ablehnungen 18
+    // in der Schleife + 7, Endungen/Stufen 22-23 x5, Status x10,
+    // Zustand/Umgebung/Riegel/Deckel x11, Deckel x5, HEAD x2, Abbruch Stufe
+    // 24 x3, Stufe 21 x3, Stufe 20 x2, Infrastruktur x1, Reste x3,
+    // Sperr-Halter x2, Einrichten-Ablehnungen x2) = 112. Unten durch den
+    // tatsaechlichen Lauf bestaetigt.
+    const ERWARTETE_FAELLE = 112;
     if (process.getuid() !== 0) {
         if (process.env.CI === 'true') {
             console.log(`  ✗ FEHLT: --selbsttest-ausfuehrung braucht root (uid 0, gefunden ${process.getuid()}) -- unter CI=true ist das ROT, kein SKIP.`);
@@ -4419,7 +4450,7 @@ async function selbsttestAusfuehrung() {
     const echtesLog = console.log;
     const echtesError = console.error;
     try {
-        const fx = ausfuehrSpur.fixtureAnlegen(basis);
+        const fx = spur().fixtureAnlegen(basis);
         process.env.PLAYWRIGHT_BROWSERS_PATH = fx.browser;
         process.env.DEEPSEEK_API_KEY = 'selbsttest-dummy-deepseek-schluessel-ohne-netz';
         delete process.env.DEEPSEEK_KEY_DATEI;
@@ -4445,7 +4476,7 @@ async function selbsttestAusfuehrung() {
         // ----- Modell-Riegel und --kanarie ohne --ausfuehren: Exit 2 VOR jedem Schluessel/Cluster -----
         const codeModell = await mainStumm([diffPfad, `--brief=${briefPfad}`, `--wurzel=${fx.wurzel}`, '--ausfuehren', '--modell=gpt-6-sol']);
         pruefen(`MODELL-RIEGEL: --ausfuehren mit --modell=gpt-6-sol -> Exit ${codeModell}, Meldung nennt deepseek-flash, nichts eingerichtet`,
-            codeModell === 2 && fehlerZeilen.some((z) => z.includes('nur mit --modell=deepseek-flash')) && !ausfuehrSpur.istAktiv());
+            codeModell === 2 && fehlerZeilen.some((z) => z.includes('nur mit --modell=deepseek-flash')) && !spurAktiv());
         const codeKanarie = await mainStumm([diffPfad, `--brief=${briefPfad}`, `--wurzel=${fx.wurzel}`, '--kanarie=test_gruen.js', '--modell=deepseek-flash']);
         pruefen(`--kanarie OHNE --ausfuehren -> Exit ${codeKanarie}`, codeKanarie === 2 && fehlerZeilen.some((z) => z.includes('--kanarie')));
         const ohne = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
@@ -4478,13 +4509,13 @@ async function selbsttestAusfuehrung() {
                 namen === 'suche,lies,teste,mutiere_und_teste' && aufgezeichnet[0].input[0].content.includes('AUSFUEHRENDE WERKZEUGE') && aufgezeichnet[0].input[0].content.includes('- grundlauf-unvollstaendig:'));
             const ausgabe1 = aufgezeichnet.length > 1 ? aufgezeichnet[1].input.find((e) => e.type === 'function_call_output' && e.call_id === 'call-e1') : null;
             pruefen('LAUF E1 teste-ERGEBNIS im naechsten Koerper: "status: bestanden", exit 0, hoechstens 8 KB',
-                !!ausgabe1 && ausgabe1.output.startsWith('status: bestanden\nexit: 0\n') && Buffer.byteLength(ausgabe1.output) <= ausfuehrSpur.MAX_ERGEBNIS_BYTES);
+                !!ausgabe1 && ausgabe1.output.startsWith('status: bestanden\nexit: 0\n') && Buffer.byteLength(ausgabe1.output) <= 8192);
             const ausgabe2 = aufgezeichnet.length > 2 ? aufgezeichnet[2].input.find((e) => e.type === 'function_call_output' && e.call_id === 'call-e2') : null;
             pruefen('LAUF E1 mutiere_und_teste-ERGEBNIS: "status: gescheitert" nach gueltigem Grundlauf aus dem Zwischenspeicher',
                 !!ausgabe2 && ausgabe2.output.startsWith('status: gescheitert\nexit: 1\n') && ausgabe2.output.includes('grundlauf: bestanden, gueltig (aus dem Zwischenspeicher'));
             pruefen(`LAUF E1 Exit ${code}, Zusammenfassung nennt Ausfuehrungen 3 / Mutationen 1 / Kanarie gruen, danach kein dsv1-Cluster mehr, Spur nicht mehr aktiv`,
                 code === 0 && ausgabeZeilen.some((z) => z.startsWith('Ausfuehrungen: 3  Mutationen: 1  Ausfuehrungs-Aufrufe: 2  Ausfuehrungs-Ablehnungen: 0'))
-                && ausgabeZeilen.some((z) => z.startsWith('Kanarie: test_kanarie_static.js — gruen')) && !ausfuehrSpur.istAktiv()
+                && ausgabeZeilen.some((z) => z.startsWith('Kanarie: test_kanarie_static.js — gruen')) && !spurAktiv()
                 && !execFileSync('pg_lsclusters', ['-h'], { encoding: 'utf8' }).includes('dsv1'));
             const zeile = fs.readFileSync(protokollDatei, 'utf8').split('\n').find((z) => z.includes('Selbsttest E1'));
             pruefen(`LAUF E1 ASTRA-Zeile traegt die Zaehler der Spur: ${zeile ? zeile.slice(0, 120) : '(keine Zeile)'}`,
@@ -4506,16 +4537,68 @@ async function selbsttestAusfuehrung() {
             pruefen('LAUF E2 nach dem Abbruch: der naechste Koerper traegt KEIN tools-Feld, der Rundenhinweis den Marker "AUSFÜHRUNG ABGEBROCHEN — Belege nach Aufruf 1 fehlen"',
                 !!zweiter && zweiter.tools === undefined && !!hinweis && hinweis.role === 'user' && hinweis.content.includes('AUSFÜHRUNG ABGEBROCHEN — Belege nach Aufruf 1 fehlen'));
             pruefen(`LAUF E2 Exit ${code} (7), Marker in der Ausgabe, Bericht als Text ohne Belege gekennzeichnet, Spur aufgeraeumt`,
-                code === 7 && ausgabeZeilen.some((z) => z.includes('AUSFÜHRUNG ABGEBROCHEN') && z.includes('OHNE Belege')) && !ausfuehrSpur.istAktiv());
+                code === 7 && ausgabeZeilen.some((z) => z.includes('AUSFÜHRUNG ABGEBROCHEN') && z.includes('OHNE Belege')) && !spurAktiv());
             const zeile = fs.readFileSync(protokollDatei, 'utf8').split('\n').find((z) => z.includes('Selbsttest E2'));
             pruefen(`LAUF E2 ASTRA-Zeile: abgebrochen (Isolationsabbruch), Ausfuehrungen 3 (Kanarie + Grundlauf + Mutation), Mutationen 1`,
                 !!zeile && zeile.includes('**abgebrochen** (Isolationsabbruch der ausfuehrenden Spur)') && zeile.includes('Ausfuehrungen 3, Mutationen 1'));
         }
+        // ----- LAUF E3: unlesbare Argumente eines Ausfuehrungsaufrufs zaehlen gegen den Deckel (Befund S9) -----
+        {
+            protokollFrisch();
+            const aufgezeichnet = [];
+            https.request = httpsStubBauen([
+                antwortKoerperBauen({ id: 'fc-call-g1', type: 'function_call', status: 'completed', call_id: 'call-g1', name: 'teste', arguments: '{kaputt' }, 100, 50),
+                antwortKoerperBauen(elementTextBauen('BERICHT-NACH-KAPUTTEM-AUFRUF'), 100, 50),
+            ], aufgezeichnet);
+            const code = await mainStumm([diffPfad, `--brief=${briefPfad}`, `--wurzel=${fx.wurzel}`, '--modell=deepseek-flash', '--ausfuehren', '--max-runden=6',
+                `--protokoll=${path.join(basis, 'p3.jsonl')}`, '--zweck=Selbsttest E3']);
+            const ausgabeG = aufgezeichnet.length > 1 ? aufgezeichnet[1].input.find((e) => e.type === 'function_call_output' && e.call_id === 'call-g1') : null;
+            pruefen(`LAUF E3 Exit ${code}: ungueltiges JSON -> abgelehnt, und die Zusammenfassung zaehlt Ausfuehrungs-Aufrufe 1 / Ablehnungen 1 ohne Kind-Lauf`,
+                code === 0 && !!ausgabeG && ausgabeG.output.startsWith('abgelehnt: ungueltige Argumente')
+                && ausgabeZeilen.some((z) => z.startsWith('Ausfuehrungen: 0  Mutationen: 0  Ausfuehrungs-Aufrufe: 1  Ausfuehrungs-Ablehnungen: 1')));
+        }
+
+        // ----- LAUF E4: unvollstaendiges Aufraeumen nach regulaerem Bericht -> Exit 8, ASTRA-Zeile abgebrochen (Befund S4) -----
+        {
+            protokollFrisch();
+            const aufgezeichnet = [];
+            https.request = httpsStubBauen([antwortKoerperBauen(elementTextBauen('BERICHT-MIT-RESTEN'), 100, 50)], aufgezeichnet);
+            const echtesAufraeumen = spur().aufraeumen;
+            spur().aufraeumen = () => { echtesAufraeumen(); return false; };
+            let code;
+            try {
+                code = await mainStumm([diffPfad, `--brief=${briefPfad}`, `--wurzel=${fx.wurzel}`, '--modell=deepseek-flash', '--ausfuehren', '--max-runden=6',
+                    `--protokoll=${path.join(basis, 'p4.jsonl')}`, '--zweck=Selbsttest E4']);
+            } finally {
+                spur().aufraeumen = echtesAufraeumen;
+            }
+            const zeile = fs.readFileSync(protokollDatei, 'utf8').split('\n').find((z) => z.includes('Selbsttest E4'));
+            pruefen(`LAUF E4 Exit ${code} (8) bei unvollstaendigem Aufraeumen nach regulaerem Bericht, Meldung auf stderr`,
+                code === 8 && fehlerZeilen.some((z) => z.includes('AUFRAEUMEN UNVOLLSTAENDIG')));
+            pruefen(`LAUF E4 ASTRA-Zeile ist KEIN regulaerer Abschluss: ${zeile ? zeile.slice(0, 140) : '(keine Zeile)'}`,
+                !!zeile && zeile.includes('**abgebrochen** (Aufraeumen der ausfuehrenden Spur unvollstaendig)'));
+        }
         https.request = echtesHttpsRequest;
         console.error = echtesError;
 
+        // ----- Lazy-Laden des Moduls (Befund S12): die reine Lesespur laedt ausfuehr-spur.js nicht -----
+        {
+            const hook = path.join(basis, 'lade-hook.js');
+            fs.writeFileSync(hook, "process.on('exit', () => { process.stderr.write('SPUR_GELADEN=' + Object.keys(require.cache).some((k) => k.endsWith('/ausfuehr-spur.js')) + '\\n'); });\n");
+            const lauf = (argumente) => {
+                const r = require('node:child_process').spawnSync(process.execPath, ['--require', hook, __filename, ...argumente], { encoding: 'utf8', env: { ...process.env, OPENAI_API_KEY: 'x', DEEPSEEK_API_KEY: 'x' } });
+                return { status: r.status, stderr: r.stderr || '' };
+            };
+            const ohne = lauf([diffPfad, `--brief=${briefPfad}`, `--wurzel=${fx.wurzel}`, '--max-runden=0']);
+            pruefen(`LAZY: ohne --ausfuehren wird tools/ausfuehr-spur.js NICHT geladen (Kindprozess, Exit ${ohne.status}: ${(ohne.stderr.match(/SPUR_GELADEN=\w+/) || ['?'])[0]})`,
+                ohne.status === 4 && ohne.stderr.includes('SPUR_GELADEN=false'));
+            const mit = lauf([diffPfad, `--brief=${briefPfad}`, `--wurzel=${fx.wurzel}`, '--max-runden=0', '--ausfuehren', '--modell=deepseek-flash']);
+            pruefen(`LAZY POSITIVKONTROLLE: mit --ausfuehren wird es geladen (Exit ${mit.status}: ${(mit.stderr.match(/SPUR_GELADEN=\w+/) || ['?'])[0]})`,
+                mit.status === 4 && mit.stderr.includes('SPUR_GELADEN=true'));
+        }
+
         // ----- Mechanik der Spur (Kind-Laeufe, Status-Vertrag, Ablehnungen, Deckel, Aufraeumen) -----
-        await ausfuehrSpur.selbsttestSpur(pruefen);
+        await spur().selbsttestSpur(pruefen);
     } catch (e) {
         console.log(`  ✗ FEHLT: unerwarteter Fehler im Selbsttest der ausfuehrenden Spur: ${e.stack || e.message}`);
         fehler++;
@@ -4523,7 +4606,7 @@ async function selbsttestAusfuehrung() {
         https.request = echtesHttpsRequest;
         console.log = echtesLog;
         console.error = echtesError;
-        if (ausfuehrSpur.istAktiv()) ausfuehrSpur.aufraeumen();
+        if (spurAktiv()) spur().aufraeumen();
         for (const [k, v] of Object.entries(alteUmgebung)) { if (v !== undefined) process.env[k] = v; else delete process.env[k]; }
         fs.rmSync(basis, { recursive: true, force: true });
     }
