@@ -88,3 +88,19 @@ Selbst gelesen: `badgeRender` (`public/offline-queue.js:440-462`). Ein Konflikt 
 | R3-6 | Anmerkung | Für 408/429/Netz ist nicht belegt, dass sie die Kette anhalten. | Nacharbeit 3: je Fall ein zweiter Eintrag |
 | R3-7 | Anmerkung | B6s stützt sich auf die Reihenfolge aus dem Vorblock. | Nacharbeit 3: Erwartung ausdrücklich |
 | R3-8 | Anmerkung | Ein Captive Portal mit 200 + HTML lässt den Eintrag unbegrenzt kreisen, ohne Hinweis. Stand vorher genauso. | Sammelliste |
+
+## Runde 4 (Lesespur flash über Nacharbeit 3, `3264dd8..53c126d`)
+
+Selbst gelesen. R4-1 trägt: bei `r.herkunft` bricht der Live-Pfad ab (`formFehler` und `return`, kein `qPut`). Die Meldung „bitte die Seite neu laden und erneut speichern … Eingaben bleiben erhalten“ stimmt nicht, denn Neuladen löscht die Unterschrift. Vor Nacharbeit 3 landete derselbe 403 in der Queue.
+
+| Nr | Schwere | Befund | Entscheidung |
+|---|---|---|---|
+| R4-1 | blockierend | Live-Pfad bei CSRF-403: die Prüfung wird nicht in die Queue gelegt, die Anweisung „neu laden und erneut speichern“ verliert die Unterschrift. | Nacharbeit 4: in die Queue legen (`qPut`, `status 'offen'`, ohne `sitzung_ok`), dazu der Herkunfts-Hinweis |
+| R4-2 | sollte | R3-4 hält die Kette bei einem Schreibfehler an. Der Eintrag selbst kreist aber weiter, und alle folgenden Einträge sind blockiert (R2-2 aufgegeben). | Nacharbeit 4: R3-4 zurücknehmen, die Kette läuft weiter. Der Speicher-Warnkasten zeigt den Ausfall bereits. |
+| R4-3 | sollte | Der Schreibversuch für den `sitzung_ok`-Merker kann scheitern, ohne dass es jemand merkt. Nach einem Neuladen und zehnmal 500 entsteht dann `wiederholt` mit Nachtrageliste. | Sammelliste: dafür müssen der Speicher ausfallen UND zehn Serverfehler folgen. Die Reihenfolge-Anweisung aus R3-1 („erst Erneut versuchen“) verhindert die Doppelerfassung, wenn man ihr folgt. |
+| R4-4 | sollte | B6i2 ist im Wartungsfall nicht zu Fall zu bringen (`posts >= 11`). | Nacharbeit 4: im Wartungsfall `posts === 11` |
+| R4-5 | sollte | `sitzung_ok` wird nur verbraucht (geseedet), aber nicht im Produktionsweg zugesichert. `__queue()` gibt das Feld nicht aus. | Nacharbeit 4: Feld in `__queue()`, im echten Ablauf zusichern (gesetzt nach übernommener Sitzung, nicht gesetzt nach einem Netzfehler) |
+| R4-6 | Anmerkung | `herkunftFehler` wird nie zurückgesetzt. | Nacharbeit 4: bei der nächsten Serverantwort ohne Herkunftsfehler zurücksetzen |
+| R4-7 | Anmerkung | Ein Sitzungsfehler bei `sitzung_ok` meldet „Nachreichen X-mal abgelehnt“, obwohl kein Foto gesendet wurde. | Nacharbeit 4: Text |
+| R4-8 | Anmerkung | „die unten aufgeführten Defekte“ steht auch dann da, wenn keine Defekte vorliegen. | Nacharbeit 4: Text je nach Fall |
+| R4-9 | Anmerkung | Ein Eintrag mit `sitzung_ok` kann über `bereits_geprueft`/`validierung` eine Nachtrageliste zeigen, etwa nach einem Studiowechsel des Tablets. Ein 403 wegen Host-Abweichung, das Neuladen nicht behebt, kreist sichtbar, aber auf Dauer. | Sammelliste |
