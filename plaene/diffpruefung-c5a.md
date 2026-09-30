@@ -30,3 +30,16 @@ Spuren:
 | F3 | Anmerkung | Die Wartezeit am Monats-Lock ist unbegrenzt. | gelesen | Sammelliste |
 
 Die Sammelliste für C5-A steht in `offene-befunde-c5a.md`.
+
+## Runde 2 (Lesespur flash über Nacharbeit 1, `20094e8..43f7bfc`)
+
+Den B7-Rückfall (Stilllegen nach 23503 in eigener `auditTx`, `studio_id` in jeder Abfrage) habe ich selbst gelesen.
+
+| Nr | Schwere | Befund | Entscheidung |
+|---|---|---|---|
+| R2-1 | sollte | Nach einem Verlust der Lock-Verbindung läuft `arbeit()` ohne Sperre weiter; nur `melde()`. Vor B4 stürzte stattdessen der ganze Prozess ab. | Sammelliste (selten; eine Behebung braucht einen Abbruchweg in `fn()`) |
+| R2-2 | sollte | Ein zweiter Löschversuch an einer schon stillgelegten Zeile leitet stumm weiter. | Nacharbeit 2: eigenes Feedback |
+| R2-3 | Anmerkung | Der Kommentar in `routes/archiv.js` sagt, Monatslauf und Einzelweg schrieben dieselbe Datei. Die Dateinamen unterscheiden sich; die Kollision gibt es zwischen zwei Einzelklicks und an der Zeile. | Nacharbeit 2: Kommentar berichtigen |
+| R2-4 | Anmerkung | Der Monats-Lock hat keinen Timeout, die Haltezeit ist jetzt die ganze PDF-Erzeugung. | Sammelliste (F3 erweitert) |
+| R2-5 | – | `last_error` in der Meldung: Telegram bekommt nur Quelle und Signatur, der Text steht nur im Serverlog. | kein Befund |
+| R2-6 | Anmerkung | Die Zusicherung „Lock nach Fehlschlag frei“ belegt den Lock selbst nicht. Das tragen C und D. | Nacharbeit 2: Text präzisieren |
