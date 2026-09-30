@@ -619,3 +619,14 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-B N2 ist fertig (`c2efe51`). Die volle Suite steht aus: ihre Schleife bekam die Sperre fünfmal nicht (99).
   - Engpass ist die Suite-Sperre: sieben Zweige stehen in der Schlange, je 20–25 min.
   - Sammelliste neu: `offene-befunde-q.md`.
+- 30.09.2026 19:40 UTC (Takt): läuft
+  - **C5-F gemergt** (#491, squash `db1dc98`, Botschaft zurückgelesen, CI 6/6 grün, kein Bot-Kommentar). Deploy-Prüfung um 19:55; der erste Deploy mit `queue: max` belegt, dass GitHub die Syntax annimmt.
+  - C5-B: master (mit C5-F) hereingemergt (`d9ccbd2`, konfliktfrei, Lint 0), Suite läuft in der Schlange.
+  - Nacharbeit:
+    - C5-A N2 (klein).
+    - C5-D N1.
+    - C5-E1 N2: master-Merge plus 6 kleine Helferpunkte.
+    - Q N2 (Regress R2-1/R2-2).
+    - W N4: LO vor dem Klonen, Werkzeug-Befund beendet die Werkzeuge, find-Exit.
+  - Im Bau: C5-C.
+  - Jeder Zweig nimmt vor seiner letzten Suite master herein.
