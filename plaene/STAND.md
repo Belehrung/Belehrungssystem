@@ -630,3 +630,6 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
     - W N4: LO vor dem Klonen, Werkzeug-Befund beendet die Werkzeuge, find-Exit.
   - Im Bau: C5-C.
   - Jeder Zweig nimmt vor seiner letzten Suite master herein.
+- 30.09.2026 20:00 UTC: **C5-F ausgeliefert.** Deploy-Lauf 458 (`workflow_run`, `db1dc98`) war `success`, also nimmt GitHub `queue: max` an. `tools/live-check.sh` EXIT 0, zwei Punkte ℹ wie immer (Zertifikat, Health).
+  - W N4 ist fertig (`440f83f`, Selbsttest-Ausführung 142/0, K13–K18 rot). Runde 5 (flash) läuft, weil die Nacharbeit Verhalten ändert (Exit 9, Wurf vor dem Klonen).
+  - Die Suite von C5-E1 N2 steht in der Schlange; sein Bauender hat vor dem Ende aufgehört zu warten.
