@@ -640,3 +640,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-E1 hat master hereingenommen (`9c2a5c3`), die Suite steht in der Schlange.
   - Q Runde 3 (flash): 8 Befunde, davon 3 „sollte“. Nacharbeit 3 läuft, R3-8 steht auf der Sammelliste.
   - W Runde 5 (flash): 5 Befunde, Nacharbeit 5 läuft.
+- 30.09.2026 20:45 UTC: **C5-B ausgeliefert.** Deploy-Lauf 459 (`d9eec8b`) `success`. `tools/live-check.sh` EXIT 0, fünf Punkte ✓, zwei ℹ wie immer.
