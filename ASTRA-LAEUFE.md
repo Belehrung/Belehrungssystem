@@ -353,6 +353,12 @@ sondern falsch.
 | 30.09.2026 | C5 Zustandspruefung b5 (deepseek-flash) | Diff 1 Zeilen, Suchen 42, Lesungen 35, Token rein 1944015, Token raus 76030, Runden 21 | — | — | — | 0,67 $ |
 | 30.09.2026 | Planpruefung c5a-db (flash) (deepseek-flash) | Diff 158 Zeilen, Suchen 42, Lesungen 59, Token rein 2357020, Token raus 57983, Runden 29 | — | — | — | 0,78 $ |
 | 30.09.2026 | Planpruefung c5b-sperren-melden (flash) (deepseek-flash) | Diff 177 Zeilen, Suchen 45, Lesungen 53, Token rein 2583165, Token raus 71229, Runden 26 | — | — | — | 0,86 $ |
+| 30.09.2026 | C5 Zustandspruefung b4a (deepseek-flash) | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 1 Zeilen, Suchen 57, Lesungen 62, Token rein 4356255, Token raus 47190, Runden 31 | — | — | — | 1,36 $ |
+| 30.09.2026 | C5 Zustandspruefung b4b (deepseek-flash) | Diff 1 Zeilen, Suchen 63, Lesungen 61, Token rein 3148850, Token raus 63224, Runden 24 | — | — | — | 1,02 $ |
+| 30.09.2026 | C5 Zustandspruefung b3b (deepseek-flash) | Diff 1 Zeilen, Suchen 73, Lesungen 63, Token rein 4309541, Token raus 69956, Runden 32 | — | — | — | 1,38 $ |
+| 30.09.2026 | C5 Zustandspruefung b6 (deepseek-flash) | Diff 1 Zeilen, Suchen 78, Lesungen 68, Token rein 1163980, Token raus 82424, Runden 14 | — | — | — | 0,45 $ |
+| 30.09.2026 | C5 Zustandspruefung b1 (deepseek-flash) | Diff 1 Zeilen, Suchen 51, Lesungen 52, Token rein 1601670, Token raus 83302, Runden 13 | — | — | — | 0,58 $ |
+| 30.09.2026 | C5 Zustandspruefung b3a (deepseek-flash) | Diff 1 Zeilen, Suchen 82, Lesungen 65, Token rein 2587593, Token raus 87799, Runden 20 | — | — | — | 0,88 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
