@@ -1,6 +1,6 @@
 # Auftrag C5-F — CI-Workflows, Deploy-Gate-Tests, Kommentare (Extrarunde)
 
-Fassung 1, 30.09.2026. Repo GymDocu, Stand `origin/master`. Die Fundorte stehen in `plaene/c5-zustand-30-09.md`
+Fassung 2, 30.09.2026 (Planprüfung flash + kimi, `scratchpad/c5plan/dicht/*c5f*`). Repo GymDocu, Stand `origin/master`. Die Fundorte stehen in `plaene/c5-zustand-30-09.md`
 (Abschnitt `b6`). Jede Fundstelle ist vor dem Bau neu zu messen.
 
 Modell: Standard-Executer.
@@ -43,6 +43,65 @@ Modell: Standard-Executer.
     (b) wird gemessen und im Bericht als Vorschlag geführt, NICHT gebaut.
 11. **DEP-5:** Prozessregel „kein amend, kein Force-Push auf fremde Zweige“. Nur als Satz in `docs/CI.md`, falls dort
     noch nicht vorhanden.
+
+## Fassung 2 — verbindlich (geht dem Text oben vor)
+
+**GH-S4:**
+- **(a) Digest-Pin entfällt vorerst.** Kein Aktualisierer pflegt `image:`-Digests in Workflow-Diensten; Dependabot
+  betreut nur npm und github-actions (`.github/dependabot.yml:26-52`). Ein Pin würde still veralten. Das geht als
+  Betreiberentscheidung in die nächste Vorlage und wird NICHT gebaut.
+- **(b) `concurrency` für `deploy.yml`:** Gruppe `deploy-production`, `cancel-in-progress: false`. Richtig formuliert:
+  ein LAUFENDER Deploy wird nie abgebrochen, wartende können vom neueren ersetzt werden.
+  - Hinweis-Workflows bekommen `cancel-in-progress: true`, Gruppe je Workflow und Ref.
+  - Heute sichert nur `test_feature_ci_gates.js:36` `concurrency` zu, und das nur für `ci.yml`. Neue Zusicherungen
+    prüfen je Datei Gruppenschlüssel UND `cancel-in-progress`-Wert. Gegenprobe je Datei.
+
+**GH-S7:**
+- Der gitleaks-Wächter (`test_feature_gitleaks_hinweis.js:521-640`) legt die Schrittzahl und die Werkzeuge fest.
+  Deshalb KEINE Workflow-Änderung.
+- Stattdessen messen, welchen Bereich der Hinweis-Workflow scannt (nur neue Commits oder alles).
+- Ist er bereichsbeschränkt: einmaliger vollständiger Historien-Scan lokal (falls `gitleaks` installiert ist, sonst
+  „nicht messbar“ melden) und das Ergebnis in den Bericht. Ein Kopfstand-Scan ist sonst entbehrlich: jede
+  versionierte Datei steht in einem Commit.
+
+**GH-S8:**
+- Der im Papier zitierte Satz existiert nicht; die Köpfe sagen heute das Gegenteil. Belegbar ist nur:
+  - `ops/deploy.sh` (GitHub-Deploy) ruft `test/run.sh` NICHT auf;
+  - der Hand-Deploy `gymdocu-deploy` auf dem Server fährt die Suite als Gate; das ist aus dem Repo nicht belegbar
+    (CLAUDE.md).
+- Wortlaut genau darauf eingrenzen.
+- Vorher ALLE Testköpfe mit der falschen Wendung suchen (z. B. `test_feature_suite_laufsperre.js:35`) und alle
+  berichtigen, mit Fundliste im Bericht.
+
+**GH-S5:** Im Beispiel Kennung plus `# v6` UND `persist-credentials: false`. Ein kleiner Doku-Wächter verbietet
+schwebende Tags in `uses:`-Zeilen von `docs/*.md`, mit Gegenprobe.
+
+**DEP-2:** auch `test/helfer/netz-sperre.js:115-116` und die weiteren Zeilenanker derselben Art. Anker auf
+`node_modules` sind nur nach `npm ci` prüfbar; das steht im Kommentar.
+
+**D-B5:**
+- Die dominierten `doesNotMatch` bekommen einen Kommentar, der den dominierenden Vergleich nennt.
+- Die Muster werden case-insensitiv (`/i`), weil OpenSSH-Optionsnamen es sind. Gegenprobe: eine kleingeschriebene
+  Option in einer Fixtur ⇒ ROT.
+
+**D-B7:**
+- Die Schleife zählt ALLE Workflows (heute 14 `uses:` gesamt). Untergrenze JE DATEI, mit Polster: dem heutigen Wert
+  minus 2, aber mindestens 1.
+- Die Regel „beim Entfernen senken, begründet“ gehört in den Kommentar.
+- Den Kommentarbereich `:315-320` berichtigen.
+- Gegenprobe: drei `uses:` aus `ci.yml` entfernen ⇒ ROT.
+
+**R2-N:**
+- Zuerst die auslösende Reihenfolge messen: welcher Test legt die Zeilen an, deren Werte die enge CHECK-Liste von
+  0013 verletzen.
+- Der Testkopf `test_feature_legionellen.js:315` („reihenfolgeunabhängig“) wird auf die tatsächliche Garantie
+  berichtigt.
+- Der Zeilenendzustand der geteilten Test-DB nach dem Aufräumen wird gemessen und steht im Bericht.
+
+**GH-S3:** Messung über Autor `dependabot[bot]` ODER Zweigpräfix `dependabot/`. Die Methode steht im Bericht.
+
+**DEP-5:** Der Satz betrifft fremde Zweige. Die bestehende master-Regel (`docs/CI.md:16/54`) wird nicht doppelt
+formuliert.
 
 ## Regeln
 

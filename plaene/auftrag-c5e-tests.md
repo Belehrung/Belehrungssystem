@@ -1,6 +1,6 @@
 # Auftrag C5-E — Testsuite: Helfer, Wächter und Einzeltests (Extrarunde)
 
-Fassung 1, 30.09.2026. Repo GymDocu, Stand `origin/master`. Die Fundorte stehen in `plaene/c5-zustand-30-09.md`
+Fassung 2, 30.09.2026 (Planprüfung flash + kimi, `scratchpad/c5plan/dicht/*c5e*`). Repo GymDocu, Stand `origin/master`. Die Fundorte stehen in `plaene/c5-zustand-30-09.md`
 (Abschnitte `b4a1`, `b4a2`, `t13-19`, `t20-27`, `b4b`). Jede Fundstelle ist vor der Änderung neu zu messen.
 
 **Zwei Teile, zwei Bauende:**
@@ -124,6 +124,105 @@ tritt, und das mit Beleg.
     - V27-4: `strictEqual(summe, kopf.gesamt)`.
     - V27-5: `strictEqual(alleTreffer.length, 6)` plus Bindung von Zeile 230.
     - V27-6: `kombiniertOhneKommentare` benutzen.
+
+## Fassung 2 — verbindlich (geht dem Text oben vor)
+
+**E1**
+
+- **1 (C2-S17): KEINE Sofortausgabe.**
+  - Die Selbsttests erwarten gesammelte und danach quittierte Verstösse (`test/helfer/datei-sperre.js:225-244`,
+    `test_feature_dateisperre.js`).
+  - Neu ist nur ein SIGTERM/SIGINT-Handler: er gibt die Zusammenfassung der NICHT quittierten Verstösse nach stderr
+    aus, entfernt sich selbst und löst das Signal erneut aus (`process.kill(process.pid, sig)`). So bleibt der
+    Exit-Code 143/130 erhalten.
+  - Test per Kindprozess: SIGTERM ⇒ die Zusammenfassung steht in stderr, der Exit ist signalbedingt.
+- **2 (DEP-4).**
+  - Zuerst messen, ob die Netzsperre Loopback (127.0.0.1) durchlässt.
+  - Wenn ja: `core/mailer.sendMail` mit echtem nodemailer-SMTP-Transport gegen einen SMTP-Stub im Prozess
+    (`net.createServer` auf 127.0.0.1). Dabei wird belegt, dass der echte Transport verbindet und die Nachricht
+    ankommt.
+  - Zusätzlich: ein externer Host ⇒ die Netzsperre wirft.
+  - Wenn Loopback gesperrt ist: nur der zweite Teil, und der Rest geht mit Messung in den Bericht.
+  - Die Mailkonfiguration wird über die DB-Konfiguration der Test-DB umgelenkt; vorher messen, wie `core/mailer.js`
+    den Host bestimmt.
+- **3 (G-V1).**
+  - Der Prüfblock wird maschinell aus `test/umgebung.sh` geschnitten (Start- und Endmarke), keine Kopie.
+  - Fälle auch in URL-Form (Query, Fragment, Socket-Pfad).
+  - Aufräumen per `mktemp`.
+  - Der bash-Kindprozess bekommt einen AUSNAHMEN-Eintrag in `test_feature_keine_systemeingriffe.js` mit Begründung.
+- **4 (H1a-S6).** Der Export wurde in `routes/csp-bericht.js:362` bewusst abgelehnt; die Begründung dort lesen.
+  - Trägt sie: KEIN Export. Die Grenze kommt mit dieser Begründung in den Bericht.
+  - Sonst: Export plus Quelltext-Anker auf den `setInterval`-Aufruf (Verdrahtung).
+- **5 (H2-R2-3).** Die Eigensignatur folgt dem Format der Version, die express-session benutzt (1.0.7). Beleg per
+  Positivkontrolle: das selbst signierte Cookie wird von der App angenommen, ein verfälschtes abgelehnt.
+- **6 (H2-R2-4).**
+  - ALLE vier Kopien kommen auf den Helfer: `test_feature_audit_races.js:48-51`, `test_feature_offboarding.js:51-52`,
+    `test_feature_session.js:53`, `test_feature_h2_cookie_schleife.js:183`.
+  - Die Abweichung `timestamptz` gegen `timestamp(6)` wird dabei aufgelöst: Quelle ist `table.sql`.
+  - Idempotenz belegen (zweimal ausführen).
+- **7 (P2-S5).** Die Fixtur friert den heutigen Erkennungsstand je Form ein. Jede ÄNDERUNG (neu erkannt oder nicht
+  mehr erkannt) schlägt an. Kein Dauer-Alarm.
+- **8 (P2-S7).** Hook und Test mit erzwungener Warnung gibt es schon (`routes/sichtpruefung.js:5732-5743`,
+  `test_feature_p3_eingabetypen_verhalten.js:408-424`). Offen ist nur der 500-Zweig: dafür ein Test mit
+  Response-Attrappe PLUS ein Quelltext-Anker, dass der Handler den Hook tatsächlich aufruft.
+- **9 (T2-S1).**
+  - `--exclude-standard` filtert nur nicht versionierte Dateien. Die Symmetrie wird gemessen und hergestellt.
+  - Die Gegenprobe läuft in einem WEGWERF-git-Repo unter `mktemp`, nicht im Repo-Baum; die Wurzelsperre bleibt
+    unberührt.
+- **10 (T2-S2).** Es gibt ZWEI Exit-2-Wege: Verzeichnis unlesbar (`:299-301`) und Einzeldatei unlesbar
+  (`:329-332`). Einen `DATABASE_URL`-Weg gibt es in dieser Datei nicht, er entfällt.
+  - Kindprozess-Selbsttests je Weg, als nobody; die Vorbedingung `sudo -u nobody` wird gemessen (sonst CI FAIL,
+    lokal SKIP).
+  - Der Dateikopf („keine Kindprozesse“, `:81-83`) wird berichtigt, samt dem Hinweis, dass Kindprozesse die
+    `NODE_OPTIONS`-Sperren erben.
+- **12 (T2-S4).**
+  - Das Muster `test_feature_frist_herkunft.js:448-458` wird vor Ort verifiziert.
+  - Den PATH nicht angleichen, wenn das die Messbedingung ändert. Stattdessen die nobody-Vorbedingung messen und
+    SKIP/FAIL setzen.
+- **13 (TS-1).** Zusätzlich zusichern, dass der Lauf WÄHREND des Wartens noch aktiv ist; sonst ist 0 trivial. Das
+  Fenster muss kleiner sein als die minimale Regressionsdauer (8×150 ms); das wird begründet.
+- **14 (R9-12b).**
+  - Gemessen sind heute: `deproute_queue.js:55` patcht global; `error_tracking_sammelstufe.js:134` und
+    `pdf_reste_ernte.js:69` nur im Kindprozess-Text.
+  - Der Helfer greift, wo er passt. Die Liste kommt in den Bericht.
+- **15 (V27-7).**
+  - Entscheidung: fehlt `unzip`, heisst das „NICHT GEPRÜFT“ (CI FAIL, lokal SKIP).
+  - Die Integritätsprobe (`unzip -t`) bleibt. Ein korruptes Archiv muss ROT werden (Gegenprobe).
+- **16 (V02-1t).** Die Zusicherung prüft Status ≥ 400 UND keinen Dateiinhalt im Körper. Ein 500 mit leerem Körper
+  zählt nicht als Erfolg der Sperre, sondern als Befund.
+- **17 (T1-K4).** Nur mit selbst geprüftem Beleg schliessen. Sonst geht der Rest (Einzelaufruf ohne `umgebung.sh`) in
+  den Bericht.
+
+**E2**
+
+- **V13-1:** zusätzlich zusichern, dass der Style-Block kein `undefined` enthält; den Kopfkommentar `:36-38`
+  nachziehen.
+- **V14-5, V24-3, V26-5, V18-5:**
+  - Fundstellen vor Ort messen. V18-5: `letzterAuditEintrag` hat `studio_id` bereits, gemeint ist vermutlich
+    `anzahlGeraeteZeilen()` (`:119-121`).
+  - Geschwisterstellen mitnehmen: `retention_verbandbuch_hold.js` und die zwei Wartungstests.
+  - Liste der geänderten Abfragen in den Bericht.
+- **V16-2:** Muster `(DESIGN_CSS|DESIGN_TOKENS_CSS)`.
+- **V16-7:** den Vorbild-Helfer `schliessendeKlammer()` (maskiert Strings und Templates) benutzen; keine naive
+  Klammerzählung.
+- **V17-2 und V13-3:**
+  - Die Uhr per `test/helfer/eingefrorene-uhr.js` im Kindprozess einfrieren; ein `Date.prototype`-Stub erreicht
+    `formatBerlinDate` nicht.
+  - Die Erwartung wird UNABHÄNGIG gerechnet (Literal für den Randfall 00:30 Berlin), nicht mit denselben
+    Funktionen.
+- **V15-1a:** vorher messen, welche Wettlauftests gemeint sind. Muster ist die PID-Barriere aus Szenario G.
+- **V17-3:** vorher messen, welches Konstrukt gemeint ist (an `:723-726` stehen Deadlock-Zusicherungen).
+- **V18-2:** die Zeilen `:176-177` sind schon begrenzt. Offen ist z. B. `auditAppend\([\s\S]*,\s*t\);`, alle
+  restlichen unbegrenzten Muster der Datei.
+- **V18-3:** Aufräumen im `finally`, einschliesslich `EXPORT_DIR`, mit Zusicherung „nach dem Fehlerweg existiert es
+  nicht mehr“.
+- **V22-2:** die Zahl ist heute 14 (gemessen). Auch `:316` („alle drei“ bei vier Einträgen) nachziehen, oder beide
+  dynamisch.
+- **V22-3:** der neue `git ls-files`-Aufruf bekommt try/catch mit Exit 2 (Muster `rechtsaussagen.js`).
+- **V22-4:** Fundstelle `:272`.
+- **V23-4/5:** den Schreibversuch vor Ort finden. Das Studio im `finally` wieder aktivieren.
+- **V26-4, V27-1..6:** Fundstellen aus `plaene/vollpruefung-befunde.md` (Bereiche 26/27) lesen; der Bauende darf
+  diese Datei lesen.
 
 ## Regeln
 

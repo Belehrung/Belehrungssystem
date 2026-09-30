@@ -1,6 +1,6 @@
 # Auftrag C5-D — Routen: stille Fehler, Eingaben, Statuscodes (Extrarunde)
 
-Fassung 1, 30.09.2026. Repo GymDocu, Stand master `13448c8`.
+Fassung 2, 30.09.2026 (Planprüfung flash + kimi, `scratchpad/c5plan/dicht/*c5d*`; tragende Befunde selbst nachgemessen, u. a. `server.js:308-316`, `routes/sichtpruefung.js:3660-3662`, `routes/wartung.js:1773-1803`). Repo GymDocu, Stand master `13448c8`.
 
 **Herkunft der Fundstellen.** Die Fundorte stehen in `plaene/c5-zustand-30-09.md` (Abschnitte `b3a`, `b3b`),
 gefunden per flash-Zustandsprüfung. Jede Fundstelle ist vor dem Bau NEU zu messen, denn Zeilen verschieben sich und
@@ -86,6 +86,84 @@ C5-A/B/C laufen parallel.
 18. **H2-R2-1** `routes/auth.js`: Der Marker-Zweig schreibt immer ein frisches Feld (`markerBestaetigtAm`) statt nur
     `delete`. Das `pending2fa`-Verhalten bleibt unberührt, das Feld gibt es nur im Tablet-Zweig.
 19. **V03-6:** nur Buchführung; der Eintrag wird mit Beleg `core/eingabe.js:35-41` geschlossen, kein Code.
+
+## Fassung 2 — verbindliche Änderungen aus der Planprüfung (gehen dem Text oben vor)
+
+**C2-S2 (Punkt 1).**
+- Gemeint ist der catch in `makeNeueFotosHandler` (`routes/sichtpruefung.js:3660-3662`, GET der Fotoseite). Er leitet
+  heute mit `?saved=1` weiter, also als Erfolg. Der Upload-catch (`:3472-3476`) ist NICHT gemeint, der meldet schon
+  `foto_fehler=upload`.
+- Die Behebung ersetzt dort `saved=1` durch den bestehenden Banner-Weg `foto_fehler=…` und ergänzt `melde`.
+  `saved=1` bleibt nur auf den echten Erfolgswegen.
+
+**C2-S6 (Punkt 2).**
+- Ein bestehender Test erzwingt heute bei einem PDF-Fehler 500 mit Text (vorher suchen). Die neue Seite (200, Banner,
+  Nachholweg `GET /verlauf`) ist ein BEWUSSTER Verhaltenswechsel. Der Test wird fachlich umgestellt, und der Wechsel
+  kommt in den Bericht.
+- Nicht „Techniker-Mail vor PDF“: die Mail wird nicht automatisch versendet (`:1466-1468`). Stattdessen: Die
+  Ermittlung von Sperre und Technikeradresse (`:1469-1477`) bekommt ein eigenes try/catch und läuft vor dem PDF.
+- Das Post-Commit-catch (`:1597-1632`) bleibt erhalten.
+- Mit 200 statt 500 entfällt der zweite Alarmkanal des globalen Fehlerbehandlers. Deshalb ist `melde` Pflicht.
+
+**P2-S3 (Punkt 12).**
+- Der Aufrufer `routes/wartung.js:1773` wertet heute den Wahrheitswert aus. Nach der Umstellung liest er `.ok`, sonst
+  wird aus jedem Fehlschlag ein Scheinerfolg.
+- Alle Rückwege von `sendeWartungsDefektMail` bekommen einen Grund, auch „schon gesendet“.
+- Tests: `test_feature_defekt_mail_race.js:54` und `test_feature_wartung_mail_seite_status.js:21/63` prüfen künftig
+  den `grund`-Wert und den Statuscode, nicht die Negation.
+
+**P2-S4 (Punkt 14).**
+- Der Handler antwortet heute zusätzlich mit 403 (Token), 404 (Studio unbekannt) und 500 (`server.js:309, 315, 657`).
+  Die Zusicherung umfasst die GESAMTE Menge.
+- Prüfmatrix: jeder Zweig (heute zehn bis elf `status`-Stellen, vorher zählen) wird im Test ausgelöst, nicht nur die
+  leicht erreichbaren.
+
+**C3a-S7 (Punkt 16).**
+- `inaktiv_seit` ist bewusst NICHT deckungsgleich mit `aktiv`: Ein Admin-Override darf den Zeitpunkt weder löschen
+  noch erneuern (`routes/webhooks.js:343-354`).
+- Zuerst den ursprünglichen Befund (C3a-S7, `offene-befunde-c3a.md`) nachmessen. Die Behebung erhält die
+  Override-Regel.
+- Pflichttests:
+  - ACTIVE ohne Merkmal;
+  - erstmalig INAKTIV;
+  - erneut INAKTIV (Datum bleibt);
+  - Admin-Override;
+  - der Rennfall.
+- Gegenprobe: eine invertierte Formel ⇒ ROT.
+
+**V03-8 (Punkt 8).**
+- `0` bleibt `null` (heutiges Verhalten, gemessen: `parseInt(...) || null`).
+- `-5`, `3.7`, `5abc` und `3651` ⇒ 400.
+- Der Test prüft den GESPEICHERTEN Wert, nicht nur den Statuscode.
+
+**V03-9 (Punkt 9).**
+- Beide Namensauflösungen werden über die ID eindeutig: `mitarbeiter` und `ersthelfer` (`:601-604`, Formular `:341`).
+- Passen ID und Name nicht zusammen ⇒ Ablehnung mit Hinweis.
+
+**V03-7 (Punkt 7).**
+- Ein `maxlength` gibt es im Formular NICHT.
+- Deckel: Namen 120, Freitexte 2000. Dieselben Werte kommen als `maxlength` ins Formular, aus EINER Konstante
+  (keine zweite Kopie).
+- `unfall_zeit` (datetime-local, `YYYY-MM-DDTHH:MM`): Kalendertag über `istGueltigesKalenderdatum`
+  (`core/geraete-alter.js:56-59`), Uhrzeit 00:00–23:59.
+
+**V05-4 (Punkt 6).** Die Fehler beim Einladungsversand (`routes/admin/mitarbeiter.js:684`, `:708`, heute nur
+`console.error`) gehören in dieselbe „eine Meldung je Lauf“.
+
+**V06-7 (Punkt 11).** Der Test prüft Status und Hinweistext, nie nur „kein PDF / Prozess lebt“.
+
+**P2-S6 (Punkt 15).** Den Fehler per Lese-Stub bzw. `require.cache` erzeugen. Kein echtes Löschen einer
+Vorlagendatei.
+
+**H2-R2-1 (Punkt 18).** `delete req.session.cookieUnbestaetigt` bleibt, `markerBestaetigtAm` kommt ZUSÄTZLICH dazu.
+Leser und Lebensdauer kommen als Kommentar dazu.
+
+**C2-S4 (Punkt 17).** ZWEI Wächter pinnen den `server.js`-Text: `test_feature_status_messfehler.js:837-855` UND
+`test_feature_onboarding.js:102`. Beide werden auf die neue Datei umgestellt. Die Funktion bekommt `konfigUnlesbar`
+als Parameter.
+
+**V03-6 (Punkt 19).** Der Schliessvermerk nennt die drei Grenzen des Wächters (`test/helfer/eingabetyp-scan.js:18-27,
+43-50`) ausdrücklich.
 
 ## Regeln
 
