@@ -73,3 +73,18 @@ Selbst gelesen: `antwortLesen()`, `formularIndizes()`, die Zuordnung live und be
 | R2-5 | sollte | `art='fotos'` bleibt stehen, wenn `konfliktSetzen` ohne `art` gerufen wird. | Nacharbeit 2 |
 | R2-6/7/8 | Anmerkung | `ok(true)` in B6l; 404 fehlt in der Liste; Kommentar zu 413 | Nacharbeit 2 |
 | E2E | Bestand | `test/e2e-durchlauf.js` ist auf master rot (5 FAIL, Abbruch bei `:332`), das Skript ist gegenüber der App gedriftet. | Sammelliste |
+
+## Runde 3 (Lesespur flash über Nacharbeit 2, `8c15e73..e32938b`)
+
+Selbst gelesen: `badgeRender` (`public/offline-queue.js:440-462`). Ein Konflikt `wiederholt` zeigt „Erfasste Defekte (bitte manuell nachtragen)“ und daneben „Erneut versuchen“. Wer beides tut, trägt die Defekte doppelt ein. Damit trägt R3-1. Das Zählen von 5xx mit JSON bleibt trotzdem: ein Eintrag mit einem gleichbleibenden 500 würde sonst die Kette für immer anhalten, und der Konflikt ist über „Erneut versuchen“ umkehrbar. Falsch ist nur der Text.
+
+| Nr | Schwere | Befund | Entscheidung |
+|---|---|---|---|
+| R3-1 | sollte | Ein Ausfall über 10 Zyklen (500 `{error}`, 502/504 mit JSON) macht aus der Prüfung einen Konflikt `wiederholt` mit „bitte manuell nachtragen“ neben „Erneut versuchen“. Wer beides tut, trägt doppelt ein. | Nacharbeit 3: Zählen bleibt. Der Text für `wiederholt` nennt die Reihenfolge: erst „Erneut versuchen“; erst wenn das dauerhaft scheitert, von Hand nachtragen UND den Eintrag verwerfen. |
+| R3-2 | sollte | CSRF-403 („Ungültige Herkunft“) zählt als Eintragsfehler. „Erneut versuchen“ von derselben Seite scheitert wieder. | Nacharbeit 3: wie `auth` behandeln (nicht zählen, Kette anhalten), Hinweis „Seite neu laden“ |
+| R3-3 | sollte | Ist die Sitzung schon gespeichert und fehlen nur Fotos, endet ein 10-facher Sitzungsfehler beim Replay als `wiederholt` mit Nachtrageliste. | Nacharbeit 3: ist die Sitzung schon übernommen, zählt der Fehler als `art 'fotos'` (keine Nachtrageliste) |
+| R3-4 | Anmerkung | `versuchZaehlen` wertet das Ergebnis von `qPutSicher` nicht aus. Bei vollem Speicher kreist der Eintrag über 10 hinaus. | Nacharbeit 3: Kette anhalten |
+| R3-5 | Anmerkung | Der Live-Pfad nutzt `qPut` roh. Ein Erfolg setzt `speicherFehler` nicht zurück, das Badge widerspricht sich. | Nacharbeit 3 |
+| R3-6 | Anmerkung | Für 408/429/Netz ist nicht belegt, dass sie die Kette anhalten. | Nacharbeit 3: je Fall ein zweiter Eintrag |
+| R3-7 | Anmerkung | B6s stützt sich auf die Reihenfolge aus dem Vorblock. | Nacharbeit 3: Erwartung ausdrücklich |
+| R3-8 | Anmerkung | Ein Captive Portal mit 200 + HTML lässt den Eintrag unbegrenzt kreisen, ohne Hinweis. Stand vorher genauso. | Sammelliste |
