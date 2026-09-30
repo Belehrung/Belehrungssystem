@@ -11,11 +11,20 @@ name: CI
   push:
   pull_request:
 
+# Workflow-Haertung (Auftrag GH, 30.09.2026, zizmor): Aktion auf der vollen
+# Commit-Kennung (Version als Kommentar; ein bewegliches Tag laesst sich vom
+# Betreiber der Aktion umbiegen), kein Zugangstoken im .git nach dem Checkout
+# (kein Schritt schreibt oder holt per git), und nur Leserechte.
+permissions:
+  contents: read
+
 jobs:
   hooks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Syntax-Check tools/live-check.sh
         run: bash -n tools/live-check.sh
