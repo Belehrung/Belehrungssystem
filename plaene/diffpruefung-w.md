@@ -148,3 +148,15 @@ Selbst gelesen: `tools/ausfuehr-manifest.sh` (längenpräfixierte Felder, NUL-ge
 | R4-2 | sollte | Ein Werkzeug-Befund beendet den Gegenleser-Lauf nicht; er endet regulär, obwohl nie ein Test lief. Der Kopf in `gegenleser-repo.js` sagt Exit 7. | Nacharbeit 4: eigener Marker, Exit ≠ 0, Kopf angleichen |
 | R4-3 | Anmerkung | Der Exit von `find` in `ausfuehr-manifest.sh` wird nicht geprüft (dasselbe Muster wie `diffpruefung-t2.md:41`). | Nacharbeit 4 |
 | R4-4 | Anmerkung | Ein Mountziel mit Leerzeichen löst einen Fehlalarm aus (sichere Richtung). | Nacharbeit 4, falls billig; sonst benannte Grenze |
+
+## Runde 5 (Lesespur flash über Nacharbeit 4, `0440275..440f83f`)
+
+Diff selbst gelesen. R5-1 ist gegengelesen: `kindLaufenSicher` (`tools/ausfuehr-spur.js:904-921`) setzt kein `werkzeugBefund`. `kanarieSicherstellen` (`:986-1001`) bricht deshalb bei jedem Infrastrukturfehler der Kanarie die Isolation ab. Das ist sicher (Exit 7, nichts gilt), aber falsch eingeordnet.
+
+| Nr | Schwere | Befund | Entscheidung |
+|---|---|---|---|
+| R5-1 | sollte | Ein LO in template1 (oder ein anderer Infrastrukturfehler) beim Kanarienlauf ergibt einen Isolationsabbruch mit Exit 7 statt eines Werkzeug-Befunds. Der Selbsttest ist nur grün, weil die Kanarie vorher schon lief. | Nacharbeit 5: `umgebung-fehler` der Kanarie gilt als Werkzeug-Befund (Exit 9). Dazu ein Fall mit dem LO VOR dem ersten Kanarienlauf. |
+| R5-2 | sollte | Der Leerzeichen-Fall prüft nicht, dass die Einhängung zustande kam (`mount` ohne `\|\| scheitern`). | Nacharbeit 5 |
+| R5-3 | Anmerkung | `mktemp` im Manifest-Skript hat kein `trap`. Beim Elternaufruf liegen Reste im Host-`/tmp`. | Nacharbeit 5: `trap … EXIT` |
+| R5-4 | Anmerkung | `printf %b` erzeugt aus `\x0a` einen echten Zeilenumbruch. Die zeilenweise Erlaubnisliste wird damit offen. Eine Einhängung kann nur die Vorbereitung anlegen, nicht das Modell. | Nacharbeit 5: Ziele mit Zeilenumbruch abweisen (`return 1`) |
+| R5-5 | Anmerkung | Die Kette Manifest-Exit → Aufbau → „MANIFEST NICHT ERMITTELBAR“ hat keinen Fall im Kindlauf. | Nacharbeit 5: Fall mit verkrüppeltem Manifest-Skript |
