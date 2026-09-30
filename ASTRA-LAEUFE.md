@@ -329,6 +329,7 @@ sondern falsch.
 | 30.09.2026 | QR-J Planpruefung N8 Spur a (deepseek-flash) | Diff 70 Zeilen, Suchen 15, Lesungen 22, Token rein 1557389, Token raus 81569, Runden 18 | — | — | — | 0,57 $ |
 | 30.09.2026 | DB-INIT Planpruefung Spur a (deepseek-flash) | Diff 61 Zeilen, Suchen 23, Lesungen 27, Token rein 1515593, Token raus 55993, Runden 23 | — | — | — | 0,52 $ |
 | 30.09.2026 | DB-INIT Planpruefung Spur b (deepseek-flash) | Diff 61 Zeilen, Suchen 46, Lesungen 27, Token rein 2967239, Token raus 77789, Runden 29 | — | — | — | 0,98 $ |
+| 30.09.2026 | DB-INIT Planpruefung Runde 2 (deepseek-flash) | Diff 93 Zeilen, Suchen 29, Lesungen 25, Token rein 2461155, Token raus 65039, Runden 28 | — | — | — | 0,82 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
