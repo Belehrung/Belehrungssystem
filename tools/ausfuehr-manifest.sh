@@ -22,16 +22,18 @@
 set -u
 export LC_ALL=C
 cd "${1:?Verzeichnis}" || exit 2
-ausgabe=$(mktemp) && fehler=$(mktemp) || exit 3
+# Temporaerdateien haengen an einem EXIT-Trap (Runde 5 Befund 3): auch wenn
+# das zweite mktemp scheitert oder ein Signal kommt, bleibt nichts liegen.
+ausgabe=$(mktemp) || exit 3
+trap 'rm -f "$ausgabe" "${fehler:-}"' EXIT
+fehler=$(mktemp) || exit 3
 find . -path ./node_modules -prune -o -printf '%y\0%p\0%l\0' > "$ausgabe" 2> "$fehler"
 rc=$?
 if [ "$rc" -ne 0 ] || [ -s "$fehler" ]; then
     echo "ausfuehr-manifest: find endete mit $rc: $(head -c 400 "$fehler")" >&2
-    rm -f "$ausgabe" "$fehler"
     exit 3
 fi
 mapfile -d '' -t felder < "$ausgabe"
-rm -f "$ausgabe" "$fehler"
 n=${#felder[@]}
 (( n > 0 && n % 3 == 0 )) || { echo "ausfuehr-manifest: $n Felder, erwartet ein Vielfaches von 3 (> 0)" >&2; exit 3; }
 for ((i = 0; i < n; i += 3)); do

@@ -991,9 +991,12 @@ async function kanarieSicherstellen() {
     const r = await kindLaufenSicher({ testdatei: k.datei, zweck: 'kanarie' });
     k.ergebnis = r;
     k.gruen = r.gueltigerGrundlauf;
-    if (!k.gruen && r.werkzeugBefund) {
-        // Isolation intakt, das Werkzeug passt nur nicht auf diesen Host:
-        // kein Abbruchmarker, aber keine Ausfuehrung in diesem Lauf.
+    if (!k.gruen && (r.werkzeugBefund || (r.status === 'umgebung-fehler' && !r.isolationGebrochen))) {
+        // Werkzeug-Befund (Runde 3 Befund 7, Runde 5 Befund 1): die Kanarie
+        // laeuft VOR jedem Modellcode — ein umgebung-fehler dort (Host-
+        // Anordnung, Infrastruktur, Aufbau) ist ein Befund gegen das Werkzeug,
+        // kein Isolationsbruch: kein Abbruchmarker, aber keine Ausfuehrung.
+        // Ein echter Isolationsbruch (isolationGebrochen) bleibt Abbruch.
         lauf.werkzeugBefund = `WERKZEUG-BEFUND der Kanarie ${k.datei}: ${r.grund}`;
         console.error(`[ausfuehr-spur] ${lauf.werkzeugBefund} — keine Ausfuehrung, Isolation intakt.`);
     } else if (!k.gruen) isolationAbbrechen(`Kanarie ${k.datei} nicht gruen: ${r.status} (${r.grund})`);
@@ -1461,13 +1464,15 @@ async function selbsttestSpur(pruefen) {
         fs.mkdirSync(path.join(mfDir, 'geheim')); fs.writeFileSync(path.join(mfDir, 'geheim', 'b'), 'b');
         fs.chmodSync(path.join(mfDir, 'lib'), 0o755); fs.chmodSync(path.join(mfDir, 'lib', 'a'), 0o644);
         fs.chmodSync(path.join(mfDir, 'geheim'), 0o000);
-        const alsNobody = (dir) => spawnSync('setpriv', ['--reuid=65534', '--regid=65534', '--clear-groups', 'bash', MANIFEST_SKRIPT, dir], { encoding: 'utf8', env: { PATH: KIND_PATH } });
+        const mfTmp = path.join(basis, 'manifest-tmp');
+        fs.mkdirSync(mfTmp, { mode: 0o1777 });
+        const alsNobody = (dir) => spawnSync('setpriv', ['--reuid=65534', '--regid=65534', '--clear-groups', 'bash', MANIFEST_SKRIPT, dir], { encoding: 'utf8', env: { PATH: KIND_PATH, TMPDIR: mfTmp } });
         const mfRot = alsNobody(mfDir);
         fs.chmodSync(path.join(mfDir, 'geheim'), 0o755); fs.chmodSync(path.join(mfDir, 'geheim', 'b'), 0o644);
         const mfGruen = alsNobody(mfDir);
-        pruefen(`MANIFEST-SKRIPT: unlesbares Verzeichnis (als 65534) -> Exit ${mfRot.status} mit find-Meldung statt verkuerzter Liste; lesbar -> Exit ${mfGruen.status} mit 5 Saetzen`,
+        pruefen(`MANIFEST-SKRIPT: unlesbares Verzeichnis (als 65534) -> Exit ${mfRot.status} mit find-Meldung statt verkuerzter Liste; lesbar -> Exit ${mfGruen.status} mit 5 Saetzen; keine Temporaerdatei bleibt (TMPDIR danach: ${fs.readdirSync(mfTmp).length} Eintraege)`,
             mfRot.status === 3 && /find endete mit 1/.test(mfRot.stderr) && /Permission denied/.test(mfRot.stderr) && mfRot.stdout === ''
-            && mfGruen.status === 0 && mfGruen.stdout.split('\0').length - 1 === 5);
+            && mfGruen.status === 0 && mfGruen.stdout.split('\0').length - 1 === 5 && fs.readdirSync(mfTmp).length === 0);
 
         // ----- Kein Zustand, Umgebungsvertrag, Riegel, Deckel -----
         const z1 = await werkzeugAufrufen('teste', { testdatei: 'test_zustand.js' });
@@ -1569,8 +1574,9 @@ async function selbsttestSpur(pruefen) {
         pruefen('GEGENPROBE-VORBEREITUNG: die proc-Zeile (hidepid=2) kommt genau einmal vor', fundstellenZaehlen(aufbauOriginal, procZeile) === 1);
         await einrichten({ wurzel: fx.wurzel, istHartGesperrt, tSekunden: T_KURZ, aufbauSkript: aufbauOhneProc });
         const s20 = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
-        pruefen('AUFBAU GESCHEITERT (Stufe 20): umgebung-fehler mit exit 20 in der Kanarie, kein Testergebnis, Isolationsabbruch (Kanarie nicht gruen)',
-            s20.abgelehnt && lauf.kanarie.ergebnis.status === 'umgebung-fehler' && lauf.kanarie.ergebnis.exit === 20 && lauf.kanarie.ergebnis.waechter === false);
+        pruefen('AUFBAU GESCHEITERT (Stufe 20): umgebung-fehler mit exit 20 in der Kanarie, kein Testergebnis, Werkzeug-Befund statt Isolationsabbruch (Isolation intakt, keine Ausfuehrung)',
+            s20.abgelehnt && s20.text.includes('WERKZEUG-BEFUND der Kanarie') && lauf.kanarie.ergebnis.status === 'umgebung-fehler' && lauf.kanarie.ergebnis.exit === 20 && lauf.kanarie.ergebnis.waechter === false
+            && istWerkzeugBefund() && !istAbgebrochen());
         aufraeumen();
 
         // ----- Positivkontrollen zu W-E3 am Aufbauskript: ohne Beenden entsteht der Marker, ohne kill bleibt der Prozess dem Scan -----
@@ -1611,12 +1617,43 @@ async function selbsttestSpur(pruefen) {
         // findmnt -r maskiert das Leerzeichen als \x20; ohne Dekodierung stand
         // "/tmp/mit\x20leerzeichen" in der Erlaubnisliste, find meldete den
         // echten Pfad als Rest -> Exit 25 fuer eine rechtmaessige ro-Einhaengung.
+        // Der Mount faellt laut (|| scheitern), und die Einhaengung wird im
+        // Kindlauf nachgewiesen (findmnt-Zeile in der Ausgabe von PID 1) —
+        // sonst waere der Fall mit "true" statt mount ebenso gruen (Runde 5 Befund 2).
         const aufbauLeerzeichen = path.join(basis, 'aufbau-leerzeichen.sh');
-        fs.writeFileSync(aufbauLeerzeichen, aufbauOriginal.replace(vorbereitungZeile, 'mkdir -p "/tmp/mit leerzeichen" && mount -n -t tmpfs -o ro tmpfs "/tmp/mit leerzeichen"   # Selbsttest: ro-Mount mit Leerzeichen\n' + vorbereitungZeile));
-        await einrichten({ wurzel: fx.wurzel, istHartGesperrt, tSekunden: T_KURZ, aufbauSkript: aufbauLeerzeichen });
+        fs.writeFileSync(aufbauLeerzeichen, aufbauOriginal.replace(vorbereitungZeile,
+            'mkdir -p "/tmp/mit leerzeichen" && mount -n -t tmpfs -o ro tmpfs "/tmp/mit leerzeichen" || scheitern "ro-Mount mit Leerzeichen (Selbsttest)"\n'
+            + 'echo "[dsv1] Selbsttest: Einhaengung mit Leerzeichen: $(findmnt -rn -o TARGET,OPTIONS "/tmp/mit leerzeichen")"\n' + vorbereitungZeile));
+        const lzEintraege = [];
+        await einrichten({ wurzel: fx.wurzel, istHartGesperrt, tSekunden: T_KURZ, aufbauSkript: aufbauLeerzeichen, protokoll: (p) => lzEintraege.push(p) });
         const tlz = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
-        pruefen(`RO-MOUNT MIT LEERZEICHEN: eine ro-Einhaengung "/tmp/mit leerzeichen" nach der Selbstmessung wird dekodiert und geduldet -> Kanarie und Lauf bestanden (${tlz.status})`,
-            tlz.status === 'bestanden' && lauf.kanarie.gruen);
+        pruefen(`RO-MOUNT MIT LEERZEICHEN: eine ro-Einhaengung "/tmp/mit leerzeichen" nach der Selbstmessung besteht nachweislich (findmnt im Kind), wird dekodiert und geduldet -> Kanarie und Lauf bestanden (${tlz.status})`,
+            tlz.status === 'bestanden' && lauf.kanarie.gruen && lzEintraege.length >= 1
+            && lzEintraege.every((e) => e.ausgabe.includes('[dsv1] Selbsttest: Einhaengung mit Leerzeichen: /tmp/mit\\x20leerzeichen ro,')));
+        aufraeumen();
+
+        // ----- Mountziel mit Zeilenumbruch unter den Ablagen: fail-closed mit eigener Meldung (Runde 5 Befund 4) -----
+        const aufbauUmbruch = path.join(basis, 'aufbau-umbruch.sh');
+        fs.writeFileSync(aufbauUmbruch, aufbauOriginal.replace(vorbereitungZeile,
+            'z=$(printf "/tmp/mit\\numbruch"); mkdir -p "$z" && mount -n -t tmpfs -o ro tmpfs "$z" || scheitern "ro-Mount mit Zeilenumbruch (Selbsttest)"\n' + vorbereitungZeile));
+        await einrichten({ wurzel: fx.wurzel, istHartGesperrt, tSekunden: T_KURZ, aufbauSkript: aufbauUmbruch });
+        const tum = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
+        pruefen('MOUNTZIEL MIT ZEILENUMBRUCH: eine ro-Einhaengung "/tmp/mit<LF>umbruch" wird nach der Dekodierung mit eigener Meldung abgewiesen -> Exit 25, manipuliert (nicht "Ablagen nicht leer")',
+            tum.abgelehnt && lauf.kanarie.ergebnis.status === 'manipuliert' && lauf.kanarie.ergebnis.exit === 25
+            && lauf.kanarie.ergebnis.ausgabe.includes('Mountziel mit Zeilenumbruch/Steuerzeichen unter den Ablagen') && !lauf.kanarie.ergebnis.ausgabe.includes('Ablagen nach dem Leeren nicht leer'));
+        aufraeumen();
+
+        // ----- Manifest-Skript scheitert im Kind: MANIFEST NICHT ERMITTELBAR, Exit 25 (Runde 5 Befund 5) -----
+        // Nach der Selbstmessung wird eine Attrappe (exit 3) ueber das
+        // Manifest-Skript der ro-Werkzeugablage gebunden.
+        const aufbauManifestKaputt = path.join(basis, 'aufbau-manifest-kaputt.sh');
+        fs.writeFileSync(aufbauManifestKaputt, aufbauOriginal.replace(vorbereitungZeile,
+            "printf '#!/bin/bash\\nexit 3\\n' > /tmp/manifest-kaputt.sh && mount -n --bind /tmp/manifest-kaputt.sh /dsv1/werkzeug/ausfuehr-manifest.sh || scheitern \"Manifest-Attrappe (Selbsttest)\"\n" + vorbereitungZeile));
+        await einrichten({ wurzel: fx.wurzel, istHartGesperrt, tSekunden: T_KURZ, aufbauSkript: aufbauManifestKaputt });
+        const tmk = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
+        pruefen('MANIFEST NICHT ERMITTELBAR: endet das Manifest-Skript im Kind mit 3, ist das kein Vergleich, sondern Exit 25 mit eigener Meldung (nicht "MANIFEST VERLETZT")',
+            tmk.abgelehnt && lauf.kanarie.ergebnis.status === 'manipuliert' && lauf.kanarie.ergebnis.exit === 25
+            && lauf.kanarie.ergebnis.ausgabe.includes('MANIFEST NICHT ERMITTELBAR nach der Vorbereitung') && !lauf.kanarie.ergebnis.ausgabe.includes('MANIFEST VERLETZT'));
         aufraeumen();
 
         // ----- Host-Anordnung ausserhalb der Literal-Praefixe: Werkzeug-Befund, KEIN Isolationsabbruch (Runde 3 Befund 7) -----
@@ -1671,6 +1708,17 @@ async function selbsttestSpur(pruefen) {
         const tg2 = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/wert.js', alt: '42', neu: '43', testdatei: 'test_geheimnis.js' });
         pruefen(`TRANSIENT IM GRUNDLAUF: mutiere_und_teste mit scheiternder Verwaltung -> grundlauf-rot (${tg1.status}), nichts gemerkt, der naechste Aufruf faehrt den Grundlauf frisch und gelingt (${tg2.status})`,
             tg1.status === 'grundlauf-rot' && tg1.text.includes('Infrastrukturfehler des Werkzeugs (Datenbankverwaltung)') && tg2.status === 'bestanden' && tg2.text.includes('gueltig (in diesem Aufruf gefahren)'));
+        aufraeumen();
+
+        // ----- Infrastrukturfehler in der ERSTEN Kanarie eines frischen Laufs: Werkzeug-Befund, kein Isolationsabbruch (Runde 5 Befund 1) -----
+        await einrichten({ wurzel: fx.wurzel, istHartGesperrt, tSekunden: T_KURZ });
+        psqlVerwaltungIn('template1', 'SELECT lo_create(0)');   // als postgres, VOR dem ersten Kanarienlauf
+        const tk1 = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
+        const tk2 = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
+        pruefen(`KANARIE MIT INFRASTRUKTURFEHLER: LO in template1 vor dem ersten Kanarienlauf -> Werkzeug-Befund mit dem Infrastruktur-Grund, kein Abbruchmarker, kein weiterer Test (Ausfuehrungen ${zaehler().ausfuehrungen})`,
+            tk1.abgelehnt && tk1.text.includes('WERKZEUG-BEFUND der Kanarie') && tk1.text.includes('(Datenbankverwaltung)') && !tk1.text.includes('AUSFÜHRUNG ABGEBROCHEN')
+            && istWerkzeugBefund() && !istAbgebrochen() && lauf.kanarie.ergebnis.status === 'umgebung-fehler' && lauf.kanarie.ergebnis.isolationGebrochen === false
+            && tk2.abgelehnt && tk2.text.includes('WERKZEUG-BEFUND') && zaehler().ausfuehrungen === 0);
         aufraeumen();
 
         // ----- Reste eines abgestuerzten Laufs: Sperr-Halter getoetet, nichts aufgeraeumt, Neustart raeumt -----

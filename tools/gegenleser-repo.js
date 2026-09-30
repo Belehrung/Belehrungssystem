@@ -4453,9 +4453,10 @@ async function selbsttestAusfuehrung() {
     // Vorbereitungszeile, fremdes Mountziel, Werkzeug-Befund) = 136; Runde 4
     // dazu LAUF E6 (Werkzeug-Befund durch den ganzen Lauf) x3 und in
     // selbsttestSpur() LO in template1, Manifest-Skript find-Exit, ro-Mount
-    // mit Leerzeichen = 142. Unten durch den
+    // mit Leerzeichen = 142; Runde 5 dazu Kanarie mit Infrastrukturfehler,
+    // Mountziel mit Zeilenumbruch, Manifest nicht ermittelbar = 145. Unten durch den
     // tatsaechlichen Lauf bestaetigt.
-    const ERWARTETE_FAELLE = 142;
+    const ERWARTETE_FAELLE = 145;
     if (process.getuid() !== 0) {
         if (process.env.CI === 'true') {
             console.log(`  ✗ FEHLT: --selbsttest-ausfuehrung braucht root (uid 0, gefunden ${process.getuid()}) -- unter CI=true ist das ROT, kein SKIP.`);

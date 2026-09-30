@@ -243,6 +243,9 @@ ablagen_leeren() {
         # entspricht, was find unten meldet.
         ziel=$(printf '%b' "$ziel")
         case "$ziel" in /tmp/*|/var/tmp/*|/dev/shm/*) ;; *) continue ;; esac
+        # Fail-closed mit eigener Meldung (Runde 5 Befund 4): ein Ziel mit
+        # Zeilenumbruch oder Steuerzeichen passt in keine zeilenweise Liste.
+        case "$ziel" in *[[:cntrl:]]*) echo "[dsv1] Mountziel mit Zeilenumbruch/Steuerzeichen unter den Ablagen (fail-closed): $(printf '%q' "$ziel")" >&2; return 1 ;; esac
         case "$optionen" in ro|ro,*) ;; *) echo "[dsv1] fremdes Mountziel unter den Ablagen (nicht ro): $ziel ($optionen)" >&2; return 1 ;; esac
         while [ "$ziel" != /tmp ] && [ "$ziel" != /var/tmp ] && [ "$ziel" != /dev/shm ] && [ "$ziel" != / ] && [ -n "$ziel" ]; do
             erlaubt="$erlaubt$ziel"$'\n'
