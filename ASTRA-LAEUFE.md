@@ -323,6 +323,7 @@ sondern falsch.
 | 30.09.2026 | QR-J N7 Planpruefung Spur b (flash) (deepseek-flash) | Diff 74 Zeilen, Suchen 16, Lesungen 21, Token rein 1497412, Token raus 121837, Runden 12 | — | — | — | 0,60 $ |
 | 30.09.2026 | QR-J N7 Planpruefung R2 Spur b (flash) (deepseek-flash) | Diff 103 Zeilen, Suchen 14, Lesungen 16, Token rein 959022, Token raus 94103, Runden 9 | — | — | — | 0,40 $ |
 | 30.09.2026 | QR-J N7 Planpruefung R2 Spur a (flash) (deepseek-flash) | Diff 103 Zeilen, Suchen 10, Lesungen 19, Token rein 1740705, Token raus 120655, Runden 18 | — | — | — | 0,67 $ |
+| 30.09.2026 | GH Diff (Lesespur flash) (deepseek-flash) | Diff 1412 Zeilen, Suchen 20, Lesungen 21, Token rein 1745336, Token raus 93155, Runden 15 | — | — | — | 0,64 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
