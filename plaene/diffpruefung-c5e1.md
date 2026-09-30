@@ -65,3 +65,14 @@ Ich habe den Diff selbst gelesen. Eine dritte Runde gibt es nicht. R2-3 ändert 
 - `test_feature_pentest_p1_struktur.js:665`
 
 Ein Aufrufer, der den Fehler schluckt, macht den Lauf deshalb trotzdem rot. R2-1, R2-2 und R2-6 sind Kommentar- und Testarbeit, R2-4 und R2-5 sind Einstufungen mit Fällen in beide Richtungen.
+
+## Volle Suite auf `9c2a5c3` (nach dem Merge von C5-B): rot
+
+`SUITE_EXIT=1`, Dateizahl 426 = 426, genau 1 FAIL: `test_feature_qr_journal.js` F3.
+
+Ursache: ein Flake im Bestand, der schon vorher angelegt war.
+- F2b lässt eine unerledigte Präfix-Zeile (abgerissene Studiozahl) im Journal.
+- F3 legt danach das nächste Studio an. Liegt dessen ID in derselben Zehnergruppe, sperrt die Vergabe fail-closed.
+- Ob das passiert, hängt nur an der Zahl der Studios, die die Suite vorher angelegt hat. Auf master ist die Datei heute zufällig grün.
+
+Nacharbeit 3: die Fixtur wird von der ID-Folge unabhängig, mit einer erzwungenen Gegenprobe.
