@@ -580,3 +580,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
 - 30.09.2026 11:10 UTC: Teil G Nacharbeit fertig (`001ff65`, Suite 412 = 412, Wächter 71/0), PR offen, CI läuft. D in Nacharbeit.
 - 30.09.2026 11:05 UTC: D Nacharbeit fertig (`2ba8067`: Kanarienwert ohne PEM-Rahmen, `continue-on-error` bewacht; Suite 413 = 413), Diffprüfung Lesespur läuft. Teil W im Bau (Fable-Executer, Baum `/workspace/belehrung-w`, lokaler Zweig `w-bau`; Messziel `/workspace/gymdocu-w` = G `001ff65`). G-PR: CI läuft.
 - 30.09.2026 11:32 UTC: Teil G #489 gemergt (`d915f0e`), Deploy 456 success, live-check EXIT 0 (2 ℹ wie immer). D in Nacharbeit 2 (`diffpruefung-d.md`), W im Bau.
+- 30.09.2026 11:55 UTC: D Nacharbeit 2 fertig (`8afb01f`), PR offen, CI läuft. Erster Deploy danach ist die Probe des neuen SSH-Schritts.

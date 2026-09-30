@@ -17,4 +17,9 @@ hat den run:-Text gegen einen echten sshd gefahren und 59 Mutationen gemessen; d
 | D-B8 | keyscan-stderr verworfen | trägt | Nacharbeit 2 |
 | D-B9 | Formatprüfung des eigenen Literals | trägt, gewollt | — |
 
+Nacharbeit 2 `8afb01f` (+ Merge `d915f0e`): Muster am Zeilenanfang (fünf, `^Connection timed out` gemessen
+nachgetragen), Abschlusszeile Pflicht (in der Produktionsausgabe von Deploy 455 nachgesehen: `▶ Deploy abgeschlossen ✅`),
+`-t ecdsa` doppelt bewacht, Scan-stderr ausgegeben. Selbst gefahren: 225/0, 20/0; Diff ohne Geheimnis-Muster. Suite
+413 = 413 (Bauer), 68 Mutationen.
+
 -- Ende --
