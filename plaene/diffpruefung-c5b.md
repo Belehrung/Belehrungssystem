@@ -38,3 +38,21 @@ Ohne Befund gemessen (Mutation ⇒ ROT):
 Sonde „alle 100 Zeilen des ersten Blocks bekommen einen Hold“: 150 gelöscht, keine Schleife.
 
 -- Ende --
+
+## Runde 2 (Lesespur flash über die Nacharbeit 1, `61380af..1e2bad0`)
+
+Der Diff von Nacharbeit 1 ist selbst gelesen (core, workers, ops). Befunde:
+
+| Nr | Schwere | Befund | Nachgemessen | Entscheidung |
+|---|---|---|---|---|
+| R2-1 | sollte | Die Begründung des Zustandsorts zitiert `ops/deploy.sh` falsch: Unversioniertes sperrt den Deploy seit der Entschärfung nicht mehr. Das eigentliche Risiko ist eine ignorierte Datei beim Fast-Forward. | gelesen `ops/deploy.sh:214-235`, trägt | Nacharbeit 2 |
+| R2-2 | sollte | Der erste Schreiber besitzt Verzeichnis und Datei (0600). Ein CLI-Lauf als root sperrt den Webprozess dauerhaft aus; danach kommen täglich zwei Meldungen. | gelesen, trägt | Nacharbeit 2 |
+| R2-3 | sollte | Defekte ausserhalb des Höchstalters fallen spurlos aus dem Wiederholer. | gelesen, trägt | Nacharbeit 2: Zähler `zuAlt` plus Logzeile |
+| R2-4 | – | Die Studio-Signatur wird vor dem Löschen gebildet, jede neue reifende Datei meldet also neu. | Das ist so gewollt: die Meldung soll vor dem Löschen einer Datei stehen, die noch niemand gesehen hat. Auch vor N1 schon so, kein Regress. | keine Änderung |
+| R2-5 | Anmerkung | `docs/STORAGE_REPLICA.md:35` „höchstens ~25 min“ ohne die neue Ausnahme. | gelesen | Nacharbeit 2 |
+| R2-6 | Anmerkung | `dead_at` stammt von der App-Uhr, verglichen wird mit `now()`. | gelesen | Nacharbeit 2: `LEAST(dead_at, now())` |
+| R2-7 | Anmerkung | „V07-8“ hat im GymDocu-Repo keine Fundstelle. | gelesen | Nacharbeit 2: Quelle nennen |
+| R2-8 | Anmerkung | Die Zerlegung „0,4 ms plus 70 ms“ passt nicht zu den Messwerten (110 gegen 159 ms). | nachgerechnet, trägt | Nacharbeit 2 |
+| R2-9 | – | Ein Ausfall des Meldekanals beim Stopp wird nur geloggt. | so gewollt (Auftrag) | keine Änderung |
+| R2-10 | Anmerkung | „ohne `id > $3` bleibt jeder Verhaltenstest grün“ ist nicht nachvollziehbar belegt. | gelesen | Nacharbeit 2: als benannte Grenze formulieren |
+| R2-E | Anmerkung (eigen) | `ops/schluessel-rotieren.js` schreibt „Trockenlauf jederzeit“ dem Betreiber zu. Es stammt aus dem Auftrag (`auftrag-c5b-sperren-melden.md:198`). | gelesen | Nacharbeit 2 |
