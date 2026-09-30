@@ -633,3 +633,10 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
 - 30.09.2026 20:00 UTC: **C5-F ausgeliefert.** Deploy-Lauf 458 (`workflow_run`, `db1dc98`) war `success`, also nimmt GitHub `queue: max` an. `tools/live-check.sh` EXIT 0, zwei Punkte ℹ wie immer (Zertifikat, Health).
   - W N4 ist fertig (`440f83f`, Selbsttest-Ausführung 142/0, K13–K18 rot). Runde 5 (flash) läuft, weil die Nacharbeit Verhalten ändert (Exit 9, Wurf vor dem Klonen).
   - Die Suite von C5-E1 N2 steht in der Schlange; sein Bauender hat vor dem Ende aufgehört zu warten.
+- 30.09.2026 20:40 UTC: **C5-B gemergt** (#492, squash `d9eec8b`, CI 6/6 grün, kein Bot-Befund).
+  - Fehler von mir: im PR-Rumpf und in der Squash-Botschaft stand „tote Jobs nach 7 Tagen abgeräumt“. Das gehört zu C5-A, nicht zu C5-B. Den PR-Rumpf habe ich berichtigt. Die Botschaft auf master bleibt falsch stehen, weil ein Force-Push ausscheidet; die Berichtigung steht im PR-Rumpf.
+  - C5-G1 (Fable) und C5-G2 bauen. C5-E2 baut.
+  - C5-A N2 ist fertig, master ist hereingenommen (`d5722ab`), die Suite steht in der Schlange.
+  - C5-E1 hat master hereingenommen (`9c2a5c3`), die Suite steht in der Schlange.
+  - Q Runde 3 (flash): 8 Befunde, davon 3 „sollte“. Nacharbeit 3 läuft, R3-8 steht auf der Sammelliste.
+  - W Runde 5 (flash): 5 Befunde, Nacharbeit 5 läuft.

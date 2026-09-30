@@ -43,3 +43,9 @@ Den B7-Rückfall (Stilllegen nach 23503 in eigener `auditTx`, `studio_id` in jed
 | R2-4 | Anmerkung | Der Monats-Lock hat keinen Timeout, die Haltezeit ist jetzt die ganze PDF-Erzeugung. | Sammelliste (F3 erweitert) |
 | R2-5 | – | `last_error` in der Meldung: Telegram bekommt nur Quelle und Signatur, der Text steht nur im Serverlog. | kein Befund |
 | R2-6 | Anmerkung | Die Zusicherung „Lock nach Fehlschlag frei“ belegt den Lock selbst nicht. Das tragen C und D. | Nacharbeit 2: Text präzisieren |
+
+## Nacharbeit 2 (`43f7bfc..720a14f`) und Merge von master (`d5722ab`), selbst gelesen
+
+R2-2, R2-3 und R2-6 sind wie entschieden umgesetzt; eine dritte Runde gibt es nicht. R2-2 fügt nur eine Rückmeldung hinzu, der Test hat eine Gegenprobe (ROT 62/1).
+
+Der einzige Merge-Konflikt lag in `core/storage-replica.js` `requeueStale()`. Aufgelöst ist er richtig: die Parameter `[leaseMin, limit, totMin]` kommen aus C5-B, `abgeraeumt` aus C5-A. Die beiden Wege schliessen einander nicht aus. C5-B belebt tote Jobs MIT Zeile (erst 60 min nach dem Tod), C5-A löscht tote Jobs OHNE Zeile nach 7 Tagen.
