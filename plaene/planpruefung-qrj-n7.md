@@ -19,3 +19,15 @@ Selbst nachgemessen (Stichproben am Code, Rest über die zitierten Zeilen):
 - B-4 (trägt): B7/R7-L9 nur per Handzeile → als Verteidigung gekennzeichnet.
 - A-1 (Anmerkung): `:2964/:2941` `geschrieben === false` bei Trockenlauf strukturell wahr — Sammelliste-Kandidat, nicht
   in N7.
+
+## Runde 2 (Fassung 2, `scratchpad/qrjn7p/antwort2-{a,b}.txt`, 0,67 $ + 0,40 $)
+
+Selbst gelesen und eingearbeitet (Fassung 3): A-B1 Untergrenze bindet bei Präfix fremde Nummernräume → nur genau; A-B2/
+B-F1 Block-Ausweg öffnet unsichtbare Kreuzungsspannen → kein Schalter, Abbruch + benannte Grenze; A-B3/B-F7 Benennung
+über A(idx) öffnet `--ausgenommene-freigeben=S` → eigene Eigenschaft; A-B4 `charge` ab Länge 3 unmöglich; A-B5 Texte;
+A-B6/B-F2/B-F9 Erklärung an Meldung mit Zeile K binden, `chargeAnlegen` meldet heute nicht (`core/qr-token.js:968`);
+A-B8 Fixtur verwerfbar; A-B9/B-F5 `:1304`, `:1286`; B-F6 `:1310-1311`; A-B10 Feldname; A-B11 Länge 5–8; B-F4
+Korrigieren-Frischprüfung mit Neuerhebung und Hook; B-F8 Anker gegen angeklebten Rest. Nicht übernommen: B-F3 (belegfreier
+Weg für meldungslose Kurzrisse) — widerspricht fail-closed, als benannte Grenze geführt.
+Dritte Planrunde ausgelassen: die verbleibenden Punkte sind Entscheidungen (benannte Grenzen), keine offenen
+Tatsachenfragen; die Diffprüfung folgt.
