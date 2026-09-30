@@ -419,6 +419,9 @@ OpenRouter-Schlüssel liegt zusätzlich in `/tmp/claude-0/.openrouter-key` (Rech
 Kimi-Probe ging durch); ungenutzt, nicht im Prüfwerkzeug. Vor der nächsten Planprüfung Kimi-Guthaben über
 `/v1/users/me/balance` prüfen.
 
+Stand 30.09.2026 04:23 UTC: **GymDocu DEP ausgeliefert** (#485, squash `364087f`, Deploy 452 success, live-check EXIT 0;
+nodemailer 10.0.12 live). Offen aus DEP: `plaene/offene-befunde-dep.md`.
+
 Stand 30.09.2026 03:53 UTC: Hauptserver **#103 (DEP)** und **#102 (CI-Härtung)** gemergt (Botschaften zurückgelesen).
 Hauptserver hat keinen Auto-Deploy: Betreiber braucht `git pull --ff-only origin master` + `npm ci` (nodemailer 10).
 GymDocu DEP #485 CI läuft. GymDocu GH in Nacharbeit 1. QR-J N7 im Bau (Suite).
