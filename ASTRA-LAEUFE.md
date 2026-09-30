@@ -345,6 +345,7 @@ sondern falsch.
 | 30.09.2026 | Planpruefung D Fassung 2 Spur B (Vorgeschichte) (deepseek-flash) | Diff 101 Zeilen, Suchen 26, Lesungen 19, Token rein 677324, Token raus 71804, Runden 12 | — | — | — | 0,29 $ |
 | 30.09.2026 | Planpruefung D Fassung 2 Spur A (GymDocu) (deepseek-flash) | Diff 101 Zeilen, Suchen 11, Lesungen 27, Token rein 1196769, Token raus 117016, Runden 12 | — | — | — | 0,50 $ |
 | 30.09.2026 | Diffpruefung Teil G Lesespur (deepseek-flash) | Diff 859 Zeilen, Suchen 21, Lesungen 27, Token rein 2481984, Token raus 89235, Runden 21 | — | — | — | 0,85 $ |
+| 30.09.2026 | Diffpruefung D Lesespur (deepseek-flash) | **abgebrochen** (Geheimnis-Riegel auf dem Eingabediff): Diff 1441 Zeilen, Suchen 0, Lesungen 0, Token rein 0, Token raus 0, Runden 0 | — | — | — | 0,00 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
