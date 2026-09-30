@@ -419,6 +419,9 @@ OpenRouter-Schlüssel liegt zusätzlich in `/tmp/claude-0/.openrouter-key` (Rech
 Kimi-Probe ging durch); ungenutzt, nicht im Prüfwerkzeug. Vor der nächsten Planprüfung Kimi-Guthaben über
 `/v1/users/me/balance` prüfen.
 
+Stand 30.09.2026 00:41 UTC (Takt): C3b fertig geprüft (`c33c173`, master C3a eingemergt, Suite 0, 402 = 402, Lint 0),
+PR angelegt, CI läuft, Check-in 01:17 UTC. Im Bau: C2 N5, SG N2, QR-J N6 (Suite läuft).
+
 Stand 30.09.2026 23:40 UTC (Takt, nach Container-Neustart): Vier Bauten abgebrochen und fortgesetzt — C2 N4
 (`52a7d4f`), SG N1 (`f746a5a`), QR-J N6 (`0f0ae43`), C3b N3 (`d64d5e2`); alle Bäume sauber, gepusht, keine Marker.
 GH Fassung 2 wartet auf den SG-Merge (Host-Schlüssel festgehalten in `plaene/git-mechanismen-27-09-2026.md`).
