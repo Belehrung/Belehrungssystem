@@ -1,4 +1,4 @@
-# Auftrag QR-J Nacharbeit 8 (30.09.2026, Fassung 1)
+# Auftrag QR-J Nacharbeit 8 (30.09.2026, Fassung 2 nach Planprüfung `scratchpad/qrjn8p/antwort-{a,b}.txt`)
 
 Baum `/workspace/gymdocu-qrj`, Zweig `fix-qrj-journal-reparatur`, Kopf `e82d858` (N7 + master). Grundlage: Diffprüfung
 Runde 8 (`plaene/diffpruefung-qrj.md`), Lesespur `scratchpad/qrjr8/antwort-lese.txt`, ausführende Spur
@@ -15,22 +15,38 @@ Heute nimmt `core/qr-verbrauch.js:1250` `schreibfehlerBruchstueck` die LETZTE ph
 - **R8-L2**: im Werkzeug rechnet die Meldung NACH dem Rollback (`tools/qr-journal.js` Catch ausserhalb `auditTx`), der
   Advisory-Lock ist frei; ein nebenläufig angehängter Eintrag wird als „die Zeile“ gemeldet.
 
-Behebung:
-- `schreibfehlerBruchstueck` wertet NUR den Bereich ab Byte `groesseVorher` aus: ein führendes `"\n"` gehört zum
-  Schreibversuch (es wird nur vorangestellt, wenn die Datei davor nicht mit `"\n"` endete — das ist am Byte
-  `groesseVorher-1` nachprüfbar); ist danach nichts übrig → `geschrieben: false` (kein Bruchstück der neuen Zeile). Sonst
-  ist K die physische Zeile, die bei diesem Byte beginnt (Zählung wie `journalZeilenAufteilen`), und das Geschriebene ist
-  genau der Bereich bis zum Dateiende; „vollständig“ nur, wenn der Bereich mit `"\n"` endet und die Zeile vollständig ist.
-  `groesseVorher == null` → `geschrieben: null` mit eigenem Text („nicht feststellbar — Dateigrösse vor dem Schreiben
-  unbekannt“), KEIN `--art-laut-meldung`-Vorschlag.
-- In `befehlKorrigieren`, `befehlVerwerfen`, `befehlFreigeben` wird der Schreibfehler-Fehler INNERHALB des
-  Transaktions-Callbacks (unter beiden Locks) gebildet — im bestehenden Catch um `eintragAnhaengen` — und nach aussen
-  durchgereicht; `schreibfehlerEinordnen` darf ihn nicht neu bilden. `core/qr-token.js#chargeAnlegen` tut das schon.
-- Tests literal: (a) der R8-H1-Fall (Vorzustand altes Bruchstück ohne Umbruch, Riss nach genau `"\n"`) → Meldung „KEIN
-  Bruchstück“, kein Befehl; (b) Riss nach `"\n"` + n Byte → K ist die NEUE Zeile; (c) `groesseVorher null` → „nicht
-  feststellbar“; (d) Werkzeug: ein Hook, der nach dem gescheiterten Schreiben (vor dem Rollback) und — getrennt — nach dem
-  Rollback eine fremde vollständige Zeile anhängt: die Meldung nennt weiter die eigene Zeile K. Gegenproben: alte
-  Auswertung „letzte Zeile“ wiederherstellen → (a) ROT; Meldung ausserhalb des Callbacks bilden → (d) ROT.
+Behebung (Fassung 2, Planprüfung A P1–P6, B 2–5, 7):
+- **Bereichsregel.** Ausgewertet wird nur, was ab Byte `groesseVorher` steht; gezählt wird im GESAMTEN Puffer
+  (`journalZeilenAufteilen`). Ein `0x0a` als ERSTES Byte des Bereichs ist immer der Vorspann von `eintragAnhaengen`
+  (eine JSON-Zeile beginnt nie mit `"\n"`; der Vorspann wird auch gesetzt, wenn das letzte Byte davor nicht lesbar war,
+  `core/qr-verbrauch.js:1328-1329`) — also NICHT am Byte `groesseVorher-1` entscheiden. `groesseVorher === 0` (Datei
+  fehlte oder war leer): nie ein Vorspann, K = 1. K = die physische Zeile, die am ersten Byte nach dem Vorspann beginnt.
+  Alles hinter dem ersten `"\n"` nach diesem Byte ist fremd und wird ignoriert.
+- **Einstufung.** Bereich leer → `geschrieben: false`, Text „nichts geschrieben“. Bereich nur der Vorspann → eigener
+  Text „nur ein Zeilenumbruch geschrieben, kein Bruchstück der <Art>-Zeile“ OHNE Befehl (ein älteres Bruchstück
+  bleibt, was es war). Sonst Zeile K: „vollständig“, wenn sie als vollständige Metazeile/Chargenzeile parst — mit ODER
+  ohne abschliessendes `"\n"` (der Leser behandelt eine letzte Zeile ohne Umbruch genauso, A P5); sonst Bruchstück.
+  `groesseVorher == null` → `geschrieben: null` ohne `fehler`, Text „nicht feststellbar — Dateigrösse vor dem
+  Schreiben unbekannt; node tools/qr-journal.js zeigen“, KEIN `--art-laut-meldung`-Vorschlag. In
+  `schreibfehlerMeldung` den `null`-Fall VOR `!b.geschrieben` prüfen (A P3).
+- **Im Lock gebildet.** In `befehlKorrigieren`, `befehlVerwerfen`, `befehlFreigeben` wird der Schreibfehler-Fehler im
+  bestehenden Catch um `eintragAnhaengen` INNERHALB des Transaktions-Callbacks gebildet und geworfen.
+  `schreibfehlerEinordnen` reicht einen Fehler mit `code === 'QR_JOURNAL_SCHREIBFEHLER'` UNVERÄNDERT durch und baut
+  keine zweite Meldung (A P4, B 3). Wirft die Meldungsbildung selbst, wird der ursprüngliche Schreibfehler geworfen
+  (Code `QR_JOURNAL_SCHREIBFEHLER`, `ursache` = Schreibfehler), mit dem Zusatz „Meldung nicht bildbar (<Grund>):
+  node tools/qr-journal.js zeigen“ — der Schreibfehler wird nie verdeckt. Ein vollständiges Lesen des Journals im
+  Lock ist hingenommen (Fehlerpfad, Journal klein); im Bericht die Grösse nennen.
+- **Tests literal** (K als Handliteral aus dem Vorzustand, nicht über `journalZeilenAufteilen` des Prüflings):
+  (a) R8-H1: altes Bruchstück ohne Umbruch, eigene Attrappe schreibt genau den Vorspann `"\n"` und wirft (der
+  vorhandene `mitSchreibfehler` bildet den Vorspann nicht ab) → Text „nur ein Zeilenumbruch …“, kein Befehl;
+  (b) Vorspann + n Byte → K ist die NEUE Zeile; (c) Datei fehlt/leer, Riss nach n Byte → K = 1; (d) Vorspann obwohl
+  die Datei davor mit `"\n"` endete (letztes Byte nicht lesbar nachgestellt) → K richtig; (e) vollständige Zeile ohne
+  abschliessendes `"\n"` → „vollständig“; (f) `groesseVorher null` über direkten Aufruf UND über einen echten
+  Werkzeugaufruf mit nicht messbarer Grösse → „nicht feststellbar“; (g) Lock-Nachweis: ein Test-Hook
+  (`schreibfehlerHook`, nur für Tests, wie die übrigen) läuft im Moment der Meldungsbildung und misst über eine EIGENE
+  Pool-Verbindung in `pg_locks`, dass der Advisory-Lock `hashtext('qr-charge-nummer')` gehalten ist. Gegenproben: alte
+  Auswertung „letzte Zeile“ → (a) ROT; Vorspann-Entscheidung am Byte `groesseVorher-1` → (d) ROT; Meldungsbildung
+  zurück in den äusseren Catch → (g) ROT; Durchreichen in `schreibfehlerEinordnen` entfernt → Doppelmeldung ROT.
 
 ## 2. Frischprüfung der Korrektur erhebt die Untergrenze neu (R8-L1, Lesespur B1)
 
@@ -49,12 +65,15 @@ Befund erneut rufen; weicht die Untergrenze vom Plan ab → Abbruch „nichts ge
   fängt den Filterausfall). Gegenprobe Untergrenzen-Filter im `wiederholt_fuer`-Block entfernt → ROT.
 - **M1** (umgekehrt): im Wege-Fuzz blind — reicht, wenn der neue Journal-Fall aus M5 auch M1 fängt (messen).
 - **M18b/M18c**: J10e nennt „Block, Grenzen, MAX(qr_token)“, keine Zusicherung fällt ohne die Block- oder
-  MAX-Prüfung. Je ein Fall über `vorFrischpruefungHook` (ein `qr_token` der Charge über `maxToken` einfügen; die Blocklage
-  ändern) → Abbruch, nichts geschrieben, Audit +0. Gegenproben je Bedingung entfernt → ROT.
+  MAX-Prüfung. Die Frischprüfung liest über den POOL (`core/db.js:426-433`), nicht über `t` — ein Hook-INSERT über `t`
+  ist unsichtbar (Planprüfung B 1). Je ein Fall über `vorFrischpruefungHook`, der über den POOL schreibt (danach
+  aufräumen): M18b mit ECHTER `qr_charge` (ohne passende Journalzeile, sonst `passt:false`), ein `qr_token` der Charge
+  über `maxToken`; M18c Blocklage ändern. Je Fall genau EINE Bedingung verletzt → Abbruch, nichts geschrieben, Audit +0,
+  Text literal. Gegenproben je Bedingung entfernt → ROT.
 - **M16**: literaler Fall „späteres Bruchstück nennt Z mit FREMDEM Hash“ → setzt keine Untergrenze (Trockenlauf mit
   `--bis` unter dessen `nr_bis` ist ok). Gegenprobe Hash-Vergleich entfernt → ROT.
-- Lesespur: `test_feature_qr_journal.js:3136` (`startsWith`) und `:3145` (`includes`) auf vollständigen Literalvergleich
-  umstellen, wo der Text vollständig bestimmt ist.
+- `test_feature_qr_journal.js:3136` und `:3334` (`startsWith`) auf vollständigen Literalvergleich umstellen
+  (`:3145` `includes` ist neben dem vollen Literal redundant und darf wegfallen).
 
 ## Nicht in diesem Auftrag
 
