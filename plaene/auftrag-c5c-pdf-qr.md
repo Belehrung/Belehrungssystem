@@ -1,6 +1,6 @@
 # Auftrag C5-C — PDF-Erzeugung und QR-Druckdaten (Extrarunde aus den Sammellisten)
 
-Fassung 1, 30.09.2026. Repo GymDocu, Stand master `13448c8`.
+Fassung 2, 30.09.2026 (Planprüfung flash mit Repo-Werkzeugen + kimi-k3 mit Codebündel, `scratchpad/c5plan/flash-c5c.txt`, `kimi-c.md`; `core/korrektur-pdf.js:125-205` selbst gelesen). Repo GymDocu, Stand master `13448c8`.
 
 **Herkunft der Befunde.** Die Zustandsprüfung lief mit `deepseek-flash` und Lesewerkzeugen
 (`scratchpad/c5z-b1/antwort.txt`, verdichtet in `scratchpad/c5dicht/b1.md`). Der Haupt-Agent hat diese Stellen selbst
@@ -105,6 +105,121 @@ Betroffen ist `routes/lageplan.js:90-102`.
   try/catch fassen, ohne einen echten Schreibfehler zu verdecken; der Fehler wird weitergeworfen.
 - Die unerreichbaren Zweige `core/qr-verbrauch.js:1287-1292` und `tools/qr-journal.js:1043-1045` bleiben als
   Verteidigung stehen und bekommen je einen Kommentar „unerreichbar, weil … — bleibt als Riegel“.
+
+## Fassung 2 — verbindliche Änderungen aus der Planprüfung (gehen dem Text oben vor)
+
+**Zu 1 (C2-S9), neu gefasst.**
+
+Die Begründung „der nächste Versuch scheitert an `wx`“ ist FALSCH: `correctionPath()` zieht je Aufruf einen neuen
+Zufallsnamen (`:29`). Richtig ist:
+
+- Heute wird INNERHALB der `auditTx` direkt unter den öffentlichen Namen gerendert. Der `catch` löscht die Datei nach
+  JEDEM Wurf (`:196-203`), auch wenn die COMMIT-Quittung verloren ging und die Zeile längst committet ist. Das ist
+  CLAUDE.md „Ein Wurf aus `db.tx()` beweist KEINEN Rollback“, und dabei entsteht ein Datenverlust.
+
+Neuer Ablauf:
+
+1. In eine Temp-Datei rendern (Muster `schreibStrom`).
+2. Hash und INSERTs in der Transaktion wie heute.
+3. NACH erfolgreichem Rücksprung der Transaktion veröffentlichen, per `fs.linkSync(temp, ziel)` (atomar,
+   überschreibt nie; das hält „ein Dokument wird nie durch ein anderes ersetzt“), dann `unlinkSync(temp)`.
+4. Wirft die Transaktion, wird über eine FRISCHE Verbindung nachgemessen, ob die Zeile existiert:
+   - ja: veröffentlichen wie Schritt 3;
+   - nein: Temp-Datei entfernen;
+   - unklar (DB weg): die Temp-Datei bleibt liegen, und es gibt ein `melde()`.
+5. Scheitert `link` nach dem Commit: `melde()` und Temp in Quarantäne (`quarantaenePfad`). Die Zeile bleibt, das
+   Restfenster steht im Bericht.
+
+Weitere Punkte zu 1:
+
+- **Tempdateien bei Prozesstod:** Vorher messen, ob `ops/gymdocu-pdf-reste-ernte.js` verwaiste `.tmp-*` in diesem
+  Verzeichnis erfasst; das Ergebnis kommt in den Bericht.
+- **Den Aufräumhelfer teilen:** `raeumeTempAufBeiFehler` ist NICHT exportiert. Er wandert (mit `quarantaenePfad`)
+  nach `core/pdf-ablage.js`, und beide Module benutzen ihn; keine zweite Kopie.
+- **Bestehende Zusicherungen mitziehen:** `test_feature_korrektur_dokumente_static.js:29` pinnt die heutige
+  Schreibweise, `test_feature_pdf_streamfehler.js:136-142` prüft die Stelle formgebunden. Beide werden FACHLICH
+  umgestellt, nicht gestrichen.
+- **Tests:**
+  - Abbruch NACH der Stream-Erzeugung, im Zeichnen ⇒ kein öffentlicher Name, keine Temp-Datei.
+  - COMMIT-Quittung verloren (Attrappe: die Transaktion committet und wirft danach) ⇒ die Datei wird veröffentlicht,
+    nicht gelöscht.
+  - Transaktion ohne Commit ⇒ die Temp-Datei ist weg.
+  - Zufallsnamen aus der Rückgabe bzw. der DB lesen.
+  - Gegenprobe je Fall.
+
+**Zu 2 (C2-S10).**
+
+- Aufrufer von `schreibStrom`: `createDocument()` (Erzeuger `:820, :1439, :1490, :1533, :1581, :1629, :2125, :2578`),
+  `generateWartungsPDF()`, `generateSpuelprotokollPDF()`.
+- Der Abbruchhelfer beendet auch `doc` (unpipe bzw. Ende) und zerstört den Stream. Er entfernt die Temp-Datei über
+  `entferneDatei` (ENOENT still, sonst `melde`).
+- Die Zusicherung lautet `stream.destroyed === true` und „Temp-Datei weg“, NICHT „kein offener Deskriptor“; der ist
+  per Datei-API nicht messbar.
+
+**Zu 3 (C2-S11).**
+
+- Die Kompensation läuft NUR, wenn `registriereVerify` in DIESEM Aufruf gelungen ist (Flag). Sonst löscht sie womöglich
+  eine fremde Zeile desselben Codes (Unique-Verletzung).
+- Die Kompensation hat ein eigenes try/catch, ihr Fehler geht an `melde`, und die Ablehnung bleibt der ursprüngliche
+  Fehler.
+- Der Test belegt die Zwischenstufe: die Zeile existierte nach der Registrierung und ist nach dem rename-Fehler weg.
+
+**Zu 5 (V09-8).**
+
+- Fail-closed für ALLE drei Stellen, an denen der Prüf-QR verloren gehen kann:
+  - `QRCode.toBuffer` (`:486-489`, heute `qrBuf = null`);
+  - `doc.image` in `addPageNumbers` (`:473`, heute `catch {}`);
+  - `addPageNumbers` selbst.
+- Nach der Ablehnung darf `finish` kein `rename` mehr auslösen. Dafür wird der Helfer aus 2 benutzt.
+- Je Stelle ein Testfall.
+
+**Zu 4 (C3a-S4).**
+
+- Die Attrappe trifft NUR die `_z`-Zählungen, nicht die `pdf_archiv`-Zählung davor (`:441-443`, ohne try/catch).
+  Sonst wird der Test über den frühen Wurf grün.
+- Testdaten: NUR eine Reinigung mit der Anlage im selben Studio. Eine verwaiste Reinigung (fremdes Studio) zählt NICHT.
+- „Im Zweifel erzeugen“ ist gewollt; der Kommentar „keine leeren PDFs“ wird angepasst. Ist erzeugt, verhindert der
+  Archiv-Eintrag Wiederholungen; das wird im Bericht mit Beleg bestätigt.
+
+**Zu 6 (V06-2).**
+
+- Vorlage ist `routes/admin/qr-bestellung.js:756-764`.
+- Mitmessen:
+  - repoweit `FROM qr_charge` ohne `studio_id` (Bericht);
+  - die beiden `qr_token`-Abfragen `:266`, `:338` bekommen die Bindung per Unterabfrage (Muster
+    `core/qr-zuordnung.js:590`).
+- Die statische Zusicherung zielt auf das Statement in `ladeEigeneCharge`.
+
+**Zu 7 (V06-9).**
+
+- Getrennt entscheiden:
+  - „Keine Token“ wird 409 (Zustand);
+  - „Unbekanntes Format“ bleibt 500 (Dateninkonsistenz, clientseitig nicht behebbar) und bekommt ein `melde()`.
+- Bestehende 500-Zusicherungen gibt es nicht (gemessen). Neue Zusicherungen auf genau diese Codes, und die P2-Tabelle
+  ergänzen.
+
+**Zu 8 (V02-8).**
+
+- Der einzige Aufrufer ist `routes/lageplan.js:710-715`; sein synchrones try/catch muss auf `await` umgestellt werden.
+- Warteschlange deckeln: mehr als 4 Wartende ⇒ 503 mit Hinweis. Wartezeit maximal 30 s, danach ebenfalls 503.
+- Tests:
+  - Deckel mit einer BLOCKIERENDEN Attrappe (≥ 3 gleichzeitige Aufrufe, kontrolliertes Auflösen).
+  - Die Argumentliste und Optionen von `pdftoppm` als statischer Schnappschuss (`-singlefile`, `timeout: 15000`,
+    `SIGKILL`, `maxBuffer`), mit Gegenprobe.
+- Der Bestandstest mit der `pdftoppm`-Attrappe auf PATH bleibt und muss grün sein.
+
+**Zu 9.**
+
+- **QJ7-K:**
+  - Je Typ (korrektur/verworfen/freigabe) eine GÜLTIGE Grundzeile mit Zusicherung `=== true`, dann je Fall genau
+    EIN Feld kippen.
+  - `abschnitt`-Fälle nur für die Typen, die es prüfen.
+  - Keine neue Leserregel für `verworfen`.
+- **QJ9-B:**
+  - Hook-Fehler an den echten Schreibfehler hängen (`e.hookFehler`) und `e` werfen; der echte Fehler wird nie
+    verdeckt.
+  - Zeilenverweise durch Funktionsanker ersetzen (`kennzeichneCommitUngewiss`).
+  - Unerreichbarkeit nur mit Bedingung kommentieren („solange …“) oder per Test beweisen.
 
 ## Nicht in diesem Auftrag
 
