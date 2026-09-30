@@ -569,3 +569,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
 - 30.09.2026 05:05 UTC: GH #486 gemergt (`deddcd9`), Deploy 453 grün (SSH mit Host-Schlüsselprüfung, `abweisung` übersprungen), live-check EXIT 0. GH-S2 erledigt.
 - 30.09.2026 05:40 UTC (Takt): läuft — QR-J Nacharbeit 8 im Bau (`auftrag-qrj-nacharbeit8.md` Fassung 2, Baum `/workspace/gymdocu-qrj`); DB-INIT Planprüfung Runde 2 (`auftrag-db-init.md` Fassung 2). Suite auf QR-J `e82d858` grün (410 = 410).
 - 30.09.2026 06:40 UTC (Takt): QR-J N8 gebaut (`3716cff`, + master `4f8450b`), Diffprüfung Runde 9 läuft (Lesespur fertig: nichts Blockierendes; ausführende Spur und Suite laufen). DB-INIT im Bau (Zweig `fix-db-init-sperren`).
+- 30.09.2026 07:40 UTC (Takt): im Bau — QR-J Nacharbeit 9 (nur Zusicherungen, Runde 9 ausgewertet) und DB-INIT Nacharbeit 1 (Runde 1 ausgewertet, `diffpruefung-db-init.md`, Sammelliste `offene-befunde-db-init.md`).
