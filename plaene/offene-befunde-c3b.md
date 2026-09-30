@@ -11,3 +11,6 @@ Stand 25.09.2026. Verweise statt Kopien; jeder Punkt bekommt eine eigene Extraru
   gleichartige Upload-Wege prüfen) schreibt einen vorab gebildeten Hash; bei einem zwischenzeitlichen Upsert steht die
   Zeile danach `dead` mit veraltetem Hash (Health „degraded“ bis zum nächsten Upload). Gemessen: frisch gebildeter Hash
   heilt (`scratchpad/c3bcc3/m9-v1.log`). Extrarunde.
+- **C3b4-1..4** (Runde 4, Lesespur, gering): N3i-Kommentar schreibt den `dead`-Zweig Nacharbeit 3 zu (stammt aus N2);
+  `catch (me)` um `melde()` ohne `console.warn` (`core/storage-replica.js:798`); Negativkontrollen N2c/N2d und die
+  Endzustandszeile in N3g als solche kennzeichnen. Extrarunde (Kommentare, eine Logzeile).

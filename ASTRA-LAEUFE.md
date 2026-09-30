@@ -314,6 +314,7 @@ sondern falsch.
 | 30.09.2026 | C3b Diffpruefung Runde 3 Lesespur (deepseek-flash) | Diff 625 Zeilen, Suchen 14, Lesungen 17, Token rein 1604154, Token raus 75257, Runden 14 | 4 | 3 (einzig: zweiter `requeue` wirft auch bei inzwischen offenem Job — Fehlalarm, Test N3g zementiert ihn) | 1 (open-Zählung „kann nicht rot werden“ — X8 machte sie rot, 123/4) | 0,57 $ |
 | 30.09.2026 | Planpruefung QR-J N6 F3 (deepseek-flash) | Diff 103 Zeilen, Suchen 20, Lesungen 24, Token rein 3656827, Token raus 111659, Runden 25 | 10 | 10 (einzig: `verwerfen` fragt `verwerfbarkeit` statt Schlüssel; `--keine-aufkleber` würde lockerer) | 0 | 1,23 $ |
 | 30.09.2026 | C2 Diffpruefung Runde 5 Lesespur (deepseek-flash) | Diff 2421 Zeilen, Suchen 25, Lesungen 30, Token rein 4059549, Token raus 75559, Runden 29 | 4 + 2 Testlücken | 5 (einzig: Fenster ohne Zeitgeber bleibt bei Zeitgeber-Wurf stehen; Probelauf-Ping-Zusicherung ohne Positivkontrolle) | 0 (B4 kein Befund) | 1,31 $ |
+| 30.09.2026 | C3b Diffpruefung Runde 4 Lesespur (deepseek-flash) | Diff 377 Zeilen, Suchen 21, Lesungen 21, Token rein 872300, Token raus 68965, Runden 12 | 4 | 4 (alle Anmerkung/gering: N3i-Kommentar schreibt Nacharbeit 3 zu, melde-Ausfall ohne Log, zwei Test-Kennzeichnungen) | 0 | 0,34 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
