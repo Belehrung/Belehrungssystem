@@ -645,7 +645,7 @@ function statusAusExitBasis({ code, signal, testExit, waechter, dauerMs, tSekund
         if (testExit >= 129) return { status: 'signaltod', grund: `Teststufe durch Signal ${testExit - 128} beendet (Exit ${testExit})`, isolation: false };
         return { status: 'umgebung-fehler', grund: `Teststufe Exit ${testExit} (unbekannt, nur 0/1 sind Testergebnisse; kein Zeitlimit — die Teststufe hat geendet)`, isolation: false };
     }
-    if (code === STUFE.AUFBAU) return { status: 'umgebung-fehler', grund: 'Aufbau der Sandbox gescheitert (Stufe 20)', isolation: false };
+    if (code === STUFE.AUFBAU) return { status: 'umgebung-fehler', grund: 'Aufbau der Sandbox oder ein Werkzeugschritt gescheitert (Stufe 20)', isolation: false };
     if (code === STUFE.SELBSTMESSUNG) return { status: 'umgebung-fehler', grund: 'Selbstmessung ROT oder Prozess der Selbstmessung ueberlebt (Stufe 21)', isolation: true };
     if (code === STUFE.VORBEREITUNG) return { status: 'vorbereitung-gescheitert', grund: 'test/db-vorbereiten.js endete != 0 (Stufe 22)', isolation: false };
     if (code === STUFE.UMGEBUNG) return { status: 'umgebung-fehler', grund: 'test/umgebung.sh gescheitert (Stufe 23)', isolation: false };
@@ -1077,9 +1077,11 @@ function fixtureAnlegen(basis) {
         'export QR_VERBRAUCH="$_q/qr-verbrauch.jsonl"; unset _q',
         'export NODE_OPTIONS="--require $PWD/test/vorlade.js${NODE_OPTIONS:+ $NODE_OPTIONS}"',
         'if grep -q "extra: 1" test/umgebung-schalter.js; then export EXTRA_DSV1=1; fi',
+        '# Befund W-E3, Stufe Umgebung: ein abgekoppelter Prozess, der nach der Waechterdatei die Kopie beschreibt',
+        'if grep -q "hintergrund: 1" test/umgebung-schalter.js; then ( while [ ! -e /dsv1/ergebnis/test-gestartet ]; do sleep 0.1; done; echo x > marker-w-e3 ) & fi',
         '',
     ].join('\n'));
-    schreiben('test/umgebung-schalter.js', '// Fixture-Schalter, per Mutation umlegbar\n// schalter: 0\n// extra: 0\nmodule.exports = 0;\n');
+    schreiben('test/umgebung-schalter.js', '// Fixture-Schalter, per Mutation umlegbar\n// schalter: 0\n// extra: 0\n// hintergrund: 0\nmodule.exports = 0;\n');
     schreiben('test/vorlade.js', 'globalThis.dsv1Vorgeladen = true;\n');
     schreiben('lib/schema.js', "module.exports = 'CREATE TABLE IF NOT EXISTS vorbereitet(a int)';\n");
     schreiben('test/db-vorbereiten.js', "'use strict';\nconst { spawnSync } = require('node:child_process');\nconst sql = require('../lib/schema');\nconst r = spawnSync('psql', [process.env.DATABASE_URL, '-X', '-v', 'ON_ERROR_STOP=1', '-c', sql], { encoding: 'utf8' });\nif (r.status !== 0) { console.error(r.stderr || r.error); process.exitCode = 1; }\n");
@@ -1207,6 +1209,9 @@ async function selbsttestSpur(pruefen) {
         const mp = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/schema.js', alt: "module.exports = 'CREATE TABLE", neu: schlaeferNeu, testdatei: 'test_marker.js' });
         pruefen('PROZESSE BEENDET: ein abgekoppelter Prozess der Vorbereitung ist vor der Manifestpruefung tot, der Marker entsteht nie, /tmp, /var/tmp und /dev/shm sind geleert -> bestanden, 4 PASS',
             mp.status === 'bestanden' && mp.text.includes('4 PASS / 0 FAIL') && mp.text.includes('✓ kein Marker') && mp.text.includes('grundlauf: bestanden, gueltig (in diesem Aufruf gefahren)'));
+        const mu2 = await werkzeugAufrufen('mutiere_und_teste', { datei: 'test/umgebung-schalter.js', alt: 'hintergrund: 0', neu: 'hintergrund: 1', testdatei: 'test_marker.js' });
+        pruefen('PROZESSE BEENDET nach der Umgebung: ein von umgebung.sh abgekoppelter Prozess ist vor der Teststufe tot, der Marker entsteht nie -> bestanden',
+            mu2.status === 'bestanden' && mu2.text.includes('✓ kein Marker') && mu2.text.includes('4 PASS / 0 FAIL'));
         // ----- Umgehaengter Symlink (Befund 2, Runde 2) -----
         const ms = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/schema.js', alt: "module.exports = 'CREATE TABLE", neu: "require('node:fs').unlinkSync('zeiger.js'); require('node:fs').symlinkSync('lib/doppelt.js', 'zeiger.js');\nmodule.exports = 'CREATE TABLE", testdatei: 'test_gruen.js' });
         pruefen('MANIPULIERT: die Vorbereitung haengt den versionierten Symlink zeiger.js um (lib/wert.js -> lib/doppelt.js): Typ und Pfad gleich, das Ziel in der Datei-Liste weicht ab',

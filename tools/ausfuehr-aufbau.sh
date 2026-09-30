@@ -217,6 +217,29 @@ prozesse_beenden() {
     return 1
 }
 
+# Ablagen leeren: alles auf den drei tmpfs selbst (-xdev). Unter /tmp kann
+# ein ro-Bind liegen (Browserpfad des Selbsttests und der CI) — der und
+# seine Elternverzeichnisse bleiben, alles andere muss danach weg sein
+# (gemessen 30.09.2026: ohne -xdev scheiterte find am ro-Bind mit EROFS).
+ablagen_leeren() {
+    local erlaubt="" ziel rest
+    find /tmp /var/tmp /dev/shm -mindepth 1 -xdev -delete 2>/dev/null
+    while read -r ziel; do
+        case "$ziel" in /tmp/*|/var/tmp/*|/dev/shm/*) ;; *) continue ;; esac
+        while [ "$ziel" != /tmp ] && [ "$ziel" != /var/tmp ] && [ "$ziel" != /dev/shm ] && [ "$ziel" != / ] && [ -n "$ziel" ]; do
+            erlaubt="$erlaubt$ziel"$'\n'
+            ziel=${ziel%/*}
+        done
+    done < <(findmnt -rn -o TARGET)
+    rest=$(find /tmp /var/tmp /dev/shm -mindepth 1 -xdev | grep -vxF -f <(printf '%s' "$erlaubt"))
+    if [ -n "$rest" ]; then
+        echo "[dsv1] Ablagen nach dem Leeren nicht leer:" >&2
+        printf '%s\n' "$rest" | head -n 10 >&2
+        return 1
+    fi
+    return 0
+}
+
 # ===== 4. Stufen als 65534, jede einzeln, unter rlimits =====
 SESSION_SECRET_LITERAL='ci-isolation-session-secret-0123456789abcdef'   # ci.yml:114 des Zielrepos
 KIND_ENV=(
@@ -256,7 +279,7 @@ fi
 prozesse_beenden "der Vorbereitung" || exit 25
 # Ablagen der Vorbereitung leeren (Befund W-E3 / Kimi 10), BEVOR umgebung.sh
 # seine eigenen Verzeichnisse dort anlegt.
-find /tmp /var/tmp /dev/shm -mindepth 1 -delete || scheitern "Leeren von /tmp, /var/tmp, /dev/shm"
+ablagen_leeren || scheitern "Leeren von /tmp, /var/tmp, /dev/shm"
 manifest_pruefen "der Vorbereitung" || exit 25
 
 stufe "Stufe Umgebung (test/umgebung.sh)"
