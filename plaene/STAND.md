@@ -613,3 +613,9 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-E1 gebaut (`d1b0bab`, Suite 0, 419 = 419). Die Lesespur ist ausgewertet (8 Befunde), die ausführende Spur läuft.
   - Sammellisten neu: `offene-befunde-c5a.md`, `-c5d.md`, `-c5e.md`.
   - C5-E2 und C5-G starten, sobald Plätze frei sind; C5-G erst nach dem Merge von C5-B.
+- 30.09.2026 18:40 UTC (Takt): läuft
+  - Um 17:5x brachen alle Claude-Bauenden gleichzeitig am Sitzungslimit ab (429, Rücksetzung 18:00). Um 18:07 wurden alle fortgesetzt. Kein Gegenproben-Rest in den GymDocu-Bäumen, W hatte eine unkommittete eigene Änderung.
+  - Nacharbeit läuft: C5-A N1, C5-C Bau, C5-D N1, C5-E1 N1, C5-F N1, Q N2 (Runde 2: Regress „JSON-Fehler der App zählen nie“ und Kette blockiert), W N3.
+  - C5-B N2 ist fertig (`c2efe51`). Die volle Suite steht aus: ihre Schleife bekam die Sperre fünfmal nicht (99).
+  - Engpass ist die Suite-Sperre: sieben Zweige stehen in der Schlange, je 20–25 min.
+  - Sammelliste neu: `offene-befunde-q.md`.
