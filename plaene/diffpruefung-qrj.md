@@ -239,4 +239,10 @@ Lesespur `deepseek-flash` (`scratchpad/qrjr7/antwort-lese.txt`, 0,46 $). Selbst 
 | R7-L9 Handzeilen-Korrektur mit `abschnitt` ≥ Abschnittszahl: Weg nennt verwerfen, (v) lehnt ab | vermutet, nur Handzeile | offen | Sammelliste |
 | Frage 3.2 „gibt niemanden frei" widerspricht WIDERLEGT | der Satz stimmt (niemand wird frei), WIDERLEGT folgt | nein | keine |
 
-Ausführende Spur: läuft (`scratchpad/qrjr7/cc/`).
+Ausführende Spur (`scratchpad/qrjr7/cc/befunde.md`): 87 Mutationen (49 ROT, 38 GRÜN, 8 äquivalent), Differentialtest
+alt/neu über 140.000 Journale 0 Lockerungen, Sackgassen-Fuzz 7.821 Wege 0 Sackgassen. Befunde: B1 Riss nach 3/4 Byte =
+Freitext → Doppelvergabe (trägt, durch Lesen von `istKorrekturBruchstueck` bestätigt; Ursache MEINE Vorgabe in N6);
+B2 = R7-L1; B3 lesbares Studio des Bruchstücks nicht erzwungen, drei Freigabewege (trägt: Kandidat „alle“ laut N6);
+B4 lesbare Spanne nicht als Untergrenze (trägt: N6 liest nr_von/nr_bis bewusst nicht); B5 = R7-L2; B6 Reihenfolge im
+Hinweis (gering); B7 = R7-L9; B8 Text; B9 Überlebende (Präfixrand, R26 nur Zufallsstrom, Texte, R55). K04–K14 Bestand →
+Sammelliste. → `plaene/auftrag-qrj-nacharbeit7.md`.
