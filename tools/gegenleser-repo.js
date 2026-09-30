@@ -1582,7 +1582,11 @@ async function main(argvUeberschreibung) {
             const kern = `Diff ${zeilenAus(diffInhalt).length} Zeilen, Suchen ${sucheAnzahl}, Lesungen ${liesAnzahl}, `
                 + `Token rein ${promptTokenSumme}, Token raus ${completionTokenSumme}, Runden ${runde}`
                 // Zaehler der ausfuehrenden Spur (leer ohne --ausfuehren).
-                + (spurAktiv() ? spur().protokollMaterialZusatz() : '');
+                // Nach dem Aufraeumen (laeuft VOR dieser Zeile, Exit 8 bei Resten)
+                // ist die Spur nicht mehr aktiv; ihre Zaehler haelt das Modul.
+                // Bedingung ist der Schalter DIESES Laufs, nicht der Ladezustand:
+                // im Selbsttest bleibt das Modul ueber mehrere main()-Laeufe geladen.
+                + (optionen.ausfuehren ? spur().protokollMaterialZusatz() : '');
             return abbruchGrund ? `**abgebrochen** (${abbruchGrund}): ${kern}` : kern;
         };
         const protokollKostenText = () => {
@@ -4414,16 +4418,17 @@ async function selbsttestAusfuehrung() {
     // ASTRA-Zeile), LAUF E2 Isolationsabbruch x3 (kein tools-Feld + Marker
     // im Hinweis, Exit 7 + Marker in der Ausgabe, ASTRA-Zeile abgebrochen))
     // Nacharbeit (Diffpruefung 30.09.2026): hier dazu LAUF E3 (ungueltiges
-    // JSON zaehlt) x1, LAUF E4 (Exit 8, ASTRA-Zeile abgebrochen) x2, LAZY
-    // (Modul nicht/doch geladen) x2 = 17.
+    // JSON zaehlt) x1, LAUF E4 (Exit 8, ASTRA-Zeile abgebrochen) x2, LAUF E5
+    // (ohne Schalter nach E1-E4: keine Spur-Zaehler) x1, LAZY (Modul
+    // nicht/doch geladen) x2 = 18.
     // + 95 Faelle in selbsttestSpur() (Einrichten x4, teste/Kanarie x5,
     // Mutation/Grundlauf/Muster x9, Manifest/vorgeladen x3, Ablehnungen 18
     // in der Schleife + 7, Endungen/Stufen 22-23 x5, Status x10,
     // Zustand/Umgebung/Riegel/Deckel x11, Deckel x5, HEAD x2, Abbruch Stufe
     // 24 x3, Stufe 21 x3, Stufe 20 x2, Infrastruktur x1, Reste x3,
-    // Sperr-Halter x2, Einrichten-Ablehnungen x2) = 112. Unten durch den
+    // Sperr-Halter x2, Einrichten-Ablehnungen x2) = 113. Unten durch den
     // tatsaechlichen Lauf bestaetigt.
-    const ERWARTETE_FAELLE = 112;
+    const ERWARTETE_FAELLE = 113;
     if (process.getuid() !== 0) {
         if (process.env.CI === 'true') {
             console.log(`  ✗ FEHLT: --selbsttest-ausfuehrung braucht root (uid 0, gefunden ${process.getuid()}) -- unter CI=true ist das ROT, kein SKIP.`);
@@ -4577,6 +4582,21 @@ async function selbsttestAusfuehrung() {
                 code === 8 && fehlerZeilen.some((z) => z.includes('AUFRAEUMEN UNVOLLSTAENDIG')));
             pruefen(`LAUF E4 ASTRA-Zeile ist KEIN regulaerer Abschluss: ${zeile ? zeile.slice(0, 140) : '(keine Zeile)'}`,
                 !!zeile && zeile.includes('**abgebrochen** (Aufraeumen der ausfuehrenden Spur unvollstaendig)'));
+        }
+        // ----- LAUF E5: OHNE Schalter nach E1-E4 im selben Prozess -> KEINE Spur-Zaehler in der ASTRA-Zeile -----
+        // Das Modul bleibt geladen und haelt die Zaehler des letzten Laufs
+        // (die Zeile entsteht NACH dem Aufraeumen); massgeblich ist der
+        // Schalter dieses Laufs, nicht der Ladezustand. Gemessen mit der
+        // Bedingung "Modul geladen": die Zaehler von E4 standen in dieser Zeile.
+        {
+            protokollFrisch();
+            const aufgezeichnet = [];
+            https.request = httpsStubBauen([antwortKoerperBauen(elementTextBauen('BERICHT-OHNE-SPUR-DANACH'), 100, 50)], aufgezeichnet);
+            const code = await mainStumm([diffPfad, `--brief=${briefPfad}`, `--wurzel=${fx.wurzel}`, '--modell=deepseek-flash', '--max-runden=5',
+                `--protokoll=${path.join(basis, 'p5.jsonl')}`, '--zweck=Selbsttest E5']);
+            const zeile = fs.readFileSync(protokollDatei, 'utf8').split('\n').find((z) => z.includes('Selbsttest E5'));
+            pruefen(`LAUF E5 OHNE SCHALTER nach E1-E4 (Exit ${code}): ASTRA-Zeile ohne Spur-Zaehler, obwohl das Modul geladen ist und Zaehler haelt: ${zeile ? zeile.slice(0, 140) : '(keine Zeile)'}`,
+                code === 0 && !!zeile && !zeile.includes('Ausfuehrungen') && ausfuehrSpurModul !== null && spur().protokollMaterialZusatz() !== '');
         }
         https.request = echtesHttpsRequest;
         console.error = echtesError;

@@ -103,7 +103,7 @@ const HAKEN_ZEILE = /^\s*✓/;
 const SKIP_MUSTER = /NICHT GEPR(?:Ü|UE)FT|⤳ SKIP|\b[1-9]\d* (?:ÜBERSPRUNGEN|übersprungen|uebersprungen|SKIP)\b/;
 // Steuerzeichen ausser \n und \t werden vor Protokoll und Modellkontext
 // neutralisiert (Befund B13): ESC-Folgen, NUL, \r, C1.
-const STEUERZEICHEN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g;
+const STEUERZEICHEN = /[\u0000-\u0008\u000B-\u001F\u007F-\u009F]/g;
 
 // Der Status-Katalog — jeder Wert mit eigenem ROT/GRUEN-Fall im Selbsttest.
 // Der Text geht so in den Vorspann des Modells (vorspannAbsatz()).
@@ -164,6 +164,9 @@ class Ablehnung extends Error {}
 
 // ===================== Modulzustand fuer EINEN Lauf =====================
 let lauf = null;
+// Zaehler des letzten Laufs: das Aufraeumen laeuft VOR der Protokollzeile
+// (Exit 8 bei Resten), die Zeile braucht die Zahlen danach trotzdem.
+let letzterZaehler = null;
 
 function istAktiv() { return lauf !== null; }
 function istAbgebrochen() { return lauf !== null && lauf.isolation.abgebrochen; }
@@ -383,6 +386,7 @@ function datenbankUrl() {
 // Selbsttest (kein CLI- oder Umgebungsschalter fuehrt dorthin).
 async function einrichten(optionen) {
     if (lauf) throw new Error('ausfuehr-spur: bereits eingerichtet');
+    letzterZaehler = null;
     if (typeof optionen.istHartGesperrt !== 'function') throw new Error('ausfuehr-spur: istHartGesperrt fehlt');
     if (process.getuid() !== 0) throw new Error('--ausfuehren braucht root (uid 0): Namensraeume, pivot_root, pg_createcluster, chown.');
     const fehlend = BENOETIGTE_PROGRAMME.filter((p) => !programmFinden(p));
@@ -466,6 +470,7 @@ function aufraeumenIntern(l) {
 function aufraeumen() {
     if (!lauf) return true;
     const l = lauf;
+    letzterZaehler = { ...l.zaehler };
     lauf = null;
     return aufraeumenIntern(l);
 }
@@ -595,7 +600,7 @@ function statusAusExit({ code, signal, testExit, waechter, dauerMs, tSekunden, e
     if (code === STUFE.SIGNAL) return { status: 'umgebung-fehler', grund: 'PID 1 des Kindes bekam ein Signal (Stufe 30)', isolation: false };
     const uhrAbgelaufen = dauerMs >= tSekunden * 1000;
     if (code === 124) {
-        if (uhrAbgelaufen) return { status: 'zeitlimit', grund: 'timeout (Exit 124) nach Ablauf der eigenen Uhr, Teststufe nie geendet', isolation: false };
+        if (uhrAbgelaufen) return { status: 'zeitlimit', grund: 'von timeout beendet nach Ablauf der eigenen Uhr, Teststufe nie geendet', isolation: false };
         return { status: 'umgebung-fehler', grund: 'Exit 124 vor Ablauf der eigenen Uhr, ohne Testexit — kein Zeitlimit belegt', isolation: false };
     }
     if (code === 137) {
@@ -947,8 +952,8 @@ function zusammenfassungZeilen() {
 }
 
 function protokollMaterialZusatz() {
-    if (!lauf) return '';
-    const z = lauf.zaehler;
+    const z = lauf ? lauf.zaehler : letzterZaehler;
+    if (!z) return '';
     return `, Ausfuehrungen ${z.ausfuehrungen}, Mutationen ${z.mutationen}, Ausfuehrungs-Ablehnungen ${z.ablehnungen}`;
 }
 
@@ -1025,7 +1030,9 @@ function fixtureAnlegen(basis) {
     schreiben('test_umgebung.js', ok + "const namen = Object.keys(process.env).sort();\nconst soll = ['BELEHRUNGEN_UPLOAD_DIR','CI','DATABASE_URL','DEFECT_PHOTO_DIR','DOKUMENTE_DIR','EINWEISUNG_NACHWEIS_DIR','EXPORT_DIR','GYMDOCU_BOOT_SMOKE_STARTPFAD','HOME','LAGEPLAN_UPLOAD_DIR','NODE_OPTIONS','OFFBOARDING_QUEUE_DIR','PATH','PDF_ROOT','PLAYWRIGHT_BROWSERS_PATH','PRUEFBERICHT_DIR','PUBLIC_BASE_DOMAIN','QR_VERBRAUCH','SESSION_SECRET','TZ'];\nok('Umgebungsnamen = Literalliste', JSON.stringify(namen) === JSON.stringify(soll), namen);\nok('CI=true, TZ=UTC, HOME=/tmp', process.env.CI === 'true' && process.env.TZ === 'UTC' && process.env.HOME === '/tmp');\nok('SESSION_SECRET ist das CI-Literal', process.env.SESSION_SECRET === 'ci-isolation-session-secret-0123456789abcdef');\nok('DATABASE_URL zeigt auf den Socket-Ordner /dsv1/pg und gymdocu_test und ist fuer new URL() gueltig', /^postgresql:\\/\\/nobody@localhost\\/gymdocu_test\\?host=\\/dsv1\\/pg&port=\\d+$/.test(process.env.DATABASE_URL) && new URL(process.env.DATABASE_URL).pathname === '/gymdocu_test', process.env.DATABASE_URL);\nok('Vorladung ueber NODE_OPTIONS wirkt', globalThis.dsv1Vorgeladen === true);\nok('PDF_ROOT liegt unter /tmp/gymdocu-suite-', String(process.env.PDF_ROOT).startsWith('/tmp/gymdocu-suite-'));\nok('cwd ist /dsv1/kopie', process.cwd() === '/dsv1/kopie');\nschluss();\n");
     schreiben('test_geheimnis.js', ok + "console.log('token = \"' + 'gh' + 'p_' + 'X'.repeat(36) + '\"');\nok('eine Zeile mit Attrappe ausgegeben', true);\nschluss();\n");
     // PEM-Rahmen zur Laufzeit zusammengesetzt (kein Literal im Quelltext).
-    schreiben('test_pem.js', ok + "console.log('-----BEGIN ' + 'PRIVATE KEY-----');\nfor (let i = 0; i < 3; i++) console.log('MIIE' + 'Q'.repeat(60));\nconsole.log('-----END ' + 'PRIVATE KEY-----');\nok('PEM-Block ausgegeben', true);\nschluss();\n");
+    // 25 Fuellzeilen davor: der Riegel verwirft die GESAMTE Ausgabe, sobald
+    // mehr als ein Viertel der Zeilen faellt (gemessen: 5 von 7 -> alles weg).
+    schreiben('test_pem.js', ok + "for (let i = 0; i < 25; i++) console.log('Fuellzeile ' + i);\nconsole.log('-----BEGIN ' + 'PRIVATE KEY-----');\nfor (let i = 0; i < 3; i++) console.log('MIIE' + 'Q'.repeat(60));\nconsole.log('-----END ' + 'PRIVATE KEY-----');\nok('PEM-Block ausgegeben', true);\nschluss();\n");
     schreiben('test_laut.js', ok + "for (let i = 0; i < 2000; i++) console.log('Zeile ' + String(i).padStart(5, '0') + ' ' + 'x'.repeat(50));\nok('laut, aber gruen', true);\nschluss();\n");
     schreiben('test_flut.js', ok + "const zeile = 'F'.repeat(1023) + '\\n';\nfor (let i = 0; i < 5120; i++) process.stdout.write(zeile);\nok('Flut, aber gruen', true);\nschluss();\n");
     fs.symlinkSync('lib/wert.js', path.join(w, 'zeiger.js'));
@@ -1138,6 +1145,14 @@ async function selbsttestSpur(pruefen) {
             ['Syntaxfehler .sh', { datei: 'ops/skript.sh', alt: 'echo hallo', neu: 'fi', testdatei: 'test_gruen.js' }, 'bash -n'],
             ['leeres alt', { datei: 'lib/wert.js', alt: '', neu: '1', testdatei: 'test_gruen.js' }, 'nichtleerer Text'],
         ];
+        // Der Deckel von 30 zaehlt JEDEN Ausfuehrungsaufruf, auch abgelehnte
+        // (Absicht: das Modell soll ihn nicht mit Ablehnungen umgehen koennen,
+        // und er gilt je Lauf). Dieser Selbsttest macht mehr Aufrufe als ein
+        // Lauf -- der Zaehler wird hier und nach dem naechsten Abschnitt
+        // ausdruecklich zurueckgesetzt; der Deckel selbst wird unten eigens
+        // gemessen. Gemessen ohne diesen Reset: Aufruf 31 (die Steuerzeichen-
+        // Ablehnung) fiel schon dem Deckel zum Opfer, nicht ihrem eigenen Grund.
+        lauf.zaehler.aufrufe = 0;
         for (const [name, argumente, erwartet] of ablehnungen) {
             const r = await werkzeugAufrufen('mutiere_und_teste', argumente);
             pruefen(`ABLEHNUNG ${name}: "${r.text.slice(0, 90)}"`, r.abgelehnt === true && r.status === 'abgelehnt' && r.text.includes(erwartet));
@@ -1174,13 +1189,11 @@ async function selbsttestSpur(pruefen) {
             mu.status === 'umgebung-fehler' && /^status: umgebung-fehler\nexit: 23\n/.test(mu.text) && mu.text.includes('Schalter verlangt Abbruch') && !istAbgebrochen());
 
         // ----- Die uebrigen Status -----
-        // Der Deckel von 30 zaehlt JEDEN Ausfuehrungsaufruf, auch abgelehnte
-        // (Absicht: das Modell soll ihn nicht mit Ablehnungen umgehen koennen,
-        // und er gilt je Lauf). Dieser Selbsttest macht mehr Aufrufe als ein
-        // Lauf -- der Zaehler wird hier deshalb ausdruecklich zurueckgesetzt;
-        // der Deckel selbst wird weiter unten eigens gemessen.
-        pruefen(`DECKEL ZAEHLT AUCH ABLEHNUNGEN: nach ${lauf.zaehler.aufrufe} Aufrufen (davon ${zaehler().ablehnungen} abgelehnt) steht der Zaehler ueber der Zahl der Kind-Laeufe`,
-            lauf.zaehler.aufrufe > zaehler().ausfuehrungen && lauf.zaehler.aufrufe === zaehler().ausfuehrungen - 1 + zaehler().ablehnungen);
+        // Seit dem Zuruecksetzen vor der Ablehnungsschleife: 18 Ablehnungen der
+        // Schleife + 4 weitere (nicht registriert, 20000 Zeichen, Steuerzeichen,
+        // ungueltiges JSON) + 5 gefahrene Mutationsaufrufe = 27 (Literal).
+        pruefen(`DECKEL ZAEHLT AUCH ABLEHNUNGEN: seit dem Zuruecksetzen ${lauf.zaehler.aufrufe} Aufrufe = ${ablehnungen.length + 4} Ablehnungen + 5 gefahrene Mutationsaufrufe (Literal 27)`,
+            lauf.zaehler.aufrufe === 27 && lauf.zaehler.aufrufe === ablehnungen.length + 4 + 5);
         lauf.zaehler.aufrufe = 0;
         const ts = await werkzeugAufrufen('teste', { testdatei: 'test_signal.js' });
         pruefen(`SIGNALTOD: SIGSEGV in der Teststufe -> signaltod, exit 139 aus der test-exit-Datei (gemessen ${ts.text.split('\n')[1]})`, ts.status === 'signaltod' && ts.text.includes('exit: 139'));
@@ -1225,7 +1238,7 @@ async function selbsttestSpur(pruefen) {
         const z1 = await werkzeugAufrufen('teste', { testdatei: 'test_zustand.js' });
         const z2 = await werkzeugAufrufen('teste', { testdatei: 'test_zustand.js' });
         pruefen('KEIN ZUSTAND: Datei in Kopie, /tmp, /var/tmp, /dev/shm, Tabelle, Nebendatenbank (CREATEDB) und ALTER-ROLE-Vorgabe aus Lauf n sind in n+1 weg (beide Laeufe bestanden, Positivkontrolle im Test selbst)',
-            z1.status === 'bestanden' && z2.status === 'bestanden' && z2.text.includes('Positivkontrolle: im selben Lauf sind die Spuren jetzt da') && z2.text.includes('10 PASS / 0 FAIL'));
+            z1.status === 'bestanden' && z2.status === 'bestanden' && z2.text.includes('Positivkontrolle: im selben Lauf sind die Spuren jetzt da') && z2.text.includes('11 PASS / 0 FAIL'));
         const tu = await werkzeugAufrufen('teste', { testdatei: 'test_umgebung.js' });
         pruefen(`UMGEBUNGSVERTRAG im Kind: Namen = Literalliste, CI/TZ/HOME, SESSION_SECRET-Literal, DATABASE_URL auf /dsv1/pg, Vorladung wirkt, cwd (${tu.status})`,
             tu.status === 'bestanden' && tu.text.includes('7 PASS / 0 FAIL'));
@@ -1327,12 +1340,15 @@ async function selbsttestSpur(pruefen) {
 
         // ----- Infrastrukturfehler wird ein Status, kein Wurf (Befund F-B5) -----
         await einrichten({ wurzel: fx.wurzel, istHartGesperrt, tSekunden: T_KURZ });
+        // Erst Kanarie und Grundlauf mit dem echten Port -- scheitert schon die
+        // Kanarie, ist es ein Isolationsabbruch (gemessen), nicht der Fall hier.
+        const tiVor = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
         const echterPort = lauf.port;
         lauf.port = 1;   // Verwaltung des Clusters scheitert (kein Socket .s.PGSQL.1)
-        const ti = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
+        const ti = await werkzeugAufrufen('teste', { testdatei: 'test_rot.js' });
         lauf.port = echterPort;
-        pruefen(`INFRASTRUKTURFEHLER: scheiternde Datenbank-Verwaltung -> Ergebnis umgebung-fehler mit Grund, kein Wurf, kein "null" im Kopf (${ti.text.split('\n')[2].slice(0, 80)})`,
-            ti.status === 'umgebung-fehler' && ti.text.startsWith('status: umgebung-fehler\nexit: keiner (Kind nicht gestartet)\ngrund: Infrastrukturfehler des Werkzeugs: runuser') && !/\bnull\b/.test(ti.text.split('\n').slice(0, 6).join('\n')));
+        pruefen(`INFRASTRUKTURFEHLER: scheiternde Datenbank-Verwaltung -> Ergebnis umgebung-fehler mit Grund, kein Wurf, kein "null" im Kopf, kein Isolationsabbruch (${(ti.text.split('\n')[2] || ti.text).slice(0, 80)})`,
+            tiVor.status === 'bestanden' && ti.status === 'umgebung-fehler' && ti.text.startsWith('status: umgebung-fehler\nexit: keiner (Kind nicht gestartet)\ngrund: Infrastrukturfehler des Werkzeugs: runuser') && !/\bnull\b/.test(ti.text.split('\n').slice(0, 6).join('\n')) && !istAbgebrochen());
         aufraeumen();
 
         // ----- Reste eines abgestuerzten Laufs: Sperr-Halter getoetet, nichts aufgeraeumt, Neustart raeumt -----
