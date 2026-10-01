@@ -54,3 +54,19 @@ Nacharbeit 1 ist beauftragt (derselbe Agent).
 | 6 | Anmerkung | Der Kommentar behauptet „Prüfcode nicht verbraucht“, gemessen ist es nicht. | trägt | N2 |
 | 7 | Anmerkung | Der Verweis „Abschnitt E“ meint E2. | trägt | N2 |
 | R | Anmerkung (Rechenschaft) | `aeltere` filtert `datei_geloescht` nicht. Gelöschte Zeilen werden gemailt und markiert. | trägt (`generateMonthlyPDFs.js:414-417`) | N2 |
+
+## Runde 3: flash über Nacharbeit 2 (`cd7a123..960baad`, 8 Befunde)
+
+Eigene Lesung des Diffs: Code (`core/pdf-fristen.js`, `generateMonthlyPDFs.js`, `routes/archiv.js`, `server.js`) ohne
+eigenen Befund. Suite-Log `/workspace/c6a1-suite-n2.log`: grün, 469 = 469, `diff` EXIT 0.
+
+| Nr | Schwere | Befund | Nachgemessen | Entscheidung |
+|---|---|---|---|---|
+| 1 | sollte | `/mail/:monat` nennt und markiert Zeilen mit gelöschter Datei (`routes/archiv.js:1003`, ohne `datei_geloescht`-Filter). | trägt | N3 |
+| 2 | sollte | Die Mail nennt die Linkdauer als Rohwert aus der Konfiguration (`generateMonthlyPDFs.js:482`, `:563`), auch wenn ersatzweise 90 Tage gelten. | trägt | N3 |
+| 3 | Anmerkung | Der Versandfehler in `/mail/:monat` geht nicht an `melde()`. | trägt | N3 |
+| 4 | Anmerkung | Eine dritte Monatsende-Rechnung steht in `regenerierePdfMonat.js:26-30`. | trägt | N3: `monatsende` nach `core/datum.js`, beide Wege von dort |
+| 5 | Anmerkung | Die Wertprüfung im Meldungstext entfällt für Proben mit mehr als 15 Zeichen, obwohl erst ab 50 gekürzt wird. | trägt | N3 |
+| 6 | Anmerkung | Der F-Test prüft den ausgezogenen Funktionskörper, nicht die Kopplung an `errorTracker` in `server.js`. | trägt | N3: statische Zusicherung dazu |
+| 7 | Anmerkung | `loeschen_nach = NULL` bleibt dauerhaft. Nach der Korrektur des Konfigwerts trägt nichts die Frist nach. | trägt | Betreiberfrage (`c6-plan.md`) |
+| 8 | Anmerkung | Der Ersatzwert in `core/pdf-fristen.js:71` steht ohne `try`. | trägt (heute nicht erreichbar) | N3 |

@@ -58,6 +58,12 @@ ausdrücklich gebildet wird (`core/datum.js`). Dann ist es egal, in welcher Zone
   unterscheiden.
   - Empfehlung: so lassen („mindestens einmal“). „Genau einmal“ geht über SMTP nicht, und eine verlorene Mail wäre der
     größere Schaden.
+- A1-r3-7 (`pdf_loeschen_tage`): Ist der Wert unbrauchbar, legt der Monatslauf die PDFs ohne Löschfrist an
+  (`loeschen_nach` leer, also keine automatische Löschung) und meldet es bei jedem Lauf. Wird der Wert später
+  berichtigt, bleiben die schon angelegten Zeilen ohne Frist. Den Wert setzt nur der Betreiber direkt in der Datenbank.
+  - Empfehlung: so lassen. Die Meldung nennt den Schlüssel, und die betroffenen Zeilen lassen sich bei Bedarf von Hand
+    nachziehen. Ein automatisches Nachtragen müsste neue von alten Zeilen ohne Frist unterscheiden; dafür bräuchte es
+    eine Schemaänderung.
 - ladebestand#3: Ein Kommentar innerhalb eines Template-Literals überlebt die Maskierung. Das ist eine benannte Grenze
   des Rohwert-Scanners.
   - Empfehlung: so lassen. Die Behebung würde gewollte Erkennungen mitmaskieren.
