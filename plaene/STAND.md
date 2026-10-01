@@ -757,3 +757,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Gesichert: C6-A1 mit drei Commits bis `2791f43`, jetzt gepusht. C6-F hatte nichts committet, eine Änderung lag uncommittet im Baum.
   - Beide Agenten sind per Fortsetzung neu angestoßen, mit dem Auftrag, zuerst Gegenproben-Reste zu prüfen.
   - C6-A2: Fassung 2 nach zwei Planprüfungsrunden. Runde 2: flash 13, sol 16 Befunde. Neuer Entwurf: Tausch auf der Sperrverbindung, Vorab-Löschanker, Pfadsperre. Runde 3 (flash + sol) läuft.
+- 01.10.2026 15:41 UTC (Takt): C6-A1 und C6-F werden gebaut. Die Suite von C6-A1 läuft, die von C6-F wartet auf die Sperre.
+  - Aufträge mit Planprüfung bereit: C6-D1 (Fassung 2), C6-E (Fassung 2). C6-A2 (Fassung 3) wartet auf A1.
+  - C6-B: Planprüfung läuft.
+  - Neue Betreiber-Fragen mit Empfehlung „so lassen“: V07-9, c5d#1, ladebestand#3 (`c6-plan.md`).
