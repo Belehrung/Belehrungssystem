@@ -732,3 +732,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-G1: PR offen auf `3fac862` (Suite 0, 458 = 458), CI läuft, Kontrolle 11:17.
   - C5-D: N5 ist fertig und gelesen (Suite 0, 447 = 447). Wartet auf den Merge von G1, danach master herein, G1-Leserliste ergänzen, Suite, PR.
   - C5-E3: N1 läuft.
+- 01.10.2026 10:45 UTC: C5-G1 gemergt (`9f058be`, #500). CI 6/6 auf `3fac862`, kein Review-Kommentar, die Botschaft ist zurückgelesen. Der Deploy steht noch aus. C5-D nimmt master herein und ergänzt die G1-Leserliste.
