@@ -701,3 +701,8 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   C5-E3 beauftragt (Zweig `c5e3-reste`): die E2-Restnummern V13-2, V23-6, V25-6, die TG-Variablen im Kindprozess von qr_block, die Kommentare in wartung.js und `studio_id` in nachweis_waisen.
   Keine Planprüfung: ein reiner Testbeitrag mit genau benannten Stellen; jede Nummer bringt ihre eigene Gegenprobe mit.
   Noch auf der E-Sammelliste: T1-K4 (Einzelaufruf legt `einweisung-nachweise/` an), rund 40 Testdateien mit relativen Pfaden (erst nach den offenen Zweigen, sonst Konflikte), gii-xml-Paare bei V24-4.
+- 01.10.2026 05:40 UTC (Takt): läuft
+  - C5-E1 ist gemergt, der Deploy wird um 05:44 geprüft. C5-E3 (E-Reste) wird gebaut.
+  - C5-C: Der Merge von master steht mit Konflikt in `korrektur_dokumente_static`. Der Executer löst ihn und baut dabei N2 (4 Befunde aus Runde 2) mit; danach Suite.
+  - C5-D: N3 läuft. C5-G1: N1 läuft. C5-G2: N2 (17.06.2028) läuft.
+  - Drift-Alarm (`drift-chk-namen`): wartet auf die Suite.
