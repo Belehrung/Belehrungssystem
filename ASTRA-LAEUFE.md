@@ -403,6 +403,11 @@ sondern falsch.
 | 01.10.2026 | c5e3-diff (deepseek-flash) | **abgebrochen** (Geheimnis-Riegel auf dem Eingabediff): Diff 805 Zeilen, Suchen 0, Lesungen 0, Token rein 0, Token raus 0, Runden 0 | — | — | — | 0,00 $ |
 | 01.10.2026 | c5e3-diff (deepseek-flash) | Diff 805 Zeilen, Suchen 67, Lesungen 63, Token rein 4102104, Token raus 129685, Runden 23 | 8 | 8 | — | 1,39 $ |
 | 01.10.2026 | c6-verdichtung (deepseek-flash) | Diff 1 Zeilen, Suchen 9, Lesungen 33, Token rein 427460, Token raus 81720, Runden 8 | 124 offene Punkte | Positivkontrollen 5/5 | — | 0,23 $ |
+| 01.10.2026 | c6-zustand-z5a (deepseek-flash) | Diff 1 Zeilen, Suchen 34, Lesungen 51, Token rein 1144651, Token raus 52569, Runden 14 | 18 Kennungen | Nachmessung beim Bau | — | 0,41 $ |
+| 01.10.2026 | c6-zustand-z2 (deepseek-flash) | Diff 1 Zeilen, Suchen 48, Lesungen 38, Token rein 1523231, Token raus 64434, Runden 16 | 14 Kennungen | Nachmessung beim Bau | — | 0,53 $ |
+| 01.10.2026 | c6-zustand-z1 (deepseek-flash) | Diff 1 Zeilen, Suchen 36, Lesungen 54, Token rein 1137693, Token raus 67077, Runden 11 | 19 Kennungen | Nachmessung beim Bau | — | 0,42 $ |
+| 01.10.2026 | c6-zustand-z3 (deepseek-flash) | Diff 1 Zeilen, Suchen 55, Lesungen 53, Token rein 2276404, Token raus 74756, Runden 19 | 18 Kennungen | Nachmessung beim Bau | — | 0,77 $ |
+| 01.10.2026 | c6-zustand-z5b (deepseek-flash) | Diff 1 Zeilen, Suchen 57, Lesungen 84, Token rein 2557504, Token raus 86515, Runden 19 | 24 Kennungen | Nachmessung beim Bau | — | 0,87 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
