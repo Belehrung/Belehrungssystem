@@ -72,3 +72,51 @@ Neue Tests gegen eine eigene DB `gymdocu_c5c_test` laufen ohne echte Dateien au�
 - Mutationsskripte nach Hausregel: Ziel als Argument, Abbruch bei ≠ 1 Treffer, Marker, `cp`-Rücknahme mit `diff` EXIT 0. Nie mit einem Testlauf verketten.
 - Kein Test fasst ein echtes PDF_ROOT, echte Dienste oder `melde()`/Telegram an.
 - Kein PR. Committen und pushen auf `c5c-pdf-qr`.
+
+## Fassung 2 — verbindlich, geht §1 bis §3 vor (Planprüfung flash, 01.10.2026)
+
+Die Planprüfung hat 8 Befunde geliefert. Ich habe sie nachgelesen, sie tragen. Daraus folgt:
+
+1. **Umfang nur noch Korrekturblätter** (`PDF_ROOT/<sid>/Korrekturen/`).
+   - Begründung: `verify_dokumente` überlebt absichtlich jede Fristlöschung (`core/pdf-loeschung.js`), und ein Name kann in einem Studio mehrere Hashes tragen (Neu erstellen). Das Kriterium „Registerzeile vorhanden“ würde dort gelöschte oder überholte Fassungen wieder veröffentlichen.
+   - Bei Korrekturblättern gilt es nicht: `nachweis_korrektur_dokumente` hat `korrektur_id UNIQUE`, und die Retention löscht die Zeile per CASCADE mit (`core/retention.js` ~1006).
+   - `finalize()` (Engine-Dokumente, auch `Verbandbuch`) bleibt bei „löschen wie bisher“. Ein dort im Absturzfenster liegengebliebenes Dokument wurde nie ausgeliefert und wird neu erzeugt; übrig bleibt höchstens eine verwaiste `verify_dokumente`-Zeile. Das gehört als Kommentar an `finalize()` und als Anmerkung auf `plaene/offene-befunde-c5c.md`.
+
+2. **Kriterium:** `SELECT pdf_hash FROM nachweis_korrektur_dokumente WHERE studio_id = $1 AND dateipfad = $2`.
+   - `dateipfad` ist der gespeicherte öffentliche Pfad. Das Format lernst du an `correctionPath()`/`file.publicPath`.
+   - KEIN `typ`, KEIN `verify_dokumente`.
+
+3. **Helfer mit festem Kandidaten:** `repariereAusKandidat(kandidat, zielAbs, erwarteterHash, { entfernen })`. Ergebnisse:
+
+   | Ergebnis | Bedeutung |
+   |---|---|
+   | `repariert` | Link gesetzt |
+   | `schon_da` | Ziel trägt denselben Hash |
+   | `konflikt` | Ziel trägt einen anderen Hash |
+   | `anderer_inhalt` | Kandidat-Hash ≠ erwarteter Hash |
+   | `fehler` | E/A-Fehler |
+
+   - Ein `link` mit EEXIST wird neu gelesen.
+   - Wirft nie, überschreibt nie.
+   - Den Kandidaten entfernt der Helfer nur mit `entfernen: true` UND bei `repariert` oder `schon_da`.
+   - `findeResteKandidaten(zielAbs)` bleibt für den Lesepfad.
+
+4. **Lesepfad `alsBestehend()`: Reparatur ohne Entfernen** (`entfernen: false`).
+   - Grund: In einem anderen Prozess kann der Ersteller gerade zwischen COMMIT und `link()` stehen (Befund 3). Den Kandidaten räumt später die Ernte.
+   - Dazu `veroeffentliche()` im Ersteller: Wirft `linkSync` EEXIST oder ENOENT und trägt das Ziel den Hash der Zeile, gilt das als Erfolg. Bei EEXIST wird die Temp-Datei danach entfernt. Ein Wettlauf mit dem Reparierer darf nicht in `quarantaeneNachCommit` und `missing: true` enden.
+
+5. **Ernte, nur Kandidaten unter `<sid>/Korrekturen/` bzw. `_quarantaene/<sid>/Korrekturen/` jenseits der Altersschwelle:**
+   - keine Zeile zum Pfad → löschen wie bisher;
+   - Zeile da, `anderer_inhalt` → löschen wie bisher. Fehlt dabei die öffentliche Datei, zusätzlich melden;
+   - `repariert` oder `schon_da` → Kandidat entfernen (`entfernen: true`);
+   - `konflikt` oder `fehler` → liegen lassen, eigener Zähler, Meldung entprellt wie die übrigen. Kein Löschen, auch nicht später: Ein Korrekturblatt wird nie ersetzt, ein Konflikt ist ein Beweisstück;
+   - DB-Abfrage scheitert → liegen lassen, eigener Zähler, Meldung.
+   - Alle übrigen Pfade (Engine-Typen) bleiben unverändert.
+
+6. **Tests:**
+   - laufen in der Suite gegen deren DB (Muster `/_test$/`), Einzelläufe gegen `gymdocu_c5c_test`; `test/run.sh` NICHT ändern;
+   - prüfen Mengen: genau welche Pfade danach existieren und welche nicht, als Literale;
+   - führen einen eigenen Fall: `Verbandbuch`-Temp-Datei mit Registerzeile wird wie bisher gelöscht, NICHT repariert;
+   - führen einen Wettlauf-Fall: Lesepfad repariert, danach ruft der Ersteller `veroeffentliche()` → Erfolg, kein `missing`.
+
+§4 (C3, F3, C4, C5, C7, C8) und §0 bleiben unverändert.
