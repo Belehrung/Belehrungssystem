@@ -63,3 +63,11 @@ Lesespur flash, Runde 2 (5 Befunde, keiner blockierend):
 | R2-3 | sollte | Für den Traversalschutz `istEinfacherName`/`korrekturZiel` gibt es keine Zusicherung. | trägt | N2 |
 | R2-4 | Anmerkung | Der ENOENT-Erfolgszweig in `veroeffentliche()` ist ungetestet. | trägt | N2 |
 | R2-5 | Anmerkung | Lesepfad: Steht unter dem Namen eine Datei mit falschem Inhalt, liefert er `missing:false` ohne Meldung. Das war schon vorher so. | trägt | Sammelliste |
+
+## Nacharbeit 2 und master-Merge (`83773a5`, `3717422`), selbst gelesen
+
+- Konflikt in `test_feature_korrektur_dokumente_static.js` gelöst: Die Struktur kommt von master (MUSTER/trifft), die Aussage vom Zweig (Temp-Datei create-only, `linkSync` statt rename). `auditTxInserts` ist neu gemessen auf 1213/287, die Lücken stehen auf 1850/450 (Gegenmessung an master: 1032/287 reproduziert).
+- R2-1: `repariereAusKandidat` behandelt ENOENT wie EEXIST über den Zielzustand; nur „fehlt“ wirft weiter. R2-2 bis R2-4 als Tests mit Gegenproben (142/4, 145/1). Zusätzlich gefunden und geschlossen: Die Bedingung `!erwarteterHash ||` hatte keine Zusicherung (G2f).
+- Suite auf `3717422` (selbst nachgezählt): 0, 442 = 442, `diff` EXIT 0, 0 FAIL im Log, Lint 0. qr_journal ist grün (1262/0), weil die Behebung aus C5-E1 hereingekommen ist.
+
+PR geöffnet, CI läuft.
