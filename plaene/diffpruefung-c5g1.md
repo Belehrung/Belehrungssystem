@@ -75,3 +75,11 @@ Entscheidung zur Rückfrage des Bauenden: Ein nicht auflösbarer `local_path` gi
 Das ist N3.
 
 Keine dritte Lesespur: Die Behebungen sind eng umrissen, jede ist mit einer roten Mutation belegt, den Diff habe ich gelesen.
+
+## Nacharbeit 3 (`3fac862`), selbst gelesen
+
+- Ein ungültiger Pfad gilt jetzt als `weg` (`pfad_ungueltig`). Gemeldet wird einmal je Auftrag, danach wird gelöscht.
+- `weg2_vorab` 63/0. Fünf Gegenproben, alle ROT.
+- Suite 0, 458 = 458, Lint 0. master ist nicht weiter.
+- PR offen.
+- Wegen der Überschneidung mit C5-D bekommt der Bauende von C5-D den Hinweis: Nach dem Merge von G1 muss sein neuer Leser von `mail_gesendet_am` in die Leserliste von `test_feature_defekt_mail_claim_uebergang.js`.
