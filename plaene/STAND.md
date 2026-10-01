@@ -752,3 +752,8 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
 - 01.10.2026 12:55 UTC: C5-E3 ausgeliefert (Deploy 469, `9dfe522`, success). live-check EXIT 0, 5 ✓, 2 ℹ. Damit ist C5 abgeschlossen.
   - In Bau: C6-F (Tests, Baum `/workspace/gymdocu-c6f`) und C6-A1 (Monatslauf, `/workspace/gymdocu-c6a1`).
   - Planprüfung: C6-A2 (Monatssperre und Archivversionen, `auftrag-c6a2-archivversionen.md`).
+- 01.10.2026 15:10 UTC (Takt):
+  - Beide Executer (C6-F, C6-A1) brachen um ca. 13 Uhr am API-Ausgabenlimit ab. Der Betreiber meldet, es sei noch Guthaben da. Der Container hat neu gestartet.
+  - Gesichert: C6-A1 mit drei Commits bis `2791f43`, jetzt gepusht. C6-F hatte nichts committet, eine Änderung lag uncommittet im Baum.
+  - Beide Agenten sind per Fortsetzung neu angestoßen, mit dem Auftrag, zuerst Gegenproben-Reste zu prüfen.
+  - C6-A2: Fassung 2 nach zwei Planprüfungsrunden. Runde 2: flash 13, sol 16 Befunde. Neuer Entwurf: Tausch auf der Sperrverbindung, Vorab-Löschanker, Pfadsperre. Runde 3 (flash + sol) läuft.
