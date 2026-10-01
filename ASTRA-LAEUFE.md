@@ -433,6 +433,7 @@ sondern falsch.
 | 01.10.2026 | planpruefung-c6c-f3-flash (deepseek-flash) | Diff 247 Zeilen, Suchen 21, Lesungen 49, Token rein 3189481, Token raus 61703, Runden 30 | 13 (1 blockierend) | 1, 4, 6, 9 nachgemessen, getragen (1: S27 hinge mit Studio-Lock zuerst); Rest eingearbeitet (Fassung 4) | — | 1,03 $ |
 | 01.10.2026 | planpruefung-c6c-f4-flash (deepseek-flash) | Diff 278 Zeilen, Suchen 19, Lesungen 45, Token rein 2390465, Token raus 107320, Runden 21 | 10 (1 blockierend) | 1, 8, 10 nachgemessen, getragen (10 ändert den Entwurf: bestehende ziele-Felder); Rest eingearbeitet (Fassung 5) | — | 0,85 $ |
 | 01.10.2026 | diffpruefung-c6f-flash (deepseek-flash) | Diff 3456 Zeilen, Suchen 52, Lesungen 65, Token rein 5618526, Token raus 80492, Runden 30 | 6 | 6 (Nr. 1 deckt sich mit dem eigenen Befund E1) | — | 1,78 $ |
+| 01.10.2026 | diffpruefung-c6a1-n2-flash (deepseek-flash) | Diff 1004 Zeilen, Suchen 15, Lesungen 31, Token rein 1586057, Token raus 64483, Runden 15 | 8 | 8 (7 als Betreiberfrage) | — | 0,55 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
