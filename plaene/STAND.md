@@ -689,3 +689,11 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Diagnose aus Code und Wächterlogik: Die Regeln gelten live unter den älteren Namen `*_chk` (Migrationen 0005/0007/0010).
   - Ein frisches Schema hat sie doppelt, inline `*_check` plus `*_chk` aus der Migration. Der Wächter vergleicht nach Namen. Es fehlt also nur der Name, keine Regel.
   - Behebung: Zweig `drift-chk-namen` (Migration 0066 vereinheitlicht die Namen, dazu ein Klassenwächter gegen doppelte CHECKs). Executer läuft.
+- 01.10.2026 04:40 UTC (Takt): läuft
+  - Drift-Alarm (`drift-chk-namen`): Der Bauende wartet auf seine Suite.
+  - C5-C: Nacharbeit 1 (Opus) wartet auf ihre Suite.
+  - C5-D: Nacharbeit 3 läuft (Anzeige des Versandstands; beachtet den Übergangswert aus G1).
+  - C5-G1: Diffprüfung fertig (Lesespur 8, ausführende Spur 7 Befunde, keiner blockierend). Nacharbeit 1 läuft.
+  - C5-G2: Nacharbeit 1 gelesen. Nacharbeit 2 (17.06.2028 Berlin) läuft.
+  - C5-E1: Die Suite m5 lief nach 2 h Warten auf die Sperre ins Zeitlimit. Sie ist neu gestartet, losgelöst vom Zeitlimit.
+  - Die Suite-Sperre ist der Engpass: bis zu 6 Zweige warten gleichzeitig.
