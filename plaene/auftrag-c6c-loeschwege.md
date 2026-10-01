@@ -1,6 +1,13 @@
 # Auftrag C6-C — Löschwege, Offboarding, Meldekanal (Extrarunde C6)
 
-Fassung 3, 01.10.2026. Zweite Planprüfung sol über Fassung 2 mit 9 Befunden (`scratchpad/c6plan/sol-c6c4.txt`).
+Fassung 4, 01.10.2026. Dritte Planprüfung flash über Fassung 3 mit 13 Befunden (`scratchpad/c6plan/flash-c6c-f3.txt`).
+Selbst nachgemessen sind 1 (`test_feature_storage_replica_loeschauftrag.js:1162-1177`, S27: Mit dem Studio-Lock zuerst
+hinge der Test), 4 (`core/provisioning.js:488-495`: Mitarbeiter-Ordner `<maId>_…`, kein Studio-Ordner), 6
+(`test_feature_offboarding_ziel_ausserhalb_root.js:115` verlangt keine Meldung) und 9 (Fremdschlüssel erst aus der
+Boot-Härtung, `core/db.js:2980-2994`). Der Studio-Lock aus Fassung 3 entfällt deshalb; die Queue wird stattdessen am
+ENDE der Discovery übernommen. Die übrigen Befunde sind eingearbeitet.
+
+Fassung 3: Zweite Planprüfung sol über Fassung 2 mit 9 Befunden (`scratchpad/c6plan/sol-c6c4.txt`).
 Selbst nachgemessen und getragen sind 1, 3 (`core/provisioning.js` nimmt keinen Studio-Lock, `fuehreLoeschungenAus`
 nimmt ihn über `auditTx`), 7, 8 und 9 (`core/retention.js:832` prüft nur `path.resolve`, nicht `path.isAbsolute`).
 2, 4, 5 und 6 folgen aus dem Code wie beschrieben und sind eingearbeitet, 5 als benannte Grenze.
@@ -41,35 +48,45 @@ Wurzeln darauf gesetzt), nie echte Verzeichnisse. `melde()` ist immer eine Attra
    - Messen: Welche Zeilen von `retention_datei_loeschqueue` löscht `deprovisionStudio` heute mit
      (`core/provisioning.js:644-647`)? Wie ist `rec.ziele` aufgebaut, und welche Prüfungen wendet
      `raeumeOffboardingRueckstaende` je Kategorie an?
-   - Behebung nach dem Muster der beiden Replica-DELETEs in derselben Transaktion (`core/provisioning.js:582-588`):
-     Direkt danach und VOR `schreibeOffboardingRest` läuft `DELETE FROM retention_datei_loeschqueue WHERE studio_id = $1
-     RETURNING dateipfad, kategorie`. Die zurückgegebenen Pfade kommen als eigenes Feld in `ziele`.
-   - Ein Queue-Eintrag, der NACH diesem DELETE noch eingefügt wird, darf von der Discovery nicht still mitgelöscht
-     werden (sol 2). Deshalb nimmt die Discovery `retention_datei_loeschqueue` aus.
-     - Bleibt eine späte Zeile stehen, scheitert das Löschen des Studios am Fremdschlüssel (`core/db.js:2985-2990`,
-       ohne CASCADE; messen). Die Transaktion rollt zurück, und es wird nichts gelöscht.
-     - Die Fehlermeldung nennt dann diesen Grund ausdrücklich und nicht „FK-Zyklus“.
-     - Test mit einer Barriere: ein INSERT über eine zweite Verbindung nach dem RETURNING und vor dem Löschen des
-       Studios → Rollback, Studio lebt, Queue-Zeile da.
-   - Sperrordnung (sol 3): `fuehreLoeschungenAus` nimmt über `auditTx` den Studio-Lock, sperrt dann eine Fachzeile und
-     fügt danach Queue-Zeilen ein (`core/retention.js:1014`, `:1050-1077`). Die Deprovisionierung nimmt heute KEINEN
-     Studio-Lock.
-     - Behebung: `deprovisionStudio` nimmt als ERSTE Sperre seiner Transaktion `pg_advisory_xact_lock(studioId)`. Das ist
-       dieselbe Sperrklasse wie in `core/integritaet.js:72-74`, also keine neue.
-     - VORHER messen, ob ein Weg den Studio-Lock NACH einer Zeile nimmt, die die Deprovisionierung löscht. Der
-       Kommentar `core/provisioning.js:568-581` nennt den Abschluss eines Replica-Uploads (1c: Zeile FOR UPDATE, dann
-       KEY SHARE auf `studios`). Gibt es so einen Weg, abbrechen und melden; dann nicht bauen.
-     - Paralleltest mit zwei Verbindungen: Retention-Block und Deprovisionierung für dasselbe Studio, mit einem
-       vorbestehenden Konflikteintrag in der Queue. Erwartet wird kein `40P01`.
+   - Behebung:
+     - Die Discovery nimmt `retention_datei_loeschqueue` aus.
+     - NACH der Discovery und VOR dem Löschen der `studios`-Zeile läuft `DELETE FROM retention_datei_loeschqueue WHERE
+       studio_id = $1 RETURNING dateipfad, kategorie`. Die zurückgegebenen Pfade kommen als eigenes Feld in `ziele`.
+     - Danach wird die Offboarding-Queue-Datei mit demselben Namen (`laufKennung`) noch VOR dem COMMIT neu geschrieben,
+       atomar wie `schreibeOffboardingRest`. Scheitert dieses Neuschreiben, wirft der Callback; das ist ein sicherer
+       Rollback wie bei R7-2.
+   - Warum am Ende statt am Anfang (sol 3, flash F3-1): `fuehreLoeschungenAus` sperrt erst eine Fachzeile und fügt
+     danach Queue-Zeilen ein (`core/retention.js:1014`, `:1050-1077`). Nimmt die Deprovisionierung die Queue-Zeilen
+     ebenfalls NACH den Fachzeilen, sperren beide in derselben Reihenfolge, und für dieses Paar entsteht kein Kreis.
+     Einen Studio-Lock nimmt die Deprovisionierung weiterhin NICHT; S27 bleibt unverändert.
+   - Späte Einträge (sol 2): Ein Queue-Eintrag, der nach diesem DELETE noch eingefügt wird, lässt das Löschen des
+     Studios am Fremdschlüssel scheitern. Die Transaktion rollt zurück, und es wird nichts gelöscht.
+     - Voraussetzung: Den Fremdschlüssel `fk_retention_datei_loeschqueue_studio` in der Test-DB messen. Er entsteht
+       erst in der Boot-Härtung (`core/db.js:2980-2994`, flash F3-9). Fehlt er, abbrechen und melden.
+     - Die Fehlermeldung nennt diesen Grund ausdrücklich, nicht „FK-Zyklus“.
+     - Test mit einer Barriere: Über eine zweite Verbindung wird nach dem RETURNING und vor dem Löschen des Studios eine
+       Zeile eingefügt → Rollback, Studio lebt, Queue-Zeile da.
+   - Die Sperrordnung des neuen DELETE gegen alle Wege messen, die die Queue anfassen
+     (`verarbeiteKorrekturDateiQueue`, `entferneDateiOderQueue`, `fuehreLoeschungenAus`), und in den Bericht schreiben.
+     Bestehende Verzahnungstests (S27 und Geschwister) bleiben unverändert grün.
    - Kategorie `'hauptdatei'`: Die Wurzelprüfung allein reicht NICHT, denn eine Löschwurzel sagt nichts darüber, welchem
      Studio die Datei gehört (sol 1). Gelöscht wird nur über EINE neue, gemeinsame Funktion (Arbeitsname
-     `darfFremdlosLoeschen(pfad, studioId)`), die L-7 und C-7 beide benutzen:
-     - `path.isAbsolute` wird VOR jeder Normalisierung geprüft (sol 9), danach `findeLoeschWurzel`.
-     - Liegt der Pfad unter `PDF_ROOT`, muss er unter `PDF_ROOT/<studioId>/` liegen. Für einen Pfad unter `DOKUMENTE_DIR`
-       gilt dasselbe für den Studio-Ordner, falls es einen gibt (`core/provisioning.js:462-491`; messen, wie er
-       aufgebaut ist). Ein Pfad im Ordner eines ANDEREN Studios wird nie gelöscht, sondern gezählt und gemeldet. Pfade im
-       eigenen Ordner deckt das rekursive Entfernen von `studioPdfRoot` bzw. `dokumenteOrdner` schon ab; dann ist nichts
-       zusätzlich zu tun.
+     `darfFremdlosLoeschen(pfad, kategorie, studioId, kontext)`), die L-7 und C-7 beide benutzen:
+     - Kategorie `'korrekturblatt'`: Auflösen wie `core/retention.js:859-866` (relativ bzw. `/pdf/<sid>/…`). Der Pfad muss
+       unter `PDF_ROOT/<studioId>/Korrekturen` liegen. Dann deckt ihn das Entfernen von `studioPdfRoot` ab, und der
+       Eintrag gilt als abgeschlossen. Sonst wird er gezählt und gemeldet (flash F3-2).
+     - Kategorie `'hauptdatei'`: `path.isAbsolute` wird VOR jeder Normalisierung geprüft (sol 9), danach
+       `findeLoeschWurzel`.
+     - Pfade unter `PDF_ROOT` müssen unter `PDF_ROOT/<studioId>/` oder `PDF_ROOT/_quarantaene/<studioId>/` liegen
+       (`core/provisioning.js:546-556`, flash F3-5). Beide deckt das rekursive Entfernen ab, der Eintrag ist abgeschlossen.
+     - Pfade unter `DOKUMENTE_DIR`: Die Ordner heißen `<maId>_…` (`core/provisioning.js:488-495`, flash F3-4).
+       - Im Offboarding (Mitarbeiter-IDs von X sind vor der Discovery bekannt): Ein Pfad in einem Ordner von X ist
+         abgedeckt (`dokumenteOrdner`).
+       - Sonst, und immer im Spool-Nachholen ohne lebendes Studio, gibt es keinen belegbaren Bezug. Dann wird nicht
+         gelöscht, sondern gezählt und gemeldet; das ist kein `merke()`.
+     - Ein Pfad im Ordner eines ANDEREN Studios wird nie gelöscht, sondern gezählt und gemeldet.
+     - Ablehnungen sind gezählt und abgeschlossen. Nur ein Fehler einer DB-Prüfung geht in `merke()` (`ok = false`).
+       Sonst liefe der Eintrag jeden Tag erneut auf (flash F3-2).
      - Flache, mandanten-globale Verzeichnisse (`BELEHRUNGEN_UPLOAD_DIR`, `PRUEFBERICHT_DIR`, `EINWEISUNG_NACHWEIS_DIR`):
        Gelöscht wird nur, wenn KEIN lebendes Studio den Dateinamen referenziert. Für Belehrungen gibt es die Prüfung schon
        (`belehrungsDateiNochReferenziert`). Für Prüfberichte und Einweisungs-Nachweise die Tabellen und Spalten messen,
@@ -81,11 +98,10 @@ Wurzeln darauf gesetzt), nie echte Verzeichnisse. `melde()` ist immer eine Attra
      (`core/provisioning.js:787-788`). Messen und belegen. Trägt das, brauchen sie keinen eigenen Löschweg, aber einen
      Test. Trägt es nicht, kategorieabhängig auflösen wie `core/retention.js:859-865`.
    - Ein Upload, auf den ein lebendes Studio verweist, ist KEINE Auslassung (`core/provisioning.js:775-776`). Er wird
-     eigens gezählt und gemeldet („geteilt, bleibt zu Recht“), nicht über `uebersprungen` (flash 3).
+     eigens GEZÄHLT, aber NICHT gemeldet, wie heute im `uploadNamen`-Zweig. Er bleibt zu Recht liegen, und
+     `test_feature_offboarding_ziel_ausserhalb_root.js:115` und `:157` bleiben unverändert (flash 3, flash F3-6).
    - Scheitert die Referenzprüfung, geht das über `merke()` in `ok = false`. Die Offboarding-Queue-Datei bleibt dann
      liegen (`core/provisioning.js:1005-1013`).
-   - Die Meldung „geteilt“ mit den bestehenden Kanalzusicherungen abstimmen: `test_feature_offboarding_ziel_ausserhalb_root.js:115`
-     und `:157` verlangen dort KEINE Meldung (sol, Rechenschaft). Die Lösung kommt in den Bericht.
    - Test (heute rot): Eine Queue-Zeile für Studio X zeigt auf eine unreferenzierte Datei unter dem Upload-Verzeichnis
      (Wegwerf-Wurzel). X wird deprovisioniert.
      - Die direkte Löschung nach dem Commit wird gezielt zum Scheitern gebracht, nach dem Muster
@@ -97,8 +113,8 @@ Wurzeln darauf gesetzt), nie echte Verzeichnisse. `melde()` ist immer eine Attra
      - Vorbedingungen werden zugesichert: Die Datei existiert vorher. KEINE `belehrungen`-Zeile irgendeines Studios
        trägt diesen Namen, auch keine mit `datei_vorhanden = 0`. Sonst löscht schon der heutige `uploadNamen`-Zweig
        (`core/provisioning.js:496-498`), und der Test ist grün aus dem falschen Grund (flash 12).
-   - Positivkontrolle: Verweist ein ANDERES, lebendes Studio auf dieselbe Datei, bleibt sie liegen und wird als „geteilt“
-     gemeldet.
+   - Positivkontrolle: Verweist ein ANDERES, lebendes Studio auf dieselbe Datei, bleibt sie liegen. Sie wird als
+     „geteilt“ gezählt, nicht gemeldet.
    - Test für `'korrekturblatt'`: Eine Queue-Zeile mit `/pdf/<sid>/Korrekturen/…`. Nach Deprovisionierung und
      Abarbeiten ist die Datei weg.
    - Zweite Positivkontrolle: Eine Queue-Zeile mit einem Pfad außerhalb aller Löschwurzeln wird nicht gelöscht.
@@ -106,6 +122,11 @@ Wurzeln darauf gesetzt), nie echte Verzeichnisse. `melde()` ist immer eine Attra
      Datei des lebenden Studios B (`PDF_ROOT/<B>/…`). Datei bleibt, gezählt und gemeldet.
    - Vierte Positivkontrolle (sol 9): ein relativer Pfad, dessen Auflösung in einer erlaubten Wurzel läge, wird nicht
      gelöscht.
+   - Derselbe `path.isAbsolute`-Riegel kommt auch in `verarbeiteKorrekturDateiQueue`, Zweig `'hauptdatei'`
+     (`core/retention.js:832`). Test: Eine Queue-Zeile mit relativem Pfad wird nicht gelöscht und als Fehler gezählt
+     (flash F3-8).
+   - Fünfte Positivkontrolle (flash F3-5): ein eigener Pfad unter `PDF_ROOT/_quarantaene/<X>/`. Er gilt als abgedeckt
+     und wird nicht als fremd gemeldet.
 2. **C-7 — scheitert der Queue-Eintrag, geht der Löschauftrag trotzdem nicht verloren (sollte).**
    - Behebung: Ein Spool-Eintrag wird auf die Platte geschrieben, und zwar in drei Fällen:
      - in `entferneDateiOderQueue`, wenn der Queue-INSERT scheitert;
@@ -121,9 +142,10 @@ Wurzeln darauf gesetzt), nie echte Verzeichnisse. `melde()` ist immer eine Attra
      - Inhalt: `studio_id`, absoluter `dateipfad`, `quelle`, Zeitpunkt, dazu die IDENTITÄT der Datei zum Zeitpunkt des
        Vormerkens: `dev`, `ino`, `size`, `mtimeMs` aus `fs.statSync` (sol 6). Ist die Datei schon weg, gibt es nichts
        vorzumerken.
-   - Nachholen: `spoolNachholen()` läuft im nächtlichen Retention-Lauf VOR der Studio-Schleife (`server.js:1611-1617`,
-     Fundstelle neu messen). Es gibt KEINEN Boot-Aufruf, aus demselben Grund wie beim Offboarding-Reaper (R6-11,
-     `core/provisioning.js:53-54`; flash 4). Je Spool-Datei:
+   - Nachholen: `spoolNachholen()` läuft im nächtlichen Retention-Cron (`cron.schedule('30 4 * * *')`,
+     `server.js:1741-1742`) VOR `fuerAlleStudios('Retention-Löschen', …)`. NICHT in der allgemeinen Hilfe
+     `fuerAlleStudios` (`:1611`), die auch andere Jobs bedient (flash F3-3). Einen Boot-Aufruf gibt es nicht, aus
+     demselben Grund wie beim Offboarding-Reaper (R6-11, `core/provisioning.js:53-54`; flash 4). Je Spool-Datei:
      - Prüfen: absoluter Pfad und `findeLoeschWurzel`. Ein ungültiger Eintrag bleibt liegen und wird mit eigener
        Kennung gemeldet.
      - Identität prüfen (sol 6). Ist die Datei weg, ist der Auftrag erledigt, und die Spool-Datei wird entfernt. Hat
@@ -151,8 +173,14 @@ Wurzeln darauf gesetzt), nie echte Verzeichnisse. `melde()` ist immer eine Attra
      - Studio gelöscht → Datei gelöscht, Spool-Datei weg.
      - Positivkontrolle: Ein referenzierter Upload bleibt liegen, die Spool-Datei bleibt.
      - Referenzprüfung wirft (DB weg) → Spool-Datei angelegt, Datei liegt (sol 4).
-     - Identität: Spool anlegen, Datei löschen, unter demselben Pfad eine NEUE Datei mit lebender Referenz anlegen,
-       nachholen → die neue Datei bleibt, die Spool-Datei ist weg, eine Meldung ist da (sol 6).
+     - Identität: Spool anlegen, Datei löschen, unter demselben Pfad eine NEUE, UNREFERENZIERTE Datei anlegen,
+       nachholen. Erwartet (sol 6, flash F3-7):
+       - die neue Datei bleibt;
+       - es entsteht KEIN Queue-Eintrag;
+       - die Spool-Datei ist weg;
+       - die Meldung trägt die eigene Kennung der Identitätsprüfung.
+     - Die Tests setzen `DATEI_LOESCHQUEUE_SPOOL_DIR` auf eine Wegwerf-Wurzel, und zwar VOR dem ersten projekteigenen
+       `require`, wie bei `OFFBOARDING_QUEUE_DIR` (flash F3-13).
      - Ein Spool-Eintrag mit einem Pfad außerhalb aller Wurzeln wird nicht gelöscht und gemeldet.
 3. **R2-7 — Stufe 2 des Foto-Reapers fragt nach einem Stufe-1-Fehler nicht erneut (Anmerkung).**
    - Heute überspringt Stufe 2 die Tabellenabfrage nur bei `'tabelle_fehlt'` (`core/foto-reaper.js:202-203`). Neu:
@@ -178,6 +206,8 @@ Wurzeln darauf gesetzt), nie echte Verzeichnisse. `melde()` ist immer eine Attra
      - Wenn ja: nicht löschen, als Auslassung zählen und melden.
      - Scheitert die Prüfung, wird nicht gelöscht, und der Queue-Eintrag bleibt.
      - Die L-2-Fälle (Pfad außerhalb des aktuellen Spiegel-Roots, keine lebende Zeile) werden weiter gelöscht.
+   - Alle Referenzen eines Laufs gehen in EINE Abfrage je Tabelle (`remote_ref = ANY($1)`), nicht in eine Abfrage je
+     Referenz. `remote_ref` hat allein keinen Index (flash F3-12).
    - Die Spaltennamen messen, nicht raten. Gemessen in der Planprüfung: `storage_replica.remote_ref` und
      `storage_replica_loeschauftrag.remote_ref` (`core/db.js:2238-2288`). Der Filter auf Aufträge darf `'vorbelegt'` und
      beanspruchte Aufträge NICHT ausschließen (sol 7).
@@ -221,7 +251,8 @@ Wurzeln darauf gesetzt), nie echte Verzeichnisse. `melde()` ist immer eine Attra
      - Keine Datei `migrations/*.sql` enthält ein `ALTER COLUMN … TYPE` auf eine dieser Spalten.
        - Der Scanbereich ist NUR `migrations/*.sql`. Die Testdatei selbst enthält solches SQL (`:429`, `:448`).
        - Die Zahl der gescannten Dateien ist > 0.
-       - Kommentare werden vorher entfernt (`0061:67` ist ein Kommentar).
+       - Kommentare (`--` und `/* … */`) werden allgemein entfernt, nicht als Einzelfall. Gemessen sind es zwei Treffer:
+         `0061:67` und `0066:70` (flash F3-11).
        - Eine Positivkontrolle zeigt, dass das Muster eine eingesetzte Zeile findet (flash 9).
    - Die Meldung verweist auf die benannte Grenze in 0066.
    - Gegenprobe: eine Wegwerf-Migrationsdatei mit `ALTER COLUMN … TYPE` im Testverzeichnis → rot.
