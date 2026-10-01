@@ -116,3 +116,14 @@ N4 ergänzt einen Senden-Knopf im Sperr-Banner der Geräteseite (Zustand „offe
 - Suite 0, 447 = 447, Lint 0. Der erste Lauf war rot: Kurze negative Muster schlugen in `verengung_static` an. Die Zusicherungen sind jetzt positiv formuliert.
 - Screenshots gesichtet.
 - **Offen vor dem PR:** master hereinnehmen. Hinzu kommen C5-G2 (#499) und C5-G1, sobald es gemergt ist. Die Leser von `mail_gesendet_am` in C5-D (`mailStandZustand`, das SELECT der Ergebnisseite, das SELECT der Geräteseite) müssen in die Leserliste von `test_feature_defekt_mail_claim_uebergang.js`, danach die Suite neu.
+
+## Nacharbeit 6 (master herein, Leserliste; Merge `5197071`, `6523cc5`), selbst gelesen
+
+- Konflikt in `core/defekt_mailer.js` aufgelöst: Die Struktur von G1 (try, `claimGeholt`, `claimWert`) bleibt, die Rückgaben sind `{ ok, grund }`. Ich habe alle Rückgaben gelesen. `sendeWartungsDefektMail` hat nur einen echten Aufrufer (`routes/wartung.js:1953`), und der liest `.ok`.
+- Zwei Tests brachen am Inhalt, nicht als Textkonflikt; beide sind angepasst:
+  - G1-Test: Er erwartete `true`.
+  - Tor-Test: Während des Versands steht jetzt der Übergangswert in der Spalte, die Anzeige sagt „unklar“.
+- Die Leser sind im Kopf des Mailers eingetragen. Der Test zählt literal 4 Code-Zeilen in `routes/wartung.js` und prüft die strenge Zeitstempelform. Gegenproben 39/1, 39/1, 39/1, 39/1 und 177/1 sowie 170/8.
+- Grenze: Das `SELECT *` der Geräteseite bleibt für den Textscan unsichtbar. Abgesichert ist es durch Verhaltenstests.
+- Suite auf `6523cc5`: 0, 462 = 462, Lint 0.
+- PR offen.
