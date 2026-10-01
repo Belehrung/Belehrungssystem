@@ -24,7 +24,7 @@ Diese Punkte werden in den Sammellisten als erledigt nachgetragen, sobald C6 aus
 | C6-C | Löschwege und Offboarding: L-7, C-7, R2-7, R2-11, G1-c, G1-h, c5g#1, C3b4-1..4, Drift-G1 | offen |
 | C6-D1 | Eingabeprüfung: B8, V02-5, V02-6, V02-7, V02-10, N1-H2, c5d#1, P3-S1, F7, V08-2, V09-4 | Fassung 2 bereit (`auftrag-c6d1-eingaben.md`) |
 | C6-D2 | Doppelsenden, Entwurf, Import-Rennen, Zeitlimit: V02-4, V03-3, c5d#2, D-E1, B7, V05-6, H1a-S5, V08-5 | Fassung 2 bereit (`auftrag-c6d2-doppelsenden.md`) |
-| C6-D3 | Berliner Zeit und Bereich 04: V01-6, V03-4, V03-5, V04-4..17 | Planprüfung läuft (`auftrag-c6d3-zeit-bereich04.md`) |
+| C6-D3 | Berliner Zeit und Bereich 04: V01-6, V03-4, V03-5, V04-4..17 | Fassung 2 bereit (`auftrag-c6d3-zeit-bereich04.md`) |
 | C6-E | Offline-Warteschlange: R2-4 (q), R3-8, R4-3, R4-9, N4-H1, N4-H2 | Fassung 2 bereit (`auftrag-c6e-offline.md`) |
 
 **Zeitzone (V01-6, V03-4, V03-5):** Das ist keine Betreiberfrage. Behoben wird es, indem die Berliner Zeit

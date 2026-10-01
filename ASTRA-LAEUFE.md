@@ -423,6 +423,7 @@ sondern falsch.
 | 01.10.2026 | planpruefung-c6e-flash (deepseek-flash) | Diff 65 Zeilen, Suchen 27, Lesungen 24, Token rein 2444755, Token raus 91756, Runden 22 | 13 | 1 und 7 nachgemessen, getragen | — | 0,84 $ |
 | 01.10.2026 | planpruefung-c6b-flash (deepseek-flash) | Diff 119 Zeilen, Suchen 35, Lesungen 43, Token rein 1607531, Token raus 80806, Runden 17 | 13 | 1 und 3 nachgemessen, getragen | — | 0,58 $ |
 | 01.10.2026 | planpruefung-c6d2-flash (deepseek-flash) | Diff 93 Zeilen, Suchen 36, Lesungen 62, Token rein 3747485, Token raus 73840, Runden 29 | 12 | 1 nachgemessen, getragen | — | 1,21 $ |
+| 01.10.2026 | planpruefung-c6d3-flash (deepseek-flash) | Diff 115 Zeilen, Suchen 47, Lesungen 61, Token rein 2822594, Token raus 54788, Runden 29 | 14 | 1 und 2 nachgemessen, getragen | — | 0,91 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
