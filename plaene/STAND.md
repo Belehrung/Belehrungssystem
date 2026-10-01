@@ -766,3 +766,8 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C6-F und C6-D1 in Bau.
   - Bereit: C6-B, C6-D2, C6-D3, C6-E (je Fassung 2) und C6-A2 (Fassung 3, nach A1).
   - Betreiber-Frage zu R1 (DeepSeek-R1) beantwortet: direkt nicht verfügbar, über OpenRouter ohne Guthaben, Empfehlung „nicht einbinden“.
+- 01.10.2026 17:41 UTC (Takt):
+  - C6-F und C6-D1 brachen um ca. 16:50 erneut am API-Limit ab. Beide sind fortgesetzt (Stand: C6-F `4c2ab21`, C6-D1 `1b14cb7`, beide gepusht, Bäume sauber).
+  - C6-A1 Nacharbeit 1: Suite 0, 468 = 468, Lint 0, Gegenproben je Punkt getragen (`cd7a123`). Die Diffprüfung Runde 2 (flash) hat 7 Befunde, 6 tragen. Nacharbeit 2 läuft (`diffpruefung-c6a1.md`, Sammelliste `offene-befunde-c6a1.md`).
+  - C6-C (Löschwege): Fassung 4 nach drei Planprüfungen (flash 13, sol 9, flash 13). Der Studio-Lock aus Fassung 3 ist verworfen (S27 hinge); die Queue wird jetzt am Ende der Discovery übernommen. Die vierte Prüfung (flash) läuft. G1-h geht als Betreiberfrage hinaus (`c6-plan.md`). Sammelliste: `offene-befunde-c6c.md`.
+  - sol brach bei C6-C zweimal am Lesedeckel ab. Grund war ein eigener Fehler: Der Brief trug den Schwerpunkt von C6-A2. Der dritte Lauf mit eigenem Brief lieferte.
