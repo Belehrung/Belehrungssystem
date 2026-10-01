@@ -720,3 +720,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-G1: Runde 2 der Lesespur fand 8 Befunde, N2 läuft.
   - C5-D: N5 läuft.
 - 01.10.2026 07:41 UTC (Takt): Es laufen C5-D N5, C5-G1 N2, C5-G2 N2 und C5-E3. Der Deploy für `4ef18ef`/`d372589` steht noch aus, Prüfung um 07:50 (send_later).
+- 01.10.2026 07:51 UTC: C5-C ist ausgeliefert (Deploy 464, `4ef18ef`, success). Ebenso der Drift-Fix (Deploy 465, `d372589`, success). Der Health-Gate des Deploys belegt, dass Migration 0066 beim App-Start durchging. live-check EXIT 0, 5 ✓, 2 ℹ (Zertifikat, Health; umgebungsbedingt). Die drei Drift-WARN sollten beim nächsten Lauf des Drift-Wächters verschwinden.
