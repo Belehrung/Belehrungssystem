@@ -679,3 +679,9 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-G2: Nacharbeit 1 läuft beim Bauenden (Befunde E-, L-, C- in `diffpruefung-c5g2.md`).
   - C5-C: Nacharbeit 1 nach Fassung 2 läuft (Executer auf Opus).
   - C5-D und C5-G1 laufen.
+- 01.10.2026 03:40 UTC (Takt): läuft
+  - C5-E1: Suite m5 (mit master/E2) läuft.
+  - C5-D: Nacharbeit 2 gelesen und übernommen. Nacharbeit 3 (Anzeige „Servicetechniker benachrichtigt am …“, R2-4) läuft.
+  - C5-G2 und C5-C: die jeweilige Nacharbeit 1 läuft.
+  - C5-G1 läuft.
+  - Modellregel: Gebaut wird auf Sonnet (Betreiber 01.10.).
