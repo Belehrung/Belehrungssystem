@@ -15,3 +15,11 @@ Keine Zusicherung ist schwächer geworden. Gefunden hat die Lesespur keine Zusic
 | F3 | Anmerkung | Der Kommentar „GLEICHZEITIG“ im wettlauf-Test widerspricht der Staffelung. | Nacharbeit 1 |
 | F4 | Anmerkung | `summe === kopf.gesamt` bezieht sich auf sich selbst. | Nacharbeit 1: handgeführte Kopfzahl als Literal |
 | F5 | Anmerkung | Die mkdtemp-Verzeichnisse entstehen schon beim Laden. Ein Wurf in den `require`s erreicht das finally nicht. | Nacharbeit 1: `process.on('exit')`-Räumpfad |
+
+## Nacharbeit 1 (`45ab1b8..797e35c`), selbst gelesen
+
+F1 bis F5 sind umgesetzt, aus cwd=/tmp vorher ROT, nachher GRÜN belegt. Suite 0, 428 = 428, Lint 0.
+
+**Die ausführende Claude-Spur entfällt.** Das ist ein reiner Testbeitrag ohne Produktivcode. Jede der 53 Nummern hat der Bauende mit einer eigenen ROT/GRÜN-Gegenprobe belegt, und die Lesespur fand keine abgeschwächte Zusicherung. Eine zweite ausführende Spur würde dieselben Mutationen an denselben Stellen wiederholen.
+
+Merge-Reihenfolge: nach Q (#494). E2 nimmt danach master herein und fährt die Suite neu.
