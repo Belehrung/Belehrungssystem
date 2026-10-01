@@ -36,3 +36,10 @@ Stand 01.10.2026, Zweig `c5e3-reste`, Kopf `e477c95`.
 - **Suite:** 0, 444 = 444, Lint 0.
 - **Offen:** master hereinnehmen (G2, G1) und die Suite neu fahren, dann PR.
 - **Zusatz für die Sammelliste E3-b:** Mindestens 13 weitere Tests sind fest auf `gymdocu_test` verdrahtet. Liste im Bericht des Bauenden.
+
+## master herein (`314b9a2`, `ab3db58`), selbst gelesen
+
+- Ohne Konflikte.
+- Neu gefunden: `test_feature_check_namen_vereinheitlichen.js` aus 0066 startete Kinder mit `...process.env`. Jetzt nimmt er `kindUmgebung()` und steht in der Verdrahtungsliste. Gegenprobe 33/1.
+- Suite auf `ab3db58`: 0, 463 = 463. Lint 0.
+- PR offen.
