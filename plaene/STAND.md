@@ -655,3 +655,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Ab 21:30 brachen alle Claude-Bauenden an der Sitzungsgrenze ab (Rücksetzung 23:00), danach startete der Container neu. Befund nach dem Neustart: in keinem Baum ein Marker, alle Zweige gepusht. C5-D stand mitten im Merge von C5-A: Konflikte in `core/geraete-alter.js` und im P2-Wächter.
   - Um 23:4x habe ich alle sieben Bauenden fortgesetzt: C5-C, C5-D, C5-E1, C5-E2, C5-G1, C5-G2, Q.
   - C5-C Diffprüfung Runde 1 (flash) läuft.
+- 01.10.2026 00:40 UTC (Takt): läuft
+  - C5-C: Diffprüfung Runde 1 fertig (flash und ausführende Spur, `diffpruefung-c5c.md`). Blockierend ist C1: die einzige Kopie eines committeten Korrekturblatts wird auf drei Wegen geerntet. Entschieden ist „reparieren statt löschen“. Nacharbeit 1, sobald die Suite des Bauenden durch ist.
+  - C5-E2: fertig (53 von 56, Suite 0, 428 = 428). Lesespur: 5 kleine Punkte, Nacharbeit 1 läuft.
+  - C5-D (Merge-Konflikt, dann N2), C5-E1 (N3-Suite), C5-G1, C5-G2, Q N4: laufen.
