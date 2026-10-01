@@ -697,3 +697,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-G2: Nacharbeit 1 gelesen. Nacharbeit 2 (17.06.2028 Berlin) läuft.
   - C5-E1: Die Suite m5 lief nach 2 h Warten auf die Sperre ins Zeitlimit. Sie ist neu gestartet, losgelöst vom Zeitlimit.
   - Die Suite-Sperre ist der Engpass: bis zu 6 Zweige warten gleichzeitig.
+- 01.10.2026 05:22 UTC: C5-E1 gemergt (`baaf698`, CI 6/6, keine Bot-Kommentare, Botschaft zurückgelesen). Der Deploy wird um 05:44 geprüft.
+  C5-E3 beauftragt (Zweig `c5e3-reste`): die E2-Restnummern V13-2, V23-6, V25-6, die TG-Variablen im Kindprozess von qr_block, die Kommentare in wartung.js und `studio_id` in nachweis_waisen.
+  Keine Planprüfung: ein reiner Testbeitrag mit genau benannten Stellen; jede Nummer bringt ihre eigene Gegenprobe mit.
+  Noch auf der E-Sammelliste: T1-K4 (Einzelaufruf legt `einweisung-nachweise/` an), rund 40 Testdateien mit relativen Pfaden (erst nach den offenen Zweigen, sonst Konflikte), gii-xml-Paare bei V24-4.
