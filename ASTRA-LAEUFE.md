@@ -400,6 +400,7 @@ sondern falsch.
 | 01.10.2026 | c5d-n4-diff (deepseek-flash) | Diff 234 Zeilen, Suchen 29, Lesungen 33, Token rein 3042719, Token raus 61183, Runden 29 | 7 | 6 (B2 nur zum Teil) | — | 0,99 $ |
 | 01.10.2026 | drift-0066-diff (deepseek-flash) | Diff 608 Zeilen, Suchen 25, Lesungen 35, Token rein 2613079, Token raus 116284, Runden 21 | 5 | 5 | — | 0,92 $ |
 | 01.10.2026 | c5g1-n1-diff (deepseek-flash) | Diff 1206 Zeilen, Suchen 14, Lesungen 30, Token rein 1948497, Token raus 93589, Runden 17 | 8 | 8 | — | 0,70 $ |
+| 01.10.2026 | c5e3-diff (deepseek-flash) | **abgebrochen** (Geheimnis-Riegel auf dem Eingabediff): Diff 805 Zeilen, Suchen 0, Lesungen 0, Token rein 0, Token raus 0, Runden 0 | — | — | — | 0,00 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
