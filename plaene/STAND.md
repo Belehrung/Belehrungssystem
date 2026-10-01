@@ -659,3 +659,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-C: Diffprüfung Runde 1 fertig (flash und ausführende Spur, `diffpruefung-c5c.md`). Blockierend ist C1: die einzige Kopie eines committeten Korrekturblatts wird auf drei Wegen geerntet. Entschieden ist „reparieren statt löschen“. Nacharbeit 1, sobald die Suite des Bauenden durch ist.
   - C5-E2: fertig (53 von 56, Suite 0, 428 = 428). Lesespur: 5 kleine Punkte, Nacharbeit 1 läuft.
   - C5-D (Merge-Konflikt, dann N2), C5-E1 (N3-Suite), C5-G1, C5-G2, Q N4: laufen.
+- 01.10.2026 01:01 UTC: **Q gemergt** (#494, squash `664ed77`, CI 6/6 grün, kein Bot-Befund, Botschaft zurückgelesen). Die Deploy-Prüfung folgt um 01:21. C5-E2 hat master hereingenommen (`4f74f07`, Lint 0), die Suite läuft; danach kommt der PR. Die laufenden Bauenden haben den Hinweis auf den neuen master bekommen.
