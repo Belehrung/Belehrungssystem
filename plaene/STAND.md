@@ -727,3 +727,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Betreiberfrage OpenAI „Dots“ beantwortet (`plaene/openai-dots-01-10-2026.md`): nicht einsetzen.
 - 01.10.2026 08:52 UTC: C5-G2 gemergt (`75bd00f`). CI 6/6 auf `8deae3b`, kein Review-Kommentar, master nicht weiter. Die Botschaft ist zurückgelesen. Der Deploy steht aus.
 - 01.10.2026 09:28 UTC: C5-G2 ist ausgeliefert (Deploy 466, `75bd00f`, success). live-check EXIT 0, 5 ✓, 2 ℹ (Zertifikat, Health; umgebungsbedingt).
+- 01.10.2026 09:41 UTC (Takt): Es laufen C5-D N5, C5-G1 N3 (ungültiger Pfad gilt als weg) und C5-E3 N1. C5-G2 ist seit 09:28 ausgeliefert.
