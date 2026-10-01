@@ -719,3 +719,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Der Drift-Fix ist gemergt (`d372589`, #498, Migration 0066). Gemessen ist die CI auf dem Merge-Stand: grün, 443 = 443. Für C5-C (`4ef18ef`) und den Drift-Fix steht der Deploy noch aus, ich prüfe um 07:50.
   - C5-G1: Runde 2 der Lesespur fand 8 Befunde, N2 läuft.
   - C5-D: N5 läuft.
+- 01.10.2026 07:41 UTC (Takt): Es laufen C5-D N5, C5-G1 N2, C5-G2 N2 und C5-E3. Der Deploy für `4ef18ef`/`d372589` steht noch aus, Prüfung um 07:50 (send_later).
