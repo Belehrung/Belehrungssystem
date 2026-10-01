@@ -39,3 +39,16 @@ Alle Schutzstellen werden ROT, wenn man sie herausnimmt: Steckbrief an allen 12 
 | C-3 | Anmerkung | Teilladen ohne Audit-Eintrag (= L-1). | trägt | N1 (L-1) |
 | C-4 | Anmerkung | „BEIDE Karten“ prüft nur `>= 2`, der Text steht ein drittes Mal da. Der Kommentar in bezirk-archiv zu `?jahr=` ist falsch (der alte Code prüfte dort zuerst den Token). Der Strukturwächter prüft die Layer-Reihenfolge nicht. Kein Test verbietet „Nichts geändert“ im Trockenlauf (k1c bleibt 35/0). | trägt | N1: genaue Anzahl; Kommentar; `tokenWache` als Layer 0 zusichern; Trockenlauf ohne „Nichts geändert“ zusichern |
 | C-5 | Anmerkung | `/intern/export` antwortet trotz Erhebungsfehler mit 200 `ok:true` (= E-2). | trägt | keine Änderung |
+
+## Nacharbeit 1 (`0cec1a8..d226824`), selbst gelesen
+
+E-1, E-3, L-1 bis L-7 und C-1 bis C-4 sind umgesetzt, jeweils mit ROT/GRÜN.
+- E-1: Quellen aus dem GVBl Berlin selbst gelesen (2019 S. 22; 2024 S. 460).
+- C-2: Die 503-Seite wird jetzt mit dem echten `intern()` geprüft.
+- C-4: Für `tokenWache` als Layer 0 wird die Mutation b3 ROT.
+
+Stand: Suite 0, 440 = 440, Lint 0.
+
+Neuer Fund des Bauenden: Derselbe Gesetzestext macht auch den **17.06.2028** in Berlin zum einmaligen Feiertag. Das kommt als Nacharbeit 2 dazu.
+
+Eine zweite Prüfrunde entfällt. Die Behebungen sind klein, jede ist mit eigener Gegenprobe belegt, und die neuen Zweige (Weiterleitungen, 503-Seite, Audit-Bedingung) habe ich selbst gelesen.
