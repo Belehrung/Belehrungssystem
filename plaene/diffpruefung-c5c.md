@@ -47,3 +47,19 @@ Auftrag `plaene/auftrag-c5c-n1.md`. Die Planprüfung (flash) fand 8 Befunde, dre
 - Der Lesepfad entfernt beim Reparieren die Temp-Datei eines laufenden Erstellers in einem anderen Prozess. Folge: dead letter.
 
 Fassung 2 schränkt die Reparatur deshalb auf Korrekturblätter ein, mit dem Kriterium `nachweis_korrektur_dokumente`, `korrektur_id UNIQUE`, CASCADE durch die Retention. Der Lesepfad repariert, ohne die Temp-Datei zu entfernen, und die Rückgabewerte sind festgelegt. Gebaut wird mit dem Executer auf Opus.
+
+## Nacharbeit 1 (`5d05d58..da30d70`), Runde 2
+
+Selbst gelesen habe ich `repariereAusKandidat`, `findeResteKandidaten` und `zielZustand` (`core/pdf-ablage.js`). Der Helfer prüft zuerst das Ziel, wirft nie, überschreibt nie und entfernt nur mit `entfernen:true`.
+
+Laut Bericht des Bauenden ist die Suite rot, und zwar nur durch `test_feature_qr_journal.js`. Die Fixtur hängt dort von der Studio-ID-Folge ab. Die Behebung kam mit C5-E1 auf master und wird jetzt hereingenommen; beim Merge gab es einen Konflikt in `test_feature_korrektur_dokumente_static.js`, den ein Executer löst.
+
+Lesespur flash, Runde 2 (5 Befunde, keiner blockierend):
+
+| Nr | Schwere | Befund | Nachgemessen | Entscheidung |
+|---|---|---|---|---|
+| R2-1 | sollte | ENOENT im catch um `linkSync` wird als `fehler` gemeldet, ohne dass der Zielzustand neu gelesen wird. Im Wettlauf mit einem Ersteller in einem anderen Prozess gibt das einen Fehlalarm und Exit 1. | trägt (Code gelesen) | N2 |
+| R2-2 | sollte | Der Fall „`veroeffentliche()` mit EEXIST und anderem Hash“ ist ungetestet. Die Hashprüfung lässt sich entfernen, ohne dass ein Test fällt. | trägt | N2 |
+| R2-3 | sollte | Für den Traversalschutz `istEinfacherName`/`korrekturZiel` gibt es keine Zusicherung. | trägt | N2 |
+| R2-4 | Anmerkung | Der ENOENT-Erfolgszweig in `veroeffentliche()` ist ungetestet. | trägt | N2 |
+| R2-5 | Anmerkung | Lesepfad: Steht unter dem Namen eine Datei mit falschem Inhalt, liefert er `missing:false` ohne Meldung. Das war schon vorher so. | trägt | Sammelliste |
