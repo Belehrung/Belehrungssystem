@@ -1,6 +1,10 @@
 # Auftrag C6-F — Tests: Wettlauf, Einzelläufe, Arbeitsverzeichnis, Werkzeug (Extrarunde C6)
 
-Fassung 1, 01.10.2026. Repo GymDocu, Stand master `9dfe522`.
+Fassung 2, 01.10.2026. Repo GymDocu, Stand master `9dfe522`.
+
+Planprüfung: flash, 8 Befunde, die beiden tragenden selbst nachgemessen
+(`scratchpad/c6plan/flash-c6f.txt`). Die zweite Spur, sol, brach am Ausgabelimit ab. Sie wird nicht wiederholt,
+denn der Auftrag ist bis auf Punkt 2 reine Testarbeit.
 
 **Herkunft:** `plaene/c6-zustand-01-10/z1.md` (CI-Wettlauf), `z3.md` (G1-g), `z4.md` (alle übrigen). Jede Fundstelle
 ist neu zu messen. Widerspricht der Code dem Auftrag, wird abgebrochen und gemeldet.
@@ -27,10 +31,13 @@ ist neu zu messen. Widerspricht der Code dem Auftrag, wird abgebrochen und gemel
 - Um `:960` folgt `tabletPage.goto(...)` direkt auf einen POST, nach dem die Seite selbst per
   `window.location.href` navigiert. In der CI liefert `goto` dann `null`, und `navResp.status()` wirft (rot auf
   C5-C, ein Neustart war grün).
-- Behebung: Vor dem `goto` den Abschluss der selbst ausgelösten Navigation abwarten (`waitForURL` auf das bekannte
-  Ziel oder `waitForLoadState('load')`).
-- Liefert `goto` trotzdem `null`, gilt das genau EINMAL als Wettlauf: neu laden, dann Status 200 zusichern. Jeder
-  andere Fehlschlag bleibt ein Fehler.
+- Gemessen: In der CI von C5-C war genau das rot, ein Neustart war grün.
+- Das Ziel der Selbstnavigation hängt von den Daten ab (`public/offline-queue.js:688`,
+  `r.weiter || '/module/'+pfad+'?saved=1'`).
+- Behebung: Vor dem `goto` warten, bis die URL die Formularseite verlassen hat, mit
+  `waitForURL(u => u.pathname !== '<Formularpfad>')`, danach `waitForLoadState('load')`.
+- Liefert `goto` trotzdem `null`, gilt das genau EINMAL als Wettlauf: erneut `goto`, dann Status 200 zusichern. Ein
+  WERFENDES `goto` und jeder Status ≠ 200 bleiben Fehler.
 - Dieselbe Bauart (POST mit Selbstnavigation, direkt danach `goto` oder `status()` auf einer möglicherweise `null`
   gelieferten Antwort) suchst du in allen Playwright-Tests und behebst jede Fundstelle gleich. Liste in den Bericht.
 - Gegenprobe:
@@ -41,15 +48,29 @@ ist neu zu messen. Widerspricht der Code dem Auftrag, wird abgebrochen und gemel
 
 ### 2. T1-K4 — Laden von `routes/belehrungen.js` legt kein Verzeichnis an
 
-- `routes/belehrungen.js:1218-1219` legt beim Modulladen `EINWEISUNG_NACHWEIS_DIR` an. Ohne `test/umgebung.sh` ist
-  das `<repo>/einweisung-nachweise/`.
-- Behebung: `mkdirSync` in den Schreibweg verlegen (lazy, unmittelbar vor dem ersten Schreiben, `recursive: true`).
-  Muster `core/pruefbericht.js`.
-- Prüfen, ob dieselbe Bauart (`mkdirSync` beim Modulladen mit einem Repo-Pfad als Rückfall) in weiteren `routes/`-
-  oder `core/`-Dateien steht. Jede Fundstelle gleich behandeln und in den Bericht.
-- Test: Kindprozess `node -e "require('./routes/belehrungen')"` mit `EINWEISUNG_NACHWEIS_DIR=<tmp>/nicht-da`, ohne
-  `umgebung.sh` (Kindumgebung von Hand gebaut). Danach existiert `<tmp>/nicht-da` nicht. Heute ROT.
-- Positivkontrolle: Ein Upload über den echten Weg legt das Verzeichnis an.
+- Beim Modulladen legt die Datei DREI Verzeichnisse an:
+  - `UPLOAD_DIR` und `DOKUMENTE_DIR` (`routes/belehrungen.js:148-150`);
+  - `EINWEISUNG_NACHWEIS_DIR` (`:1218-1219`).
+- Ohne `test/umgebung.sh` liegen alle drei unter `<repo>/`.
+- Behebung: Bei allen drei läuft `mkdirSync` erst im Schreibweg (lazy, direkt vor dem ersten Schreiben,
+  `recursive: true`, Muster `core/pruefbericht.js`).
+  - Schreibwege laut Planprüfung: `nachweisUpload` (`:1232`), `pdfUpload` (`:190`), `kollisionsfreieVorlagenKopie`
+    (`:2568`, `:2628`).
+  - Den Rest selbst per `grep` vervollständigen. Leser vertragen ein fehlendes Verzeichnis; das je Leser
+    nachsehen.
+- Dieselbe Bauart (`mkdirSync` beim Modulladen mit einem Repo-Pfad als Rückfall) in allen `routes/`- und
+  `core/`-Dateien suchen und jede Fundstelle gleich behandeln. Die Liste kommt in den Bericht.
+- Test:
+  - Kindprozess `node -e "require('./routes/belehrungen'); console.log('GELADEN')"`.
+  - Die drei Variablen zeigen auf `<tmp>/nicht-da-{1,2,3}`. `DATABASE_URL` zeigt auf `gymdocu_c6f_test`, sonst
+    stirbt das Kind schon in `core/db.js` vor der geprüften Zeile.
+  - Zugesichert wird, dass `GELADEN` in der Ausgabe steht. So ist belegt, dass das Laden durchlief und nicht vorher
+    abbrach.
+  - Zugesichert wird außerdem, dass keines der drei Verzeichnisse existiert.
+  - Heute ROT.
+- Positivkontrolle: Ein Schreibvorgang über den echten Weg legt das jeweilige Verzeichnis an.
+- Benannte Grenze im Bericht: Ein nicht beschreibbares Verzeichnis fällt jetzt erst beim ersten Schreiben auf
+  (500), nicht mehr beim Start.
 
 ### 3. c5e#2 — Tests lesen unabhängig vom Arbeitsverzeichnis
 
@@ -60,7 +81,10 @@ ist neu zu messen. Widerspricht der Code dem Auftrag, wird abgebrochen und gemel
 - Neuer statischer Wächter `test_feature_tests_cwd_unabhaengig.js`:
   - Kein `readFileSync`/`existsSync`/`readdirSync` mit einem relativen Literal (beginnt nicht mit `/` und ist kein
     `path.join(__dirname…)`) in Testdateien.
-  - Ausnahmeliste leer.
+  - Ausnahmen nur für Kindquelltext, der als ZEICHENKETTE eingebettet ist und absichtlich in einem Wegwerf-Repo
+    unter `/tmp` läuft, z. B. `test_feature_ausmusterung_gegenproben_bewertung.js:82-97`. Jede Ausnahme hat einen
+    Eintrag mit Datei und Begründung.
+  - Die Blindstelle bei zusammengesetzten Pfaden (`'routes/' + x`, Template-Strings) steht im Kopf des Wächters.
   - Die Menge der gescannten Dateien hält er gegen `git ls-files 'test*.js' 'test/**/*.js'`, die Referenz kommt von
     außen.
   - Gegenprobe: eine Stelle zurückdrehen → ROT, an genau dieser Datei.
@@ -80,8 +104,17 @@ ist neu zu messen. Widerspricht der Code dem Auftrag, wird abgebrochen und gemel
   - `test_feature_migration_0060_loeschauftrag.js:33`, `test_feature_korrekturen.js:32-33`,
     `test_feature_korrektur_dokumente.js:86-87`, `test_feature_getraenke_race.js:82-83`,
     `test_feature_pdf_crlf_saeuberung.js:379-380`.
-- Behebung: Der Riegel wird generisch nach dem Muster `core/db.js:330` (Name endet auf `_test` oder `_e2e`, Wortende
-  beibehalten). Vorbild ist `test_feature_storage_replica_upsert_rennen.js:62-66`.
+- Behebung: Der Riegel wird generisch nach dem Muster `core/db.js:330`: Der Name endet auf `_test` oder `_e2e`,
+  Wortende beibehalten.
+  - Vorbild ist `test_feature_storage_replica_upsert_rennen.js:62-66`.
+  - Die SQL-seitigen Riegel (`current_database() = 'gymdocu_test'`) werden zu
+    `current_database() ~ '_(test|e2e)$'`.
+- Die zwei GESCHWISTERWÄCHTER, die die alten Literale wörtlich verlangen, ziehst du im selben Schritt fachlich
+  nach. Gestrichen wird nichts, und die geforderte Reihenfolge „Riegel vor `db.init()`“ bleibt:
+  - `test_feature_korrekturen_static.js:131-134`;
+  - `test_feature_korrektur_dokumente_static.js:126-128`, `:202-203`.
+- Benannte Grenze im Bericht: Destruktive Tests (Migrationen) laufen danach gegen JEDE `*_test`-DB. Das ist
+  derselbe Kompromiss wie in `core/db.js:330`.
 - Bei `qr_charge:710` sichert die Zusicherung den TATSÄCHLICHEN DB-Namen aus der `DATABASE_URL` zu, nicht das
   Literal.
 - Vollständigkeit per `grep -rn "gymdocu_test" --include='test*.js' .` herstellen, nicht nur aus dieser Liste. Die
@@ -109,19 +142,28 @@ ist neu zu messen. Widerspricht der Code dem Auftrag, wird abgebrochen und gemel
 - `test_feature_rechtsstand.js:163-165` nennt die gii-xml-Lagen (`normtext_unbestaetigt`, `pruefungsfehler`,
   `norm_geaendert` …) ausdrücklich als nicht abgedeckt.
 - Fixturen mit gültigem Normtext-Hash ergänzen und alle Paare in die Matrix aufnehmen.
-- Abdeckungswächter: Die Menge der beprobten Lagen ist gleich einer handgeschriebenen Literalliste ALLER Lagen, die
-  `core/rechtsstand.js` erzeugen kann. Die Liste schreibst du nach eigenem Lesen von `core/rechtsstand.js` hin, nicht
-  per Import.
+  - Mindestens eine Fixtur trägt einen UNABHÄNGIG hingeschriebenen Literal-Hash, nicht über
+    `normtextFingerabdruck()` erzeugt.
+- Abdeckungswächter: Die Menge der beprobten Lagen ist gleich einer handgeschriebenen Literalliste ALLER `lage`-Werte,
+  die `core/rechtsstand.js` erzeugen kann.
+  - Die Liste schreibst du nach eigenem Lesen von `core/rechtsstand.js` hin, nicht per Import.
+  - `opsKopieVeraltet` ist seit Runde 4 kein eigener `lage`-Wert, sondern `nicht_erreichbar` plus Zusatzfeld
+    (`:1578-1583`). Die ältere Liste im selben Test (`:1913`, mit `'ops_kopie_veraltet'`) prüfst du dabei und
+    berichtigst sie, falls sie veraltet ist.
 - Gegenprobe: eine Lage aus den Fixturen nehmen → ROT.
 
 ### 7. G-B7 — `tools/mutationsprobe.js` startet Tests mit der Testumgebung
 
 - `tools/mutationsprobe.js:521-528` baut die Kindumgebung selbst (`{ ...process.env, DATABASE_URL, … }`). Ohne
   vorher gesourcte `test/umgebung.sh` fehlen Netzsperre, Dateisperre, Telegram-Attrappen und Wegwerfwurzeln.
-- Behebung: Das Kind läuft über `bash -c '. test/umgebung.sh && exec node "$1"' _ <datei>`. `umgebung.sh` bleibt die
-  einzige Quelle.
-- Prüfe, was `umgebung.sh` voraussetzt (Wegwerf-`DATABASE_URL`, mktemp-Wurzeln) und dass die Wurzeln nach dem Lauf
-  geräumt werden. Gibt es dafür schon einen Aufräummechanismus, wird er benutzt.
+- Behebung: `umgebung.sh` bleibt die einzige Quelle, wird aber EINMAL je Werkzeuglauf gesourct, nicht je Kind.
+  - Das Werkzeug holt die Umgebung zu Beginn über `bash -c '. test/umgebung.sh && env -0'`, mit der Wegwerf-
+    `DATABASE_URL` des Werkzeugs.
+  - Diese Umgebung (plus `DATABASE_URL`/`PUBLIC_BASE_DOMAIN` wie heute) bekommt jedes Kind.
+  - Die mktemp-Wurzeln, die `umgebung.sh` anlegt, räumt das Werkzeug am Ende selbst (`process.on('exit')`). Laut
+    Vertrag in `test/umgebung.sh:32-33` gehört das Aufräumen dem Aufrufer.
+- Scheitert das Sourcen (z. B. `umgebung.sh` lehnt den DB-Namen ab), bricht das Werkzeug laut ab. Kein Rückfall auf
+  die alte Kindumgebung.
 - Statischer Wächter, dass das Werkzeug `test/umgebung.sh` benutzt, mit Gegenprobe.
 - Verhaltensprobe: Ein Kindprozess unter dem Werkzeug sieht `GYMDOCU_TG_BOT_TOKEN` = Attrappe und eine gesetzte
   Wegwerf-`PDF_ROOT`.
