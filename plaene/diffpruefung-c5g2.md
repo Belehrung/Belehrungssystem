@@ -52,3 +52,12 @@ Stand: Suite 0, 440 = 440, Lint 0.
 Neuer Fund des Bauenden: Derselbe Gesetzestext macht auch den **17.06.2028** in Berlin zum einmaligen Feiertag. Das kommt als Nacharbeit 2 dazu.
 
 Eine zweite Prüfrunde entfällt. Die Behebungen sind klein, jede ist mit eigener Gegenprobe belegt, und die neuen Zweige (Weiterleitungen, 503-Seite, Audit-Bedingung) habe ich selbst gelesen.
+
+## Nacharbeit 2 (`747cb21`, Merge `8deae3b`), selbst gelesen
+
+- **17.06.2028 Berlin:** Die Quelle habe ich selbst gelesen (pardok, `g24280460.pdf`). Art. 1 Nr. 2 fügt die neue Nr. 12 an: „der 17. Juni 2028 (75. Jahrestag des Aufstandes vom 17. Juni 1953)“. Laut Art. 4 Abs. 3 tritt Art. 3 am 18. Juni 2028 in Kraft.
+- **Test:** 77/0. Die Gegenproben ergaben 74/3, 75/2, 76/1, 76/1, 75/2 und 74/3.
+- **Merge-Konflikt** in der OBERGRENZE von `test_feature_keine_stillen_fehler.js`: neu gemessen, Ergebnis 25, nicht addiert.
+- **Suite auf `8deae3b`:** 0, 452 = 452. Lint 0.
+- **Keine zweite Lesespur:** Die Nacharbeit fügt einen einzigen Datensatz mit Primärquelle hinzu, und jede Abweichung ist mit einer Gegenprobe rot belegt.
+- PR offen.
