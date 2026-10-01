@@ -56,6 +56,12 @@ haben."
 
 ## Modellwahl beim Delegieren
 
+**Übergang (Betreiber, 01.10.2026): Fable ist bis Anfang nächster Woche nicht verfügbar** (Guthaben aufgebraucht);
+der Betreiber überlässt den Ersatz mir. Entscheidung: Wo die Regel unten Fable vorsieht („sehr komplex“),
+bekommt der Executer bis dahin das Modell `opus`. Externe Modelle (DeepSeek, Kimi, gpt-6) können hier nicht bauen;
+sie bleiben Prüfspuren. Der Regelfall bleibt der Standard-Executer. Ist Fable zurück, gilt wieder die Regel unten,
+und dieser Absatz wird gestrichen.
+
 **Vorgabe des Betreibers (08.09.2026 — sie ersetzt alles Frühere): Fable 5.1
 NUR bei SEHR komplexen Aufgaben. Ausnahme davon nur dort, wo ein messbarer
 Vorteil BELEGT ist — und belegt ist bisher keiner (siehe unten).**

@@ -660,3 +660,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-E2: fertig (53 von 56, Suite 0, 428 = 428). Lesespur: 5 kleine Punkte, Nacharbeit 1 läuft.
   - C5-D (Merge-Konflikt, dann N2), C5-E1 (N3-Suite), C5-G1, C5-G2, Q N4: laufen.
 - 01.10.2026 01:01 UTC: **Q gemergt** (#494, squash `664ed77`, CI 6/6 grün, kein Bot-Befund, Botschaft zurückgelesen). Die Deploy-Prüfung folgt um 01:21. C5-E2 hat master hereingenommen (`4f74f07`, Lint 0), die Suite läuft; danach kommt der PR. Die laufenden Bauenden haben den Hinweis auf den neuen master bekommen.
+- 01.10.2026 01:10 UTC: **Betreiber: Fable kommt erst nächste Woche zurück, Ersatz liegt bei mir.** Entscheidung: Fälle, die als „sehr komplex“ für Fable vorgesehen wären, bekommen den Executer mit Modell `opus`; der Regelfall bleibt beim Standard. Eingetragen in CLAUDE.md, Abschnitt „Modellwahl“. Als Erstes betrifft das C5-C Nacharbeit 1 (Datenverlustweg Korrekturblatt).
