@@ -743,3 +743,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - DeepSeek aufgeladen auf 77,91 $.
   - Für das Claude-Guthaben ist automatisches Aufladen aktiviert.
   - Frage „DeepSeek bauen lassen?“: Betreiber-Entscheidung „wir lassen es so“. DeepSeek bleibt Prüfspur, gebaut wird weiter über den Executer.
+- 01.10.2026 12:20 UTC: C5-D ausgeliefert (Deploy 468, `9ad8acd`, success). live-check EXIT 0, 5 ✓, 2 ℹ. C5-E3 (#502) wartet auf die CI.
