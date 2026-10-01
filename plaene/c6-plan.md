@@ -20,11 +20,11 @@ Diese Punkte werden in den Sammellisten als erledigt nachgetragen, sobald C6 aus
 |---|---|---|
 | C6-A | Monatslauf und PDF-Nachweise: c5c#2, F3/R2-4, R2-1, F2, C2-S8 + V09-7, V09-6, V01-8, V01-7r, V09-9, V08-6 (`auftrag-c6a-monatslauf.md`) | Planprüfung läuft (flash + gpt-6.1-sol) |
 | C6-F | Tests: CI-Wettlauf csp_crawler (blockierend), Ergebnisse z4 (E3-a..e, T1-K4, cwd-Leser, qr_block-Kind, ladebestand#1..6, G-B7), G1-g, V20-4, V12-5 | Auftrag folgt nach z4 |
-| C6-B | Jobs, Health, Korrekturblatt, Krypto: F4 + C2-S5 (Requeue-Werkzeug), C-6, R2-5, c5c#1, c5c#3, SG-S1, SG-S3, V07-9, V09-5, V08-3, PP4b-21 | offen |
+| C6-B | Jobs, Health, Korrekturblatt, Krypto: F4 + C2-S5 (Requeue-Werkzeug), C-6, R2-5, c5c#1, c5c#3, SG-S1, SG-S3, V07-9, V09-5, V08-3, PP4b-21 | Auftrag `auftrag-c6b-jobs-krypto.md`, Planprüfung läuft |
 | C6-C | Löschwege und Offboarding: L-7, C-7, R2-7, R2-11, G1-c, G1-h, c5g#1, C3b4-1..4, Drift-G1 | offen |
-| C6-D1 | Eingabeprüfung: B8, V02-5, V02-6, V02-7, V02-10, N1-H2, c5d#1, P3-S1, F7, V08-2, V09-4 | offen |
+| C6-D1 | Eingabeprüfung: B8, V02-5, V02-6, V02-7, V02-10, N1-H2, c5d#1, P3-S1, F7, V08-2, V09-4 | Fassung 2 bereit (`auftrag-c6d1-eingaben.md`) |
 | C6-D2 | Doppelsenden, Zeitzone, Bedienung: V02-4, V03-3, c5d#2, D-E1, B7, V05-6, V01-6, V03-4, V03-5, H1a-S5, V08-5, V04-4..17 (z6) | offen |
-| C6-E | Offline-Warteschlange: R2-4 (q), R3-8, R4-3, R4-9, N4-H1, N4-H2 | offen |
+| C6-E | Offline-Warteschlange: R2-4 (q), R3-8, R4-3, R4-9, N4-H1, N4-H2 | Fassung 2 bereit (`auftrag-c6e-offline.md`) |
 
 **Zeitzone (V01-6, V03-4, V03-5):** Das ist keine Betreiberfrage. Behoben wird es, indem die Berliner Zeit
 ausdrücklich gebildet wird (`core/datum.js`). Dann ist es egal, in welcher Zone der Server läuft.
@@ -42,6 +42,15 @@ ausdrücklich gebildet wird (`core/datum.js`). Dann ist es egal, in welcher Zone
   die Mail nur auf Knopfdruck.
 - H1a-S2: Safari/WebKit ist nicht gemessen. Vor dem Enforce werden Berichte eines iPads gebraucht.
 - PP4b-20: Die Auswertung echter Unterschrifts-Protokollzeilen ist ein Termin (4 Wochen nach P4).
+- V07-9: `decryptStream` liest die ganze verschlüsselte Datei in den Speicher, bevor entschlüsselt wird.
+  - Empfehlung: so lassen. Die Dateien sind durch das Upload-Limit klein, und die Echtheit (GCM-Tag) wird vor der
+    Freigabe geprüft. Ein Streaming gäbe ungeprüften Klartext heraus.
+- c5d#1: Altdaten in `mitarbeiter.name` mit Leerraum am Rand.
+  - Funktional ist das behoben, alle Vergleiche trimmen.
+  - Empfehlung: KEINE Datenmigration, weil sie Namen ohne Audit-Spur ändern würde.
+- ladebestand#3: Ein Kommentar innerhalb eines Template-Literals überlebt die Maskierung. Das ist eine benannte Grenze
+  des Rohwert-Scanners.
+  - Empfehlung: so lassen. Die Behebung würde gewollte Erkennungen mitmaskieren.
 
 ## Server-Schritte (Betreiber, „Später“ laut 30.09.)
 
