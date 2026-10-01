@@ -410,6 +410,8 @@ sondern falsch.
 | 01.10.2026 | c6-zustand-z5b (deepseek-flash) | Diff 1 Zeilen, Suchen 57, Lesungen 84, Token rein 2557504, Token raus 86515, Runden 19 | 24 Kennungen | Nachmessung beim Bau | — | 0,87 $ |
 | 01.10.2026 | c6-zustand-z6 (deepseek-flash) | Diff 1 Zeilen, Suchen 35, Lesungen 55, Token rein 2815394, Token raus 53020, Runden 28 | 13 Kennungen | Nachmessung beim Bau | — | 0,91 $ |
 | 01.10.2026 | c6-zustand-z4 (deepseek-flash) | Diff 1 Zeilen, Suchen 53, Lesungen 42, Token rein 2610125, Token raus 69056, Runden 27 | 21 Kennungen | Nachmessung beim Bau | — | 0,87 $ |
+| 01.10.2026 | planpruefung-c6a-flash (deepseek-flash) | Diff 207 Zeilen, Suchen 29, Lesungen 29, Token rein 2555889, Token raus 50433, Runden 28 | 14 | 4 nachgemessen (1, 2, 4, 10), alle getragen | — | 0,83 $ |
+| 01.10.2026 | planpruefung-c6f-sol (gpt-6.1-sol) | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 142 Zeilen, Suchen 37, Lesungen 71, Token rein 1512467, Token raus 6643, Runden 14 | — | — | — | 6,15 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
