@@ -20,3 +20,13 @@
 | B5 | Anmerkung | Zwischen Merge und Neustart meldet der Wächter sechs WARN statt drei. | trägt | Keine Änderung: Übergangszustand, nur WARN, kein Deploy-Blocker |
 
 Nebenbefund des Bauenden: `test_feature_brandschutz.js` spielt 0005, 0007 und 0010 auf `gymdocu_test` erneut ein. Danach stehen dort wieder `_chk` neben `_check`. Das betrifft nur die Test-DB; der Klassenwächter liest deshalb eine eigene frische DB.
+
+## Nacharbeit 1 (`1553972`) und Merge (01.10.2026)
+
+- **N1 behoben:** B1 (Zusicherung umbenannt), B2 (Gültigkeit im Fall „beide da“), B3 (Typ der echten Spalte; fehlt die Spalte, bricht die Migration laut ab), B4 (Kommentar zu den Sperrstufen).
+  - Die Sperrstufen sind gemessen. Für DROP, RENAME und ADD CHECK ist es ACCESS EXCLUSIVE, ebenso für DROP FK in 0062 und UNIQUE in 0065. Die FKs aus 0062 und 0065 nehmen nur SHARE ROW EXCLUSIVE.
+  - Test: 78/0. Die Gegenproben ergaben 76/2, 75/3, 77/1 und 10/9.
+- **Benannte Grenze G1** (nachträglich geänderter Spaltentyp): steht auf `plaene/offene-befunde-drift.md`.
+- **Volle Suite:** Gemessen ist der CI-Lauf auf dem Merge-Stand `5b285cc`. Er ist grün, 443 = 443, `diff` EXIT 0. Die lokale Suite stand zu dieser Zeit noch in der Sperr-Warteschlange, ihr Ergebnis lag beim Merge nicht vor.
+- **CI** auf `1553972`: 6/6 grün.
+- **Gemergt** als `d372589` (#498). Die Botschaft ist zurückgelesen.

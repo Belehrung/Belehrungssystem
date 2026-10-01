@@ -715,3 +715,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-C gemergt (`4ef18ef`, #497). Die CI war zuerst rot, und zwar am Wettlauf in `test_feature_csp_crawler.js`, nicht am Diff. Nach einem Neulauf grün. Der Wettlauf steht auf der Sammelliste C5-C. Der Deploy steht noch aus.
   - Drift-Fix 0066: PR offen. Die Lesespur fand 5 Punkte, N1 läuft im Arbeitsbaum `gymdocu-drift-n1`.
   - C5-D: Die Lesespur zu N4 fand 7 Punkte, N5 läuft.
+- 01.10.2026 07:30 UTC:
+  - Der Drift-Fix ist gemergt (`d372589`, #498, Migration 0066). Gemessen ist die CI auf dem Merge-Stand: grün, 443 = 443. Für C5-C (`4ef18ef`) und den Drift-Fix steht der Deploy noch aus, ich prüfe um 07:50.
+  - C5-G1: Runde 2 der Lesespur fand 8 Befunde, N2 läuft.
+  - C5-D: N5 läuft.
