@@ -658,6 +658,11 @@ Sachfrage):
 
 **Wofür was.** Das ist eine Empfehlung aus den Messungen oben, keine Vorschrift:
 
+- **SEIT 01.10.2026 (Betreiber: „nutze die neue Version 6.1“): `gpt-6.1-sol` ersetzt `gpt-6-sol`** überall, wo bisher
+  `gpt-6-sol` stand. Ist auch die Vorgabe in `tools/gegenleser-repo.js`. Gemessen am echten Endpunkt: erreichbar
+  (Gegenprobe → `model_not_found`), effort `low`…`max` (kein `none`), Denk-Token steigen monoton, erfundenes Feld →
+  „Unknown parameter“, Werkzeugweg mit zweiter Runde und `store:false` trägt, Websuche liefert Quellen. Preis laut
+  Preisseite wie `gpt-6-sol`. Es gibt nur die sol-Stufe. Die Prüfgüte ist NICHT gemessen.
 - **Prüfen und Gegenlesen von Nicht-Code (Recht, Doku, Recherche mit Websuche): `gpt-6-sol`**
   — Betreiber-Entscheidung vom 23.09.2026 („ja ab jetzt sol 6"), gestützt auf EINEN
   wortgleichen A/B gegen `gpt-5.6-sol` (8 statt 9 Befunde, alle getragen, jede Spur mit

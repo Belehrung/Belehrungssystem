@@ -45,7 +45,7 @@
 // AUFRUF:
 //   node tools/gegenleser-repo.js <diff.txt> --brief=<auftrag.txt>
 //                                 [--wurzel=/pfad/zum/repo]
-//                                 [--modell=gpt-6-sol] [--max-runden=25]
+//                                 [--modell=gpt-6.1-sol] [--max-runden=25]
 //                                 [--protokoll=/pfad.jsonl] [--zweck=<text>]
 //   node tools/gegenleser-repo.js --selbsttest   (prueft die Riegel, OHNE Netz)
 //   node tools/gegenleser-repo.js --selbsttest-ausfuehrung   (als root: die
@@ -286,7 +286,17 @@ const EFFORT_DEEPSEEK = process.env.GEGENLESER_EFFORT_DEEPSEEK || 'max';
 // zweite Runde, store:false, effort xhigh) ist fuer gpt-6-sol gemessen.
 // WAS DAMIT NICHT BELEGT IST: dass gpt-6-sol besser oder gleich gut prueft --
 // eine Stichprobe von eins traegt eine Beobachtung, keine Rangfolge.
-const VORGABE_MODELL = 'gpt-6-sol';
+//
+// VORGABE seit 01.10.2026 gpt-6.1-sol -- Betreiber-Vorgabe ("nutze die neue
+// Version 6.1 fuer unsere Zwecke, falls vorhanden"). Am echten Endpunkt
+// gemessen (01.10.2026): erreichbar (Gegenprobe erfundenes Modell ->
+// model_not_found), richtige Antwort auf eine nicht erratbare Rechenaufgabe,
+// effort low|medium|high|xhigh|max (none -> unsupported_value), Denk-Token
+// steigen monoton (low 52, high 73, xhigh 90, max 177), erfundenes Feld ->
+// "Unknown parameter", Werkzeugweg mit zweiter Runde und store:false traegt,
+// web_search liefert Quellen. Es gibt nur die sol-Stufe (kein 6.1-astra/-luna).
+// Die PRUEFGUETE ist NICHT gemessen -- dieselbe Einschraenkung wie oben.
+const VORGABE_MODELL = 'gpt-6.1-sol';
 // 25 reichten in Messlauf 1 (09.09.2026) NICHT: das Modell rief je Antwort
 // genau EINEN Werkzeugaufruf auf (gemessen: 25 Antworten, 25 Aufrufe) und lief
 // mitten in der Arbeit ins Limit. Der Abbruch war richtig -- ein Lauf, der
@@ -349,6 +359,10 @@ const PREISTABELLE = {
     // effort none|low|medium|high|xhigh|max, Werkzeugweg mit zweiter Runde
     // und store:false traegt.
     'gpt-6-sol': { rein: 4.00, raus: 15.00 },
+    // 01.10.2026 aus platform.openai.com/docs/pricing: gpt-6.1-sol traegt
+    // dieselben Standard-Preise wie gpt-6-sol (nur Cache-Lesen billiger) --
+    // also dieselbe obere Schranke.
+    'gpt-6.1-sol': { rein: 4.00, raus: 15.00 },
     'gpt-6-luna': { rein: 0.20, raus: 0.75 },
     // Zweiter Anbieter DeepSeek (23.09.2026), aus
     // api-docs.deepseek.com/quick_start/pricing, Spitzenzeit/Cache-Miss als
@@ -1098,7 +1112,7 @@ function protokollSchreiben(eintrag) {
 
 function konsoleUsage() {
     console.error('Aufruf: node tools/gegenleser-repo.js <diff.txt> --brief=<auftrag.txt>');
-    console.error('        [--wurzel=/pfad/zum/repo] [--modell=gpt-6-sol] [--max-runden=25]');
+    console.error('        [--wurzel=/pfad/zum/repo] [--modell=gpt-6.1-sol] [--max-runden=25]');
     console.error('        [--protokoll=/pfad.jsonl] [--zweck=<text>]');
     console.error('        [--ausfuehren [--kanarie=<testdatei>]]   (nur --modell=deepseek-flash, nur als root)');
     console.error('        node tools/gegenleser-repo.js --selbsttest');
