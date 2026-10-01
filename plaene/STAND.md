@@ -738,3 +738,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-G1 ausgeliefert (Deploy 467).
   - C5-D: PR offen auf `fc8786e` (Suite 0, 462 = 462), CI läuft, Kontrolle 12:14.
   - C5-E3: nimmt master herein (G2, G1), Suite.
+- 01.10.2026 11:44 UTC: C5-D gemergt (`9ad8acd`, #501). CI 6/6 auf `fc8786e`, kein Review-Kommentar, master nicht weiter. Der Deploy steht noch aus.
