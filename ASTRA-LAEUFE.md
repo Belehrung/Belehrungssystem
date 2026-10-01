@@ -435,6 +435,7 @@ sondern falsch.
 | 01.10.2026 | diffpruefung-c6f-flash (deepseek-flash) | Diff 3456 Zeilen, Suchen 52, Lesungen 65, Token rein 5618526, Token raus 80492, Runden 30 | 6 | 6 (Nr. 1 deckt sich mit dem eigenen Befund E1) | — | 1,78 $ |
 | 01.10.2026 | diffpruefung-c6a1-n2-flash (deepseek-flash) | Diff 1004 Zeilen, Suchen 15, Lesungen 31, Token rein 1586057, Token raus 64483, Runden 15 | 8 | 8 (7 als Betreiberfrage) | — | 0,55 $ |
 | 01.10.2026 | diffpruefung-c6d1-flash (deepseek-flash) | **abgebrochen** (Antwortstrom vor dem Abschluss-Ereignis abgerissen): **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 3449 Zeilen, Suchen 54, Lesungen 60, Token rein 4936022, Token raus 74630, Runden 28 | — | — | — | mind. 1,57 $ |
+| 01.10.2026 | diffpruefung-c6d1-flash-2 (deepseek-flash) | Diff 3449 Zeilen, Suchen 41, Lesungen 32, Token rein 3819136, Token raus 75890, Runden 22 | 4 | 4 | — | 1,24 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
