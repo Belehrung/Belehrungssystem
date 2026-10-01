@@ -721,3 +721,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-D: N5 läuft.
 - 01.10.2026 07:41 UTC (Takt): Es laufen C5-D N5, C5-G1 N2, C5-G2 N2 und C5-E3. Der Deploy für `4ef18ef`/`d372589` steht noch aus, Prüfung um 07:50 (send_later).
 - 01.10.2026 07:51 UTC: C5-C ist ausgeliefert (Deploy 464, `4ef18ef`, success). Ebenso der Drift-Fix (Deploy 465, `d372589`, success). Der Health-Gate des Deploys belegt, dass Migration 0066 beim App-Start durchging. live-check EXIT 0, 5 ✓, 2 ℹ (Zertifikat, Health; umgebungsbedingt). Die drei Drift-WARN sollten beim nächsten Lauf des Drift-Wächters verschwinden.
+- 01.10.2026 08:40 UTC (Takt):
+  - Laufen noch: C5-D N5, C5-G1 N2 und C5-E3 N1. Die Lesespur zu E3 fand 8 Befunde; die Attrappen kommen systemisch über `test/umgebung.sh`.
+  - C5-G2: PR offen auf `8deae3b` (Suite 0, 452 = 452), CI läuft. Kontrolle 09:23.
+  - Betreiberfrage OpenAI „Dots“ beantwortet (`plaene/openai-dots-01-10-2026.md`): nicht einsetzen.
