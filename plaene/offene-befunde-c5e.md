@@ -11,3 +11,10 @@
   - Rund 40 Testdateien lesen relativ zum Arbeitsverzeichnis (Klasse V26-4).
   - In `test_feature_nachweis_waisen.js` stehen weitere Abfragen nur über die ID (Z. 250, 301, 308, 326-328, 336, 362, 363).
   - Bei V24-4 sind die gii-xml-Paare nicht abgedeckt.
+
+## Aus C5-E3 (01.10.2026)
+
+- **E3-a:** `test/e2e-durchlauf.js` ist schon auf `baaf698` rot (17 ✓, 5 ✗, danach TypeError). Die Datei ist nicht in `test/run.sh`, die Ursache ist nicht untersucht.
+- **E3-b:** `test_feature_audit_batch3.js`, `test_feature_qr_charge.js` und `test_feature_bodyparser_und_sequenz.js` laufen nur gegen die fest verdrahtete `gymdocu_test`. Einzeln mit eigener DB lassen sie sich nicht prüfen.
+- **E3-c (E-5):** Die Tabellen-Zusicherung in `test_feature_session.js` prüft nur den Normalfall. Den Wurf-Pfad belegt nur die Mutation des Bauenden.
+- **E3-d (E-6):** Die Anker in `test_feature_kind_umgebung.js`, Teil 2/3, prüfen nur, ob der Helfer aufgerufen wird, nicht ob er wirkt. Mit dem systemischen Export in `test/umgebung.sh` ist das entschärft.
