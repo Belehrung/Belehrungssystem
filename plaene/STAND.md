@@ -726,3 +726,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-G2: PR offen auf `8deae3b` (Suite 0, 452 = 452), CI läuft. Kontrolle 09:23.
   - Betreiberfrage OpenAI „Dots“ beantwortet (`plaene/openai-dots-01-10-2026.md`): nicht einsetzen.
 - 01.10.2026 08:52 UTC: C5-G2 gemergt (`75bd00f`). CI 6/6 auf `8deae3b`, kein Review-Kommentar, master nicht weiter. Die Botschaft ist zurückgelesen. Der Deploy steht aus.
+- 01.10.2026 09:28 UTC: C5-G2 ist ausgeliefert (Deploy 466, `75bd00f`, success). live-check siehe Commit.
