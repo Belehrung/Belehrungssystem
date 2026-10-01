@@ -707,3 +707,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-D: N3 läuft. C5-G1: N1 läuft. C5-G2: N2 (17.06.2028) läuft.
   - Drift-Alarm (`drift-chk-namen`): wartet auf die Suite.
 - 01.10.2026 05:45 UTC: C5-E1 ausgeliefert (Deploy 463 success für `baaf698`, live-check EXIT 0, 5 ✓). Die E2-Restnummern sind schon als C5-E3 beauftragt.
+- 01.10.2026 06:40 UTC (Takt): läuft
+  - C5-C: PR offen auf `3717422` (Suite 0, 442 = 442, Lint 0), CI läuft.
+  - C5-D: N4 (Senden-Knopf auf der Geräteseite) läuft. C5-G1: N1 läuft, dazu der Zusatz zur Claim-Rücknahme bei einem Wurf vor `sendMail`.
+  - C5-G2: N2 läuft. C5-E3 läuft. Drift: Suite-Lauf 2 läuft (Lauf 1 war rot).
