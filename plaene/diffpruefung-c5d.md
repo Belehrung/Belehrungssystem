@@ -87,3 +87,17 @@ Ein reines Kürzen des Textes hätte eine Lücke gelassen: Scheitert beim Doppel
 Befund des Bauenden, Sackgasse: Auf der Geräteseite steht „noch nicht benachrichtigt“ ohne Knopf, der 409-Text rät aber zum erneuten Senden. Entscheidung: Nacharbeit 4 setzt dort im Zustand „offen“ mit vorhandener Adresse den Knopf. Die Adresse wird aus derselben Quelle aufgelöst wie in der Route.
 
 Befund des Bauenden zum Claim: Der Teil nach dem Claim (getConfig, `baueHtmlWartung`) liegt ausserhalb jedes try und nimmt den Claim bei einem Wurf nicht zurück. Das gehört zum Mailer und damit zu G1; der Bauende von G1 hat es als Zusatz zu seiner Nacharbeit 1 bekommen.
+
+## Nacharbeit 4 (`1e2e98d`), Lesespur flash (01.10.2026)
+
+N4 ergänzt einen Senden-Knopf im Sperr-Banner der Geräteseite (Zustand „offen“) und legt die Adressauflösung in `loeseServiceMailAdresse` zusammen. Den Diff habe ich selbst gelesen und den Screenshot gesichtet. Laut Bericht ist die Suite grün mit 441 = 441 Dateien.
+
+| Nr | Schwere | Befund | Nachgemessen | Entscheidung |
+|---|---|---|---|---|
+| B1 | sollte | Die Adressauflösung auf der Geräteseite liegt im großen try. Fällt die DB aus, endet die ganze Seite in einem 500er. Der POST-Weg fängt denselben Aufruf eigens ab. | trägt | N5 |
+| B2 | sollte → Anmerkung | Die Zusicherung „409-Link → Knopf“ sei aus einem anderen Grund grün. Nachgelesen: Sie prüft genau das, was der 409-Text bedingt verspricht (im Zustand „offen“ gibt es einen Knopf), und sie fällt ohne den Knopf (26/2). Falsch ist nur der Kommentar zur Herkunft des Zustands, weil die Route vor dem Versand auf NULL setzt. | Befund nur zum Teil getragen | N5: Kommentar berichtigen, Gegenfall „ausgelöst“ ergänzen |
+| B3 | Anmerkung | `test_feature_c5d_stille_fehler.js:477-478`: Der Redirect liefert einen leeren Rumpf, die Zusicherung ist damit immer wahr. | trägt | N5 |
+| B4 | Anmerkung | Die Sperr-Abfrage der Geräteseite hat kein `ORDER BY`. Bei Alt-Duplikaten zeigt der Knopf womöglich auf die älteste Sperre. | trägt (`:749-751`) | N5 |
+| B5 | Anmerkung | Auf der Geräteseite steht nicht, an wen die Mail geht. | trägt | N5 |
+| B6 | Anmerkung | Der CSRF-Kommentar ist falsch: Der Schutz ist origin-/referer-basiert, Formulare tragen kein Token. | trägt | N5 |
+| B7 | Anmerkung | Nach dem Senden gibt es keinen Weg zurück zum Gerät. Eine halb ausgefüllte Prüfung geht beim Senden verloren. | trägt | Rückweg in N5, Entwurfsverlust auf die Sammelliste |

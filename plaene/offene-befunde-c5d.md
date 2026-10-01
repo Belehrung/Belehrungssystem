@@ -8,3 +8,7 @@ Die Einzelheiten stehen in `diffpruefung-c5d.md`.
 - **Wartungsprüfung ohne Idempotenz (Bestand):** Ein erneutes Absenden legt eine zweite Prüfung an.
 - **N1-H1** (Bericht der Nacharbeit 1): `routes/mitarbeiter-auth.js` (`sendeMitarbeiterEinladung`) schreibt `console.error('Mitarbeiter-Einladung Mail-Fehler:', e.message)` unmaskiert ins Serverlog. Ein SMTP-Fehlertext kann dabei die Empfängeradresse enthalten.
 - **N1-H2**: Im Verbandbuch wird das ID-Format am ungetrimmten Rohwert geprüft; `" 5 "` wird mit 400 abgelehnt. Das Formular sendet die ID ohne Leerraum, der Fall entsteht also nur bei handgebauten Anfragen.
+
+## B7 (01.10.2026, Lesespur N4): Entwurfsverlust auf der Wartungs-Prüfseite
+
+Der Senden-Knopf im Sperr-Banner steht über dem Prüfformular. Wer ihn während einer begonnenen Prüfung drückt, verliert die Eingaben. Eine Entwurfspufferung (`core/ui-feedback.js#ENTWURF_SCRIPT`) hat `routes/wartung.js` nicht. Behebung in C6: Entwurfspufferung einbinden oder den Knopf in eigenem Fenster absenden. Fundstelle: `plaene/diffpruefung-c5d.md`, Abschnitt N4.
