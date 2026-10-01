@@ -76,3 +76,14 @@ Stand: Suite 0, 435 = 435, Lint 0.
 **R2-4:** Der Bauende hat widersprochen, und zu Recht. `mail_gesendet_am` wird nirgends angezeigt, ein Verweis im Text liefe ins Leere. Entscheidung: Nacharbeit 3 baut die Anzeige „Servicetechniker benachrichtigt am …“ an jeder aktiven Sperre mit Versandknopf, und der 409-Text verweist darauf.
 
 Ein reines Kürzen des Textes hätte eine Lücke gelassen: Scheitert beim Doppelklick der siegreiche Versand, bliebe die Sperre unbemerkt ohne Benachrichtigung.
+
+## Nacharbeit 3 (`ff345e3`, `6b48db6`, dazu der Merge von C5-E1 → `add06eb`), selbst gelesen
+
+- `mailStandHtml()` hat drei Zustände, gebunden an die FORM des Endzeitstempels, nicht an das Präfix aus G1: offen / „ausgelöst am“ / „wird gerade versendet oder der Stand ist unklar“. Bewusst steht nie „benachrichtigt am“. Der Grund ist gemessen: Der Claim setzt den Zeitstempel VOR dem Versand.
+- Die Zeile steht auf der Ergebnisseite (dort mit Knopf) und auf der Geräteseite (ohne Knopf). Der 409-Text verweist auf die Geräteseite und verlinkt sie.
+- Kontrast mit `kontrast.js` gerechnet: ≥ 8,8:1. Screenshots unter `/workspace/c5d-shots/`.
+- Stand: Suite 0, 441 = 441, Lint 0.
+
+Befund des Bauenden, Sackgasse: Auf der Geräteseite steht „noch nicht benachrichtigt“ ohne Knopf, der 409-Text rät aber zum erneuten Senden. Entscheidung: Nacharbeit 4 setzt dort im Zustand „offen“ mit vorhandener Adresse den Knopf. Die Adresse wird aus derselben Quelle aufgelöst wie in der Route.
+
+Befund des Bauenden zum Claim: Der Teil nach dem Claim (getConfig, `baueHtmlWartung`) liegt ausserhalb jedes try und nimmt den Claim bei einem Wurf nicht zurück. Das gehört zum Mailer und damit zu G1; der Bauende von G1 hat es als Zusatz zu seiner Nacharbeit 1 bekommen.
