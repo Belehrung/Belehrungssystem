@@ -18,3 +18,12 @@
 - **E3-b:** `test_feature_audit_batch3.js`, `test_feature_qr_charge.js` und `test_feature_bodyparser_und_sequenz.js` laufen nur gegen die fest verdrahtete `gymdocu_test`. Einzeln mit eigener DB lassen sie sich nicht prüfen.
 - **E3-c (E-5):** Die Tabellen-Zusicherung in `test_feature_session.js` prüft nur den Normalfall. Den Wurf-Pfad belegt nur die Mutation des Bauenden.
 - **E3-d (E-6):** Die Anker in `test_feature_kind_umgebung.js`, Teil 2/3, prüfen nur, ob der Helfer aufgerufen wird, nicht ob er wirkt. Mit dem systemischen Export in `test/umgebung.sh` ist das entschärft.
+- **E3-e (Ergänzung zu E3-b):** Fest auf `gymdocu_test` verdrahtet und deshalb nicht einzeln mit eigener DB prüfbar sind außerdem:
+  - deprovision_route_queue, schluessel_rotation, migrations
+  - db_tx_commit_ungewiss, db_pool_timeout
+  - pdf_jobs, pdf_jobs_korrektur
+  - storage_replica, storage_replica_loeschauftrag, migration_0060_loeschauftrag
+  - korrekturen, korrektur_dokumente
+  - getraenke_race, pdf_crlf_saeuberung
+
+  Dazu kommen Folgefehler in geraete_alter und qr_token.
