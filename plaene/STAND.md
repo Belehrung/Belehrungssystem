@@ -734,3 +734,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-E3: N1 läuft.
 - 01.10.2026 10:45 UTC: C5-G1 gemergt (`9f058be`, #500). CI 6/6 auf `3fac862`, kein Review-Kommentar, die Botschaft ist zurückgelesen. Der Deploy steht noch aus. C5-D nimmt master herein und ergänzt die G1-Leserliste.
 - 01.10.2026 11:22 UTC: C5-G1 ist ausgeliefert (Deploy 467, `9f058be`, success). live-check EXIT 0, 5 ✓, 2 ℹ (umgebungsbedingt).
+- 01.10.2026 11:41 UTC (Takt):
+  - C5-G1 ausgeliefert (Deploy 467).
+  - C5-D: PR offen auf `fc8786e` (Suite 0, 462 = 462), CI läuft, Kontrolle 12:14.
+  - C5-E3: nimmt master herein (G2, G1), Suite.
