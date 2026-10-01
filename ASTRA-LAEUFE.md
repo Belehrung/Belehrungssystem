@@ -408,6 +408,8 @@ sondern falsch.
 | 01.10.2026 | c6-zustand-z1 (deepseek-flash) | Diff 1 Zeilen, Suchen 36, Lesungen 54, Token rein 1137693, Token raus 67077, Runden 11 | 19 Kennungen | Nachmessung beim Bau | — | 0,42 $ |
 | 01.10.2026 | c6-zustand-z3 (deepseek-flash) | Diff 1 Zeilen, Suchen 55, Lesungen 53, Token rein 2276404, Token raus 74756, Runden 19 | 18 Kennungen | Nachmessung beim Bau | — | 0,77 $ |
 | 01.10.2026 | c6-zustand-z5b (deepseek-flash) | Diff 1 Zeilen, Suchen 57, Lesungen 84, Token rein 2557504, Token raus 86515, Runden 19 | 24 Kennungen | Nachmessung beim Bau | — | 0,87 $ |
+| 01.10.2026 | c6-zustand-z6 (deepseek-flash) | Diff 1 Zeilen, Suchen 35, Lesungen 55, Token rein 2815394, Token raus 53020, Runden 28 | 13 Kennungen | Nachmessung beim Bau | — | 0,91 $ |
+| 01.10.2026 | c6-zustand-z4 (deepseek-flash) | Diff 1 Zeilen, Suchen 53, Lesungen 42, Token rein 2610125, Token raus 69056, Runden 27 | 21 Kennungen | Nachmessung beim Bau | — | 0,87 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
