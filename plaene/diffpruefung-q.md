@@ -104,3 +104,13 @@ Selbst gelesen. R4-1 trägt: bei `r.herkunft` bricht der Live-Pfad ab (`formFehl
 | R4-7 | Anmerkung | Ein Sitzungsfehler bei `sitzung_ok` meldet „Nachreichen X-mal abgelehnt“, obwohl kein Foto gesendet wurde. | Nacharbeit 4: Text |
 | R4-8 | Anmerkung | „die unten aufgeführten Defekte“ steht auch dann da, wenn keine Defekte vorliegen. | Nacharbeit 4: Text je nach Fall |
 | R4-9 | Anmerkung | Ein Eintrag mit `sitzung_ok` kann über `bereits_geprueft`/`validierung` eine Nachtrageliste zeigen, etwa nach einem Studiowechsel des Tablets. Ein 403 wegen Host-Abweichung, das Neuladen nicht behebt, kreist sichtbar, aber auf Dauer. | Sammelliste |
+
+## Nacharbeit 4 (`53c126d..281ac61`), selbst gelesen
+
+R4-1, R4-2 und R4-4 bis R4-8 sind umgesetzt. Den Diff habe ich selbst gelesen, den Screenshot des Badges angesehen (`/workspace/q-screens/badge-herkunft-gespeichert-820.png`). Gegenproben je Punkt ROT, kombiniert 182/7 mit genau den erwarteten Zusicherungen. Suite auf `66fd487` (mit C5-A): `SUITE_EXIT=0`, 431 = 431, Lint 0.
+
+Eine Runde 5 gibt es nicht, aus zwei Gründen:
+- R4-1 leitet den Herkunftsfall nur auf den bestehenden Queue-Pfad um, und dieser Pfad ist durch B11a–f einschliesslich Reload und Sync gemessen.
+- Alle anderen Punkte sind Text oder Test.
+
+Die Restpunkte stehen auf der Sammelliste.
