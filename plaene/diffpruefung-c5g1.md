@@ -34,3 +34,21 @@ Geprüft wurden alle sieben Löschwege mit einer zwischen zwei Studios geteilten
 | C-5 | Anmerkung | Das DELETE der Queue-Zeile ohne `studio_id` bleibt grün (die id ist global). | trägt | N1: Zusicherung mit zwei Studios |
 | C-6 | Anmerkung | DB friert ein (TCP offen, keine Antwort): Der Worker steht still, der Heartbeat veraltet. | Messung | Sammelliste (der Heartbeat wird vom Health-Endpunkt erfasst) |
 | C-7 | Anmerkung | DB-Ausfall im Upload-Fehlerweg: Die Datei bleibt ohne Queue-Eintrag liegen. | Messung | Sammelliste |
+
+## Nacharbeit 1 (`1cf8b85..8320c2c`), Lesespur flash, Runde 2 (01.10.2026)
+
+Den Diff habe ich selbst gelesen. Laut Bericht des Bauenden: Suite 0, 443 = 443, Lint 0. Abweichungen C-1(a) (bei älterer Quelle wird gewartet) und C-5 (statischer Pin plus Zwei-Studio-Test) übernommen.
+
+| Nr | Schwere | Befund | Nachgemessen | Entscheidung |
+|---|---|---|---|---|
+| R2-1 | sollte | „Quelle lebt“ entscheidet nur nach mtime. Wird die Quelle bloß berührt und löscht die Retry-Queue (ruft Weg 2 nicht) die Primärdatei danach, bleibt die .enc für immer. | trägt (`retention.js:859-895` ohne Replica-Aufruf) | N2: Weg 2 auch in der Queue; Hash-Prüfung |
+| R2-2 | sollte | Test 6 heißt „gleiche Bytes“, misst aber nur die mtime. | trägt | N2 |
+| R2-3 | Anmerkung | Jeder statSync-Fehler gilt als „Quelle weg“, auch ohne ENOENT. Folge: Es wird gelöscht. | trägt | N2: nur ENOENT gilt als weg |
+| R2-4 | Anmerkung | Wartende Aufträge belegen bei `ORDER BY created_at LIMIT 200` dauerhaft Plätze. | trägt (`:1189-1195`) | N2: Aufträge ohne `last_error` zuerst |
+| R2-5 | Anmerkung | Die Cron-Zeile der Replica-Löschaufträge nennt die neuen Zähler nicht. | trägt | N2 |
+| R2-6 | Anmerkung | Die Begründung von L-1 ist überzeichnet: `deprovisionStudio` normalisiert schon per basename. | trägt | N2: Kommentar |
+| R2-7 | Anmerkung | Foto-Reaper: Bei Stufe 1 = `fehler` meldet er „waisen: fehler“. | trägt; der Fehler wird laut gemeldet | Sammelliste |
+| R2-8 | Anmerkung | Der C-5-Statiktest zählt 3 von 5 schreibenden Anweisungen. Die INSERTs tragen studio_id als Wert. | trägt | N2: Name der Zusicherung |
+| R2-9 | Anmerkung | Mailer-Kommentar: „nimmt den Claim zurück“ gilt nur, wenn die Rücknahme gelingt. | trägt | N2: Kommentar |
+| R2-10 | Anmerkung | Ein noch referenzierter Upload-Name bleibt beim Offboarding ohne Meldung liegen. | trägt | Keine Änderung: Das ist gewollt, die Datei gehört dann einem anderen Verweis. |
+| R2-11 | Anmerkung | Der Offboarding-Aufräumlauf nimmt jeden absoluten .enc-Pfad aus der Queue-Datei. Der Root-Riegel fiel mit L-2. | trägt; ausnutzbar nur mit Schreibzugriff auf die Platte | Sammelliste |

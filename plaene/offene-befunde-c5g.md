@@ -24,3 +24,8 @@ Verweist auf die Befunddateien `plaene/diffpruefung-c5g1.md` und `plaene/diffpru
 - **L-7** Queue-Einträge hängen am anstossenden Studio. Nach seinem Offboarding verarbeitet sie niemand.
 - **C-6** Friert die DB ein (TCP offen, keine Antwort), steht der PDF-Worker still. Sichtbar ist das nur über den Heartbeat.
 - **C-7** DB-Ausfall im Upload-Fehlerweg: Die Datei bleibt ohne Queue-Eintrag liegen und wird nie geräumt.
+
+## Aus Runde 2 der Lesespur zu C5-G1 N1 (01.10.2026)
+
+- **R2-7:** Foto-Reaper. Endet Stufe 1 mit `fehler` (nicht `tabelle_fehlt`), wirft die Abfrage in Stufe 2 erneut. Die Meldung sagt dann „waisen: fehler“ statt einer Zahl. Laut ist das, aber unvollständig. Behebung in C6: Stufe 2 überspringt auch bei `fehler` und meldet „unbekannt“.
+- **R2-11:** Offboarding-Aufräumlauf (`raeumeOffboardingRueckstaende`). Seit L-2 genügt ein absoluter `.enc`-Pfad ohne `..` aus der Queue-Datei, damit gelöscht wird; der Root-Riegel ist weg. Ausnutzbar ist das nur mit Schreibzugriff auf die Platte. Behebung in C6: Die Referenzen beim Aufräumen gegen die DB-Zeilen bzw. Aufträge des Studios halten, statt der Datei zu glauben.
