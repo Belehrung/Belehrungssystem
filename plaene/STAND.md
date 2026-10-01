@@ -668,3 +668,6 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-E1: master mit Q ist hereingenommen (`7f8523a`), die Suite steht in der Schlange.
   - C5-C: Nacharbeit 1 (Opus) folgt, sobald die Suite des Bauenden durch ist.
   - Es laufen außerdem: C5-D (Merge, dann N2), C5-G1 (Gegenproben und Suite), C5-G2.
+- 01.10.2026 01:55 UTC: C5-E2 gemergt (`9af3216`, CI 6/6 grün, keine Bot-Kommentare, Botschaft zurückgelesen). Der Deploy wird um 02:18 geprüft.
+  C5-E1: Die Suite m4 (Stand `7f8523a`, ohne E2) wartet noch in der Schlange. Sie abzubrechen hat der Auto-Modus abgelehnt, deshalb läuft sie durch.
+  Danach wird master mit E2 in E1 gemergt, dann die Suite m5.
