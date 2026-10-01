@@ -711,3 +711,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-C: PR offen auf `3717422` (Suite 0, 442 = 442, Lint 0), CI läuft.
   - C5-D: N4 (Senden-Knopf auf der Geräteseite) läuft. C5-G1: N1 läuft, dazu der Zusatz zur Claim-Rücknahme bei einem Wurf vor `sendMail`.
   - C5-G2: N2 läuft. C5-E3 läuft. Drift: Suite-Lauf 2 läuft (Lauf 1 war rot).
+- 01.10.2026 07:06 UTC:
+  - C5-C gemergt (`4ef18ef`, #497). Die CI war zuerst rot, und zwar am Wettlauf in `test_feature_csp_crawler.js`, nicht am Diff. Nach einem Neulauf grün. Der Wettlauf steht auf der Sammelliste C5-C. Der Deploy steht noch aus.
+  - Drift-Fix 0066: PR offen. Die Lesespur fand 5 Punkte, N1 läuft im Arbeitsbaum `gymdocu-drift-n1`.
+  - C5-D: Die Lesespur zu N4 fand 7 Punkte, N5 läuft.
