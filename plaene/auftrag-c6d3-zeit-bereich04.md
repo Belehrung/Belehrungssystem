@@ -59,6 +59,14 @@ laufen die Tests mindestens unter `UTC` UND `Etc/GMT+5`.
    - Für den Test bekommen die Stellen ihr „jetzt“ übergeben, oder sie benutzen einen Helfer, dem es übergeben wird.
    - Test am Umstellungstag. Der Sollwert wird von Hand gerechnet und als Literal hingeschrieben.
 
+5a. **A1-a9 — `getLastMonthRange()` im Monatslauf ohne Prozesszone (Anmerkung, aus C6-A1 Nacharbeit 2).**
+   - Fundort: `generateMonthlyPDFs.js#getLastMonthRange`. Unter `TZ=Asia/Tokyo` liefert sie von = 2026-08-31 und
+     bis = 2026-09-29; beide Enden sind falsch (gemessen vom Bauenden C6-A1). In UTC und Berlin ist es latent.
+   - Behebung nach dem Muster `monatsende()` in `routes/archiv.js` (seit C6-A1 N2-4): rein kalendarisch über
+     `plusMonate`/`plusTage`, ausgehend vom Berliner Kalendertag. Gibt es nach dem Merge von C6-A1 zwei Helfer
+     für dasselbe Monatsende, werden sie zu EINEM in `core/datum.js` zusammengeführt.
+   - Test im Muster `test_feature_c6a1_monatsende_zone.js` (Unterprozess mit `TZ=Asia/Tokyo`), vorher ROT.
+
 ## B. Bereich 04
 
 6. **V04-7 — Modul-Einstellungen: Seil-Bestätigung VOR jedem Schreiben; kein Pauschal-catch (sollte).**
