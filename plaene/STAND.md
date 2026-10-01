@@ -728,3 +728,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
 - 01.10.2026 08:52 UTC: C5-G2 gemergt (`75bd00f`). CI 6/6 auf `8deae3b`, kein Review-Kommentar, master nicht weiter. Die Botschaft ist zurückgelesen. Der Deploy steht aus.
 - 01.10.2026 09:28 UTC: C5-G2 ist ausgeliefert (Deploy 466, `75bd00f`, success). live-check EXIT 0, 5 ✓, 2 ℹ (Zertifikat, Health; umgebungsbedingt).
 - 01.10.2026 09:41 UTC (Takt): Es laufen C5-D N5, C5-G1 N3 (ungültiger Pfad gilt als weg) und C5-E3 N1. C5-G2 ist seit 09:28 ausgeliefert.
+- 01.10.2026 10:41 UTC (Takt):
+  - C5-G1: PR offen auf `3fac862` (Suite 0, 458 = 458), CI läuft, Kontrolle 11:17.
+  - C5-D: N5 ist fertig und gelesen (Suite 0, 447 = 447). Wartet auf den Merge von G1, danach master herein, G1-Leserliste ergänzen, Suite, PR.
+  - C5-E3: N1 läuft.
