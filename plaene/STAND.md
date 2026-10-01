@@ -674,3 +674,8 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
 - 01.10.2026 02:20 UTC: C5-E2 ist ausgeliefert (Deploy 462 success für `9af3216`, live-check EXIT 0, 5 ✓).
   C5-G2 ist gebaut (Suite 0, 440 = 440). Die Lesespur fand 7 Befunde, alle getragen. Die ausführende Spur läuft noch, Ergebnis in `diffpruefung-c5g2.md`.
   C5-C ist gebaut (`8e391ab`). Der Auftrag für Nacharbeit 1 (`auftrag-c5c-n1.md`) ist in der Planprüfung (flash); danach baut ein Executer mit Opus.
+- 01.10.2026 02:40 UTC (Takt): läuft
+  - C5-E1: Suite m4 grün (EXIT 0). master mit E2 ohne Konflikt hereingenommen (`3c6c5d3`, Lint 0). Suite m5 läuft.
+  - C5-G2: Nacharbeit 1 läuft beim Bauenden (Befunde E-, L-, C- in `diffpruefung-c5g2.md`).
+  - C5-C: Nacharbeit 1 nach Fassung 2 läuft (Executer auf Opus).
+  - C5-D und C5-G1 laufen.
