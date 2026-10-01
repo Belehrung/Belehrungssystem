@@ -744,3 +744,8 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Für das Claude-Guthaben ist automatisches Aufladen aktiviert.
   - Frage „DeepSeek bauen lassen?“: Betreiber-Entscheidung „wir lassen es so“. DeepSeek bleibt Prüfspur, gebaut wird weiter über den Executer.
 - 01.10.2026 12:20 UTC: C5-D ausgeliefert (Deploy 468, `9ad8acd`, success). live-check EXIT 0, 5 ✓, 2 ℹ. C5-E3 (#502) wartet auf die CI.
+- 01.10.2026 12:41 UTC (Takt): C5-E3 gemergt (`9dfe522`, #502). CI 6/6, 463 = 463, Botschaft zurückgelesen. Der Deploy steht noch aus, Kontrolle 12:53. Damit ist C5 vollständig. C6 ist begonnen (`plaene/c6-plan.md`):
+  - Verdichtung: 124 offene Punkte. Die Zustandsprüfung (z1–z6) ergab rund 30 davon als schon behoben.
+  - Aufträge C6-A (Monatslauf) und C6-F (Tests) sind geschrieben. Die Planprüfung läuft: flash C6-A hat 14 Befunde, die tragenden sind nachgemessen; sol C6-A läuft noch.
+  - sol C6-F ist am Ausgabelimit abgebrochen (6,15 $).
+  - Der Container hat neu gestartet, die Gegenleser liefen weiter.
