@@ -41,3 +41,16 @@ Nacharbeit 1 ist beauftragt (derselbe Agent).
 3. `neu-single`: Die Datumsrechnung wirft NACH `fn()`. Das wird gegenstandslos mit C6-A2 (Vorab-Anker).
 4. `/mail/:monat` meldet „gesendet“, auch wenn keine Empfängeradresse gesetzt ist.
 5. Die ZIP-Seite liefert alle Zeilen; „Alle N PDFs“ kann davon abweichen.
+
+## Runde 2: flash über Nacharbeit 1 (`cbc33ed..d5e704c`, 7 Befunde)
+
+| Nr | Schwere | Befund | Nachgemessen | Entscheidung |
+|---|---|---|---|---|
+| 1 | sollte | „Alle N PDFs als ZIP“ zählt nur diesen Lauf; das ZIP enthält den ganzen Monat. | trägt (= A1-a5) | N2 |
+| 2 | sollte | Ein Versandfehler der Archiv-Mail geht nur ins Log, nicht an `melde()`, und wird zu `nichts_zu_tun`. | trägt (`generateMonthlyPDFs.js:434-437`) | N2 |
+| 3 | sollte | Ein unbrauchbarer Tage-Wert reißt den ganzen Monatslauf ab, ohne `melde()` (`server.js:1617` nur `console.error`). | trägt | N2: Lauf bricht nicht ab, `loeschen_nach` NULL plus Meldung |
+| 4 | Anmerkung | `ERWARTET_A` ist dieselbe Menge wie `AKTIV_A`. | trägt NICHT: Beide sind handgeschriebene Literale. Ändert jemand die Schalter, wird der Test rot; genau das soll er. | — |
+| 5 | Anmerkung | `routes/archiv.js:1089` bildet das Monatsende aus der lokalen Zone. | trägt (latent, östlich von Berlin falsch) | N2 |
+| 6 | Anmerkung | Der Kommentar behauptet „Prüfcode nicht verbraucht“, gemessen ist es nicht. | trägt | N2 |
+| 7 | Anmerkung | Der Verweis „Abschnitt E“ meint E2. | trägt | N2 |
+| R | Anmerkung (Rechenschaft) | `aeltere` filtert `datei_geloescht` nicht. Gelöschte Zeilen werden gemailt und markiert. | trägt (`generateMonthlyPDFs.js:414-417`) | N2 |
