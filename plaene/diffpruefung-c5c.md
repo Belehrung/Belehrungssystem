@@ -38,3 +38,12 @@ Getragen und von mir nachgelesen: C1/Z2 (= F1) über die Ernte-Stellen. Z1 und Z
 | C6 | Anmerkung (= F2) | Das Warten in der Transaktion ist in der heutigen Topologie praktisch nicht erreichbar. | Keine Nacharbeit; F2 ist damit herabgestuft. |
 | C7 | Anmerkung | Die Behebung in `e539e56` setzt den FK der Suite-DB per DDL aus. Stirbt der Prozess dazwischen, fehlt der FK für den Rest der Suite. | Nacharbeit 1: DDL und Prüfung in EINER Transaktion mit ROLLBACK, oder Daten, die den FK erfüllen |
 | C8 | Anmerkung (= F6) | Falscher Testname im Kommentar. | Nacharbeit 1 |
+
+## Nacharbeit 1 — Planprüfung und Auftrag (01.10.2026)
+
+Auftrag `plaene/auftrag-c5c-n1.md`. Die Planprüfung (flash) fand 8 Befunde, drei davon blockierend. Alle trugen.
+- `verify_dokumente` überlebt Fristlöschungen. Damit würde eine gelöschte oder überholte Fassung wieder veröffentlicht.
+- `FLUECHTIGE_TYPEN` (Verbandbuch) waren nicht ausgenommen.
+- Der Lesepfad entfernt beim Reparieren die Temp-Datei eines laufenden Erstellers in einem anderen Prozess. Folge: dead letter.
+
+Fassung 2 schränkt die Reparatur deshalb auf Korrekturblätter ein, mit dem Kriterium `nachweis_korrektur_dokumente`, `korrektur_id UNIQUE`, CASCADE durch die Retention. Der Lesepfad repariert, ohne die Temp-Datei zu entfernen, und die Rückgabewerte sind festgelegt. Gebaut wird mit dem Executer auf Opus.
