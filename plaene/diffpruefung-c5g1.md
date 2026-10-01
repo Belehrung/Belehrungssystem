@@ -52,3 +52,26 @@ Den Diff habe ich selbst gelesen. Laut Bericht des Bauenden: Suite 0, 443 = 443,
 | R2-9 | Anmerkung | Mailer-Kommentar: „nimmt den Claim zurück“ gilt nur, wenn die Rücknahme gelingt. | trägt | N2: Kommentar |
 | R2-10 | Anmerkung | Ein noch referenzierter Upload-Name bleibt beim Offboarding ohne Meldung liegen. | trägt | Keine Änderung: Das ist gewollt, die Datei gehört dann einem anderen Verweis. |
 | R2-11 | Anmerkung | Der Offboarding-Aufräumlauf nimmt jeden absoluten .enc-Pfad aus der Queue-Datei. Der Root-Riegel fiel mit L-2. | trägt; ausnutzbar nur mit Schreibzugriff auf die Platte | Sammelliste |
+
+## Nacharbeit 2 (`1ee347e`, `58832f0`, Merge `9a509d0`), selbst gelesen
+
+- Alle Punkte R2-1 bis R2-6, R2-8 und R2-9 sind umgesetzt.
+- `untersucheQuelle()` liefert einen von fünf Befunden: weg, unklar, noch_da, lebt, andere_bytes.
+- Die Retry-Queue ruft Weg 2 auf. Scheitert er, bleibt der Eintrag stehen.
+- Die Sortierung bevorzugt Aufträge ohne `last_error`. Der Index trägt sie nicht mehr: gemessen 7,4 ms bei 20.000 Aufträgen.
+- Die Cron-Zeile ist eine eigene Funktion.
+
+Tests und Suite:
+- `weg2_vorab` 60/0.
+- 21 Gegenproben, alle ROT.
+- Erster Suite-Lauf rot: Ein Pin auf die Cron-Form griff. Die Form ist wiederhergestellt.
+- Suite 0, 458 = 458, Lint 0.
+
+Entscheidung zur Rückfrage des Bauenden: Ein nicht auflösbarer `local_path` gilt als „weg“ (löschen, eine Meldung), nicht als „unklar“.
+- Der Auftrag `quelle_geloescht` belegt die Löschung.
+- Ein ungültiger Pfad kann auf keine lebende verwaltete Datei zeigen.
+- Ließe man ihn als „unklar“ stehen, bliebe die Zweitkopie für immer.
+
+Das ist N3.
+
+Keine dritte Lesespur: Die Behebungen sind eng umrissen, jede ist mit einer roten Mutation belegt, den Diff habe ich gelesen.
