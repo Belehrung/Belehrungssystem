@@ -417,6 +417,8 @@ sondern falsch.
 | 01.10.2026 | planpruefung-c6a2-flash (deepseek-flash) | Diff 179 Zeilen, Suchen 26, Lesungen 40, Token rein 1906270, Token raus 67487, Runden 20 | 13 | 1 und 2 nachgemessen, getragen; 5 trägt nicht (übersieht, dass A2 erst nach A1 baut) | — | 0,65 $ |
 | 01.10.2026 | planpruefung-c6a2-sol (gpt-6.1-sol) | Diff 179 Zeilen, Suchen 41, Lesungen 64, Token rein 1364398, Token raus 28284, Runden 16 | 16 | 12–15 nachgemessen, getragen; 1 trägt nicht (Wegwerf-Wurzeln sind etablierte Praxis, kein echtes Dateisystem) | — | 5,88 $ |
 | 01.10.2026 | planpruefung-c6a2-r3-sol (gpt-6.1-sol) | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 220 Zeilen, Suchen 3, Lesungen 0, Token rein 5822, Token raus 151, Runden 2 | — | — | — | mind. 0,03 $ |
+| 01.10.2026 | planpruefung-c6a2-r3-flash (deepseek-flash) | Diff 220 Zeilen, Suchen 31, Lesungen 49, Token rein 1867686, Token raus 72049, Runden 18 | 12 | 1–4 und 7 nachgemessen, getragen; 12 trägt nicht (Namensformen kollidieren nicht) | — | 0,65 $ |
+| 01.10.2026 | planpruefung-c6a2-r3-sol (gpt-6.1-sol) | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 220 Zeilen, Suchen 47, Lesungen 80, Token rein 2085185, Token raus 11936, Runden 19 | — | — | — | 8,52 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
