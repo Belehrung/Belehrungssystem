@@ -76,3 +76,16 @@ Ursache: ein Flake im Bestand, der schon vorher angelegt war.
 - Ob das passiert, hängt nur an der Zahl der Studios, die die Suite vorher angelegt hat. Auf master ist die Datei heute zufällig grün.
 
 Nacharbeit 3: die Fixtur wird von der ID-Folge unabhängig, mit einer erzwungenen Gegenprobe.
+
+## Nacharbeit 3 (`4bb1f7a`, `fd5aee6`), selbst gelesen
+
+Der qr_journal-Flake ist behoben. F2b räumt seine Präfix-Zeile wie im Betrieb ab, und F3, G1, G2, H1 und I1 prüfen als Vorbedingung, dass keine Streu-Zeile offen ist.
+
+Erzwungene Gegenprobe (15 Wegwerf-Studios vor F2):
+- alt: Abbruch QrLageUngeklaert, ROT;
+- neu: 1260/0;
+- neu mit Freigabe nur als Trockenlauf: 4 ROT.
+
+Nach dem Merge von C5-A fiel der Session-DDL-Wächter an der neuen Drift-Fixtur. Die Fixtur ist jetzt eine benannte Ausnahme mit Begründung und drei Prüfungen: noch nötig, nur über `mitVerbindung` in den Wegwerf-DBs, Gegenprobe 3 ROT. Suite auf `fd5aee6`: 0, 434 = 434, Lint 0.
+
+Master mit Q ist hereingenommen (`7f8523a`, Lint 0), die Suite läuft. Eine weitere Runde gibt es nicht; beides sind Teständerungen mit Gegenprobe.
