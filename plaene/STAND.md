@@ -706,3 +706,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-C: Der Merge von master steht mit Konflikt in `korrektur_dokumente_static`. Der Executer löst ihn und baut dabei N2 (4 Befunde aus Runde 2) mit; danach Suite.
   - C5-D: N3 läuft. C5-G1: N1 läuft. C5-G2: N2 (17.06.2028) läuft.
   - Drift-Alarm (`drift-chk-namen`): wartet auf die Suite.
+- 01.10.2026 05:45 UTC: C5-E1 ausgeliefert (Deploy 463 success für `baaf698`, live-check EXIT 0, 5 ✓). Die E2-Restnummern sind schon als C5-E3 beauftragt.
