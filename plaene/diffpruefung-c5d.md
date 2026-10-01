@@ -62,3 +62,17 @@ Selbst gelesen: `loesePerson` in `routes/verbandbuch.js` und die beiden UPDATE-Z
 | R2-6 | Anmerkung | Der Kommentar sagt „nie 'unbekannt'“, der Code setzt es als Rückfall. | Nacharbeit 2 |
 | R2-7 | Anmerkung | Ein Test-UPDATE ohne `studio_id`. | Nacharbeit 2 |
 | R2-8 | Anmerkung | `setTimeout(res, 200)` hängt an der Zeit. | Nacharbeit 2: deterministisch warten |
+
+## Nacharbeit 2 (`559c12b`, dazu die Merges C5-A, Q und E2 → `65b8611`), selbst gelesen
+
+- R2-1: erst trimmen, dann ausweichen. Getestet über die echte Route. Gegen den alten Code gemessen 58/4.
+- R2-3: Die zweite INACTIVE-Meldung muss verarbeitet sein. Gegenprobe 62/2.
+- R2-5: neuer Helfer `core/fehlergrund.js`. Die lokale Kopie in `mitarbeiter.js` ist gelöscht, `mitarbeiter-auth.js:322` maskiert jetzt an der Quelle. Gegenprobe 123/2.
+- R2-6, R2-7, R2-8 umgesetzt (R2-8: Gegenprobe 120/7).
+- Merge-Fehler: `routes/archiv.js` hatte nach dem Merge zweimal `const { melde }`. Behoben.
+
+Stand: Suite 0, 435 = 435, Lint 0.
+
+**R2-4:** Der Bauende hat widersprochen, und zu Recht. `mail_gesendet_am` wird nirgends angezeigt, ein Verweis im Text liefe ins Leere. Entscheidung: Nacharbeit 3 baut die Anzeige „Servicetechniker benachrichtigt am …“ an jeder aktiven Sperre mit Versandknopf, und der 409-Text verweist darauf.
+
+Ein reines Kürzen des Textes hätte eine Lücke gelassen: Scheitert beim Doppelklick der siegreiche Versand, bliebe die Sperre unbemerkt ohne Benachrichtigung.
