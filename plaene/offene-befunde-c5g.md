@@ -18,3 +18,9 @@ Verweist auf die Befunddateien `plaene/diffpruefung-c5g1.md` und `plaene/diffpru
 
 - **E-2** `/intern/export`: Der Hauptserver liest `erhebungsfehler` nicht (`core/offboarding-core.js:98`). Der Betreiber erfährt es über `melde()`, der Kunde über das LIESMICH.
 - `acorn` und `ipaddr.js` sind in `ops/export-check-deckung.json` erfasst, aber nicht gelistet (Hinweis des Laufs).
+
+## Aus der Diffprüfung G1 (`plaene/diffpruefung-c5g1.md`)
+
+- **L-7** Queue-Einträge hängen am anstossenden Studio. Nach seinem Offboarding verarbeitet sie niemand.
+- **C-6** Friert die DB ein (TCP offen, keine Antwort), steht der PDF-Worker still. Sichtbar ist das nur über den Heartbeat.
+- **C-7** DB-Ausfall im Upload-Fehlerweg: Die Datei bleibt ohne Queue-Eintrag liegen und wird nie geräumt.

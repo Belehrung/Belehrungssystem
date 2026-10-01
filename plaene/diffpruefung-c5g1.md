@@ -20,3 +20,17 @@ Stand 01.10.2026. Zweig `c5g1-loeschwege`, Commit `1cf8b85` (master bis E2). Der
 | L-6 | Anmerkung | `core/export-studio.js:45` bildet `UPLOAD_DIR` selbst | trägt | N1: `belehrungen-pfad` |
 | L-7 | Anmerkung | Queue-Einträge hängen am anstossenden Studio. Nach seinem Offboarding verarbeitet sie niemand. | trägt | Sammelliste |
 | L-8 | Anmerkung | `UNIQUE(studio_id, dateipfad)` im Live-Schema nicht belegbar | widerlegt: Der Drift-Wächter prüft Indizes und Constraints, und der Alarm vom 01.10. nennt nur die drei CHECKs | keine Änderung |
+
+## Ausführende Claude-Spur (`/workspace/c5g1-pruef-bericht.md`)
+
+Geprüft wurden alle sieben Löschwege mit einer zwischen zwei Studios geteilten Belehrungs-Datei, über echte Routen, einen echten Retention-Lauf und ein echtes `deprovisionStudio`. Auf keinem Weg wurde die Datei gelöscht, die Prüfung ergab 9/0. Die Riegel sind doppelt gestaffelt: Fällt einer weg, fängt der andere. Erst mit beiden entfernt wird die Prüfung ROT (8/1). Gemessen wurden ausserdem 49 Seitenaufrufe mit Übergangswert, NULL und Endwert: die Seiten sind identisch, die Positivkontrolle steht. Der Worker beendet sich nach 20 Claim-Fehlern von selbst mit Exit 1 (488 ms, von aussen gemessen).
+
+| Nr | Schwere | Befund | Nachgemessen | Entscheidung |
+|---|---|---|---|---|
+| C-1 | sollte | U-LOE2: Ein Vorab-Auftrag löscht die `.enc`, auch wenn eine lebende Zeile darauf zeigt. Kehrt die Quelle danach mit gleichen Bytes zurück, bleibt die Zeile `succeeded`, und die Zweitkopie ist still weg. Voraussetzung: Die Transaktion scheitert zweimal UND die Quelle kehrt zurück. | Messung der Spur (m2/Zeile 6), Code gelesen | N1: Nach dem Löschen einer `quelle_geloescht`-`.enc` wird die zugehörige Zeile entfernt, und vor dem Löschen wird geprüft, ob die Quelle (wieder) da ist. Das schliesst auch G1-d. |
+| C-2 | sollte, latent, unwiderruflich | Die Queue-Wiederholung prüft die Referenz nur, wenn `findeLoeschWurzel()` den Wert `BELEHRUNGEN_UPLOAD_DIR` liefert. Liegt das Upload-Verzeichnis unter `DOKUMENTE_DIR`, geht eine geteilte Datei verloren. | trägt (Messung Zeile 4) | N1: dieselbe Prüfung wie im direkten Weg (`liegtUnterBelehrungsUploads`), auch in `fuehreLoeschungenAus` (schliesst G1-b) |
+| C-3 | sollte | `setzeVeralteteClaimsZurueck` ohne `studio_id` bleibt grün: Die Mandantentrennung dort ist ungeprüft. | trägt | N1: Test mit zwei Studios |
+| C-4 | Anmerkung | = L-4 (Foto-Reaper, fehlende Tabelle) | trägt | N1 (mit L-4) |
+| C-5 | Anmerkung | Das DELETE der Queue-Zeile ohne `studio_id` bleibt grün (die id ist global). | trägt | N1: Zusicherung mit zwei Studios |
+| C-6 | Anmerkung | DB friert ein (TCP offen, keine Antwort): Der Worker steht still, der Heartbeat veraltet. | Messung | Sammelliste (der Heartbeat wird vom Health-Endpunkt erfasst) |
+| C-7 | Anmerkung | DB-Ausfall im Upload-Fehlerweg: Die Datei bleibt ohne Queue-Eintrag liegen. | Messung | Sammelliste |
