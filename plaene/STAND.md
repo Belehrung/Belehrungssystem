@@ -685,3 +685,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C5-G2 und C5-C: die jeweilige Nacharbeit 1 läuft.
   - C5-G1 läuft.
   - Modellregel: Gebaut wird auf Sonnet (Betreiber 01.10.).
+- 01.10.2026 ~03:55 UTC: Schema-Drift-Alarm des Betreibers (3× WARN, CHECK-Constraints `*_check` fehlen in LIVE).
+  - Diagnose aus Code und Wächterlogik: Die Regeln gelten live unter den älteren Namen `*_chk` (Migrationen 0005/0007/0010).
+  - Ein frisches Schema hat sie doppelt, inline `*_check` plus `*_chk` aus der Migration. Der Wächter vergleicht nach Namen. Es fehlt also nur der Name, keine Regel.
+  - Behebung: Zweig `drift-chk-namen` (Migration 0066 vereinheitlicht die Namen, dazu ein Klassenwächter gegen doppelte CHECKs). Executer läuft.
