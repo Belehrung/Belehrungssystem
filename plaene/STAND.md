@@ -749,3 +749,6 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Aufträge C6-A (Monatslauf) und C6-F (Tests) sind geschrieben. Die Planprüfung läuft: flash C6-A hat 14 Befunde, die tragenden sind nachgemessen; sol C6-A läuft noch.
   - sol C6-F ist am Ausgabelimit abgebrochen (6,15 $).
   - Der Container hat neu gestartet, die Gegenleser liefen weiter.
+- 01.10.2026 12:55 UTC: C5-E3 ausgeliefert (Deploy 469, `9dfe522`, success). live-check EXIT 0, 5 ✓, 2 ℹ. Damit ist C5 abgeschlossen.
+  - In Bau: C6-F (Tests, Baum `/workspace/gymdocu-c6f`) und C6-A1 (Monatslauf, `/workspace/gymdocu-c6a1`).
+  - Planprüfung: C6-A2 (Monatssperre und Archivversionen, `auftrag-c6a2-archivversionen.md`).
