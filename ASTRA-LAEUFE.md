@@ -429,6 +429,7 @@ sondern falsch.
 | 01.10.2026 | planpruefung-c6c-flash (deepseek-flash) | Diff 142 Zeilen, Suchen 20, Lesungen 35, Token rein 2492753, Token raus 51634, Runden 32 | 13 | 1, 2, 4, 5, 11 nachgemessen, getragen; Rest eingearbeitet (Fassung 2) | — | 0,81 $ |
 | 01.10.2026 | planpruefung-c6c-f2-sol (gpt-6.1-sol) | **abgebrochen** (Ausgabemenge ueber dem Limit; eigener Fehler: der Brief trug den Schwerpunkt von C6-A2, die Spur las deshalb fremde Dateien): Diff 184 Zeilen, Suchen 38, Lesungen 64, Token rein 2026468, Token raus 11256, Runden 18 | — | — | — | 8,27 $ |
 | 01.10.2026 | diffpruefung-c6a1-n1-flash (deepseek-flash) | Diff 676 Zeilen, Suchen 18, Lesungen 30, Token rein 2938756, Token raus 48069, Runden 29 | 7 (+1 aus der Rechenschaft) | 7 (Nr. 4 fällt) | — | 0,94 $ |
+| 01.10.2026 | planpruefung-c6c-f2-sol-c (gpt-6.1-sol) | Diff 184 Zeilen, Suchen 38, Lesungen 63, Token rein 1199640, Token raus 23441, Runden 19 | — | — | — | 5,15 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
