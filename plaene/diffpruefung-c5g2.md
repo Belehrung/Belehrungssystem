@@ -27,3 +27,15 @@ Hat jeden Aufrufer der Steckbrief-Lader und von `externVerwaltet` geprüft: Kein
 | L-5 | Anmerkung | `/intern/export` loggt `erhebungsfehler` nicht. | trägt | N1: in die Logzeile |
 | L-6 | Anmerkung | Wenn auch die Rücknahme scheitert, rät der Hinweis zu „entfernen und erneut laden“. Das Entfernen erreicht die nicht registrierte Zeile aber nicht. | trägt | N1: eigener Hinweis bei `rueckgaengigFehler > 0` |
 | L-7 | Anmerkung | `test_feature_steckbrief_nicht_ladbar.js:92` vergleicht mit `WER_STELLEN.length` aus dem geprüften Modul. | trägt | N1: Literal |
+
+## Ausführende Claude-Spur (`/workspace/c5g2-pruef-bericht.md`)
+
+Alle Schutzstellen werden ROT, wenn man sie herausnimmt: Steckbrief an allen 12 Aufrufstellen, A3 in drei Varianten, Zuständigkeit, Export, Monitoring, qr-charge, 413 und Monat. Die Sonde gegen den Bezirk-Router schickte 1596 Anfragen ohne Token. Jede, die den Router erreicht, bekommt 403. Mit Token sieht die Sonde auch andere Antworten, sie wäre also empfindlich. Es gibt genau einen Einhängepunkt.
+
+| Nr | Schwere | Befund | Nachgemessen | Entscheidung |
+|---|---|---|---|---|
+| C-1 | sollte | d4: Die Route leitet bei einem Wurf aus `seedDemoDaten()` auf `?demo=fehler`, aber keine Zusicherung prüft das (Mutation bleibt 54/0). Geschwisterstelle `/demo-daten/entfernen`: Der catch fällt auf `?demo=entfernt` durch, ohne `melde()` (nicht neu). | trägt (einstellungen.js:731 gelesen) | N1: Test für beide Wege; das Entfernen leitet bei einem Wurf auf einen Fehlerhinweis und meldet |
+| C-2 | sollte | Ausstattungs-POST mit nicht ladbarem Regelfall: in Produktion 500 mit „Interner Fehler“. Die Zusicherung „nennt den Grund“ ist nur grün, weil der Test `intern()` durch eine Attrappe ersetzt, die `e.message` durchreicht (`test_feature_steckbrief_nicht_ladbar.js:115`). | trägt | N1: eigene 503-Seite mit dem Grund statt Wurf; Test ohne durchreichende `intern()`-Attrappe |
+| C-3 | Anmerkung | Teilladen ohne Audit-Eintrag (= L-1). | trägt | N1 (L-1) |
+| C-4 | Anmerkung | „BEIDE Karten“ prüft nur `>= 2`, der Text steht ein drittes Mal da. Der Kommentar in bezirk-archiv zu `?jahr=` ist falsch (der alte Code prüfte dort zuerst den Token). Der Strukturwächter prüft die Layer-Reihenfolge nicht. Kein Test verbietet „Nichts geändert“ im Trockenlauf (k1c bleibt 35/0). | trägt | N1: genaue Anzahl; Kommentar; `tokenWache` als Layer 0 zusichern; Trockenlauf ohne „Nichts geändert“ zusichern |
+| C-5 | Anmerkung | `/intern/export` antwortet trotz Erhebungsfehler mit 200 `ok:true` (= E-2). | trägt | keine Änderung |
