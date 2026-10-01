@@ -101,3 +101,18 @@ N4 ergänzt einen Senden-Knopf im Sperr-Banner der Geräteseite (Zustand „offe
 | B5 | Anmerkung | Auf der Geräteseite steht nicht, an wen die Mail geht. | trägt | N5 |
 | B6 | Anmerkung | Der CSRF-Kommentar ist falsch: Der Schutz ist origin-/referer-basiert, Formulare tragen kein Token. | trägt | N5 |
 | B7 | Anmerkung | Nach dem Senden gibt es keinen Weg zurück zum Gerät. Eine halb ausgefüllte Prüfung geht beim Senden verloren. | trägt | Rückweg in N5, Entwurfsverlust auf die Sammelliste |
+
+## Nacharbeit 5 (`ae1fa72`, `cff24cd`, Merge `d404822`), selbst gelesen
+
+- B1–B7 umgesetzt:
+  - B1: eigenes try/catch um die Adressermittlung. Im Fehlerfall laute Zeile und `melde`, die Seite liefert weiter 200.
+  - B2: Kommentar berichtigt, Gegenfall „ausgelöst“ ergänzt.
+  - B3: Die Zusicherung prüft jetzt 302 und Location. Gemessen: Ohne den Redirect antwortet die Route mit 500, die alte Zusicherung blieb dabei grün.
+  - B4: `ORDER BY id DESC LIMIT 1`. Gemessen: Ohne die Sortierung liefert die Abfrage die ältere Sperre.
+  - B5: Die Empfängeradresse steht escaped beim Knopf.
+  - B6: Kommentar zum CSRF-Schutz berichtigt.
+  - B7: Der Link „Zum Gerät“ steht immer da.
+- Tests: `c5d_stille_fehler` 178/0, `wartung_mail_seite_status` 31/0. Alle Gegenproben ROT.
+- Suite 0, 447 = 447, Lint 0. Der erste Lauf war rot: Kurze negative Muster schlugen in `verengung_static` an. Die Zusicherungen sind jetzt positiv formuliert.
+- Screenshots gesichtet.
+- **Offen vor dem PR:** master hereinnehmen. Hinzu kommen C5-G2 (#499) und C5-G1, sobald es gemergt ist. Die Leser von `mail_gesendet_am` in C5-D (`mailStandZustand`, das SELECT der Ergebnisseite, das SELECT der Geräteseite) müssen in die Leserliste von `test_feature_defekt_mail_claim_uebergang.js`, danach die Suite neu.
