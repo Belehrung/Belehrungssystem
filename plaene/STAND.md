@@ -771,3 +771,9 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C6-A1 Nacharbeit 1: Suite 0, 468 = 468, Lint 0, Gegenproben je Punkt getragen (`cd7a123`). Die Diffprüfung Runde 2 (flash) hat 7 Befunde, 6 tragen. Nacharbeit 2 läuft (`diffpruefung-c6a1.md`, Sammelliste `offene-befunde-c6a1.md`).
   - C6-C (Löschwege): Fassung 4 nach drei Planprüfungen (flash 13, sol 9, flash 13). Der Studio-Lock aus Fassung 3 ist verworfen (S27 hinge); die Queue wird jetzt am Ende der Discovery übernommen. Die vierte Prüfung (flash) läuft. G1-h geht als Betreiberfrage hinaus (`c6-plan.md`). Sammelliste: `offene-befunde-c6c.md`.
   - sol brach bei C6-C zweimal am Lesedeckel ab. Grund war ein eigener Fehler: Der Brief trug den Schwerpunkt von C6-A2. Der dritte Lauf mit eigenem Brief lieferte.
+- 01.10.2026 18:40 UTC (Takt):
+  - C6-A1: Nacharbeit 2 ist gelesen. Suite grün, 469 = 469. Runde 3 (flash) hat 8 Befunde, alle tragen. Nacharbeit 3 läuft (7 kleine Punkte). Betreiberfrage A1-r3-7 (fehlende Löschfrist) steht in `c6-plan.md`.
+  - C6-F: Gebaut, Suite grün, 468 = 468. Diffprüfung (eigene und flash): Der Foto-Reaper würde auf einer frischen Installation jede Nacht alarmieren, weil die Verzeichnisse nicht mehr beim Start entstehen. Nacharbeit 1 läuft: Der Serverstart legt die Verzeichnisse an, der Wegwerf-DB-Riegel wird auf `gymdocu*` eingeschränkt (`diffpruefung-c6f.md`).
+  - C6-D1: Gebaut, Suite grün, 472 = 472, Migration 0067. Der Produktivcode ist gelesen, die flash-Diffprüfung läuft.
+  - C6-C: In Bau (Fassung 5, Baum `/workspace/gymdocu-c6c`).
+  - Neue offene Punkte: A1-a9 (Monatslauf-Zeitzone) geht nach C6-D3, A1-a10 (vier Label-Tabellen) und C6C-g3 (Uploads ohne Queue) auf die Sammellisten.
