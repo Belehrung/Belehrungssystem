@@ -671,3 +671,6 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
 - 01.10.2026 01:55 UTC: C5-E2 gemergt (`9af3216`, CI 6/6 grün, keine Bot-Kommentare, Botschaft zurückgelesen). Der Deploy wird um 02:18 geprüft.
   C5-E1: Die Suite m4 (Stand `7f8523a`, ohne E2) wartet noch in der Schlange. Sie abzubrechen hat der Auto-Modus abgelehnt, deshalb läuft sie durch.
   Danach wird master mit E2 in E1 gemergt, dann die Suite m5.
+- 01.10.2026 02:20 UTC: C5-E2 ist ausgeliefert (Deploy 462 success für `9af3216`, live-check EXIT 0, 5 ✓).
+  C5-G2 ist gebaut (Suite 0, 440 = 440). Die Lesespur fand 7 Befunde, alle getragen. Die ausführende Spur läuft noch, Ergebnis in `diffpruefung-c5g2.md`.
+  C5-C ist gebaut (`8e391ab`). Der Auftrag für Nacharbeit 1 (`auftrag-c5c-n1.md`) ist in der Planprüfung (flash); danach baut ein Executer mit Opus.
