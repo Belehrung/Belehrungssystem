@@ -663,3 +663,8 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
 - 01.10.2026 01:10 UTC: **Betreiber: Fable kommt erst nächste Woche zurück, Ersatz liegt bei mir.** Entscheidung: Fälle, die als „sehr komplex“ für Fable vorgesehen wären, bekommen den Executer mit Modell `opus`; der Regelfall bleibt beim Standard. Eingetragen in CLAUDE.md, Abschnitt „Modellwahl“. Als Erstes betrifft das C5-C Nacharbeit 1 (Datenverlustweg Korrekturblatt).
 - 01.10.2026 01:25 UTC: **`gpt-6.1-sol` ist verfügbar und jetzt die Vorgabe** (Betreiber). Gemessen: erreichbar, effort low bis max, Werkzeugweg mit `store:false`, Websuche. Eingetragen in `tools/gegenleser-repo.js` (`VORGABE_MODELL`, `PREISTABELLE`, Selbsttest sauber) und in CLAUDE.md.
 - 01.10.2026 01:22 UTC: **Q ausgeliefert.** Deploy 461 (`664ed77`) `success`, live-check EXIT 0 (5 ✓).
+- 01.10.2026 01:40 UTC (Takt): läuft
+  - C5-E2: PR offen, CI läuft (Prüfung um 01:58).
+  - C5-E1: master mit Q ist hereingenommen (`7f8523a`), die Suite steht in der Schlange.
+  - C5-C: Nacharbeit 1 (Opus) folgt, sobald die Suite des Bauenden durch ist.
+  - Es laufen außerdem: C5-D (Merge, dann N2), C5-G1 (Gegenproben und Suite), C5-G2.
