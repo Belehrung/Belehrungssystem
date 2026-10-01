@@ -395,6 +395,7 @@ sondern falsch.
 | 01.10.2026 | diffpruefung-c5g2 (deepseek-flash) | **abgebrochen** (Geheimnis-Riegel auf dem Eingabediff): Diff 3927 Zeilen, Suchen 0, Lesungen 0, Token rein 0, Token raus 0, Runden 0 | — | — | — | 0,00 $ |
 | 01.10.2026 | diffpruefung-c5g2 (deepseek-flash) | Diff 3927 Zeilen, Suchen 22, Lesungen 41, Token rein 3416385, Token raus 99283, Runden 18 | — | — | — | 1,14 $ |
 | 01.10.2026 | planpruefung-c5c-n1 (deepseek-flash) | Diff 74 Zeilen, Suchen 25, Lesungen 32, Token rein 2234879, Token raus 70547, Runden 23 | — | — | — | 0,76 $ |
+| 01.10.2026 | diffpruefung-c5g1 (deepseek-flash) | Diff 2775 Zeilen, Suchen 28, Lesungen 35, Token rein 3211026, Token raus 118403, Runden 17 | — | — | — | 1,11 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
