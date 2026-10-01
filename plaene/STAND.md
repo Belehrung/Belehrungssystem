@@ -761,3 +761,8 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Aufträge mit Planprüfung bereit: C6-D1 (Fassung 2), C6-E (Fassung 2). C6-A2 (Fassung 3) wartet auf A1.
   - C6-B: Planprüfung läuft.
   - Neue Betreiber-Fragen mit Empfehlung „so lassen“: V07-9, c5d#1, ladebestand#3 (`c6-plan.md`).
+- 01.10.2026 16:41 UTC (Takt):
+  - C6-A1 gebaut, Suite 0, 468 = 468. Diffprüfung (flash) mit 7 Befunden, Nacharbeit 1 läuft (`diffpruefung-c6a1.md`).
+  - C6-F und C6-D1 in Bau.
+  - Bereit: C6-B, C6-D2, C6-D3, C6-E (je Fassung 2) und C6-A2 (Fassung 3, nach A1).
+  - Betreiber-Frage zu R1 (DeepSeek-R1) beantwortet: direkt nicht verfügbar, über OpenRouter ohne Guthaben, Empfehlung „nicht einbinden“.
