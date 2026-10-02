@@ -803,3 +803,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Es laufen C6-F N2 und der Bau von C6-A2.
 - 02.10.2026 05:01 UTC: C6-C ist ausgeliefert (Master-CI grün im ersten Lauf, Deploy 474 erfolgreich auf `c097781`).
 - 02.10.2026 05:32 UTC: C6-H ist ausgeliefert. Master-CI im ersten Lauf grün, Deploy 475 erfolgreich auf `1c26721`, live-check EXIT 0 (5 ✓). Die `deploy.sh`-Änderung (Zeile 260) wirkt erst beim übernächsten Deploy und gilt bis dahin als ausgeliefert, nicht als bewiesen.
+- 02.10.2026 05:41 UTC (Takt):
+  - Heute ausgeliefert: C6-A1, C6-D1, C6-C, C6-H (Deploys 471, 473, 474, 475). Seit C6-H lief die Master-CI im ersten Versuch grün.
+  - Es laufen C6-F (N2 geprüft, Zusammenführung mit `1c26721` und Suite) und der Bau von C6-A2.
+  - Danach kommen C6-B, C6-D2, C6-D3 (mit 5a), C6-E, C6-G und die Extrarunde C6-H.
