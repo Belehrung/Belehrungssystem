@@ -24,3 +24,19 @@ dem Fix 18/8, danach 30/0.
 **Entscheidung:** Gemergt wird mit diesen offenen Punkten. Keiner ist blockierend, und alle betreffen die Güte von Tests
 und Wächtern oder sind vorbestehend. Der Beitrag beendet die zufälligen Fehlschläge der Master-CI, die zweimal den
 Deploy übersprungen haben. Die offenen Punkte kommen in die Extrarunde.
+
+## Extrarunde (Zweig `c6h-extrarunde`, Stand `a8bfe5b`) — geprüft
+
+- Suite des Bauenden: SUITE_EXIT=0, 503 = 503, `diff` EXIT 0, Lint sauber.
+- Den Produktionsdiff (`ops/deploy.sh`, `ops/gymdocu-pitr-restore-test.sh`, `test/helfer/sigpipe-scan.js`) habe ich selbst gelesen.
+- Eine flash-Spur über Tests und Lexer: 29 Runden, ~1,06 $.
+
+| Kennung | Befund | Nachgemessen | Entscheidung |
+|---|---|---|---|
+| X-F1 | `CASE_MUSTER`, Alternative `^`: Eine echte Pipe, deren Zeile mit `)` endet, gilt als case-Muster. Beispiel: mehrzeilige Untershell `(\n  ls \| head )`. Ein blankes `(` zählt der Lexer nicht als Tiefe. | trägt (selbst gemessen: `findePipen` liefert `[]`, alte UND neue Fassung, also vorbestehend) | Nacharbeit: Die `^`-Alternative entfällt. Muster gelten nur hinter einem `case … in`-Kopf oder `;;`/`;;&`/`;&`, auch über Zeilenumbrüche hinweg. Den Kopf an die Befehlsstelle binden (`echo case in x \| head )`). |
+| X-F2 | Eine Markierung in einer Datei ohne `pipefail` heisst `markierung-verwaist`, auch wenn auf der Zeile ein Frühleser steht. Die Meldung behauptet dann etwas Falsches. | trägt (`sigpipe-scan.js:546` gegen `:563-566`) | Nacharbeit: eigene Art `markierung-ohne-pipefail`. Die Strenge (C6H-5) bleibt. |
+| X-F3 | Die tar-Zusicherung nimmt auch eine auskommentierte Sicherung an: `tar xzf … # \|\| fail "…" 2`. | trägt (Regex nicht verankert, `[^"]*` frisst das `#`) | Nacharbeit: angehängten Kommentar vor dem Vergleich abschneiden. Gegenprobe mit der auskommentierten Form → rot. |
+| X-F4 | „Fehlschlag bleibt hart“ hängt an `set -e`; kein Test pinnt `set -euo pipefail` in `ops/deploy.sh`. | trägt (nur Kommentarzeilen in den Tests) | Nacharbeit: Kopfzeile pinnen und kein `set +e` zulassen. Dazu X-Q1. |
+| X-F5 | Die beiden neuen Port-Zusicherungen sind durch `JSON ok=true` schon erzwungen. | trägt, ist aber kein Fehler (bessere Meldung) | keine |
+| X-Q1 | „Auf Verdacht kostet nur Zeit“ ist zu billig. `npm ci` löscht `node_modules`; scheitert es, bricht der Deploy ohne Meldung ab, mit halbem `node_modules` neben dem laufenden alten Prozess. Das gilt schon für den bestehenden Zweig „Sperrdatei geändert“. | trägt teilweise (es gibt keinen ERR-Trap, `die()` steht in `:27`) | Nacharbeit: beide `npm ci`-Zweige mit `\|\| die "…"` und einer Meldung, die den Zustand und den Ausweg nennt. Den Kommentar berichtigen. Die Entscheidung „laut statt still veraltet“ bleibt. |
+| X-K | `ops/final-verification.sh:89-91` beschreibt als Messung die alte ss-Attrappe. | trägt (Bericht des Bauenden) | Nacharbeit: als Messung an der damaligen Attrappe kennzeichnen; seit C6H-1 fallen beide Ports. |

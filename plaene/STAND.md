@@ -839,3 +839,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Als nächstes: die Extrarunde C6-H (`auftrag-c6h-extrarunde.md`, Fassung 2 mit Planprüfung) wird gebaut.
 - 02.10.2026 11:40 UTC (Takt): Im Bau sind C6-H Extrarunde (`/workspace/gymdocu-c6h2`) und C6-D2 Doppelsenden (`/workspace/gymdocu-c6d2`). Der Deploy-Check für #510 folgt um 11:59.
 - 02.10.2026 12:00 UTC: #510 ist ausgeliefert (Deploy 479 `success` auf `b8fe304`, live-check EXIT 0).
+- 02.10.2026 12:45 UTC: **C6-H Extrarunde** ist gebaut (`a8bfe5b`, Suite 503 = 503). Die Diffprüfung ist durch: 4 Befunde tragen, Lexer-Lücke X-F1 vorbestehend (`diffpruefung-c6h.md`, Abschnitt „Extrarunde“). Nacharbeit 1 läuft. C6-D2 ist im Bau.
