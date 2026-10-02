@@ -438,6 +438,7 @@ sondern falsch.
 | 01.10.2026 | diffpruefung-c6d1-flash-2 (deepseek-flash) | Diff 3449 Zeilen, Suchen 41, Lesungen 32, Token rein 3819136, Token raus 75890, Runden 22 | 4 | 4 | — | 1,24 $ |
 | 02.10.2026 | C6-H Planpruefung (deepseek-flash) | Auftrag Fassung 1, Suchen 34, Lesungen 25, Token rein 898953, Token raus 106018, Runden 11 | 11 | 10 (F1 traf meine Zählung nicht, nur den Fliesstext) | 2 blockierend (F1, F4); F4 getragen | 0,40 $ |
 | 02.10.2026 | C6-C Diffpruefung Produktion (deepseek-flash) | Diff 1019 Zeilen, Suchen 25, Lesungen 31, Token rein 4323971, Token raus 87632, Runden 28 | 4 | 3 (B2 Meldung bei dauerhaft offenen Spool-Einträgen, B3 Kommentarzusage bei aktiv=0, B4 .ungueltig-Bestand); B1 trägt nicht (der Live-Zweig erzeugt denselben Queue-Eintrag wie der direkte INSERT, kein neuer Zustand) | 0 blockierend | 1,40 $ |
+| 02.10.2026 | C6-C Diffpruefung Tests (deepseek-flash) | Diff 1648 Zeilen, Suchen 32, Lesungen 35, Token rein 2270111, Token raus 120654, Runden 15 | 9 | 9 (T-1 bis T-9; T-6 legt einen Zählfehler im Produktionscode offen) | 0 blockierend | 0,83 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
