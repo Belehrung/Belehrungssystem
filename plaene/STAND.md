@@ -817,3 +817,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C6-F ist ausgeliefert (Deploy 476).
   - C6-A2: Nacharbeit 1 ist geprüft. Der Bauende hat gemessen, dass ein zerstörter Socket eine an einer Sperre wartende Sitzung nicht beendet; behoben über `client_connection_check_interval`. Die zweite flash-Runde brachte 5 Befunde; Nacharbeit 2 läuft.
   - C6-B wird gebaut.
+- 02.10.2026 08:31 UTC:
+  - C6-A2 ist gemergt (#508, `925dd5b`, CI grün, kein Bot-Kommentar). Die Deploy-Prüfung folgt um 08:56.
+  - C6-B ist gebaut (Suite grün, 498 = 498). Die Diffprüfung mit zwei flash-Spuren brachte 13 Befunde, davon 12 getragen (`diffpruefung-c6b.md`). Nacharbeit 1 läuft, sie schliesst den Merge von master ein.
+  - CLAUDE.md-Neufassung (Betreiber 02.10.): Prüfung durch gpt-6.1-sol (49 Befunde) und flash (31 Befunde plus Gliederung). Der Bauauftrag `auftrag-claudemd-neu.md` läuft beim Executer, nur in `/workspace/claudemd-neu/`. Die echte CLAUDE.md bleibt bis zur Freigabe unverändert. Zwei Betreiber-Fragen sind markiert (Bagatellgrenze gegen „baut nichts“; Prüf-Ritual Schritt 1 gegen die Lesedelegation vom 30.09.).
