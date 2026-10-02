@@ -463,6 +463,7 @@ sondern falsch.
 | 02.10.2026 | Diffprüfung C6-D2 Doppelsenden (deepseek-flash) | Diff 3229 Zeilen, Suchen 34, Lesungen 46, Token rein 5470396, Token raus 89412, Runden 25 | 7 (+ Fragenteil) | 5 (A1 = mein P-1, A2, A3, A4, A7); A5/A6 ohne Folge | 0 blockierend | 1,75 $ |
 | 02.10.2026 | Recherche qr_journal-Flake (C6D2-1) (deepseek-flash) | Diff 46 Zeilen, Suchen 46, Lesungen 30, Token rein 2049364, Token raus 87753, Runden 20 | — | — | — | 0,72 $ |
 | 02.10.2026 | Planprüfung qrj-flake (A, flash) (deepseek-flash) | Diff 56 Zeilen, Suchen 40, Lesungen 24, Token rein 2814888, Token raus 64647, Runden 29 | — | — | — | 0,92 $ |
+| 02.10.2026 | Planprüfung qrj-flake (B, sol) (gpt-6.1-sol) | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 56 Zeilen, Suchen 29, Lesungen 28, Token rein 1070209, Token raus 6252, Runden 11 | — | — | — | 4,37 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
