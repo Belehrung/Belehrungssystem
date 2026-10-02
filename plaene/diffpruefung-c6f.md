@@ -20,3 +20,18 @@ Eigene Prüfung: Produktivcode (`routes/belehrungen.js`, `routes/lageplan.js`, `
 | 4 | Anmerkung | Die Ersatzzusicherung in `test_feature_korrektur_dokumente.js:86-88` belegt nur die Pfadquelle. | trägt, aber abgedeckt durch `lageplan_pfad_static` und `routen_verzeichnisse_lazy` B4 | Kommentar |
 | 5 | Anmerkung | `test_feature_mutationsprobe_umgebung.js:168-176` prüft die Wurzeln nur als Zahl (10). | trägt | N1: Namen prüfen |
 | 6 | Anmerkung | Die statische Prüfung kennt nur `writeFileSync(path.join(…))` als Schreibweg. | trägt (heute vollständig) | N1: um `copyFileSync`/`createWriteStream`/`renameSync` erweitern |
+
+## Nacharbeit 1 (`6b07191`): eigene Lesung und Lesespur flash
+
+Eigene Lesung: `core/schreibverzeichnisse.js`, `server.js#start()`, `core/retention.js` (Export). Das Anlegen läuft nach
+`runMigrations` und vor `listen`, ein mkdir-Fehler wird geloggt und gemeldet, kein neuer Pfadausdruck. Laut Bericht ist
+die Suite grün mit 469 = 469, Lint sauber, 12 Gegenproben rot.
+
+| Nr | Schwere | Befund | Nachgemessen | Entscheidung |
+|---|---|---|---|---|
+| N1-B1 | sollte | `test_feature_getmutation.js:34` behält ein eigenes lockeres Muster `_(?:test\|e2e)$`, das der neue Wächter nicht erkennt (`MUSTER_ENDUNG` kennt nur `_(test\|e2e)`, `_test$`, `_e2e$`). | trägt (gelesen, Zeile 34) | N2: auf den Helfer umstellen, `MUSTER_ENDUNG` um `(?:…)` und `_test(\?\|$)` erweitern, je eine Positivkontrolle |
+| N1-B2 | Anm. | Ein Einzellauf `node test/e2e-durchlauf.js` startet `server.js`. Dessen `start()` legt jetzt `lageplan-uploads`, `defekt-fotos` und `einweisung-nachweise` im Repo an, weil der Durchlauf nur drei der fünf Variablen auf `E2E_TMP` setzt. | trägt (gelesen, `:52-63`) | N2: alle fünf auf `E2E_TMP` |
+| N1-B3 | Anm. | `schreibverzeichnisse()` (vier `require`, darunter `core/foto-reaper`, das sonst erst im Cron geladen wird) steht ausserhalb des `try`. „Wirft nie“ gilt dafür nicht. Der Kopf behauptet zudem, der Test messe den boot-smoke-Fall. | trägt | N2: in den `try`, Ladefehler loggen und melden; Kommentar auf das Gemessene |
+| N1-B4 | Anm. | Die SQL-Konsistenzprüfungen im neuen Wächter vergleichen zwei Ableitungen derselben Konstante. Die Geschwisterwächter pinnen den Text `istWegwerfDb(database.name)`. | trägt | entschieden: bleibt. Tragend ist die PG-Schleife (JS gegen PostgreSQL über 30 Namen). Die Konsistenzprüfung schützt nur vor einem Umbau, die Textpins folgen dem Muster der Geschwister. |
+
+Toter Code `const existiert` in `test_feature_schreibverzeichnisse_start.js:62` kommt mit N2 weg.
