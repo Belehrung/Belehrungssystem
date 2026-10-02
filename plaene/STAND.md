@@ -802,3 +802,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C6-H ist geprüft (`diffpruefung-c6h.md`, 8 Befunde, keiner blockierend → `offene-befunde-c6h.md`). Der PR ist offen, der Zweig wird mit `c097781` zusammengeführt und die Suite neu gefahren.
   - Es laufen C6-F N2 und der Bau von C6-A2.
 - 02.10.2026 05:01 UTC: C6-C ist ausgeliefert (Master-CI grün im ersten Lauf, Deploy 474 erfolgreich auf `c097781`).
+- 02.10.2026 05:32 UTC: C6-H ist ausgeliefert. Master-CI im ersten Lauf grün, Deploy 475 erfolgreich auf `1c26721`, live-check EXIT 0 (5 ✓). Die `deploy.sh`-Änderung (Zeile 260) wirkt erst beim übernächsten Deploy und gilt bis dahin als ausgeliefert, nicht als bewiesen.
