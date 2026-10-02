@@ -26,6 +26,7 @@ Diese Punkte werden in den Sammellisten als erledigt nachgetragen, sobald C6 aus
 | C6-D2 | Doppelsenden, Entwurf, Import-Rennen, Zeitlimit: V02-4, V03-3, c5d#2, D-E1, B7, V05-6, H1a-S5, V08-5 | Fassung 2 bereit (`auftrag-c6d2-doppelsenden.md`) |
 | C6-D3 | Berliner Zeit und Bereich 04: V01-6, V03-4, V03-5, V04-4..17 | Fassung 2 bereit (`auftrag-c6d3-zeit-bereich04.md`) |
 | C6-E | Offline-Warteschlange: R2-4 (q), R3-8, R4-3, R4-9, N4-H1, N4-H2 | Fassung 2 bereit (`auftrag-c6e-offline.md`) |
+| C6-H | SIGPIPE unter `pipefail`: Master-CI 3e64dec (Lauf 36954136952) rot in `test_feature_final_verification_verhalten.js` Fall 1, Baum gleich dem grünen PR-Lauf. `port_listening()` in `ops/final-verification.sh` pipet `ss` in `grep -q`; endet grep vor dem zweiten `echo` der Attrappe, stirbt `ss` an SIGPIPE, und `pipefail` macht daraus „Port lauscht nicht“. Gemessen 02.10.2026 mit Attrappe und 0,3 s Pause zwischen den Zeilen: mit `pipefail` 3200 NEIN, ohne ja. Dieselbe Bauart (früh endender Leser in Skripten mit `pipefail`) kommt nach grobem Muster in 12 Dateien rund 31-mal vor; jede Stelle muss einzeln beurteilt werden. Master-Lauf neu angestoßen (nur fehlgeschlagene Jobs). | Auftrag offen |
 
 **Zeitzone (V01-6, V03-4, V03-5):** Das ist keine Betreiberfrage. Behoben wird es, indem die Berliner Zeit
 ausdrücklich gebildet wird (`core/datum.js`). Dann ist es egal, in welcher Zone der Server läuft.
