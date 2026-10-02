@@ -35,3 +35,14 @@ Nacharbeit 1: Suite des Bauenden SUITE_EXIT=0, 510 = 510 (selbst nachgezählt), 
 | R2-F | `?bereits=<beliebig>` zeigt den Banner. | trägt (`req.query.bereits ?`) | Nacharbeit 2: `=== "1"` |
 | R2-G | Scheitert `replaySeite` an der DB, sagt die Route „Fehler beim Speichern“ (500), obwohl der Nachweis längst gespeichert ist. | trägt | Nacharbeit 2: eigenes try/catch um den Replay, mit ehrlichem Text („gespeichert, Anzeige gerade nicht möglich“) und `melde` |
 | R2-4 | Schwache Zusicherungen: Wartung (E) hat denselben Body bei beiden POSTs; Import (C) prüft `protokoll.length >= 4`. | trägt | Nacharbeit 2: (E) den zweiten POST mit abweichenden Statuswerten senden (die Seite muss die gespeicherten zeigen); (C) eine exakte Zahl, wenn sie herleitbar ist, sonst begründen |
+
+### Nacharbeit 2 (Stand `33d0576`, mit master `1ff391f` gemergt) — geprüft
+
+- Suite des Bauenden auf dem gemergten Stand: SUITE_EXIT=0, 510 = 510 (selbst nachgezählt), Lint sauber, qr_journal grün. Der Merge lief ohne Konflikte.
+- Den Produktionsdiff (wartung.js, spuelplan.js, getraenkeanlage.js) habe ich selbst gelesen:
+  - Die Vorabprüfung steht jetzt gleich nach `clientUuid`, ohne `geraet_id`; ein fremdes Gerät gibt 409.
+  - Der Replay läuft nur über `sendeReplay` (try/catch, eigene Meldequelle).
+  - Hinweis-Banner auf der Replay-Seite; `?bereits === "1"`.
+- Screenshot der Replay-Seite (820 px) angesehen.
+- Gegenproben je Punkt laut Bericht. Gegenprobe C zu R2-B blieb grün, weil die Transaktion denselben sequentiellen Fall fängt (zweiter Riegel). Benannt; Gegenprobe A (beide Stellen) war rot.
+- Keine dritte Prüfrunde: Die Behebungen sind Platzierung, Antworttext und Banner, jede mit Gegenprobe. Die Rundenbegrenzung (CLAUDE.md 7.2) sieht eine zweite Runde vor, und die ist gefahren.
