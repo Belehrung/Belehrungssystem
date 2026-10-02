@@ -782,3 +782,8 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Alle Bäume sind sauber und gepusht, der Marker-Scan zeigt keine Reste: C6-A1 `db2c617`, C6-F `76cedf2`, C6-C `ccd05da`, C6-D1 `9d1ef62`.
   - C6-A1, C6-F und C6-C sind fortgesetzt. Für C6-D1 ist Nacharbeit 1 festgelegt (`diffpruefung-c6d1.md`, 4 Befunde); sie startet, sobald ein Bauplatz frei ist.
 - 02.10.2026 02:08 UTC: C6-A1 gemergt (`3e64dec`). CI 6/6, kein Bot-Kommentar, Botschaft zurückgelesen. Deploy-Prüfung 02:33. Betreiber hat das Limit um 300 € angehoben und bittet ums Sparen: Prüfrunden laufen nur noch über flash, höchstens zwei Bauagenten, knappe Meldungen.
+- 02.10.2026 02:40 UTC (Takt): Die Master-CI auf `3e64dec` war rot, deshalb wurde der Deploy (Lauf 470) übersprungen; live ist weiter der alte Stand (live-check EXIT 0).
+  - Ursache ist SIGPIPE unter `pipefail` in `ops/final-verification.sh` (`port_listening`), gemessen. Einzelheiten stehen bei C6-H in `c6-plan.md`.
+  - Die fehlgeschlagenen Jobs sind neu angestoßen.
+  - Für C6-H steht der Auftrag in Fassung 1 (`auftrag-c6h-sigpipe.md`); flash prüft den Plan.
+  - Es laufen C6-F N1, C6-C Bau und C6-D1 (master-Merge und Suite).
