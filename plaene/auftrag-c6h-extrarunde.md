@@ -1,7 +1,7 @@
 # Auftrag C6-H Extrarunde — Nachschärfungen am SIGPIPE-Wächter und zwei Ops-Skripte (Fassung 1, 02.10.2026)
 
-Repo GymDocu, Stand master `749f2d2`. Der Auftrag dient zugleich als A/B-Vergleich (`plaene/ab-deepseek-bauen.md`). Er wird
-wörtlich gleich an zwei Bauende gegeben und darf keine Hinweise auf den jeweils anderen enthalten.
+Repo GymDocu, Stand master `749f2d2` oder neuer. Gebaut wird wie üblich über den Executer. Der zunächst geplante
+A/B-Vergleich ist auf Wunsch des Betreibers entfallen (`plaene/ab-deepseek-bauen.md`).
 
 Herkunft: `plaene/offene-befunde-c6h.md` (C6H-1 bis C6H-7) und `plaene/diffpruefung-c6h.md` (B1 bis B8). Jeder Punkt ist ein
 FUNDORT. Miss ihn vor dem Ändern neu.
@@ -38,7 +38,7 @@ FUNDORT. Miss ihn vor dem Ändern neu.
    Skript läuft ohne `set -e`). Scheitert ein Auspacken, soll das Skript mit `fail "<Text>" <Code>` abbrechen, nach dem Muster
    der übrigen `fail`-Aufrufe darin. Ein statischer Test hält das fest.
 
-## Rahmen (für beide Bauenden gleich)
+## Rahmen
 
 - Kein Verhalten ausserhalb der genannten Punkte ändern. Ausgaben und Exit-Codes der Skripte bleiben, ausser wo ein Punkt es
   ausdrücklich verlangt.

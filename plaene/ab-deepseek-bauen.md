@@ -37,4 +37,6 @@ Ausführungsrechte schlechter baut.
 
 ## Ergebnis
 
-(folgt)
+Abgebrochen vor dem Start der beiden Arme, Betreiber 02.10.2026: „Nein warte. Wir lassen alles so wie es ist.“
+Es bleibt dabei: gebaut wird über den Executer (Sonnet), die externen Modelle bleiben Prüfspuren. Kein Lauf, keine Kosten
+ausser der Planprüfung des Auftrags. Der Auftrag selbst wird als gewöhnliche Extrarunde C6-H weitergeführt.
