@@ -6,7 +6,7 @@ Stündlicher Takt.
 
 **Die Regeln stehen nicht hier, sondern im Repo:**
 - **CLAUDE.md** im Belehrungssystem-Repo: Arbeitsweise, Prüf-Ritual, Prüfspuren, Modellwahl.
-- **`plaene/betreiber-entscheidungen-gymdocu.md`:** Produktfragen, die der Betreiber entschieden hat, und Berichtigungen. Beides wird nicht erneut gefragt und nicht neu aufgerollt.
+- **`plaene/ENTSCHIEDEN.md`:** Produktfragen, die der Betreiber entschieden hat, und Berichtigungen. Beides wird nicht erneut gefragt und nicht neu aufgerollt. Neue Entscheidungen kommen dort dazu.
 - **`plaene/gymdocu-fallen.md`:** Prüf-Ritual, Gegenproben, wiederkehrende Fallen und Umgebung. Vor jedem Bauauftrag und jeder Prüfung im GymDocu-Repo nachschlagen.
 
 Widersprechen sich dieser Text und das Repo, gilt das Repo, und dieser Text wird korrigiert. Der Stand gehört ins Repo, nicht hierher: Am 31.08. und am 15.09.2026 hat ein veralteter Prompt-Text zu falschen Meldungen geführt.
@@ -16,6 +16,7 @@ Widersprechen sich dieser Text und das Repo, gilt das Repo, und dieser Text wird
 - **Meldungen des Betreibers aus dem Betrieb haben Vorrang vor allem anderen.**
 - Autonom weiterbauen. Echte Entscheidungsfragen kurz stellen, mit Empfehlung. Die Freigabe „merge wenn grün“ gilt fort.
 - **Kurze Antworten, IMMER auf Deutsch.**
+- **Keine PR-Nummer und keine URL an den Betreiber, solange nicht restlos alles fertig ist, die Kontrolle eingeschlossen** (Regel 6a, CLAUDE.md). Pushen ja, melden nein.
 - Läuft nichts, kommt die nächste Arbeit aus STAND.md. Steht dort nichts, kommt sie aus `docs/offene-befunde-31-08-2026.md`. VOR dem Bauen wird nachgemessen, ob der Befund noch besteht.
 
 **Ein Fundort ist kein Befund, ein Ziel ist keine Erlaubnis, ein Verweis ist keine Tatsache. Erst messen, dann behaupten.**

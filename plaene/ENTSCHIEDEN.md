@@ -35,7 +35,7 @@ fest, WAS entschieden ist, damit niemand es erneut fragt. Das WARUM steht,
 wo es hergeleitet wurde — bei der Ausmusterung etwa in
 `plaene/ausmusterung-plan-v4.md`.
 
-**Nächster Schritt (noch offen):** Sobald diese Datei im Standardzweig
+**Erledigt am 02.10.2026:** Die beiden Listen sind aus dem Takt-Prompt entfernt, der Prompt verweist hierher (`plaene/takt-prompt.md`, Archiv der alten Fassung: `plaene/takt-prompt-archiv-2026-10-02.md`). Ursprünglicher Vermerk: Sobald diese Datei im Standardzweig
 steht, gehören die beiden Listen aus dem Takt-Prompt ENTFERNT und durch
 einen Verweis hierher ersetzt. Vorher nicht — sonst ist die einzige Kopie
 weg, bevor die neue da ist. Danach gilt die Hausregel „dieselbe Aussage an
@@ -69,7 +69,7 @@ zwei Orten" wieder: hier steht sie, dort nicht mehr.
      ausgemustert."
   4. **Der Bestätigungsschritt beim Ausmustern ist entschieden und wird
      gebaut** — die Rückfrage dazu ist NICHT mehr offen (Begründung in
-     `plaene/ausmusterung-plan-v4.md`, Abschnitt 0). Nicht erneut fragen.
+     `plaene/ausmusterung-plan-v4.md`, Abschnitt 0). Nicht erneut fragen. *(Stand 02.10.2026: umgesetzt, #448 `eb276d9` und #452.)*
 
 - **RECHTSSTAND-WÄCHTER, 16.09.2026: Stufe 1 genügt vorerst.** Wörtlich:
   „stufe 1 sollte erst mal genug sein aber nimm den rest in dein gedächtniss".

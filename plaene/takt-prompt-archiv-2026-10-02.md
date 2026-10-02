@@ -2,7 +2,7 @@
 
 Wörtliche Fassung des Prompts der Routine „GymDocu: stündlich weiterarbeiten“, abgelöst am 02.10.2026 durch die
 Kurzfassung `plaene/takt-prompt.md`. Gilt nicht mehr als Regel. Die Inhalte stehen jetzt in CLAUDE.md,
-`plaene/betreiber-entscheidungen-gymdocu.md` und `plaene/gymdocu-fallen.md`.
+`plaene/ENTSCHIEDEN.md` und `plaene/gymdocu-fallen.md`.
 
 ---
 
