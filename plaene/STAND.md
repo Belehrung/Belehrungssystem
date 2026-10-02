@@ -801,3 +801,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C6-D1 ist ausgeliefert (Deploy 473). C6-C ist gemergt (`c097781`, CI 6/6), die Deploy-Prüfung folgt um 05:00.
   - C6-H ist geprüft (`diffpruefung-c6h.md`, 8 Befunde, keiner blockierend → `offene-befunde-c6h.md`). Der PR ist offen, der Zweig wird mit `c097781` zusammengeführt und die Suite neu gefahren.
   - Es laufen C6-F N2 und der Bau von C6-A2.
+- 02.10.2026 05:01 UTC: C6-C ist ausgeliefert (Master-CI grün im ersten Lauf, Deploy 474 erfolgreich auf `c097781`).
