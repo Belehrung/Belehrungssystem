@@ -850,3 +850,6 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - **C6-D2:** Nacharbeit 2 läuft (7 Punkte aus Runde 2).
   - **qr_journal-Fehlschlag:** Der Bau-Agent ist im Bau (`/workspace/gymdocu-qrjf`).
   - Neue Betreiber-Vorgabe in CLAUDE.md §2: Bei einem Limit anhalten, bis es automatisch zurückgesetzt ist.
+- 02.10.2026 15:41 UTC (Takt):
+  - **C6-D2:** Nacharbeit 2 ist geprüft (Suite 510 = 510 auf dem mit master gemergten Stand). Der PR ist angelegt, die CI läuft.
+  - **qr_journal-Fehlschlag:** im Bau, die Suite läuft.
