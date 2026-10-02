@@ -853,3 +853,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
 - 02.10.2026 15:41 UTC (Takt):
   - **C6-D2:** Nacharbeit 2 ist geprüft (Suite 510 = 510 auf dem mit master gemergten Stand). Der PR ist angelegt, die CI läuft.
   - **qr_journal-Fehlschlag:** im Bau, die Suite läuft.
+- 02.10.2026 16:20 UTC:
+  - **C6-D2 ist ausgeliefert** (#512, `7f5b1fd`, Deploy 481 `success`, head_sha geprüft, live-check EXIT 0 mit 5 ✓). Migration 0069 ist ausgeliefert; der Deploy-Lauf war `success`, also hat auch das Health-Gate 7/8 bestanden. Offen auf der Sammelliste: C6D2-2 bis C6D2-5.
+  - **qr_journal-Fehlschlag (C6D2-1):** Der PR ist angelegt, die CI läuft. `diffpruefung-qrjf.md`.
+  - **C6-D3:** im Bau (`/workspace/gymdocu-c6d3`).
