@@ -35,3 +35,16 @@ die Suite grün mit 469 = 469, Lint sauber, 12 Gegenproben rot.
 | N1-B4 | Anm. | Die SQL-Konsistenzprüfungen im neuen Wächter vergleichen zwei Ableitungen derselben Konstante. Die Geschwisterwächter pinnen den Text `istWegwerfDb(database.name)`. | trägt | entschieden: bleibt. Tragend ist die PG-Schleife (JS gegen PostgreSQL über 30 Namen). Die Konsistenzprüfung schützt nur vor einem Umbau, die Textpins folgen dem Muster der Geschwister. |
 
 Toter Code `const existiert` in `test_feature_schreibverzeichnisse_start.js:62` kommt mit N2 weg.
+
+## Nacharbeit 2 (`5764f5c`)
+
+**Eigene Lesung:** `core/schreibverzeichnisse.js`. Die vier `require` stehen im `try`, ein Ladefehler wird gemeldet (`start:schreibverzeichnisse:laden`), der Start läuft weiter, und `meldeSicher` fasst beide Meldewege zusammen. Der Kopfkommentar trennt jetzt Gemessenes von Gelesenem.
+
+**Laut Bericht:**
+- `getmutation` und sechs neu eingeführte Riegel aus C6-A1/C6-D1 sind auf den Helfer umgestellt.
+- Die Erkennung kennt jetzt `(?:)`, `_test(\?|$)`, `new RegExp`, `endsWith`/`includes`.
+- Der E2E-Einzellauf legt nichts mehr im Repo an (gemessen mit `find` vorher/nachher).
+- Alle Gegenproben rot.
+- Suite: 484 = 484, Lint sauber.
+
+**Keine weitere Lesespur:** Die Nacharbeit schliesst drei getragene Befunde, ohne neues Verhalten in der Produktion bis auf den gefangenen Ladefehler, und jede Änderung hat eine eigene rote Gegenprobe.
