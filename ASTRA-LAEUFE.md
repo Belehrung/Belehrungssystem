@@ -459,6 +459,7 @@ sondern falsch.
 | 02.10.2026 | CLAUDE.md Neufassung Bestaetigung (deepseek-flash) | Diff 1052 Zeilen, Suchen 36, Lesungen 22, Token rein 3878557, Token raus 193806, Runden 19 | 8 | 8 (V1 verworfene Werkzeugliste verloren, V2 Dateizahl-Sieb, V4/V5 Werkzeugstand veraltet, E1 erfundener Satz; jede Fundstelle vom Bauenden nachgesehen) | 0 | 1,40 $ |
 | 02.10.2026 | C6-B N2 Diffpruefung (deepseek-flash) | Diff 435 Zeilen, Suchen 33, Lesungen 32, Token rein 3531112, Token raus 92031, Runden 28 | 7 | 7 (B1 Feldname replicas.dead statt storageReplica.dead im Bedienertext — stammt aus meiner Vorgabe; B2 Exportfehler im Abbruchzweig ungemeldet; B3–B7 Testschaerfungen) | 0 | 1,17 $ |
 | 02.10.2026 | Diffprüfung C6-H Extrarunde (Tests/Lexer) (deepseek-flash) | Diff 395 Zeilen, Suchen 31, Lesungen 24, Token rein 3175582, Token raus 86600, Runden 29 | 5 (+1 aus „was wird schlechter“) | 4 (F1–F4; F1 vorbestehend, selbst nachgemessen), dazu Q4.1 teilweise; F5 kein Fehler | 0 blockierend | 1,06 $ |
+| 02.10.2026 | Diffprüfung C6-H Extrarunde Runde 2 (nach Nacharbeit 1) (deepseek-flash) | Diff voll, Suchen 21, Lesungen 19, Token rein 2502790, Token raus 138074, Runden 21 | 6 | 5 (B1, B2, B4, B5 nachgemessen; B3 als Grenze); B6 bewusst getragen | 0 blockierend, B1 eine falsche Betreiberanweisung | 0,92 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
