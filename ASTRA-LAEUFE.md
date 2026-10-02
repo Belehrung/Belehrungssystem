@@ -456,6 +456,7 @@ sondern falsch.
 | 02.10.2026 | Hauptserver CLAUDE.md veraltet (deepseek-flash) | Diff 117 Zeilen, Suchen 39, Lesungen 31, Token rein 1829991, Token raus 63510, Runden 26 | 8 | Stichprobe 3 von 3 getragen (D --update-env falsch herum, A 17 Suiten, B zwei statt drei Jobs); Rest im Bauauftrag bzw. Sammelliste | 0 | 0,63 $ |
 | 02.10.2026 | GymDocu CLAUDE.md veraltet (deepseek-flash) | Diff 208 Zeilen, Suchen 50, Lesungen 38, Token rein 1409044, Token raus 74307, Runden 18 | 12 | Stichprobe 0 selbst; jeder Punkt wird im Bauauftrag nachgemessen (auftrag-repo-claudemd-abgleich.md) | — | 0,51 $ |
 | 02.10.2026 | Takt-Prompt Umstellung (deepseek-flash) | Diff 233 Zeilen, Suchen 38, Lesungen 19, Token rein 1742331, Token raus 96591, Runden 11 | 12 | 12 (u. a. 32 Doppelungen mit CLAUDE.md, Doppel zu ENTSCHIEDEN.md, Dateizahl-Sieb, Einzeltest-DB, Regel 6a fehlte im Prompt, Verklemmungskreis seit #469 zu; L1 traegt, ist aber gegenstandslos: Ausmusterung ausgeliefert) | 0 | 0,64 $ |
+| 02.10.2026 | CLAUDE.md Neufassung Bestaetigung (deepseek-flash) | Diff 1052 Zeilen, Suchen 36, Lesungen 22, Token rein 3878557, Token raus 193806, Runden 19 | — | — | — | 1,40 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
