@@ -777,3 +777,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C6-D1: Gebaut, Suite grün, 472 = 472, Migration 0067. Der Produktivcode ist gelesen, die flash-Diffprüfung läuft.
   - C6-C: In Bau (Fassung 5, Baum `/workspace/gymdocu-c6c`).
   - Neue offene Punkte: A1-a9 (Monatslauf-Zeitzone) geht nach C6-D3, A1-a10 (vier Label-Tabellen) und C6C-g3 (Uploads ohne Queue) auf die Sammellisten.
+- 02.10.2026 01:45 UTC (Takt, nach einer Pause):
+  - Gegen 19:30 UTC brachen C6-C, C6-F N1 und C6-A1 N3 am API-Ausgabenlimit ab, danach startete der Container neu. Die Takte 19:40 bis 01:40 liefen ohne Agenten.
+  - Alle Bäume sind sauber und gepusht, der Marker-Scan zeigt keine Reste: C6-A1 `db2c617`, C6-F `76cedf2`, C6-C `ccd05da`, C6-D1 `9d1ef62`.
+  - C6-A1, C6-F und C6-C sind fortgesetzt. Für C6-D1 ist Nacharbeit 1 festgelegt (`diffpruefung-c6d1.md`, 4 Befunde); sie startet, sobald ein Bauplatz frei ist.
