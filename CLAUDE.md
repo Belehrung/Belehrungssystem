@@ -42,6 +42,15 @@ Betreiber-Vorgabe 23.09.2026: „reduziere deinen ausgabetext in zukunft auf das
   auch parallel und mehrfach, Kosten sind kein Grund dagegen. Lange Prüfberichte lässt der Haupt-Agent vorher von einem
   dieser Modelle auf die Befundtabelle verdichten; selbst nachgemessen werden die tragenden Befunde, nicht jeder Satz.
   (Verhältnis zu Prüf-Ritual Schritt 1: Betreiber-Entscheidung 02.10.2026 (F2), Abschnitt 6.)
+- **Betreiber-Vorgabe 02.10.2026 nachmittags:** „Sollten wir das nächste Mal ins Limit laufen, erst weiter machen wenn reset
+  automatisch gemacht wird.“ Meldet ein Aufruf ein Limit (z. B. „monthly spend limit“, Sitzungs- oder Nutzungslimit), wird die
+  Arbeit angehalten:
+  - Agenten werden nicht fortgesetzt (kein SendMessage) und nicht neu gestartet;
+  - es gibt keinen Ausweichweg über ein anderes Modell oder einen anderen Zugang;
+  - weiter geht es erst, wenn das Limit von selbst zurückgesetzt ist.
+
+  Erlaubt ist nur, den Stand zu sichern (Commit und Push dessen, was schon fertig ist) und in STAND.md einzutragen, was wo
+  angehalten ist.
 
 ## 3. Eine benannte Grenze ist kein Endzustand
 
