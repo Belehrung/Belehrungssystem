@@ -857,3 +857,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - **C6-D2 ist ausgeliefert** (#512, `7f5b1fd`, Deploy 481 `success`, head_sha geprüft, live-check EXIT 0 mit 5 ✓). Migration 0069 ist ausgeliefert; der Deploy-Lauf war `success`, also hat auch das Health-Gate 7/8 bestanden. Offen auf der Sammelliste: C6D2-2 bis C6D2-5.
   - **qr_journal-Fehlschlag (C6D2-1):** Der PR ist angelegt, die CI läuft. `diffpruefung-qrjf.md`.
   - **C6-D3:** im Bau (`/workspace/gymdocu-c6d3`).
+- 02.10.2026 16:24 UTC:
+  - **qr_journal-Fehlschlag behoben und gemergt** (#513, `58eb380`, CI grün, nur Testdateien).
+  - Deploy 481 (#512) war der erste Lauf, der das neue `ops/deploy.sh` aus #511 AUSGEFÜHRT hat, mit `success`. Der Normalzweig von Schritt 3/8 ist damit belegt. Die Fehlerzweige (git diff scheitert, npm ci scheitert) sind nur über die Tests belegt.
+  - Als nächstes: C6-D3 ist im Bau, danach C6-E (`auftrag-c6e-offline.md`).
