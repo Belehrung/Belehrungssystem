@@ -453,6 +453,9 @@ sondern falsch.
 | 02.10.2026 | C6-B N1 Diffpruefung (deepseek-flash) | Diff 650 Zeilen, Suchen 29, Lesungen 45, Token rein 2783638, Token raus 113867, Runden 22 | 5 | 5 (B1 blockierend: Ablehnung storage_replicate stuetzt sich auf falsche Praemisse, health zaehlt ohne Typfilter — Praemisse stand schon in meiner Vorgabe; B3 Export haengt nach Header; B4 E5b-Variante; B2/B5 Anmerkungen) | 0 | 0,97 $ |
 | 02.10.2026 | Vergleich CLAUDE.md alt gegen neu (gpt-6.1-sol, effort high, store:false, stream) | alt 2556 + neu 1008 Zeilen nummeriert, 82.858 ein / 17.623 aus | 23 | Stichprobe 4 von 5 getragen (V5, V9, V19, V20); Rest geht als Nacharbeit an den Bauenden, der jede Zeile selbst prueft | 1 (V16: DeepSeek-Weg im Werkzeug ist vorhanden und taeglich benutzt) | ~0,60 $ |
 | 02.10.2026 | Vergleich CLAUDE.md alt gegen neu (deepseek-flash, effort high) | dieselben Dateien, 91.684 ein / 32.000 aus | **abgebrochen** (finish_reason length: alle 32.000 Token ins Denken, 0 Zeichen Antwort) | — | — | ~0,07 $ |
+| 02.10.2026 | Hauptserver CLAUDE.md veraltet (deepseek-flash) | Diff 117 Zeilen, Suchen 39, Lesungen 31, Token rein 1829991, Token raus 63510, Runden 26 | — | — | — | 0,63 $ |
+| 02.10.2026 | GymDocu CLAUDE.md veraltet (deepseek-flash) | Diff 208 Zeilen, Suchen 50, Lesungen 38, Token rein 1409044, Token raus 74307, Runden 18 | — | — | — | 0,51 $ |
+| 02.10.2026 | Takt-Prompt Umstellung (deepseek-flash) | Diff 233 Zeilen, Suchen 38, Lesungen 19, Token rein 1742331, Token raus 96591, Runden 11 | — | — | — | 0,64 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
