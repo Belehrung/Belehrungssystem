@@ -444,6 +444,7 @@ sondern falsch.
 | 02.10.2026 | C6-A2 Diffpruefung Produktion (deepseek-flash) | Diff 1409 Zeilen, Suchen 24, Lesungen 35, Token rein 4705835, Token raus 77753, Runden 30 | 2 | 2 (A Zeitlimit Tauschtransaktion, B Anker-Nachlegen best effort) | 0 blockierend | 1,51 $ |
 | 02.10.2026 | C6-A2 Diffpruefung Tests (deepseek-flash) | Diff 2162 Zeilen, Suchen 17, Lesungen 28, Token rein 5319739, Token raus 125672, Runden 27 | 6 | 6 (B1–B6) | 0 blockierend | 1,75 $ |
 | 02.10.2026 | C6-A2 N1 Diffpruefung (deepseek-flash) | Diff 432 Zeilen, Suchen 15, Lesungen 18, Token rein 1151290, Token raus 81409, Runden 13 | 5 | 5 (B1–B5; B1 Laufzeitverhalten offen) | 0 blockierend | 0,44 $ |
+| 02.10.2026 | C6-H Extrarunde Planpruefung (deepseek-flash) | Diff 52 Zeilen, Suchen 29, Lesungen 14, Token rein 1924994, Token raus 90570, Runden 20 | 7 | 7 (F1–F7, eingearbeitet in Fassung 2; vor dem Bau nachmessen) | 1 blockierend (F1) | 0,69 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht

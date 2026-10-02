@@ -1,4 +1,4 @@
-# Auftrag C6-H Extrarunde — Nachschärfungen am SIGPIPE-Wächter und zwei Ops-Skripte (Fassung 1, 02.10.2026)
+# Auftrag C6-H Extrarunde — Nachschärfungen am SIGPIPE-Wächter und zwei Ops-Skripte (Fassung 2, 02.10.2026)
 
 Repo GymDocu, Stand master `749f2d2` oder neuer. Gebaut wird wie üblich über den Executer. Der zunächst geplante
 A/B-Vergleich ist auf Wunsch des Betreibers entfallen (`plaene/ab-deepseek-bauen.md`).
@@ -37,6 +37,28 @@ FUNDORT. Miss ihn vor dem Ändern neu.
 7. **C6H-7 — `ops/gymdocu-pitr-restore-test.sh`:** Die beiden `sudo -u postgres tar xzf …` prüfen ihren Status nicht (das
    Skript läuft ohne `set -e`). Scheitert ein Auspacken, soll das Skript mit `fail "<Text>" <Code>` abbrechen, nach dem Muster
    der übrigen `fail`-Aufrufe darin. Ein statischer Test hält das fest.
+
+## Nachgeschärft nach der Planprüfung (flash, 02.10.2026, 7 Befunde; vor dem Bau je Punkt nachmessen)
+
+- **Zu 1 (F4):** Auch zwischen Portzeile und Füllzeile braucht es die Pause, sonst landen beide im Pipe-Puffer, und es entsteht
+  kein SIGPIPE. Die Gegenprobe gilt für BEIDE `ss`-Aufrufe, damit die Fall-1-Zusicherung fällt (mit „nur zweiter Aufruf“ fällt
+  nur Fall 7).
+- **Zu 2 (P2):** Die Fixtur mit einer Pipe hinter einem zitierten `#` gibt es schon (`:325`). Die ehrliche Lösung ist, den
+  Kommentar der Nadel zu berichtigen.
+- **Zu 3 (F2):** NICHT streichen. Der Mengenvergleich ist der einzige Riegel gegen ein stilles Überspringen im Helfer: Die
+  Mutation „überspringt eine Datei ohne Fehlereintrag“ macht genau ihn rot. Nur den Kopfkommentar berichtigen (er prüft den
+  Helfer-Kontrakt, nicht den Bestand).
+- **Zu 4(b) (F1):** Das Beispiel `( echo x in y | head -1 )` wird heute NICHT unterdrückt (`head -1`). Die Fixtur muss unter
+  der heutigen Fassung rot sein, z. B. `( echo x in y | head )`.
+- **Zu 4(a) (F5):** `bash <<'SH'` startet eine eigene Shell ohne geerbtes `pipefail`. Mitprüfen hiesse: den Körper wie eine
+  eigene Datei behandeln, betroffen nur, wenn er `pipefail` selbst setzt. Sonst die Grenze benennen. Im Bestand gibt es keinen
+  solchen Körper.
+- **Zu 6 (F3):** Im neuen Zweig bleibt `npm ci` hart: Ein Fehler bricht wie im Treffer-Zweig ab, er wird nicht mit `|| warn`
+  verschluckt. „Kein neuer Abbruchpfad“ gilt nur für die Behandlung von `git diff` selbst.
+- **Zu 7 (F6):** Code 2 wie im Vorbild `ops/gymdocu-wiederherstellen.sh:262-267`
+  (`|| fail "Entpacken von $BASE/base.tar.gz fehlgeschlagen." 2`). Der statische Test hält BEIDE tar-Zeilen fest.
+- **Zusatz (F7):** Das Etikett „Pipe hinter einem Heredoc-Kopf“ (`test_feature_sigpipe_pipefail_static.js:216-217`) passt
+  nicht zur Fundstelle. Es wird berichtigt.
 
 ## Rahmen
 
