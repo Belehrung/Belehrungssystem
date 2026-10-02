@@ -792,3 +792,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C6-H wird gebaut (Fassung 2).
   - C6-C: Diffprüfung abgeschlossen (`diffpruefung-c6c.md`, 14 Punkte, 13 tragen). Nacharbeit 1 startet, sobald ein Bauplatz frei ist.
   - C6-F N1 läuft.
+- 02.10.2026 03:40 UTC (Takt):
+  - C6-D1 ist gemergt (`55ed24b`). Die Master-CI fiel wieder am SIGPIPE-Fall (C6-H), der Deploy wurde übersprungen. Die fehlgeschlagenen Jobs sind neu angestossen, die Prüfung folgt um 03:56.
+  - C6-F N1 ist geprüft (`diffpruefung-c6f.md`, 4 Befunde, alle tragen). N2 wartet auf einen Bauplatz. Die Sammelliste `offene-befunde-c6f.md` ist angelegt.
+  - Es laufen C6-H (Bau) und die Nacharbeit 1 zu C6-C.
