@@ -787,3 +787,8 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Die fehlgeschlagenen Jobs sind neu angestoßen.
   - Für C6-H steht der Auftrag in Fassung 1 (`auftrag-c6h-sigpipe.md`); flash prüft den Plan.
   - Es laufen C6-F N1, C6-C Bau und C6-D1 (master-Merge und Suite).
+- 02.10.2026 03:05 UTC: C6-A1 ist ausgeliefert. Der Master-Neulauf 1279/2 war grün, Deploy 471 lief erfolgreich auf `3e64dec`, live-check EXIT 0 (5 ✓).
+  - C6-D1 ist mit master zusammengeführt (Suite grün, 478 = 478, Lint sauber), der PR ist offen, die CI läuft.
+  - C6-H wird gebaut (Fassung 2).
+  - C6-C: Diffprüfung abgeschlossen (`diffpruefung-c6c.md`, 14 Punkte, 13 tragen). Nacharbeit 1 startet, sobald ein Bauplatz frei ist.
+  - C6-F N1 läuft.
