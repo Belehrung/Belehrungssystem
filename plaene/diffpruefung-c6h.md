@@ -53,3 +53,12 @@ Nacharbeit 1: Suite des Bauenden SUITE_EXIT=0, 503 = 503, Lint sauber. Den Produ
 | R2-B4 | `die()` wird über den ersten Treffer gesucht. Eine zweite Definition zwischen `:27` und Schritt 3 bliebe grün. | trägt | Nacharbeit 2: `einzigeZeile` (genau eine Definition). |
 | R2-B5 | Die Füllzeile (C6H-1) ist selbst nicht zugesichert. Entfernt man sie, bleibt der Test grün. | trägt (die Zusicherungen prüfen nur das reparierte Skript) | Nacharbeit 2: Im Test die alte Pipe-Form gegen dieselbe Attrappe laufen lassen und ihr Scheitern für BEIDE Ports verlangen. |
 | R2-B6 | Ein Git-Fehler löst jetzt ein löschendes `npm ci` aus. | trägt; im Kommentar benannt, bewusst getragen | keine |
+
+### Nacharbeit 2 (Stand `f5c0830`) — geprüft
+
+- Suite des Bauenden: Lauf 1 SUITE_EXIT=1, rot war nur `qr_journal` mit der Aufräum-Zusicherung (9 Zeilen) — derselbe Fehlschlag wie in C6-D2 Lauf 3, siehe `offene-befunde-c6d2.md` C6D2-1. Lauf 2: SUITE_EXIT=0, 503 = 503 (selbst nachgezählt), Lint sauber.
+- Den Produktionsdiff (`ops/deploy.sh`, `test/helfer/sigpipe-scan.js`) habe ich selbst gelesen:
+  - Die Meldung nennt jetzt den Handgriff und begründet ihn.
+  - Das Subjekt ist bis zum ` in` frei, endet aber vor `;;` und `esac`.
+  - Maskiert wird nur die Gruppe `liste` (Flag `d`; die CI nutzt Node 22).
+- Was dadurch schlechter wird: Abschnitt 0 (R2-B5) verlangt Exit 141 aus EINEM Lauf. Das hängt an der Zeit (grep-Start unter 0,3 s), und dieselbe Suite ist Deploy-Gate. Nacharbeit 3 setzt bis zu drei Versuche ein; mindestens einer muss 141 liefern.
