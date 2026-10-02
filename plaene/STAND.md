@@ -813,3 +813,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C6-B wird gebaut.
 - 02.10.2026 06:44 UTC: C6-F ist ausgeliefert. Deploy 476 lief erfolgreich auf `749f2d2`, live-check EXIT 0 (5 ✓). Der Health-Gate belegt den ersten Start mit `legeSchreibverzeichnisseAn`.
   - Mit diesem Deploy lief erstmals die `deploy.sh`-Fassung aus C6-H (übernächster Deploy). Ob ihr `npm ci`-Zweig gegriffen hat, steht nur im Deploy-Log und ist nicht eigens geprüft.
+- 02.10.2026 07:41 UTC (Takt):
+  - C6-F ist ausgeliefert (Deploy 476).
+  - C6-A2: Nacharbeit 1 ist geprüft. Der Bauende hat gemessen, dass ein zerstörter Socket eine an einer Sperre wartende Sitzung nicht beendet; behoben über `client_connection_check_interval`. Die zweite flash-Runde brachte 5 Befunde; Nacharbeit 2 läuft.
+  - C6-B wird gebaut.
