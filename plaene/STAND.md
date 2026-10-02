@@ -797,3 +797,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C6-F N1 ist geprüft (`diffpruefung-c6f.md`, 4 Befunde, alle tragen). N2 wartet auf einen Bauplatz. Die Sammelliste `offene-befunde-c6f.md` ist angelegt.
   - Es laufen C6-H (Bau) und die Nacharbeit 1 zu C6-C.
 - 02.10.2026 03:57 UTC: C6-D1 ist ausgeliefert. Neulauf 1281/2 grün, Deploy 473 erfolgreich auf `55ed24b` (der Health-Check belegt Migration 0067), live-check EXIT 0 (5 ✓).
+- 02.10.2026 04:41 UTC (Takt):
+  - C6-D1 ist ausgeliefert (Deploy 473). C6-C ist gemergt (`c097781`, CI 6/6), die Deploy-Prüfung folgt um 05:00.
+  - C6-H ist geprüft (`diffpruefung-c6h.md`, 8 Befunde, keiner blockierend → `offene-befunde-c6h.md`). Der PR ist offen, der Zweig wird mit `c097781` zusammengeführt und die Suite neu gefahren.
+  - Es laufen C6-F N2 und der Bau von C6-A2.
