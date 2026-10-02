@@ -781,3 +781,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Gegen 19:30 UTC brachen C6-C, C6-F N1 und C6-A1 N3 am API-Ausgabenlimit ab, danach startete der Container neu. Die Takte 19:40 bis 01:40 liefen ohne Agenten.
   - Alle Bäume sind sauber und gepusht, der Marker-Scan zeigt keine Reste: C6-A1 `db2c617`, C6-F `76cedf2`, C6-C `ccd05da`, C6-D1 `9d1ef62`.
   - C6-A1, C6-F und C6-C sind fortgesetzt. Für C6-D1 ist Nacharbeit 1 festgelegt (`diffpruefung-c6d1.md`, 4 Befunde); sie startet, sobald ein Bauplatz frei ist.
+- 02.10.2026 02:08 UTC: C6-A1 gemergt (`3e64dec`). CI 6/6, kein Bot-Kommentar, Botschaft zurückgelesen. Deploy-Prüfung 02:33. Betreiber hat das Limit um 300 € angehoben und bittet ums Sparen: Prüfrunden laufen nur noch über flash, höchstens zwei Bauagenten, knappe Meldungen.
