@@ -466,6 +466,7 @@ sondern falsch.
 | 02.10.2026 | Planprüfung qrj-flake (B, sol) (gpt-6.1-sol) | **abgebrochen** (Ausgabemenge ueber dem Limit): Diff 56 Zeilen, Suchen 29, Lesungen 28, Token rein 1070209, Token raus 6252, Runden 11 | — | — | — | 4,37 $ |
 | 02.10.2026 | Planprüfung qrj-flake (B, flash) (deepseek-flash) | Diff 56 Zeilen, Suchen 46, Lesungen 34, Token rein 2491070, Token raus 60414, Runden 28 | 5 | 4 getragen (3 decken sich mit A, neu: Diagnose im Sperr-Test, leerer notiz-Zweig) | 0 blockierend | 0,82 $ |
 | 02.10.2026 | Diffprüfung C6-D2 Runde 2 (nach Nacharbeit 1) (deepseek-flash) | Diff 3527 Zeilen, Suchen 28, Lesungen 38, Token rein 5765317, Token raus 80683, Runden 28 | — | — | — | 1,83 $ |
+| 02.10.2026 | Diffprüfung qrj-flake (deepseek-flash) | Diff 170 Zeilen, Suchen 50, Lesungen 27, Token rein 2747369, Token raus 87644, Runden 24 | — | — | — | 0,93 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
