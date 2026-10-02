@@ -847,7 +847,8 @@ Schreibzugriffe unter `/var/www`.
   `mcp__github__actions_list` ignoriert `per_page` und liefert regelmäßig dreißig vollständige Läufe samt
   Commit-Botschaften; sparsam abfragen, mit `workflow_runs_filter` — aber `event: workflow_run` blendet einen von Hand
   angestoßenen Lauf (`workflow_dispatch`) aus: wer danach filtert und nichts findet, hat nicht bewiesen, dass kein Deploy
-  lief. Ausnahme: das ZIP-Archiv der Laufprotokolle (übernächster Punkt) geht per `curl`, weil seine URL nicht auf
+  lief. **Und `branch: master` lieferte am 02.10.2026 Läufe vom 03.09. (total 152 statt 478):** für den Deploy-Check
+  `event: workflow_run` nehmen und den `head_sha` des Laufs gegen den Merge-Commit halten. Ausnahme: das ZIP-Archiv der Laufprotokolle (übernächster Punkt) geht per `curl`, weil seine URL nicht auf
   `api.github.com` zeigt.
 - **CI-Stand eines PR: `get_check_runs` lesen, NICHT `get_status`.** Unsere CI läuft als GitHub-Actions-Jobs, also als
   CHECK-RUNS; `pull_request_read` mit `method: get_status` liefert nur Commit-Statuses und meldete für zwei frische PRs

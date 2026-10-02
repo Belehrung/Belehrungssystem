@@ -832,3 +832,8 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Um 09:57 brachen zwei Bau-Agenten mit „monthly spend limit“ ab, der Container startete neu. Nach dem Fortsetzen laufen sie wieder.
   - **C6-B:** Nacharbeit 2 ist geprüft (Suite 503 = 503). Der PR ist angelegt, die CI läuft. Nacharbeit 3 (7 kleine Befunde aus der N2-Prüfung) läuft.
   - **Doku-Abgleich GymDocu/Hauptserver:** läuft wieder.
+- 02.10.2026 11:36 UTC:
+  - **C6-B ist gemergt und ausgeliefert** (#509, `b517936`, Deploy 478 `success`, live-check EXIT 0). Drei Nacharbeitsrunden, Suite 503 = 503. Die Sammelliste `offene-befunde-c6b.md` ist angelegt.
+  - **Regeldateien abgeglichen und gemergt:** GymDocu (#510, `b8fe304`; Deploy-Check um 11:59) und Hauptserver (#105, `c818f81`; nur CLAUDE.md, kein Deploy nötig). Neue Punkte stehen in `offene-befunde-regeldateien.md` (RD-1 … RD-10).
+  - Gemessen: `actions_list` mit `branch: master` lieferte veraltete Läufe. Das steht jetzt in CLAUDE.md §15.
+  - Als nächstes: die Extrarunde C6-H (`auftrag-c6h-extrarunde.md`, Fassung 2 mit Planprüfung) wird gebaut.
