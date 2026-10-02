@@ -440,6 +440,7 @@ sondern falsch.
 | 02.10.2026 | C6-C Diffpruefung Produktion (deepseek-flash) | Diff 1019 Zeilen, Suchen 25, Lesungen 31, Token rein 4323971, Token raus 87632, Runden 28 | 4 | 3 (B2 Meldung bei dauerhaft offenen Spool-Einträgen, B3 Kommentarzusage bei aktiv=0, B4 .ungueltig-Bestand); B1 trägt nicht (der Live-Zweig erzeugt denselben Queue-Eintrag wie der direkte INSERT, kein neuer Zustand) | 0 blockierend | 1,40 $ |
 | 02.10.2026 | C6-C Diffpruefung Tests (deepseek-flash) | Diff 1648 Zeilen, Suchen 32, Lesungen 35, Token rein 2270111, Token raus 120654, Runden 15 | 9 | 9 (T-1 bis T-9; T-6 legt einen Zählfehler im Produktionscode offen) | 0 blockierend | 0,83 $ |
 | 02.10.2026 | C6-F N1 Diffpruefung (deepseek-flash) | Diff 1692 Zeilen, Suchen 46, Lesungen 39, Token rein 3075204, Token raus 117596, Runden 18 | 4 | 4 (N1-B1 eigenes Muster in getmutation, B2 E2E-Einzellauf ins Repo, B3 Ladefehler ausserhalb try, B4 Konsistenz/Textpins) | 0 blockierend | 1,06 $ |
+| 02.10.2026 | C6-H Diffpruefung (deepseek-flash) | Diff 1684 Zeilen, Suchen 25, Lesungen 30, Token rein 2036587, Token raus 129156, Runden 13 | 8 | 8 (B1–B8; B7/B8 vorbestehend) | 0 blockierend | 0,77 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
