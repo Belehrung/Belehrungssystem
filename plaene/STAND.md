@@ -796,3 +796,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - C6-D1 ist gemergt (`55ed24b`). Die Master-CI fiel wieder am SIGPIPE-Fall (C6-H), der Deploy wurde übersprungen. Die fehlgeschlagenen Jobs sind neu angestossen, die Prüfung folgt um 03:56.
   - C6-F N1 ist geprüft (`diffpruefung-c6f.md`, 4 Befunde, alle tragen). N2 wartet auf einen Bauplatz. Die Sammelliste `offene-befunde-c6f.md` ist angelegt.
   - Es laufen C6-H (Bau) und die Nacharbeit 1 zu C6-C.
+- 02.10.2026 03:57 UTC: C6-D1 ist ausgeliefert. Neulauf 1281/2 grün, Deploy 473 erfolgreich auf `55ed24b` (der Health-Check belegt Migration 0067), live-check EXIT 0 (5 ✓).
