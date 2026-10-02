@@ -841,3 +841,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
 - 02.10.2026 12:00 UTC: #510 ist ausgeliefert (Deploy 479 `success` auf `b8fe304`, live-check EXIT 0).
 - 02.10.2026 12:45 UTC: **C6-H Extrarunde** ist gebaut (`a8bfe5b`, Suite 503 = 503). Die Diffprüfung ist durch: 4 Befunde tragen, Lexer-Lücke X-F1 vorbestehend (`diffpruefung-c6h.md`, Abschnitt „Extrarunde“). Nacharbeit 1 läuft. C6-D2 ist im Bau.
 - 02.10.2026 13:41 UTC (Takt): **C6-H:** Nacharbeit 1 ist geprüft. Die zweite Prüfrunde hat 5 Befunde getragen, darunter einen falschen Ausweg in der Fehlermeldung von `npm ci`. Nacharbeit 2 läuft. Die CI war auf `5dfc97c` grün. Neu auf der Sammelliste: C6H-9 und C6H-10. **C6-D2** ist im Bau.
+- 02.10.2026 14:55 UTC (Takt):
+  - **C6-H:** Nacharbeit 2 und 3 sind geprüft. Die CI auf `d18bf8f` läuft (Isolation steht noch aus), danach folgt der Merge.
+  - **C6-D2:** gebaut und geprüft (`diffpruefung-c6d2.md`), 6 Befunde tragen. Nacharbeit 1 läuft.
+  - **qr_journal-Fehlschlag (C6D2-1):** Die Ursache ist mit hoher Wahrscheinlichkeit `test_feature_qr_beanspruchen_sperrreihenfolge.js`. Er legt 9 Chargen in einem Zufallsband an und räumt sie nicht ab; der Journal-Test zählt global. Der Auftrag liegt in `auftrag-qrj-flake.md`. Spur A der Planprüfung ist eingearbeitet, Spur B (sol) läuft.

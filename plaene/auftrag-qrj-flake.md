@@ -30,6 +30,15 @@ Einordnung: nicht sehr komplex, also baut der Standard-Executer. Es geht um zwei
    - **Diagnose:** Fällt eine der beiden Zusicherungen, gibt sie die übrig gebliebenen Zeilen aus (id, studio_id, nr_von, nr_bis, notiz; höchstens 20).
 3. Die Kommentare am Aufräumblock berichtigen: „F2 nutzt ein bestehendes Studio F“ stimmt nicht mehr, die Fixtur legt O/F/W/Z selbst an. Miss das nach, bevor du es änderst.
 
+## Ergänzung nach der Planprüfung (Spur A, nachgemessen)
+
+- **Zwei notiz-Literale:** `chargeManuellReihenfolge` schreibt `'Test qr-zuordnung-sperrreihenfolge'`, `einzelToken` schreibt `'Test qr-zuordnung-sperrreihenfolge (Einzeltoken)'` (6 der 9 Zeilen). Die End-Zusicherung in Punkt 1 wird deshalb an die GESAMMELTEN IDs gebunden: `SELECT COUNT(*) FROM qr_charge WHERE id = ANY($1)` muss 0 sein. Zusätzlich gilt: Die Zahl der gesammelten IDs ist genau 9, als Literal. Fehlt eine Sammelstelle, wird die Zusicherung so rot statt still grün.
+- **Token löschen über `charge_id`, NICHT über `studio_id`:** 13–14 der 20 Tokens sind beansprucht (`studio_id` gesetzt). Der FK `qr_token.charge_id → qr_charge.id` ist NO ACTION (`core/db.js`, „KEIN ON DELETE CASCADE … Deaktivieren statt Löschen“). Also zuerst `DELETE FROM qr_token WHERE charge_id = ANY($1)`, dann `DELETE FROM qr_charge WHERE id = ANY($1) AND studio_id IS NULL`. Die Abweichung von der Muster-Datei (dort `studio_id` in beiden DELETEs) begründest du im Kommentar, und dass hier beanspruchte Testaufkleber gelöscht werden, was nur für Testdaten zulässig ist. Dazu ein Wächter `if (ids.length)` wie im Vorbild. Das Aufräumen steht VOR `db.pool.end()`.
+- **Aufräumen auch im Fehlerweg:** zusätzlich im Top-Level-`catch` der Datei (eigenes try/catch darum, ein Aufräumfehler darf den eigentlichen Fehler nicht verdecken).
+- **`rest` (Band 101000–104999) bleibt GLOBAL.** Das Zufallsband beginnt bei 150000 und kann dort nie landen (Kommentar am Kopf des Journal-Tests). Ein Studio-Filter würde dort nur Reste abgebrochener Läufe verstecken. Punkt 2 gilt also NUR für `restH`.
+- **Journal-Test legt keine Chargen ohne Studio an:** Beide `INSERT INTO qr_charge` tragen `studio_id` und keine `notiz`, `chargeAnlegen` erzwingt `studioId`. Damit genügt der Studio-Bezug in `restH`. Miss das selbst nach (Suche + Positivkontrolle) und schreib den Beleg in den Kommentar.
+- **Was schlechter wird:** Die Klausel `900000–950999` in `restH` kann nach dem Studio-Filter nicht mehr fallen; diese Spannen existieren nur im Journal, nicht in `qr_charge`. Entweder die Klausel mit Begründung entfernen, ODER fremde Zeilen in den restH-Bändern als Diagnosezeile ausgeben (ohne FAIL). Entscheide und begründe. Eine Zusicherung, die nicht rot werden kann, darf nicht stehen bleiben.
+
 ## Gegenproben (Pflicht, je ROT und GRÜN wörtlich)
 
 - In `test_feature_qr_beanspruchen_sperrreihenfolge.js` das Aufräumen entfernen → die neue End-Zusicherung wird rot.
