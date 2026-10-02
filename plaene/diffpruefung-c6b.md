@@ -37,3 +37,17 @@ Den Produktionsdiff habe ich selbst gelesen. Jeder Befund unten ist selbst an de
 ## Offene Punkte
 
 Was nach Nacharbeit 1 übrig bleibt, steht in `offene-befunde-c6b.md`.
+
+## Nacharbeit 1 (Stand `54d3ebf`) — geprüft
+
+- Suite des Bauenden: SUITE_EXIT=0, 503 = 503, Lint sauber.
+- Den Produktionsdiff habe ich selbst gelesen.
+- Eine flash-Spur über den N1-Diff: 22 Runden, ~0,97 $.
+
+| Kennung | Befund | Nachgemessen | Entscheidung |
+|---|---|---|---|
+| N1-B1 | Die Ablehnung für `storage_replicate` (P-F1) stützt sich auf eine FALSCHE Prämisse: `healthMetrics` zählt tote Jobs OHNE Typfilter (`core/pdf-jobs.js:377`). Ein toter `storage_replicate`-Job zählt also sehr wohl unter `pdfJobs.dead`. Im Waisenfall („Replica-Zeile fehlt“, permanent, `core/storage-replica.js:591`) war das Quittieren der einzige wirksame Handgriff; „neu einreihen“ stirbt dort sofort wieder, bis der Reaper nach 7 Tagen löscht (`:1131`). Test I1 hat die falsche Prämisse festgeschrieben. Die Prämisse stand schon in MEINER Fassung von P-F1 zu pauschal. | trägt | Nacharbeit 2: Quittieren für `storage_replicate` wieder zulassen. Das Werkzeug liest dabei den Zwilling in `storage_replica` (`studio_id`-gebunden) und sagt in der Ausgabe, was gilt: Zwilling `dead` → health bleibt über `replicas.dead` degraded, Replik reparieren; Zwilling fehlt → der Reaper räumt nach 7 Tagen ab. Kommentar, Doku und I1 werden berichtigt. |
+| N1-B2 | Im ZIP-Export: Eine Zeile mit nicht vergleichbarem Hash geht weiter ungeprüft ins ZIP, auch wenn daneben ein Konflikt-Hinweis liegt. | trägt (gewollte, gepinnte Grenze) | Sammelliste C6B-3 (ergänzt) |
+| N1-B3 | Export-Route: Ein Fehler nach gesendeten Headern lässt die Antwort hängen. Der `catch` tut bei `headersSent` nichts, `finalize()` läuft nie. | trägt (vorbestehend, aber in der berührten Route) | Nacharbeit 2: `archive.abort()` und `res.destroy()` im `catch`, wenn die Header schon draussen sind. |
+| N1-B4 | Die E5b-Variante `'[]'` kann die Array-Klausel nicht isoliert rot machen, weil die `version`-Klausel sie auch fängt. Der Kommentar „genau EINE Prüfung“ stimmt für diese Variante nicht. | trägt | Nacharbeit 2: die Variante so bauen, dass nur die Array-Klausel greift, oder den Kommentar berichtigen. |
+| N1-B5 | `claim_backoff`: Das Kind erbt `PDF_WORKER_WACHHUND_MS` aus der Umgebung, der Stub kennt nur die Konstante. Ausserdem fehlt dort der `fertig`-Wächter. | trägt (Härtung) | Nacharbeit 2: die Variable in der Kind-Umgebung löschen, `fertig`-Wächter einbauen. |
