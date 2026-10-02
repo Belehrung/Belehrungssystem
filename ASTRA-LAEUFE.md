@@ -446,6 +446,10 @@ sondern falsch.
 | 02.10.2026 | C6-A2 N1 Diffpruefung (deepseek-flash) | Diff 432 Zeilen, Suchen 15, Lesungen 18, Token rein 1151290, Token raus 81409, Runden 13 | 5 | 5 (B1–B5; B1 Laufzeitverhalten offen) | 0 blockierend | 0,44 $ |
 | 02.10.2026 | C6-H Extrarunde Planpruefung (deepseek-flash) | Diff 52 Zeilen, Suchen 29, Lesungen 14, Token rein 1924994, Token raus 90570, Runden 20 | 7 | 7 (F1–F7, eingearbeitet in Fassung 2; vor dem Bau nachmessen) | 1 blockierend (F1) | 0,69 $ |
 | 02.10.2026 | C6-B Diffpruefung tests (deepseek-flash) | **abgebrochen** (Geheimnis-Riegel auf dem Eingabediff): Diff 2397 Zeilen, Suchen 0, Lesungen 0, Token rein 0, Token raus 0, Runden 0 | — | — | — | 0,00 $ |
+| 02.10.2026 | C6-B Diffpruefung prod (deepseek-flash) | Diff 1211 Zeilen, Suchen 26, Lesungen 52, Token rein 4416368, Token raus 62437, Runden 28 | — | — | — | 1,40 $ |
+| 02.10.2026 | C6-B Diffpruefung tests (deepseek-flash) | Diff 2397 Zeilen, Suchen 18, Lesungen 35, Token rein 4316734, Token raus 62227, Runden 29 | — | — | — | 1,37 $ |
+| 02.10.2026 | Pruefung CLAUDE.md fuer Neufassung (gpt-6.1-sol, effort high, store:false, stream) | nummerierte CLAUDE.md 2556 Zeilen, 53.991 ein / 20.483 aus | 49 | Stichprobe 3 von 3 getragen (S1 Bagatellgrenze gegen Delegation, S16 9≠7+3, S42 bis=gesamt=40); Ersetzungen prueft der Bauauftrag an den Zeilen, Rest der Vergleich alt/neu | — | ~0,52 $ |
+| 02.10.2026 | Pruefung CLAUDE.md fuer Neufassung (deepseek-flash) | dieselbe Datei, 59.727 ein / 20.817 aus | 31 (doppelt 16, verdichten 15; dazu Gliederung 17, Mindestliste 30) | Hinweise, gehen als Mindestliste in den Bauauftrag; Widerspruchsklasse deckt sich mit sol (S1, S12) | — | ~0,04 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
