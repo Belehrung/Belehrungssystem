@@ -827,3 +827,8 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - **Regeldateien GymDocu und Hauptserver:** flash hat 12 bzw. 8 Befunde gefunden. Wichtig beim Hauptserver: Seine CLAUDE.md beschreibt `--update-env` falsch herum. Der Doku-Abgleich läuft beim Executer (`auftrag-repo-claudemd-abgleich.md`), Code-Befunde stehen in `offene-befunde-regeldateien.md`.
   - **CLAUDE.md-Neufassung:** 1052 Zeilen. Nach dem Vergleich (sol, 23 Befunde) ist nachgearbeitet; die Bestätigungsprüfung (flash) läuft. Offene Punkte stehen in `offene-befunde-claudemd.md` (4 Betreiber-Fragen). Zusätzlich muss CLAUDE.md den Verklemmungskreis als geschlossen führen (#469).
   - **C6-B:** Nacharbeit 2 läuft (N1-B1: Quittieren von Replikationsjobs wieder zulassen, meine Vorgabe war falsch).
+- 02.10.2026 10:40 UTC (Takt):
+  - **CLAUDE.md neu gefasst und aktiv** (`4ed341f`): 1065 statt 2556 Zeilen. Die alte Fassung steht wörtlich in `plaene/claude-md-archiv-2026-10-02.md`, die Änderungen in `plaene/claude-md-aenderungsliste-2026-10-02.md`. Der Betreiber hat F1–F4 entschieden (alle wie empfohlen): Kleinkram schreibt der Haupt-Agent selbst; den Produktionsdiff liest er selbst, Tests und Berichte lesen die externen Modelle; Testausgaben und Screenshots dürfen geschwärzt an die Prüfer; der Review-Bot zählt nicht als Spur.
+  - Um 09:57 brachen zwei Bau-Agenten mit „monthly spend limit“ ab, der Container startete neu. Nach dem Fortsetzen laufen sie wieder.
+  - **C6-B:** Nacharbeit 2 ist geprüft (Suite 503 = 503). Der PR ist angelegt, die CI läuft. Nacharbeit 3 (7 kleine Befunde aus der N2-Prüfung) läuft.
+  - **Doku-Abgleich GymDocu/Hauptserver:** läuft wieder.
