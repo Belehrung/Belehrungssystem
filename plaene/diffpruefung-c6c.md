@@ -28,3 +28,18 @@ Zwei Lesespuren flash mit verschiedenen Bündeln: Produktions-Diff (P) und Test-
 | E-7 | Bericht | Anm. | `offboarding_queue_spaeter_eintrag` wird in `/intern/deprovision` zu 500 statt zu 503 „wiederholbar“. | trägt (`server.js:284-287`) | N1 |
 
 Benannte Grenzen des Bauenden: `offene-befunde-c6c.md` (C6C-g1 bis g8).
+
+## Nacharbeit 1 (`e0862bb`, mit master `55ed24b` zusammengeführt)
+
+Ich habe den Produktivcode selbst gelesen (`core/datei-loeschqueue.js`, `server.js`): Er sammelt `offen` je Grund und
+meldet EINMAL je Lauf ohne Pfad. `eingereiht` folgt jetzt `rowCount`, `schonInQueue` ist neu. Der 503-Zweig ist eine
+genaue Kopie des bestehenden Zweigs `offboarding_queue_nicht_schreibbar`. Die Kommentare zu `aktiv = 0` sind berichtigt.
+
+Laut Bericht 35 Mutationen, alle rot, Rücknahme `diff` EXIT 0. Selbst nachgesehen: Suite-Log `SUITE_EXIT=0`, keine
+`✗`-Zeile, Dateizahl-Ritual `diff` EXIT 0 (482), Lint sauber laut Bericht.
+
+**Keine zweite Lesespur:** Die Nacharbeit ändert Verhalten nur bei Meldung, Zählung und Statuscode. Sie fügt keinen
+Lösch- oder Schreibweg hinzu, und jede Änderung hat eine eigene rote Gegenprobe. Eine zweite Runde würde dieselbe
+Prüflast für keine neue Klasse kaufen.
+
+Hinweis des Bauenden, nachgemessen offen: siehe C6C-g9 in `offene-befunde-c6c.md`.
