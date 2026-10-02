@@ -807,3 +807,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Heute ausgeliefert: C6-A1, C6-D1, C6-C, C6-H (Deploys 471, 473, 474, 475). Seit C6-H lief die Master-CI im ersten Versuch grün.
   - Es laufen C6-F (N2 geprüft, Zusammenführung mit `1c26721` und Suite) und der Bau von C6-A2.
   - Danach kommen C6-B, C6-D2, C6-D3 (mit 5a), C6-E, C6-G und die Extrarunde C6-H.
+- 02.10.2026 06:41 UTC (Takt):
+  - C6-F ist gemergt (`749f2d2`), die Deploy-Prüfung folgt um 06:43.
+  - C6-A2 ist gebaut und geprüft (`diffpruefung-c6a2.md`, 8 Befunde, keiner blockierend). Nacharbeit 1 läuft, sie schliesst den Merge von master ein. Die Sammelliste `offene-befunde-c6a2.md` ist angelegt, darin eine mögliche Betreiberfrage (A2-g7).
+  - C6-B wird gebaut.
