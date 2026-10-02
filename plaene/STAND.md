@@ -838,3 +838,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Gemessen: `actions_list` mit `branch: master` lieferte veraltete Läufe. Das steht jetzt in CLAUDE.md §15.
   - Als nächstes: die Extrarunde C6-H (`auftrag-c6h-extrarunde.md`, Fassung 2 mit Planprüfung) wird gebaut.
 - 02.10.2026 11:40 UTC (Takt): Im Bau sind C6-H Extrarunde (`/workspace/gymdocu-c6h2`) und C6-D2 Doppelsenden (`/workspace/gymdocu-c6d2`). Der Deploy-Check für #510 folgt um 11:59.
+- 02.10.2026 12:00 UTC: #510 ist ausgeliefert (Deploy 479 `success` auf `b8fe304`, live-check EXIT 0).
