@@ -461,6 +461,7 @@ sondern falsch.
 | 02.10.2026 | Diffprüfung C6-H Extrarunde (Tests/Lexer) (deepseek-flash) | Diff 395 Zeilen, Suchen 31, Lesungen 24, Token rein 3175582, Token raus 86600, Runden 29 | 5 (+1 aus „was wird schlechter“) | 4 (F1–F4; F1 vorbestehend, selbst nachgemessen), dazu Q4.1 teilweise; F5 kein Fehler | 0 blockierend | 1,06 $ |
 | 02.10.2026 | Diffprüfung C6-H Extrarunde Runde 2 (nach Nacharbeit 1) (deepseek-flash) | Diff voll, Suchen 21, Lesungen 19, Token rein 2502790, Token raus 138074, Runden 21 | 6 | 5 (B1, B2, B4, B5 nachgemessen; B3 als Grenze); B6 bewusst getragen | 0 blockierend, B1 eine falsche Betreiberanweisung | 0,92 $ |
 | 02.10.2026 | Diffprüfung C6-D2 Doppelsenden (deepseek-flash) | Diff 3229 Zeilen, Suchen 34, Lesungen 46, Token rein 5470396, Token raus 89412, Runden 25 | 7 (+ Fragenteil) | 5 (A1 = mein P-1, A2, A3, A4, A7); A5/A6 ohne Folge | 0 blockierend | 1,75 $ |
+| 02.10.2026 | Recherche qr_journal-Flake (C6D2-1) (deepseek-flash) | Diff 46 Zeilen, Suchen 46, Lesungen 30, Token rein 2049364, Token raus 87753, Runden 20 | — | — | — | 0,72 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
