@@ -845,3 +845,8 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - **C6-H:** Nacharbeit 2 und 3 sind geprüft. Die CI auf `d18bf8f` läuft (Isolation steht noch aus), danach folgt der Merge.
   - **C6-D2:** gebaut und geprüft (`diffpruefung-c6d2.md`), 6 Befunde tragen. Nacharbeit 1 läuft.
   - **qr_journal-Fehlschlag (C6D2-1):** Die Ursache ist mit hoher Wahrscheinlichkeit `test_feature_qr_beanspruchen_sperrreihenfolge.js`. Er legt 9 Chargen in einem Zufallsband an und räumt sie nicht ab; der Journal-Test zählt global. Der Auftrag liegt in `auftrag-qrj-flake.md`. Spur A der Planprüfung ist eingearbeitet, Spur B (sol) läuft.
+- 02.10.2026 15:19 UTC:
+  - **C6-H ist ausgeliefert** (#511, `1ff391f`, Deploy 480 `success`, head_sha geprüft, live-check EXIT 0 mit 5 ✓). Die Änderung an `ops/deploy.sh` ist AUSGELIEFERT, nicht BEWIESEN; sie wirkt erst ab dem nächsten Deploy. Offen auf der Sammelliste: C6H-9 (Stempel statt `git diff`) und C6H-10 (Lexergrenzen).
+  - **C6-D2:** Nacharbeit 2 läuft (7 Punkte aus Runde 2).
+  - **qr_journal-Fehlschlag:** Der Bau-Agent ist im Bau (`/workspace/gymdocu-qrjf`).
+  - Neue Betreiber-Vorgabe in CLAUDE.md §2: Bei einem Limit anhalten, bis es automatisch zurückgesetzt ist.
