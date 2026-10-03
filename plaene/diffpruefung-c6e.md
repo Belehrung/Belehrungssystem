@@ -39,3 +39,9 @@ nicht Übertragenes (beide Spuren); Textwächter deckt alle Literale.
 | N2-4 | Ablehnungsliste fehlt bei später Weiterleitung | Kimi K4 | trägt (gelesen) | Nacharbeit 3 |
 | N2-5 | Notkopie-Deckel in Rohzeichen, Server begrenzt urlencodiert auf 1 MB → 413-Schleife möglich | Kimi B3 | trägt (`server.js:195`, `sendeSitzung`) | Nacharbeit 3 |
 | — | Doppelter Satz (Badge und Formularkasten) | Bauender | Kosmetik | nicht umgesetzt |
+
+## Nacharbeit 3 (`b212be5..c954ac2`, 03.10.2026)
+
+Produktionsdiff selbst gelesen: alle fünf Punkte (N2-1 bis N2-5) behoben, kein neuer Befund. Gegenproben p1–p5c je ROT,
+Harness 302/0, volle Suite EXIT 0, 520 = 520. Lesespur Kimi (Diff + offline-queue.js + Gegenproben): vier Befunde, keiner
+blockierend — N3-3 = C6E-2 (schon auf der Sammelliste), N3-1/2/4 → C6E-4/5/6. Ergebnis: mergefähig, CI und Bot entscheiden.
