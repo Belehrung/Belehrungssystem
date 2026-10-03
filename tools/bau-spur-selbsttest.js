@@ -1030,17 +1030,17 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         const t0 = Date.now();
         const rKlein = tKlein.lese.werkzeugSuche('^(a+)+$', 'klein.txt');
         const msKlein = Date.now() - t0;
-        // auch das DATEIMUSTER des Modells ist ein Regex (glob2regex: "*" wird zu ".*"): "*a" fuenfmal und "*b" gegen einen Dateinamen aus 60 mal "a" braucht ohne
-        // Limit rund 0,3 s (sechs Wiederholungen schon 3,5 s, acht haengen): hier mit 150 ms Frist abgelehnt, das Gegenstueck mit zwei Wiederholungen laeuft normal
+        // auch das DATEIMUSTER des Modells ist ein Regex (glob2regex: "*" wird zu ".*"): "*a" sechsmal und "*b" gegen einen Dateinamen aus 60 mal "a" braucht ohne
+        // Limit rund 3 s (fuenf Wiederholungen schon an der Schwelle von 0,1 bis 0,4 s, acht haengen): hier mit 150 ms Frist abgelehnt, das Gegenstueck mit zwei Wiederholungen laeuft normal
         const tG0 = Date.now();
-        const rGlob = tKlein.lese.werkzeugSuche('GLOBX', '*a'.repeat(5) + '*b');
+        const rGlob = tKlein.lese.werkzeugSuche('GLOBX', '*a'.repeat(6) + '*b');
         const msGlob = Date.now() - tG0;
         // Positivkontrollen mit der VORGABEFRIST (5 s): mit 150 ms waere der Selbsttest bei hoher Last unzuverlaessig (gemessen: 4 parallele Laeufe)
         const tNormal = werkzeugeAuf(ctx, baum);
         const rGlobHarmlos = tNormal.lese.werkzeugSuche('GLOBX', '*a'.repeat(2) + '*');
         const rPos = tNormal.lese.werkzeugSuche('^(a+)+$', 'harmlos.txt');
         const rNormal = tNormal.lese.werkzeugSuche('a b c');
-        pruefen(`X2 ZEITLIMIT IM PROZESS: dasselbe Muster gegen 27 mal "a" und "!" wird mit 150 ms Frist nach ${msKlein} ms abgelehnt (abgelehnt true, Text nennt das Zeitlimit), ebenso ein katastrophales DATEIMUSTER ("*a" mal 5 und "*b" gegen einen Namen aus 60 mal "a", ${msGlob} ms); Positivkontrollen: ein harmloses Dateimuster findet die Datei, dasselbe Muster auf einer harmlosen Datei liefert "(keine Treffer)" und ein gewoehnliches Muster seinen Treffer — das Limit lehnt nicht alles ab`,
+        pruefen(`X2 ZEITLIMIT IM PROZESS: dasselbe Muster gegen 27 mal "a" und "!" wird mit 150 ms Frist nach ${msKlein} ms abgelehnt (abgelehnt true, Text nennt das Zeitlimit), ebenso ein katastrophales DATEIMUSTER ("*a" mal 6 und "*b" gegen einen Namen aus 60 mal "a", ${msGlob} ms); Positivkontrollen: ein harmloses Dateimuster findet die Datei, dasselbe Muster auf einer harmlosen Datei liefert "(keine Treffer)" und ein gewoehnliches Muster seinen Treffer — das Limit lehnt nicht alles ab`,
             rKlein.abgelehnt === true && /Zeitlimit von 150 ms/.test(rKlein.text) && msKlein < 1500
             && rGlob.abgelehnt === true && /Zeitlimit von 150 ms/.test(rGlob.text) && msGlob < 1500 && rGlobHarmlos.abgelehnt === false && rGlobHarmlos.text === `${'a'.repeat(60)}:1:GLOBX`
             && rPos.abgelehnt === false && rPos.text === '(keine Treffer)' && rNormal.abgelehnt === false && rNormal.text === 'harmlos.txt:1:a b c');
