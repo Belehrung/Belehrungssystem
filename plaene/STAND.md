@@ -911,7 +911,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
 - 03.10.2026 06:45 UTC:
   - C6-E Nacharbeit 2 fertig (`c6e-offline` `b212be5`, Suite EXIT 0, 520 = 520, Harness 290). Produktionsdiff selbst gelesen: zwei Befunde (Live-Weg mit Foto-Rest ohne Merker „Fotos nicht gesichert“; Wettlauf, der den Merker fälschlich stehen lässt). Lesespuren laufen (Kimi ×2; flash erneut mit SSE-Abbruch).
   - Bauspur Nacharbeit 1 fertig (`bauspur-qwen` `34f56e7`, Probelauf 3 Exit 0, 0,07 $). Produktionsdiff selbst gelesen: nichts Blockierendes; Exit 27/28 im `finally` wird von `main()` überschrieben (Sammelliste). Lesespur Runde 2 (Kimi) läuft. Qwens Testdatei aus Probelauf 3 gelesen: harmlos (liest eine Datei, zwei `includes`), nicht committet.
-- 03.10.2026 07:00 UTC — **LIMIT ERREICHT, ANGEHALTEN** (Regel CLAUDE.md §2, Betreiber 02.10.2026):
+- 03.10.2026 07:00 UTC — **LIMIT ERREICHT** (Regel CLAUDE.md §2); um 07:05 hat der Betreiber das Limit ein letztes Mal um 50 € erhöht (ENTSCHIEDEN.md), es geht weiter. Beim nächsten Limit Schluss bis Reset:
   - Claude-Subagenten melden „monthly spend limit“, Reset laut Meldung **06.10.2026 22:00 UTC**. Kein Agent wird fortgesetzt oder neu gestartet, kein Ausweichmodell.
   - Wo was steht:
     - C6-E: `c6e-offline` `b212be5` gepusht, Nacharbeit 2 fertig. Diffprüfung: eigene Befunde P1 (Live-Weg mit Foto-Rest ohne Merker „Fotos nicht gesichert“) und P2 (Merker bleibt nach Wettlauf falsch stehen), von Kimi „Datenverlust“ bestätigt; dazu Kimi K3 (Sofort-Sync nimmt den Kasten „Gesichert“ weg) und K4 (Ablehnungsliste fehlt bei der späten Weiterleitung). Bericht Kimi „Umkreis“ liegt in `scratchpad/c6e-n2/bericht-a-kimi.md` (ungelesen). Nacharbeit 3 = diese vier Punkte, an den C6-E-Agenten, NACH dem Reset.

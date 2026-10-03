@@ -386,3 +386,13 @@ Folge für alle Texte, die ein Trainer am Tablet sieht:
   „Leitung informieren“.
 
 Umsetzung: `plaene/auftrag-c6e-automatik.md`.
+
+## 03.10.2026 — Limit ein letztes Mal erhöht, beim nächsten Limit Schluss bis Reset
+
+Anlass: Die Claude-Subagenten meldeten um 07:00 UTC „monthly spend limit“ (Reset laut Meldung 06.10.2026 22:00 UTC). Der Betreiber
+antwortete wörtlich: „Ich hab das Limit noch mal um weitere 50 € erhöht. Das ist aber jetzt die letzte Erhöhung wenn jetzt ins
+Limit laufen ist Schluss bis Reset“.
+
+Folge: Es geht normal weiter. Meldet ein Aufruf erneut ein Limit, gilt die Regel aus CLAUDE.md §2 ohne Rückfrage: anhalten,
+Stand sichern, bis zum automatischen Reset nichts weiter. Bis dahin sparsam: Lesen, Prüfen und Verdichten gehen an
+DeepSeek/Kimi, Bauen wo möglich an Qwen; der Executer nur, wo es gebraucht wird (A/B-Weg E, Rückfall).
