@@ -103,6 +103,10 @@ Herkunftsprüfung überhaupt hilft, ist deshalb offen. Fassung 2 regelt daher:
      - Nicht gesichert: „Die Prüfung ist noch nicht gesichert. Bitte die Seite nicht schließen – es wird automatisch weiter
        versucht.“
      - Letzter Ausweg (Zustand hält über mehrere Versuche an): „Bitte die Leitung informieren.“
+     - Anmeldeportal (Zwischenseite, seit Nacharbeit 1 „Netzwerk-Anmeldung“): in Worten, die ein Trainer kennt. Beispiel:
+       „Das WLAN verlangt eine Anmeldung. Die Prüfung ist gesichert und wird übertragen, sobald die WLAN-Anmeldung erledigt
+       ist.“ Der Badge-Hinweis heute: „bitte die Netzwerk-Anmeldung abschließen“. Eine WLAN-Anmeldung ist eine
+       Alltagshandlung und darf genannt werden; „Netzwerk“, „Portal“ und „Server“ entfallen.
    - Ersetzt werden alle Fundstellen der Messung in `public/offline-queue.js`. Den Wortlaut der Tests, der sie heute festhält,
      zieht der Bau mit; die Liste kommt in den Bericht:
      - `test_feature_seil_tablet_ux.js:86/89`;
