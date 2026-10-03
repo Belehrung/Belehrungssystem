@@ -372,3 +372,17 @@ Nachtrag 03.10.2026 (Betreiber): „sollte sich wegen als schlecht herausstellen
 nutzen eines der uns bereits bekannten Ki Modelle zum bauen.“ Gemessen wird am A/B und an `BAU-LAEUFE.md` (CLAUDE.md
 Abschnitt 1). Am selben Tag: CLAUDE.md weiter verdichten („Wenn es noch sparsamer geht dann gerne“); Abschnitt 18 steht
 seitdem wörtlich in `plaene/pruefmodelle-schnittstellen.md`.
+
+## 03.10.2026 — Trainer-Texte ohne technische Handlung, die Anwendung löst es selbst
+
+Betreiber, wörtlich, zum Screenshot des C6-E-Fehlerkastens („Bitte zuerst Speicher freimachen und ERNEUT speichern …“):
+„Der normale Trainer kann mit den Begriffen erst Speicher frei machen nichts anfangen. Das muss komplett automatisch
+passieren.“
+
+Folge für alle Texte, die ein Trainer am Tablet sieht:
+- Kein Text verlangt eine technische Handlung (Speicher freimachen, Seite neu laden, Verbindung prüfen, Herkunft).
+- Speicher- und Herkunftsprobleme löst die Anwendung selbst.
+- Der Trainer erfährt nur, ob seine Prüfung gesichert ist. Als letzter Ausweg darf ein Text sagen: „Seite offen lassen“ oder
+  „Leitung informieren“.
+
+Umsetzung: `plaene/auftrag-c6e-automatik.md`.
