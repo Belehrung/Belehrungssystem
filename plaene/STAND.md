@@ -864,3 +864,4 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
 - 03.10.2026 00:10 UTC:
   - Am 02.10. gegen 16:30 UTC lief der C6-D3-Agent ins Nutzungslimit („monthly spend limit“), danach war Ruhe. Die Takte bis 23:40 haben nichts getan (CLAUDE.md §2).
   - Der Betreiber hat „Weiter“ geschrieben. C6-D3 ist fortgesetzt: Zweig `c6d3-zeit`, `497177f`, gepusht, Baum sauber, Zwischenstände A–G; offen sind Gegenproben, Suite und Lint.
+- 03.10.2026 00:20 UTC: **Betreiber-Vorgabe:** Qwen soll bauen, DeepSeek prüfen, Claude ist Entwickler und Chef, und aus Kostengründen soll mehr an andere Modelle gehen. Der Schlüssel liegt in `/tmp/claude-0/.qwen-key` (600, nicht im Repo); der Endpunkt `dashscope-intl` antwortet und listet 172 Modelle. Den Aufbau der Qwen-Bauspur (Modell mit Werkzeugen) hat die automatische Berechtigungsprüfung der Umgebung abgelehnt („Create Unsafe Agents“). Es wartet die Entscheidung des Betreibers.
