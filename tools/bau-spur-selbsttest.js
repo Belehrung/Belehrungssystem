@@ -782,7 +782,8 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         const meineUid = process.getuid();
         const sk = (name, modus, inhalt) => { const p = path.join(ctx.basis, name); fs.writeFileSync(p, inhalt === undefined ? `${SCHLUESSEL}\n` : inhalt, { mode: modus }); fs.chmodSync(p, modus); return p; };
         const k600 = bau.schluesselDateiPruefen(sk('k600', 0o600), meineUid);
-        const kFalsch = ['k644', 'k640', 'k660', 'k700', 'k200', 'k500'].map((n, i) => bau.schluesselDateiPruefen(sk(n, [0o644, 0o640, 0o660, 0o700, 0o200, 0o500][i]), meineUid));
+        // nur Rechte, die der Eigentuemer selbst LESEN kann (0200 waere fuer einen Nicht-root-Lauf schon beim Oeffnen eine andere Meldung: EACCES)
+        const kFalsch = ['k644', 'k640', 'k660', 'k700', 'k444', 'k500'].map((n, i) => bau.schluesselDateiPruefen(sk(n, [0o644, 0o640, 0o660, 0o700, 0o444, 0o500][i]), meineUid));
         const k400 = bau.schluesselDateiPruefen(sk('k400', 0o400), meineUid);
         const kUid = bau.schluesselDateiPruefen(sk('k-uid', 0o600), meineUid + 1);
         fs.symlinkSync(path.join(ctx.basis, 'k600'), path.join(ctx.basis, 'k-link'));
@@ -791,7 +792,7 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         const kDir = bau.schluesselDateiPruefen(ctx.basis, meineUid);
         const kFehlt = bau.schluesselDateiPruefen(path.join(ctx.basis, 'gibt-es-nicht'), meineUid);
         const alleMeldungen = [kUid, kLink, kLeer, kDir, kFehlt, ...kFalsch].map((r) => r.grund).join('\n');
-        pruefen('A4 SCHLUESSELDATEI (Exit 15): Rechte 600 UND 400 (X11) und der verlangte Eigentuemer gehen (der Schluessel kommt zurueck); 644, 640, 660, 700, 200, 500, ein fremder Eigentuemer, ein Symlink, eine leere Datei, ein Verzeichnis und eine fehlende Datei brechen ab; KEINE Meldung enthaelt den Schluessel',
+        pruefen('A4 SCHLUESSELDATEI (Exit 15): Rechte 600 UND 400 (X11) und der verlangte Eigentuemer gehen (der Schluessel kommt zurueck); 644, 640, 660, 700, 444, 500, ein fremder Eigentuemer, ein Symlink, eine leere Datei, ein Verzeichnis und eine fehlende Datei brechen ab; KEINE Meldung enthaelt den Schluessel',
             k600.ok === true && k600.schluessel === SCHLUESSEL && k400.ok === true && k400.schluessel === SCHLUESSEL && kFalsch.every((r) => r.ok === false && r.exit === 15 && /Rechte \d+, verlangt sind 600 oder 400/.test(r.grund)) && kUid.exit === 15 && /gehoert uid/.test(kUid.grund)
             && kLink.exit === 15 && kLeer.exit === 15 && /leer/.test(kLeer.grund) && kDir.exit === 15 && kFehlt.exit === 15 && !alleMeldungen.includes(SCHLUESSEL) && !alleMeldungen.includes('abcdefg'));
         // X11 (Nacharbeit 1): eine FIFO als Schluesseldatei haengt das Oeffnen ohne O_NONBLOCK fuer immer — deshalb in einem KIND-Prozess mit hartem Zeitlimit.
