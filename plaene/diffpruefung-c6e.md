@@ -24,3 +24,18 @@ Zweig `c6e-offline`, Stand `74a3881`, 5 Commits ab `bb7e7bc`, 12 Dateien (+598/�
 | E4 | `test_feature_c6d2_idempotenz_schema.js` endet jetzt an der nächsten Überschrift. Eine fünfte Anweisung ohne Überschrift fiele heraus. | trägt (logisch) | Nacharbeit 1: kein weiteres `;` bis zum Abschnittsende |
 | E5 | Der Hourcycle-Wächter erkennt `hour12:false` zusammen mit `hourCycle` und `hourCycle:'h24'` nicht. | trägt (Regex gelesen) | Nacharbeit 1 |
 | E6 | `routes/module.js:1129/1140` (Seil-Foto, Seil-Freigabe) behandeln eine 200-Antwort mit HTML als „Verbindungsfehler“ und kennen den Begriff Zwischenseite nicht. | trägt (gelesen); sie zählen nichts und berühren die Warteschlange nicht | Sammelliste C6E-1 |
+
+## Nacharbeit 2 (Automatik, `c48f6d8..b212be5`, 03.10.2026)
+
+Produktionsdiff selbst gelesen; Lesespuren: Kimi „Umkreis und Zusicherungen“ (Ersatz für flash, SSE-Abbruch) und Kimi „Datenverlust“
+(dritte Spur, Anlass: das Aufräumen löscht unwiderruflich). Ergebnis: `raeumeAuf` löscht unter keinem durchgespielten Ablauf etwas
+nicht Übertragenes (beide Spuren); Textwächter deckt alle Literale.
+
+| Nr. | Befund | Quelle | Nachgemessen | Folge |
+|---|---|---|---|---|
+| N2-1 | Live-Weg `r.ok` + Foto-Rest + Speicher voll: kein Merker „Fotos nicht gesichert“, Seite zu = Fotos still weg (vorher wenigstens eine Meldung) | eigene Lesung P1, Kimi K1, Kimi B1 | trägt (`fotosVerlorenSchreiben` nur in `eintragAbschliessen`) | Nacharbeit 3 |
+| N2-2 | Wettlauf Sync-Schnappschuss gegen `sichereAusstehend`: Merker bleibt falsch stehen | eigene Lesung P2, Kimi K2 | trägt (IndexedDB-Zweig von `eintragAbschliessen` löscht keinen Merker) | Nacharbeit 3 |
+| N2-3 | Sofort-Sync in `sichereAusstehend` nimmt den Kasten „Gesichert“ gleich wieder weg | Kimi K3, Kimi B2 | trägt (`gdSyncQueue` beginnt mit `badgeRender()`) | Nacharbeit 3 |
+| N2-4 | Ablehnungsliste fehlt bei später Weiterleitung | Kimi K4 | trägt (gelesen) | Nacharbeit 3 |
+| N2-5 | Notkopie-Deckel in Rohzeichen, Server begrenzt urlencodiert auf 1 MB → 413-Schleife möglich | Kimi B3 | trägt (`server.js:195`, `sendeSitzung`) | Nacharbeit 3 |
+| — | Doppelter Satz (Badge und Formularkasten) | Bauender | Kosmetik | nicht umgesetzt |
