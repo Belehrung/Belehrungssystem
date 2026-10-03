@@ -325,10 +325,14 @@ if [ "$rc" -ne 0 ]; then
 fi
 prozesse_beenden "der Umgebung" || exit 25
 manifest_pruefen "der Umgebung" || exit 25
+# P-3 (Nacharbeit 1, 03.10.2026): DATEI_LOESCHQUEUE_SPOOL_DIR (mktemp -d), GYMDOCU_TG_BOT_TOKEN und GYMDOCU_TG_CHAT_ID (eine
+# ATTRAPPE aus test/helfer/kind-umgebung.js; alle echten GYMDOCU_TG_* entfernt umgebung.sh) setzt test/umgebung.sh des Zielrepos
+# seit #502/#505 (test/umgebung.sh Zeilen 252-256 und 318-331 am Stand master) — die Entscheidung, sie aufzunehmen, ist getroffen.
+# Die Allowlist KIND_ENV oben (= UMGEBUNG_SOLL der Selbstmessung) wuchs NICHT: die drei Namen entstehen erst NACH der Selbstmessung.
 # Namen der Kind-Umgebung = Literalliste (Allowlist oben + was
 # test/umgebung.sh setzt). PWD/SHLVL/OLDPWD/_ setzt bash selbst; sie werden
 # weder verglichen noch weitergegeben (cwd ist ohnehin die Kopie).
-ERWARTETE_NAMEN='BELEHRUNGEN_UPLOAD_DIR CI DATABASE_URL DEFECT_PHOTO_DIR DOKUMENTE_DIR EINWEISUNG_NACHWEIS_DIR EXPORT_DIR GYMDOCU_BOOT_SMOKE_STARTPFAD HOME LAGEPLAN_UPLOAD_DIR NODE_OPTIONS OFFBOARDING_QUEUE_DIR PATH PDF_ROOT PLAYWRIGHT_BROWSERS_PATH PRUEFBERICHT_DIR PUBLIC_BASE_DOMAIN QR_VERBRAUCH SESSION_SECRET TZ'
+ERWARTETE_NAMEN='BELEHRUNGEN_UPLOAD_DIR CI DATABASE_URL DATEI_LOESCHQUEUE_SPOOL_DIR DEFECT_PHOTO_DIR DOKUMENTE_DIR EINWEISUNG_NACHWEIS_DIR EXPORT_DIR GYMDOCU_BOOT_SMOKE_STARTPFAD GYMDOCU_TG_BOT_TOKEN GYMDOCU_TG_CHAT_ID HOME LAGEPLAN_UPLOAD_DIR NODE_OPTIONS OFFBOARDING_QUEUE_DIR PATH PDF_ROOT PLAYWRIGHT_BROWSERS_PATH PRUEFBERICHT_DIR PUBLIC_BASE_DOMAIN QR_VERBRAUCH SESSION_SECRET TZ'
 TEST_ENV=()
 NAMEN=()
 mapfile -d '' -t PAARE < /dsv1/ergebnis/umgebung.env

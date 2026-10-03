@@ -25,7 +25,11 @@
 // sind. pruefeGeheimnisse() bleibt daneben unveraendert bestehen —
 // tools/zweitmeinung.js benutzt es weiter als reinen Abbruch-Riegel.
 const GEHEIMNIS_MUSTER = [
-    { name: 'OpenAI-Schlüssel', regex: /\bsk-[A-Za-z0-9_-]{20,}/ },
+    // Nacharbeit 1 (X8, Angriffsspur 03.10.2026): der Punkt gehoert zu den erlaubten Zeichen. Schluessel mit einem Punkt
+    // schon in den ersten Zeichen (das Format des Qwen-Schluessels: "sk-" + 4 Zeichen + "." + 7 + "." + 4 + "." + 96)
+    // wurden vorher nicht erkannt — gemessen 75,8 % Erkennung an erfundenen Schluesseln dieser Form. Die neue Zeichen-
+    // menge ist eine OBERMENGE der alten: was vorher traf, trifft weiter.
+    { name: 'OpenAI-Schlüssel', regex: /\bsk-[A-Za-z0-9_.-]{20,}/ },
     { name: 'GitHub-Token', regex: /\bgh[pousr]_[A-Za-z0-9]{20,}/ },
     { name: 'Telegram-Bot-Token', regex: /\b\d{8,12}:[A-Za-z0-9_-]{30,}/ },
     // blockEnde: das Geheimnis steht NICHT in der Trefferzeile, sondern in
@@ -169,6 +173,8 @@ function selbsttestRiegel() {
         // im Quelltext eine Zeichenkette, die ein Geheimnis-Scanner (auch der von
         // GitHub beim Push) fuer einen echten Schluessel halten kann.
         ['OpenAI-Schlüssel', 'harmlos ' + 'sk' + '-proj-' + 'A'.repeat(40) + ' harmlos'],
+        // X8: die Qwen-Form (erfunden, gleiche Gestalt: Punkte schon nach 4, 7 und 4 Zeichen, dann 96 Zeichen)
+        ['OpenAI-Schlüssel', 'harmlos ' + 'sk' + '-Ab_1.' + 'Cd3Ef4G.' + 'hi5j.' + 'K6'.repeat(48) + ' harmlos'],
         ['GitHub-Token', 'gh' + 'p_' + 'B'.repeat(36)],
         ['Telegram-Bot-Token', '123456789:' + 'C'.repeat(35)],
         ['privater Schlüssel (PEM)', '-----BEGIN PRIVATE KEY-----'],
@@ -182,6 +188,9 @@ function selbsttestRiegel() {
         '+    // Vorbild: sk-Nummern der DGUV, etwa sk-204-010',
         '+    const url = "postgresql://localhost:5432/gymdocu_test";',
         '+    process.env.GYMDOCU_TG_BOT_TOKEN = "";',
+        // X8: Zeichenketten mit Punkten, die nach der erweiterten Zeichenmenge NICHT anschlagen duerfen (kein Wortanfang
+        // vor "sk-", bzw. weniger als 20 Zeichen danach)
+        '+    // Dateien: task-abcdefghijklmnopqrstuvwxyz.vorlage.v2 und sk-bericht.v2.pdf',
     ].join('\n');
 
     let fehler = 0;
@@ -316,6 +325,13 @@ function selbsttestRiegel() {
             && keinFragment(r.text) && ausgabe.length === 25 && ausgabe[15] === '// Zeile 16');
     }
     {
+        // X8: die Qwen-Form wird nicht nur erkannt, sondern auch ENTFERNT (der lange letzte Abschnitt kommt NULL mal vor)
+        const lang = 'K6'.repeat(48);
+        const r = entferneGeheimnisse('const a = 1;\nconst k = "' + 'sk' + '-Ab_1.' + 'Cd3Ef4G.' + 'hi5j.' + lang + '";\nconst b = 2;\nconst c = 3;\nconst d = 4;');
+        pruefen('QWEN-SCHLUESSEL ENTFERNT: eine Zeile mit "sk-", Punkten und 96 Zeichen Rest wird durch den Marker ersetzt, der Rest des Schluessels kommt NULL mal vor',
+            r.zuViel === false && r.entfernt.length === 1 && r.entfernt[0].zeile === 2 && !r.text.includes(lang) && !r.text.includes('Cd3Ef4G'));
+    }
+    {
         // Positivkontrolle: ohne sie waere "nichts durchgelassen" auch dann
         // erfuellt, wenn die Funktion einfach alles schwaerzt.
         const r = entferneGeheimnisse(harmlos);
@@ -325,7 +341,7 @@ function selbsttestRiegel() {
 
     // Sollzahl von Hand eingetragen: faellt ein Muster ersatzlos aus der Liste,
     // liefe der Selbsttest sonst mit weniger Faellen weiter durch und meldete gruen.
-    const ERWARTETE_FAELLE = 17;
+    const ERWARTETE_FAELLE = 19;
     const gelaufen = faelle.length + 1 + zusatzfaelle;
     if (gelaufen !== ERWARTETE_FAELLE) {
         console.log(`  ✗ FEHLT: ${gelaufen} Faelle gelaufen, erwartet ${ERWARTETE_FAELLE} — Muster entfernt?`);
