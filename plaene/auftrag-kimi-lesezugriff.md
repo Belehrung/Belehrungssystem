@@ -60,4 +60,48 @@ Kimi liefert keine `usage`, die Kosten sind deshalb unbekannt.
 - Ein echter Probelauf: eine kleine Planprüfung (z. B. dieses Auftragspapier) mit `--modell=kimi-k3 --wurzel=<dieses Repo>`.
   Belegt werden die Werkzeugaufrufe, die Kosten und die ASTRA-Zeile.
 
+## Planprüfung (03.10.2026): Pflichtergänzungen
+
+Spur A (flash, Mechanik) und Spur B (Kimi, Anbieter und Sicherheit); flash hat beide auf eine Befundtabelle verdichtet.
+Nachgemessen sind A1 (`gegenleser-repo.js:594` sendet `truncation:'disabled'` immer; Moonshot antwortet darauf mit HTTP 400,
+Eignungspapier :175) und A2 (`EFFORT_OPENAI` ist `xhigh`, einen Schalter `--effort` gibt es nicht). Die übrigen Punkte sind als
+Planlücken übernommen.
+
+- **A1 (blockierend):** Für Kimi geht KEIN `truncation` mit. Felder werden je Anbieter gesetzt; dazu eine Attrappe, die den
+  gesendeten Körper je Modell prüft (Vorbild GP4).
+- **A2/B2:** Die Vorgabe für Kimi ist `effort: high`. Überschreiben geht über `GEGENLESER_EFFORT`; es gibt keinen neuen
+  Schalter `--effort`, und der Auftrag sagt das jetzt so.
+  - Die Wirkung im Werkzeugweg ist zu messen: zwei echte Aufrufe mit `tools`, einmal `low`, einmal `high`, die Denk-Token
+    werden verglichen.
+  - Die Attrappe prüft `reasoning.effort === 'high'` im gesendeten Körper. Die Mutante mit falsch verschachteltem Feld wird
+    ROT.
+- **A3/A4:**
+  - Nur `kimi-k3` ist am Werkzeugweg gemessen und deshalb das einzige erlaubte Kimi-Modell. Jedes andere `kimi-*` führt zum
+    Abbruch mit eigener Meldung, nie zu einem stillen Wechsel auf einen anderen Endpunkt.
+  - Endpunkt, Schlüsselname und Effort hängen an EINER Anbieterwahl.
+  - Test, dass es keinen stillen Rückfall gibt: Mit nur `OPENAI_API_KEY` liefert `kimi-k3` `null`, mit nur dem Kimi-Schlüssel
+    liefert `gpt-6.1-sol` `null`.
+- **A5/B7, A6/B3/B6, Kosten:**
+  - Fehlt `usage`, steht in der ASTRA-Zeile „Kosten unbekannt“ bzw. die Kontostand-Differenz mit Herkunft, nie `0,00 $` und
+    nie `0` in den Token-Spalten.
+  - Der Kontostand wird vor dem ersten Aufruf und im `finally` gelesen. Scheitert eine Abfrage, steht „Kosten unbekannt
+    (Grund)“.
+  - Eine negative oder steigende Differenz gilt als „unscharf (Gutschrift oder Parallelbetrieb)“ und wird nicht als Zahl
+    eingetragen.
+  - Tests: Attrappe mit zwei Kontoständen (gleich, fallend, steigend) und einer gescheiterten Abfrage.
+- **A7:** Die Prüfung der Schlüsseldatei kommt aus dem gemeinsamen Modul. Liegt sie heute in `bau-spur.js`, zieht der Bau
+  sie dorthin um, ohne zweite Kopie. Der Selbsttest ohne root nimmt die erwartete UID als Parameter.
+- **A8:** Ob `/v1/responses` eine `usage` liefert, ist Messschritt 2; die Antwort wird wörtlich festgehalten.
+- **A9:** Der Probelauf braucht `--brief`; Beispielaufruf mit `--brief=<datei>`.
+- **B1:** Der echte Probelauf ist KEIN Teil eines Selbsttests oder der Suite (Deploy-Gate). Der Selbsttest benutzt nur
+  Attrappen, kein Netz. Ein `grep` nach `api.moonshot.ai` und `KIMI_KEY` im Selbsttest belegt, dass es dort keinen echten
+  Aufruf gibt.
+- **B4:** `sseAnfrage` kennt nur die Abschluss-Ereignisse von `/v1/responses`. Trägt `/v1/responses` nicht, braucht der
+  Fallback auf chat/completions einen eigenen Leser (`chat.completion.chunk`, `data: [DONE]`, Werkzeugargumente in Stücken je
+  `index`), mit eigener Attrappe.
+- **B5:** Die Datengrenze bleibt bei „Dateien aus `git ls-files`“. Der Bericht listet, welche Testdaten-Dateien (seed,
+  fixture, csv, sql) darunter fallen, und ob echte Personendaten darin stehen. Fixturen mit erfundenen Daten sind erlaubt.
+- **A10/B8:** Die Grenze des Präfix-Caches und die Frage einer Signatur oder Nonce kommen als benannte Grenze in den Kopf
+  (Nonce messen, wenn billig).
+
 -- Ende des Auftrags --
