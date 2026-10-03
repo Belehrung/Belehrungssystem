@@ -116,6 +116,73 @@ Je Regel eine Gegenprobe: die Regel im Werkzeug entfernen → der Selbsttest wir
 - Die bestehenden Tests dieses Repos bleiben grün: `test/*.sh`, Selbsttest Gegenleser, Selbsttest ausfuehr-spur.
 - Commit und Push auf den Zweig, kein PR.
 
+## Planprüfung (03.10.2026): Pflichtergänzungen
+
+Spur B (flash, Sicherheitsgrenze) lieferte 7 Befunde. B1, B2, B3, B6 und B7 sind am Bestand nachgemessen; B4 und B5 sind
+als Planlücken übernommen. Diese Ergänzungen gehen den Abschnitten oben VOR.
+
+- **B1 `registriere_test` (blockierend).** `test/run.sh` ist eine bash-Datei. Eine Zeile mit `$(…)` oder Backticks im
+  `TESTS=(…)`-Block wird ausgeführt, sobald die Datei eingelesen wird, auch auf dem Live-Server als Deploy-Gate.
+  - Die Sandbox prüft Testnamen heute nur auf `'` und Zeilenumbruch (`ausfuehr-spur.js:497`). `path.join(kopie, testdatei)`
+    (`:784`) lässt `..` durch.
+  - Deshalb nimmt `registriere_test(datei)` nur Namen nach `^test_[A-Za-z0-9_-]+\.js$`, ohne Pfadsegment. Im Bestand haben
+    alle Einträge diese Form, ausser `ops/boot-smoke.js`.
+  - Die Datei muss in DIESEM Lauf per `neue_datei` entstanden sein. Sie wird genau einmal eingefügt, vor der schliessenden
+    Klammer des Blocks.
+  - Prüfung danach: Die alte Datei ohne die neue Zeile ist bytegleich mit der Datei vorher (sha256). Ein zweites
+    Registrieren derselben Datei wird abgelehnt.
+  - Dieselbe Namensprüfung gilt in der Sandbox für `teste`/`mutiere_und_teste`, VOR `sha256Datei` und vor dem Kindlauf. Sie
+    gilt auch für die bestehende Prüfspur.
+  - Selbsttest abgelehnt: `$(…)`, Backtick, `..`, führendes `/`, Zeilenumbruch, Unterverzeichnis, nicht in diesem Lauf
+    angelegte Datei, Doppelregistrierung.
+  - Selbsttest angenommen: der reguläre Fall, und `test/run.sh` bleibt bis auf diese eine Zeile bytegleich.
+  - Der `fertig`-Bericht führt neue Testdateien und Registrierungen als eigene Kategorie.
+- **B2 Bindung an das Zielrepo (blockierend).** „Unter `/workspace`, nicht `master`“ trifft auch einen Arbeitsbaum DIESES
+  Repos. Dort wären `tools/` (Sandbox, Riegel, Gegenleser) und `CLAUDE.md` beschreibbar.
+  - Deshalb prüft das Werkzeug positiv: `git rev-parse --git-common-dir` des Baums muss auf den GymDocu-Hauptklon zeigen.
+    Vorgabe `/home/user/gymdocu/.git`, überschreibbar mit `BAU_ZIELREPO_GIT`; die Prüfung erfolgt über `realpath`.
+  - Zusätzlich: Die URL von `origin` endet auf `Belehrung/Gymdocu(.git)`, ohne Rücksicht auf Gross- und Kleinschreibung.
+  - Der Baum darf nicht unter dem Verzeichnis des laufenden Werkzeugs liegen und das Werkzeug nicht unter dem Baum.
+  - Jede Verletzung führt zum Abbruch mit eigenem Exit-Code VOR dem ersten Modellaufruf, mit Selbsttestfall in beide
+    Richtungen.
+- **B3 Kopierquelle „Arbeitsstand“.** Heute verlangt die Sandbox einen sauberen Baum (`ausfuehr-spur.js:485-486`) und
+  klont mit `git clone --depth 1` (`:779`). Dabei landet nur HEAD in der Kopie, nicht der Arbeitsstand.
+  - Der neue Modus ist ein eigener, benannter Modus der Bauspur und keine stille Lockerung. Die Prüfspur behält „sauberer
+    Baum + Klon“ samt ihrem Selbsttestfall.
+  - Pflichtfälle:
+    - (a) Eine nur im Arbeitsstand vorhandene Änderung wirkt in der Kopie: Ein Test, der an ihr scheitert, scheitert.
+    - (b) Eine ungetrackte Datei, die NICHT in der Schreibliste des Laufs steht, kommt NICHT in die Kopie.
+    - (c) Eine per `neue_datei` angelegte Testdatei ist in der Kopie lauffähig.
+    - (d) Die Prüfspur verweigert einen unsauberen Baum weiterhin.
+- **B4 Riegel auf jeden Modelltext.** Der Bericht aus `fertig(bericht)`, Fehlertexte und jede Modellantwort, die in das
+  Protokoll oder in `BAU-LAEUFE.md` geht, laufen durch `entferneGeheimnisse`. Dazu kommt die Steuerzeichen-Neutralisierung
+  aus `ausfuehr-spur.js:116-118`. Die benannten blinden Flecken des Riegels (`ausfuehr-spur.js:20-22`) stehen wörtlich im
+  Kopf von `bau-spur.js`.
+- **B5 Aufbewahrung beim Anbieter.** Gemessen wird, ob der DashScope-Endpunkt ein Aufbewahrungsfeld kennt (`store`) und ob
+  es wirkt: Lässt sich eine Antwort hinterher abrufen?
+  - Ist eines vorhanden und wirksam, wird es gesetzt.
+  - Ist nichts messbar, steht das als benannte Grenze im Kopf der Datei und in `BAU-LAEUFE.md`.
+- **B6 Atomar schreiben.**
+  - `neue_datei` öffnet mit `O_CREAT | O_EXCL | O_NOFOLLOW`.
+  - `ersetze` öffnet mit `O_WRONLY | O_TRUNC | O_NOFOLLOW`, nach `lstat` je Ebene (Vorbild `ausfuehr-spur.js:627`).
+  - Vor jedem Schreiben wird `nlink === 1` verlangt, sonst wird abgelehnt.
+- **B7 Sperrliste.**
+  - Ohne `--erlaubt` gesperrt ist zusätzlich `ecosystem.config.js` (pm2-Konfiguration im Wurzelverzeichnis des Zielrepos,
+    vorhanden), ebenso jedes `Dockerfile*` und `Procfile*`.
+  - Immer gesperrt ist zusätzlich der exakte Name `.git` als Datei (im verknüpften Arbeitsbaum ist `.git` eine Datei).
+  - Gesperrte Pfade werden nach `path.normalize` auf Segmentgrenzen geprüft.
+  - Selbsttestfall: Ein immer gesperrter Pfad bleibt auch mit `--erlaubt=*` und `--erlaubt=.github/` gesperrt.
+- **Weitere Punkte aus derselben Spur:**
+  - Sollwerte in den Selbsttests (Runden, Kosten, PASS-Zahlen) stehen als von Hand eingetragene Literale da, nie aus
+    `PREISTABELLE` zurückgerechnet (Vorbild `gegenleser-repo.js:3263`). Der Kosten-Abbruch wird mit festen Token- und
+    Preiswerten getestet.
+  - Das Datum in `BAU-LAEUFE.md` kommt über `laufprotokollDatum()` (Europe/Berlin), nicht über `toISOString()`.
+  - Netz- und HTTP-Fehler mitten im Lauf und kaputte Werkzeugargumente bekommen einen festen Statuskatalog (Vorbild
+    `ausfuehr-spur.js:120-136`):
+    - Ein Argumentfehler geht als Ablehnung an das Modell zurück und kommt ins Protokoll.
+    - Ein Abbruch endet mit Teilbericht und eigenem Exit-Code.
+    - Jedes Werkzeugergebnis hat einen Längendeckel.
+
 ## Bericht
 
 - je Abschnitt: Diff-Kern, Messungen am Endpunkt (wörtlich), Gegenproben ROT/GRÜN wörtlich;
