@@ -896,3 +896,12 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Neue Regel in CLAUDE.md §1: Testcode aus der Bauspur wird vor dem ersten Lauf ausserhalb der Sandbox gelesen.
   - Sammelliste `plaene/offene-befunde-bauspur.md`.
   - C6-E läuft (Executer, eigene Suite).
+- 03.10.2026 04:45 UTC:
+  - C6-E gebaut, Nacharbeit 1 (E1–E5) abgeschlossen: `c6e-offline` `c48f6d8`, Suite EXIT 0, 519 = 519, Lint 0.
+  - **Betreiber-Entscheidung** (ENTSCHIEDEN.md): Trainer-Texte ohne technische Handlung, die Anwendung löst es selbst.
+  - Auftrag `plaene/auftrag-c6e-automatik.md`:
+    - Planprüfung flash und Kimi: beide fanden unabhängig, dass ein automatisches Neuladen die Fotos vernichtet.
+    - Fassung 2 regelt das (Neuladen nur, wenn gemessen hilfreich und nichts Ungesichertes auf der Seite).
+    - Als Nacharbeit 2 im Bau beim C6-E-Agenten.
+  - C6-E wird erst nach der Automatik gemergt.
+  - Bauspur: Nacharbeit 1 (18 Punkte) läuft.
