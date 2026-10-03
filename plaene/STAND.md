@@ -905,3 +905,6 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
     - Als Nacharbeit 2 im Bau beim C6-E-Agenten.
   - C6-E wird erst nach der Automatik gemergt.
   - Bauspur: Nacharbeit 1 (18 Punkte) läuft.
+- 03.10.2026 05:10 UTC:
+  - Vorgabe für das A/B Qwen gegen Executer: In `BAU-LAEUFE.md` stehen je Beitrag die Claude-Token beider Wege (Executer laut Agentenmeldung `subagent_tokens`; beim Qwen-Weg mein Mehraufwand für die Prüfung). Dazu die Qwen-Kosten.
+  - Auftrag Kimi-Lesezugriff ist plangeprüft (`plaene/auftrag-kimi-lesezugriff.md`) und wartet auf das Ende der Bauspur-Nacharbeit, gleicher Zweig.
