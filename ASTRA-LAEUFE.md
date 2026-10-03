@@ -469,6 +469,7 @@ sondern falsch.
 | 02.10.2026 | Diffprüfung qrj-flake (deepseek-flash) | Diff 170 Zeilen, Suchen 50, Lesungen 27, Token rein 2747369, Token raus 87644, Runden 24 | — | — | — | 0,93 $ |
 | 03.10.2026 | Planprüfung Bauspur Qwen (A, flash) (deepseek-flash) | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 125 Zeilen, Suchen 20, Lesungen 27, Token rein 1323412, Token raus 33530, Runden 22 | — | — | — | mind. 0,44 $ |
 | 03.10.2026 | Planprüfung Bauspur Qwen (B, flash) (deepseek-flash) | Diff 125 Zeilen, Suchen 15, Lesungen 16, Token rein 536306, Token raus 69118, Runden 9 | 7 | **7** (B1, B2, B3, B6, B7 am Bestand nachgemessen; B4, B5 als Planlücke übernommen). Einzelheiten `plaene/auftrag-bau-spur-qwen.md`, Abschnitt „Planprüfung“ | 2 (B1 `registriere_test` als Schreibweg ins Deploy-Gate, B2 `--baum` nicht ans Zielrepo gebunden) | 0,24 $ |
+| 03.10.2026 | Planpruefung Bauspur Qwen, Buendel A Mechanik (Wiederholung nach SSE-Abbruch) (deepseek-flash) | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 125 Zeilen, Suchen 12, Lesungen 20, Token rein 1095394, Token raus 38966, Runden 18 | — | — | — | mind. 0,38 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht

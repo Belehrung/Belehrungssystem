@@ -367,3 +367,8 @@ Der Betreiber hat entschieden: Aus Kostengründen übernehmen andere KI-Modelle 
 `/tmp/claude-0/.qwen-key`) baut, DeepSeek prüft, der Haupt-Agent ist Entwickler und Chef; die Aufteilung im Einzelnen liegt
 beim Haupt-Agenten. Die Freigabe für eine Bauspur mit Werkzeugen ist ausdrücklich erteilt. Die Umsetzung steht in CLAUDE.md
 Abschnitt 1.
+
+Nachtrag 03.10.2026 (Betreiber): „sollte sich wegen als schlecht herausstellen machen wir die Entscheidung rückgängig oder
+nutzen eines der uns bereits bekannten Ki Modelle zum bauen.“ Gemessen wird am A/B und an `BAU-LAEUFE.md` (CLAUDE.md
+Abschnitt 1). Am selben Tag: CLAUDE.md weiter verdichten („Wenn es noch sparsamer geht dann gerne“); Abschnitt 18 steht
+seitdem wörtlich in `plaene/pruefmodelle-schnittstellen.md`.
