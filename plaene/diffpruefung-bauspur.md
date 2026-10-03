@@ -44,3 +44,13 @@ Protokoll, in `BAU-LAEUFE.md` oder beim Modell, kein Startriegel umgangen.
 | P-3 | `ERWARTETE_NAMEN` fehlen `DATEI_LOESCHQUEUE_SPOOL_DIR`, `GYMDOCU_TG_BOT_TOKEN` und `GYMDOCU_TG_CHAT_ID`. Die Werte sind eine Attrappe bzw. `mktemp`; alle echten `GYMDOCU_TG_*` werden entfernt. | eigener Befund, flash B-6 | trägt (`test/umgebung.sh:252-256, 318-331`) | Entscheidung: aufnehmen, Nacharbeit 1 |
 
 Eine zweite Prüfrunde folgt nach der Nacharbeit, weil sie Verhalten ändert (Kanarie, Suche, Sperren).
+
+## Runde 2 (Nacharbeit 1, `a5fe850..34f56e7`, 03.10.2026)
+
+- Produktionsdiff selbst gelesen (`spur-gemeinsam.js`, `geheimnis-riegel.js`, `ausfuehr-aufbau.sh`, `gegenleser-repo.js`, `bau-spur.js`,
+  `ausfuehr-spur.js`, `BAU-LAEUFE.md`): X1–X11, F1–F5, P-1, P-3 umgesetzt, nichts Blockierendes. Eigene Befunde: BS-6, BS-7.
+- Lesespur Kimi („Zusicherungen und Schliessung“, voller Diff, effort high; Antwort am Längendeckel abgeschnitten, die fünf Befunde
+  vollständig, die Rechenschaftstabelle nicht): N1 trägt nicht (das Fixtur-Repo samt Zweig und Worktree liegt in einem frischen
+  `mkdtemp`-Verzeichnis, das im `finally` entfernt wird, `bau-spur-selbsttest.js:1300/1404`); N2–N5 als BS-8 bis BS-11 auf die Sammelliste.
+- Qwens Testdatei aus Probelauf 3 gelesen (Regel §1): liest eine Datei, zwei `includes`, nichts ausserhalb; nicht committet.
+- Ergebnis: mergefähig in den Arbeitszweig; CI entscheidet.
