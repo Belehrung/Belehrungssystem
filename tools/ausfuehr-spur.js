@@ -1205,6 +1205,9 @@ async function kanarieSicherstellen() {
     // X1: die Kanarie laeuft immer auf einem Klon von HEAD (im Modus sauber-klon ist das ohnehin jede Kopie). Eine rote Kanarie
     // darf nie am Stand des Modells haengen (eine neue, nicht registrierte Testdatei hiess vorher "Isolationsabbruch"); Isolation
     // belegt die Selbstmessung im Kind, die Kanarie belegt, dass ein bekannt gruener Test auf HEAD in dieser Sandbox gruen laeuft.
+    // GEWAEHLT wurde der Klon von HEAD statt "erster Kind-Lauf vor jeder Aenderung", weil er (1) von der Reihenfolge unabhaengig ist (die
+    // Kanarie laeuft traege vor dem ersten Test, also NACH den Aenderungen des Modells), (2) auch eine vom Modell selbst veraenderte
+    // oder geloeschte Kanarie-Datei im Baum nicht sieht und (3) keinen Kind-Lauf auf Vorrat kostet, wenn das Modell nie teste ruft.
     const r = await kindLaufenSicher({ testdatei: k.datei, zweck: 'kanarie', kopieVonHead: true });
     k.ergebnis = r;
     k.gruen = r.gueltigerGrundlauf;
