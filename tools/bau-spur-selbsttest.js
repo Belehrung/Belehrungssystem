@@ -22,16 +22,20 @@ const { EventEmitter } = require('node:events');
 const { spawnSync } = require('node:child_process');
 const bau = require('./bau-spur');
 const sandboxModul = require('./ausfuehr-spur');
-const { leseWerkzeugeBauen, kostenSchaetzen, laufprotokollDatum } = require('./spur-gemeinsam');
+const { leseWerkzeugeBauen, kostenSchaetzen, laufprotokollDatum, istHartGesperrt } = require('./spur-gemeinsam');
 const { pruefeGeheimnisse } = require('./geheimnis-riegel');
 
-const ERWARTETE_FAELLE_OHNE_ROOT = 95;   // von Hand gezaehlt, am 03.10.2026 durch den Lauf bestaetigt
-const ERWARTETE_FAELLE_ROOT = 8;        // A4 x2, CLI-Vorbedingungen x2, ganzer Lauf x4
+const ERWARTETE_FAELLE_OHNE_ROOT = 118;  // von Hand gezaehlt: 95 + 23 (Nacharbeit 1: X3, X10 x2, X5 x2, F3 x4, F1, X11 x3, X9 Start, X8, F5 Fangnetz, X2 x3, F2 x2, X9 Vorrang, X4)
+const ERWARTETE_FAELLE_ROOT = 10;       // A4 x2, CLI-Vorbedingungen x2, F5 (401), ganzer Lauf x4, F4 (ganzer Lauf 2)
 
 const sha = (text) => crypto.createHash('sha256').update(text).digest('hex');
 // Token-Attrappen werden zur Laufzeit zusammengesetzt (kein Literal im Quelltext, das Scanner anschlaegt).
 const TOKEN = 'gh' + 'p_' + 'A'.repeat(36);
-const SCHLUESSEL = 'sk-' + 'fx' + '-1.' + 'abcdefg' + '.' + 'hijk' + '.' + 'lmnopqr' + '_' + 'S'.repeat(30) + '_' + 'T'.repeat(12);   // wie das Qwen-Format: Punkte brechen das Riegel-Muster
+// Fixtur-Schluessel in einer Form, die der Geheimnis-Riegel NICHT erkennt ("dsk-": vor "sk-" steht ein Wortzeichen, das \b-Muster greift nicht) — so
+// bleibt der EXAKTE Abzug des Schluessels (die zweite Schicht) als einzige Schicht pruefbar. Seit Nacharbeit 1 (X8) erkennt der Riegel die echte
+// Qwen-Form ("sk-" + Punkte): dafuer SCHLUESSEL_QWEN, der nur durch den Riegel (ohne exakten Abzug) entfernt werden darf.
+const SCHLUESSEL = 'dsk' + '-fx-1.' + 'abcdefg' + '.' + 'hijk' + '.' + 'lmnopqr' + '_' + 'S'.repeat(30) + '_' + 'T'.repeat(12);
+const SCHLUESSEL_QWEN = 'sk' + '-Ab_1.' + 'Cd3Ef4G.' + 'hi5j.' + 'K6'.repeat(48);
 
 // ===================== Fixturen =====================
 function umgebungFuerGit(basis) {
@@ -128,7 +132,7 @@ function eigentuemerVon(baum) { const st = fs.statSync(baum); return { uid: st.u
 // Schreibwerkzeuge auf einem frischen Baum, mit einem Sammler fuer die Protokolleintraege.
 function werkzeugeAuf(ctx, baum, optionen = {}) {
     const protokoll = [];
-    const lese = leseWerkzeugeBauen();
+    const lese = leseWerkzeugeBauen(optionen.lese || {});
     lese.wurzelEinrichten(baum);
     const w = bau.schreibWerkzeugeBauen({
         wurzelReal: baum, versioniert: bau.gitLs(baum), erlaubt: optionen.erlaubt || [], eigentuemer: optionen.eigentuemer || eigentuemerVon(baum),
@@ -175,7 +179,7 @@ function sandboxAttrappe(verhalten = {}) {
 async function laufMitDrehbuch(ctx, drehbuch, optionen = {}) {
     const baum = optionen.baum || frischerBaum(ctx);
     ctx.zaehler++;
-    const protokollPfad = path.join(ctx.basis, `protokoll-${ctx.zaehler}.jsonl`);
+    const protokollPfad = optionen.protokollPfad || path.join(ctx.basis, `protokoll-${ctx.zaehler}.jsonl`);
     const laufprotokollPfad = optionen.laufprotokollPfad || ctx.bauZeilen;
     const sandbox = optionen.sandbox || sandboxAttrappe(optionen.sandboxVerhalten);
     const log = []; const err = [];
@@ -199,7 +203,7 @@ async function laufMitDrehbuch(ctx, drehbuch, optionen = {}) {
     };
     const ergebnis = await bau.bauspurLaufen(opt, abh);
     const protokollZeilen = () => fs.readFileSync(protokollPfad, 'utf8').split('\n').filter(Boolean).map((z) => JSON.parse(z));
-    const letzteZeile = () => { const z = fs.readFileSync(laufprotokollPfad, 'utf8').split('\n').filter((l) => l.startsWith('| ') && !l.startsWith('| Datum') && !l.startsWith('|---')); return z[z.length - 1] || null; };
+    const letzteZeile = () => { let inhaltLaeufe; try { inhaltLaeufe = fs.readFileSync(laufprotokollPfad, 'utf8'); } catch (e) { return null; } const z = inhaltLaeufe.split('\n').filter((l) => l.startsWith('| ') && !l.startsWith('| Datum') && !l.startsWith('|---')); return z[z.length - 1] || null; };
     const zeileNachLauf = letzteZeile();   // sofort festgehalten: spaetere Laeufe haengen weitere Zeilen an dieselbe Wegwerfdatei
     return { ergebnis, log: log.join('\n'), err: err.join('\n'), verlaeufe, aufrufe, sandbox, baum, protokollZeilen, protokollPfad, bauZeile: () => zeileNachLauf, anfragenAnzahl: i };
 }
@@ -216,14 +220,14 @@ async function mitFesterZeit(iso, fn) {
     try { return await fn(); } finally { global.Date = Echt; }
 }
 
-function httpsAttrappe(sseText, aufgezeichnet) {
+function httpsAttrappe(sseText, aufgezeichnet, statusCode = 200) {
     return function request(url, optionen, cb) {
         const req = new EventEmitter();
         req.destroy = () => {};
         req.end = (koerper) => {
             aufgezeichnet.push({ url: String(url), optionen, koerper: String(koerper) });
             const res = new EventEmitter();
-            res.statusCode = 200;
+            res.statusCode = statusCode;
             setImmediate(() => { cb(res); res.emit('data', Buffer.from(sseText)); res.emit('end'); });
         };
         return req;
@@ -234,17 +238,17 @@ function httpsAttrappe(sseText, aufgezeichnet) {
 const EXIT_SOLL = {
     FERTIG: 0, SONSTIGER_FEHLER: 1, AUFRUF: 2, BAUM_UNGEEIGNET: 10, ZIELREPO_FALSCH: 11, BAUM_NICHT_SAUBER: 12, PROTOKOLL_IM_BAUM: 13, PREIS_UNBEKANNT: 14,
     SCHLUESSEL: 15, AUFTRAG_GEHEIMNIS: 16, SANDBOX_NICHT_EINRICHTBAR: 17, BUDGET_ERSCHOEPFT: 20, ABBRUCH_NETZ: 21, ABBRUCH_ANTWORT: 22, KEIN_FERTIG: 23,
-    SCHREIBLISTE_ABWEICHUNG: 24, ISOLATION_ABGEBROCHEN: 25, WERKZEUG_BEFUND: 26, AUFRAEUMEN_UNVOLLSTAENDIG: 27,
+    SCHREIBLISTE_ABWEICHUNG: 24, ISOLATION_ABGEBROCHEN: 25, WERKZEUG_BEFUND: 26, AUFRAEUMEN_UNVOLLSTAENDIG: 27, LAUFPROTOKOLL_FEHLER: 28,
 };
 
 async function faelleOhneRoot(pruefen, ctx) {
     // ----- Kataloge und Konstanten (Literale) -----
     pruefen('WERKZEUGLISTE abschliessend: lies, suche, ersetze, neue_datei, registriere_test, teste, mutiere_und_teste, fertig — keine Shell, kein Git, kein Netz, kein Loeschen, kein Umbenennen',
         bau.werkzeugDefinitionen().map((w) => w.name).join(',') === 'lies,suche,ersetze,neue_datei,registriere_test,teste,mutiere_und_teste,fertig');
-    pruefen('EXIT-CODES: genau die Tabelle des Kopfes (19 Codes, jeder Wert einmalig)',
-        JSON.stringify(bau.EXIT) === JSON.stringify(EXIT_SOLL) && new Set(Object.values(bau.EXIT)).size === 19);
-    const katalogSoll = { 'ok': null, 'abgelehnt': null, 'fertig': 0, 'budget-erschoepft': 20, 'abbruch-netz': 21, 'abbruch-antwort': 22, 'kein-fertig': 23, 'schreibliste-abweichung': 24, 'isolation-abgebrochen': 25, 'werkzeug-befund': 26 };
-    pruefen('STATUS-KATALOG: zehn Status, jeder mit Text und dem Exit-Code des Kopfes (Werkzeug-Status ok/abgelehnt ohne Exit)',
+    pruefen('EXIT-CODES: genau die Tabelle des Kopfes (20 Codes, jeder Wert einmalig; neu: 28 = Zeile in BAU-LAEUFE.md nicht eingetragen)',
+        JSON.stringify(bau.EXIT) === JSON.stringify(EXIT_SOLL) && new Set(Object.values(bau.EXIT)).size === 20);
+    const katalogSoll = { 'ok': null, 'abgelehnt': null, 'fertig': 0, 'budget-erschoepft': 20, 'abbruch-netz': 21, 'abbruch-antwort': 22, 'kein-fertig': 23, 'schreibliste-abweichung': 24, 'isolation-abgebrochen': 25, 'werkzeug-befund': 26, 'laufprotokoll-fehler': 28 };
+    pruefen('STATUS-KATALOG: elf Status, jeder mit Text und dem Exit-Code des Kopfes (Werkzeug-Status ok/abgelehnt ohne Exit)',
         JSON.stringify(Object.keys(bau.STATUS_KATALOG)) === JSON.stringify(Object.keys(katalogSoll))
         && Object.entries(katalogSoll).every(([k, e]) => bau.STATUS_KATALOG[k].exit === e && typeof bau.STATUS_KATALOG[k].text === 'string' && bau.STATUS_KATALOG[k].text.length > 20));
     pruefen('MODELLE: feste Liste qwen3.8-max, qwen3.7-plus, qwen3-coder-plus, qwen3.5-plus; Endpunkt dashscope-intl auf /responses',
@@ -317,6 +321,49 @@ async function faelleOhneRoot(pruefen, ctx) {
     pruefen(`PFADREGELN ABLEHNUNGEN: ${raus.length} unbrauchbare Pfade (leer, 301 Zeichen, absolut, "..", Backslash, Zeilenumbruch, ESC, NUL, Verzeichnis, ".", Nicht-Texte) sind abgelehnt`,
         raus.every((p) => bau.pfadRegeln(p, ['*']).ok === false) && raus.length === 16 && bau.pfadRegeln('x'.repeat(300), []).ok === true);
 
+    // ----- Nacharbeit 1: X3 (weiche Sperre zusaetzlich), X10 (Lesesperre ohne Gross-/Kleinschreibung), X5 (Namen neuer Dateien) -----
+    const x3Gesperrt = ['CLAUDE.md', 'sub/claude.md', 'SUB/Claude.MD', 'docs/CLAUDE.md', '.semgrepignore', 'lib/.SemgrepIgnore', '.gitignore', 'docs/.gitignore', 'golive-studio.sh', 'GoLive-Studio.sh', 'sub/setup-staging.sh', 'setup-staging.sh', 'playwright.config.js', 'e2e/x.js', 'E2E/sub/y.js'];
+    const x3Frei = ['claude-notizen.md', 'docs/claude.mdx', 'docs/claude.md.bak', 'lib/e2e.js', 'e2e-hilfe.js', 'playwright.config.json', 'golive-studio.shx', 'setup-staging.sh.bak', 'gitignore.md', 'a.semgrepignore', 'lib/claudemd/x.js'];
+    const x3Falsch = [];
+    for (const pf of x3Gesperrt) { const ohne = bau.pfadRegeln(pf, []); const mit = bau.pfadRegeln(pf, ['*']); if (ohne.ok || !/ohne ausdrueckliches --erlaubt gesperrt/.test(ohne.grund) || !mit.ok || !mit.freigabe) x3Falsch.push(pf); }
+    for (const pf of x3Frei) { const r = bau.pfadRegeln(pf, []); if (!r.ok || r.freigabe !== null) x3Falsch.push(`frei: ${pf}`); }
+    pruefen(`X3 WEICHE SPERRE NEU: ${x3Gesperrt.length} Pfade (CLAUDE.md, .gitignore, .semgrepignore in jedem Verzeichnis; golive-studio.sh, setup-staging.sh, playwright.config.js; e2e/ — jeweils auch gross geschrieben) sind ohne --erlaubt gesperrt und mit --erlaubt=* frei (die Freigabe wird benannt); ${x3Frei.length} Beinahe-Namen (claude-notizen.md, claude.mdx, lib/e2e.js, e2e-hilfe.js, playwright.config.json, golive-studio.shx, .bak, a.semgrepignore) bleiben frei`,
+        x3Falsch.length === 0 && x3Gesperrt.length === 15 && x3Frei.length === 11);
+    const x10Gesperrt = ['SECRET.PEM', '.ENV.local', 'dir/Server.PEM', 'KEY.Key', '.Env', 'a/b/.ENV.prod.js', 'x.key', '.env'];
+    const x10Frei = ['environment.md', 'lib/env.js', 'monkey.js', 'pem.md', 'keyboard.js', 'docs/key.md', 'a.keyx', 'dotenv.js'];
+    pruefen(`X10 LESESPERRE OHNE GROSS-/KLEINSCHREIBUNG: istHartGesperrt sperrt ${x10Gesperrt.length} Namen (SECRET.PEM, .ENV.local, dir/Server.PEM, KEY.Key, .Env ...), und laesst ${x10Frei.length} Beinahe-Namen (environment.md, monkey.js, pem.md, keyboard.js, dotenv.js ...) durch`,
+        x10Gesperrt.every((n) => istHartGesperrt(n)) && x10Frei.every((n) => !istHartGesperrt(n)) && x10Gesperrt.length === 8 && x10Frei.length === 8);
+    {
+        const baum = frischerBaum(ctx);
+        fs.writeFileSync(path.join(baum, 'SECRET.PEM'), 'GEHEIM-X10-PEM\n');
+        fs.writeFileSync(path.join(baum, '.ENV.local'), 'GEHEIM-X10-ENV\n');
+        fs.writeFileSync(path.join(baum, 'lib', 'oeffentlich-x10.js'), 'GEHEIM-X10-OEFFENTLICH\n');
+        ctx.g(baum, 'add', '-A');
+        ctx.g(baum, 'commit', '-q', '-m', 'x10');
+        const t = werkzeugeAuf(ctx, baum);
+        const l1 = t.lese.werkzeugLies('SECRET.PEM', 1, 5);
+        const l2 = t.lese.werkzeugLies('.ENV.local', 1, 5);
+        const l3 = t.lese.werkzeugLies('lib/oeffentlich-x10.js', 1, 5);
+        const su = t.lese.werkzeugSuche('GEHEIM-X10');
+        pruefen('X10 LESEN UND SUCHEN AM ECHTEN BAUM: SECRET.PEM und .ENV.local (versioniert, gross geschrieben) werden von lies abgelehnt und tauchen in suche NICHT auf; die Positivkontrolle lib/oeffentlich-x10.js (gleicher Inhaltsanfang) wird gelesen und gefunden',
+            l1.abgelehnt === true && l2.abgelehnt === true && !l1.text.includes('GEHEIM-X10') && !l2.text.includes('GEHEIM-X10') && l3.text.includes('GEHEIM-X10-OEFFENTLICH')
+            && su.text.includes('lib/oeffentlich-x10.js:1:GEHEIM-X10-OEFFENTLICH') && !su.text.includes('SECRET.PEM') && !su.text.includes('.ENV.local') && !su.text.includes('GEHEIM-X10-PEM') && !su.text.includes('GEHEIM-X10-ENV'));
+    }
+    {
+        const baum = frischerBaum(ctx);
+        const t = werkzeugeAuf(ctx, baum);
+        const x5Angriff = ['.git./x.js', '.git /x.js', 'git~1/x.js', 'GIT~1/x.js', '.git::$INDEX_ALLOCATION/x.js', '.g‌it/x.js', 'dir/$(id).js', 'dir/a`id`.js', 'dir/-rf.js', 'dir/--help.js', 'dir/‮txt.js', 'a./b.js', '.../x.js', '-x/y.js', 'dir/a b.js', 'dir/ä.js', 'dir/a;b.js'];
+        const x5Wirkung = x5Angriff.map((n) => t.w.neueDatei({ pfad: n, inhalt: 'x\n' }));
+        const x5Gut = ['ok/gut.js', 'a.b-c_d/e_f.js', 'lib/x..js', 'lib/v2.1/x.json', 'A/B/C.md'];
+        const x5GutErgebnis = x5Gut.map((n) => t.w.neueDatei({ pfad: n, inhalt: 'x\n' }));
+        pruefen(`X5 NAMEN NEUER DATEIEN: ${x5Angriff.length} Namen der Angriffsspur (".git./x.js", ".git /x.js", "git~1/x.js", ".git::$INDEX_ALLOCATION/x.js", Unicode-Tarnungen U+200C und U+202E, "$(id)", Backtick, "-rf", "--help", Segment auf ".", Leerzeichen, Umlaut, Strichpunkt) werden abgelehnt, es entsteht NICHTS (git status leer, keine Verzeichnisse); ${x5Gut.length} gewoehnliche Namen werden angelegt`,
+            x5Wirkung.every((r) => r.abgelehnt === true && /Dateiname/.test(r.text)) && !x5Wirkung.some((r) => /[‌‮]/.test(r.text))
+            && !fs.existsSync(path.join(baum, 'dir')) && !fs.existsSync(path.join(baum, 'git~1')) && !fs.existsSync(path.join(baum, '-x'))
+            && x5GutErgebnis.every((r) => r.abgelehnt === false) && statusVon(ctx, baum).split('\n').length === 5 && x5Angriff.length === 17);
+        pruefen('X5 NAMENSFUNKTION EINZELN: neuerNameFehler lehnt ein Segment mit fuehrendem "-" und eines mit endendem "." ab (jeweils mit eigener Meldung), laesst "a/b-c.d_e.js" durch',
+            /beginnt mit "-"/.test(bau.neuerNameFehler('a/-b.js') || '') && /endet auf "\."/.test(bau.neuerNameFehler('a./b.js') || '') && bau.neuerNameFehler('a/b-c.d_e.js') === null && /Zeichen ausserhalb/.test(bau.neuerNameFehler('a b.js') || ''));
+    }
+
     // ----- ersetze: 0, 1 und 2 Treffer, ueberlappend, Argumente -----
     {
         const t = werkzeugeAuf(ctx, frischerBaum(ctx));
@@ -378,6 +425,13 @@ async function faelleOhneRoot(pruefen, ctx) {
         pruefen('A7 ersetze AUF EINE DATEI DIESES LAUFS: neue_datei -> ersetze -> lies zeigt den neuen Inhalt; VOR neue_datei war die Datei fuer lies nicht erlaubt (Positivkontrolle der Erlaubnisliste)',
             vorher.abgelehnt === true && vorher.text.includes('Datei nicht gefunden') && r2.abgelehnt === false && nachher.text.includes('1:module.exports = 6;') && t.w.nettoGeaendert().join() === 'sub/dir/neu.js'
             && t.protokoll[1].art === 'ersetzt' && t.protokoll[1].shaVorher === sha('module.exports = 5;\n') && t.protokoll[1].shaNachher === sha('module.exports = 6;\n'));
+        // F1 (Nacharbeit 1): eine in DIESEM Lauf angelegte Datei ist auch fuer SUCHE erlaubt (alleErlaubten = ls-files PLUS Lauf-Dateien)
+        const suchVorher = t.lese.werkzeugSuche('EINZIGARTIG_F1_MARKE');
+        const f1 = t.w.neueDatei({ pfad: 'lib/suchbar-f1.js', inhalt: "const EINZIGARTIG_F1_MARKE = 1;\n" });
+        const suchNachher = t.lese.werkzeugSuche('EINZIGARTIG_F1_MARKE');
+        const suchGlob = t.lese.werkzeugSuche('EINZIGARTIG_F1_MARKE', 'lib/suchbar-*');
+        pruefen('F1 SUCHE FINDET LAUF-DATEIEN: vor neue_datei findet suche das Wort nicht ("(keine Treffer)"), danach steht lib/suchbar-f1.js:1 im Ergebnis (auch mit Dateimuster lib/suchbar-*) — die Regel "Lauf-Dateien sind lesbar" gilt fuer lies UND suche',
+            suchVorher.text === '(keine Treffer)' && f1.abgelehnt === false && suchNachher.text === 'lib/suchbar-f1.js:1:const EINZIGARTIG_F1_MARKE = 1;' && suchGlob.text === suchNachher.text);
         const schlecht = ['x.txt', 'x', 'x.py', 'x.exe', 'x.d.ts', 'x.yml', 'x.js.txt'];
         const gut = ['a.js', 'a.cjs', 'a.json', 'a.sql', 'a.sh', 'a.md', 'a.html', 'a.css'];
         pruefen('neue_datei ENDUNGEN: .js .cjs .json .sql .sh .md .html .css werden angelegt; .txt, ohne Endung, .py, .exe, .d.ts, .yml, .js.txt sind abgelehnt und nicht angelegt',
@@ -482,13 +536,45 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         const t = werkzeugeAuf(ctx, baum, { haken: { vorSchreiben: () => { throw new Error('simulierter Schreibfehler'); } } });
         const sha0 = shaVon(baum, 'lib/wert.js');
         const r = t.w.ersetze({ pfad: 'lib/wert.js', alt: '42', neu: '43' });
-        pruefen('B6 ROLLBACK: scheitert das Schreiben NACH dem Oeffnen mit O_TRUNC (Datei schon abgeschnitten), schreibt ersetze den Ausgangsinhalt ueber denselben Deskriptor zurueck -> abgelehnt, Datei bytegleich zum Ausgang, keine Schreibliste, git status sauber',
+        pruefen('B6 ROLLBACK: scheitert das Schreiben NACH dem Kuerzen (ftruncate am Deskriptor, Datei schon abgeschnitten), schreibt ersetze den Ausgangsinhalt ueber denselben Deskriptor zurueck -> abgelehnt, Datei bytegleich zum Ausgang, keine Schreibliste, git status sauber',
             r.abgelehnt === true && r.text.includes('Ausgangsinhalt wiederhergestellt') && shaVon(baum, 'lib/wert.js') === sha0 && t.w.schreibliste.size === 0 && statusVon(ctx, baum) === '');
         const baum2 = frischerBaum(ctx);
         const t2 = werkzeugeAuf(ctx, baum2, { haken: { nachAnlegen: () => { throw new Error('simulierter Anlegefehler'); } } });
         const r2 = t2.w.neueDatei({ pfad: 'neu-ordner/tief/x.js', inhalt: 'x\n' });
         pruefen('B6 AUFRAEUMEN: scheitert neue_datei nach dem Anlegen (O_CREAT|O_EXCL), werden Datei UND die dafuer angelegten Verzeichnisse wieder entfernt -> abgelehnt, nichts uebrig, nicht als Lauf-Datei vermerkt',
             r2.abgelehnt === true && r2.text.includes('aufgeraeumt') && !fs.existsSync(path.join(baum2, 'neu-ordner')) && t2.w.laufNeuListe().length === 0 && statusVon(ctx, baum2) === '');
+    }
+
+    // ----- F3 (Nacharbeit 1): das Ziel wird ZWISCHEN den Pruefungen (kettePruefen, nlink) und dem open ausgetauscht -----
+    // Haken vorOeffnen(abs) laeuft genau dort. Die Aussendatei liegt ausserhalb des Baums; sie darf in KEINEM Fall veraendert oder gekuerzt werden.
+    {
+        const aussen = path.join(ctx.basis, 'f3-aussen.txt');
+        const AUSSEN = 'AUSSEN-INHALT-F3\n';
+        const frisch = () => fs.writeFileSync(aussen, AUSSEN);
+        const bleibt = () => fs.readFileSync(aussen, 'utf8') === AUSSEN;
+        frisch();
+        const baumA = frischerBaum(ctx);
+        const tA = werkzeugeAuf(ctx, baumA, { haken: { vorOeffnen: (abs) => { fs.unlinkSync(abs); fs.symlinkSync(aussen, abs); } } });
+        const rA = tA.w.ersetze({ pfad: 'lib/wert.js', alt: '42', neu: '43' });
+        pruefen('F3 ERSETZE MIT SYMLINK-TAUSCH (O_NOFOLLOW): wird lib/wert.js zwischen Pruefung und open durch einen Symlink auf eine Datei AUSSERHALB des Baums ersetzt, ist ersetze abgelehnt, die Aussendatei ist bytegleich (nichts durch den Link geschrieben, nichts gekuerzt), keine Schreibliste',
+            rA.abgelehnt === true && bleibt() && tA.w.schreibliste.size === 0 && fs.lstatSync(path.join(baumA, 'lib/wert.js')).isSymbolicLink());
+        frisch();
+        const baumB = frischerBaum(ctx);
+        const tB = werkzeugeAuf(ctx, baumB, { haken: { vorOeffnen: (abs) => { fs.unlinkSync(abs); fs.linkSync(aussen, abs); } } });
+        const rB = tB.w.ersetze({ pfad: 'lib/wert.js', alt: '42', neu: '43' });
+        pruefen('F3 ERSETZE MIT HARDLINK-TAUSCH (nlink am Deskriptor, KEIN Kuerzen vor der Pruefung): wird lib/wert.js zwischen Pruefung und open durch einen Hardlink auf eine fremde Datei ersetzt (nlink 2), ist ersetze abgelehnt, die fremde Datei ist bytegleich — auch NICHT abgeschnitten (frueher kuerzte O_TRUNC schon beim Oeffnen) und nicht mit dem Ausgangsinhalt ueberschrieben',
+            rB.abgelehnt === true && bleibt() && tB.w.schreibliste.size === 0 && fs.statSync(aussen).nlink === 2 && !rB.text.includes('Ausgangsinhalt wiederhergestellt'));
+        frisch();
+        const baumC = frischerBaum(ctx);
+        const tC = werkzeugeAuf(ctx, baumC, { haken: { vorOeffnen: (abs) => { fs.writeFileSync(abs, 'RACER-F3\n'); } } });
+        const rC = tC.w.neueDatei({ pfad: 'lib/rennen-f3.js', inhalt: 'ok\n' });
+        pruefen('F3 NEUE_DATEI GEGEN EINE REGULAERE DATEI, DIE IM FENSTER ENTSTEHT (O_EXCL): legt jemand zwischen Pruefung und open selbst eine Datei an, ist neue_datei abgelehnt, die fremde Datei behaelt ihren Inhalt und wird NICHT geloescht, sie steht nicht als Lauf-Datei in der Liste',
+            rC.abgelehnt === true && inhaltVon(baumC, 'lib/rennen-f3.js') === 'RACER-F3\n' && tC.w.laufNeuListe().length === 0 && tC.w.schreibliste.size === 0);
+        const baumD = frischerBaum(ctx);
+        const tD = werkzeugeAuf(ctx, baumD, { haken: { vorOeffnen: (abs) => { fs.symlinkSync(aussen, abs); } } });
+        const rD = tD.w.neueDatei({ pfad: 'lib/link-f3.js', inhalt: 'ueber den Link geschrieben\n' });
+        pruefen('F3 NEUE_DATEI MIT SYMLINK IM FENSTER (O_EXCL und O_NOFOLLOW): entsteht zwischen Pruefung und open ein Symlink auf eine Aussendatei, ist neue_datei abgelehnt und die Aussendatei bytegleich',
+            rD.abgelehnt === true && bleibt() && tD.w.laufNeuListe().length === 0 && fs.lstatSync(path.join(baumD, 'lib/link-f3.js')).isSymbolicLink());
     }
 
     // ----- Geheimnis-Riegel auf dem Schreibweg -----
@@ -527,14 +613,16 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         pruefen('B1 DOPPELREGISTRIERUNG: dieselbe Datei ein zweites Mal wird abgelehnt, test/run.sh bleibt bytegleich zum Stand nach der ersten Registrierung',
             d.abgelehnt === true && d.text.includes('Doppelregistrierung') && shaVon(baum, 'test/run.sh') === nachReg);
         const boese = ['test_$(touch pwn).js', 'test_`id`.js', '../test_x.js', '/etc/test_x.js', 'test_x.js\nrm -rf x', 'sub/test_x.js', 'test_x.js # kommentar', 'test_a b.js', ')', 'test_x".js', "test_x'.js", 'test_x.js;', 'test_x.js\n', 'test_ä.js', 'test_x.JS', 'x.js', '', 'ops/boot-smoke.js', '..', 5, null];
-        // Jeden Namen, den neue_datei anlegen KANN, legen wir VORHER an (dann ist er "in diesem Lauf angelegt"): so stoppt ihn
-        // nur noch die Namensregel — ohne diesen Schritt haette die Regel "nur Dateien dieses Laufs" ihn gestoppt (zwei Riegel).
-        const angelegt = boese.filter((name) => typeof name === 'string' && t.w.neueDatei({ pfad: name, inhalt: "console.log('1 PASS');\n" }).abgelehnt === false);
+        // Jeden Namen geben wir VORHER als "in diesem Lauf angelegt" aus (Haken laufNeuVortaeuschen, nur Selbsttest): so stoppt ihn
+        // nur noch die Namensregel — ohne diesen Schritt haette die Regel "nur Dateien dieses Laufs" ihn gestoppt (zwei Riegel). Seit
+        // Nacharbeit 1 (X5) legt neue_datei die meisten dieser Namen gar nicht mehr an; der Haken ersetzt das Vorab-Anlegen.
+        const angelegt = boese.filter((name) => typeof name === 'string');
+        const tb = werkzeugeAuf(ctx, baum, { haken: { laufNeuVortaeuschen: angelegt } });
         const nachReg2 = shaVon(baum, 'test/run.sh');
         const falschB = [];
-        for (const name of boese) { const x = t.w.registriereTest({ datei: name }); if (!x.abgelehnt || shaVon(baum, 'test/run.sh') !== nachReg2 || (angelegt.includes(name) && !x.text.includes('ungueltig'))) falschB.push(JSON.stringify(name)); }
-        pruefen(`B1 NAMEN ABGELEHNT: ${boese.length} Namen ($(…), Backtick, "..", fuehrendes /, Zeilenumbruch, Unterverzeichnis, Kommentar, Leerzeichen, eine Zeile ")", Anfuehrungszeichen, Strichpunkt, Umlaut, .JS, ops/boot-smoke.js, Nicht-Texte) werden abgelehnt — die ${angelegt.length} davon, die neue_datei vorher ANLEGEN konnte (so dass nur die Namensregel sie stoppt), mit der Meldung "ungueltig"; test/run.sh bleibt bytegleich, es entsteht keine Datei "pwn"`,
-            falschB.length === 0 && boese.length === 21 && angelegt.length >= 7 && angelegt.includes('test_$(touch pwn).js') && angelegt.includes('test_`id`.js') && !fs.existsSync(path.join(baum, 'pwn')) && !fs.existsSync(path.join(baum, 'x')));
+        for (const name of boese) { const x = tb.w.registriereTest({ datei: name }); if (!x.abgelehnt || shaVon(baum, 'test/run.sh') !== nachReg2 || (angelegt.includes(name) && !x.text.includes('ungueltig'))) falschB.push(JSON.stringify(name)); }
+        pruefen(`B1 NAMEN ABGELEHNT: ${boese.length} Namen ($(…), Backtick, "..", fuehrendes /, Zeilenumbruch, Unterverzeichnis, Kommentar, Leerzeichen, eine Zeile ")", Anfuehrungszeichen, Strichpunkt, Umlaut, .JS, ops/boot-smoke.js, Nicht-Texte) werden abgelehnt — die ${angelegt.length} Text-Namen, die vorher als "in diesem Lauf angelegt" vorgetaeuscht wurden (so dass nur die Namensregel sie stoppt), mit der Meldung "ungueltig"; test/run.sh bleibt bytegleich, es entsteht keine Datei "pwn"`,
+            falschB.length === 0 && boese.length === 21 && angelegt.length === 19 && angelegt.includes('test_$(touch pwn).js') && angelegt.includes('test_`id`.js') && !fs.existsSync(path.join(baum, 'pwn')) && !fs.existsSync(path.join(baum, 'x')));
         fs.writeFileSync(path.join(baum, 'test_roh.js'), 'x\n');
         const a1 = t.w.registriereTest({ datei: 'test_alt.js' });
         const a2 = t.w.registriereTest({ datei: 'test_roh.js' });
@@ -665,11 +753,28 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         const protOhneOrdner = bau.ausserhalbPruefen(path.join(ctx.basis, 'gibt-es-nicht', 'p.jsonl'), sBaum, '--protokoll');
         pruefen('A3 --PROTOKOLL AUSSERHALB DES BAUMS (Exit 13): ausserhalb geht; im Baum, in einem Unterordner (auch ueber lib/..), ueber einen Symlink-Ordner in den Baum, als Symlink-Datei oder in einem nicht vorhandenen Ordner nicht; ohne Angabe Exit 2',
             prot.ok === true && protIn.ok === false && protIn.exit === 13 && protTief.exit === 13 && protLink.exit === 13 && protSym.exit === 13 && protOhneOrdner.exit === 13 && bau.ausserhalbPruefen(undefined, sBaum, '--protokoll').exit === 2);
+        // X9 (Nacharbeit 1): assume-unchanged ("h") und skip-worktree ("S") machen git status blind — beim Start Exit 12.
+        // Wirklichkeitsnah: erst die Datei AENDERN, dann verstecken (git status bleibt sauber, der Endvergleich waere blind).
+        const veBaum = frischerBaum(ctx);
+        fs.appendFileSync(path.join(veBaum, 'README.md'), 'heimlich geaendert\n');
+        ctx.g(veBaum, 'update-index', '--assume-unchanged', 'README.md');
+        const veStatusSauber = statusVon(ctx, veBaum) === '';
+        const veH = bau.baumSauberPruefen(veBaum);
+        ctx.g(veBaum, 'update-index', '--no-assume-unchanged', 'README.md');
+        ctx.g(veBaum, 'checkout', '--', 'README.md');
+        ctx.g(veBaum, 'update-index', '--skip-worktree', 'docs/notiz.md');
+        const veS = bau.baumSauberPruefen(veBaum);
+        ctx.g(veBaum, 'update-index', '--no-skip-worktree', 'docs/notiz.md');
+        const veOk = bau.baumSauberPruefen(veBaum);
+        pruefen(`X9 START: eine heimlich GEAENDERTE, per assume-unchanged versteckte Datei (git status bleibt leer: ${veStatusSauber}) und eine skip-worktree-Datei brechen den Start mit Exit 12 ab (Meldung nennt Kennbuchstabe h bzw. S und die Datei); nach dem Zuruecknehmen geht derselbe Baum`,
+            veStatusSauber && veH.ok === false && veH.exit === 12 && /assume-unchanged oder skip-worktree/.test(veH.grund) && veH.grund.includes('h README.md')
+            && veS.ok === false && veS.exit === 12 && veS.grund.includes('S docs/notiz.md') && veOk.ok === true);
         // Schluesseldatei (A4) — mit der eigenen uid als erwartetem Eigentuemer (root-Fall: --selbsttest-root)
         const meineUid = process.getuid();
         const sk = (name, modus, inhalt) => { const p = path.join(ctx.basis, name); fs.writeFileSync(p, inhalt === undefined ? `${SCHLUESSEL}\n` : inhalt, { mode: modus }); fs.chmodSync(p, modus); return p; };
         const k600 = bau.schluesselDateiPruefen(sk('k600', 0o600), meineUid);
-        const kFalsch = ['k644', 'k640', 'k660', 'k700', 'k400'].map((n, i) => bau.schluesselDateiPruefen(sk(n, [0o644, 0o640, 0o660, 0o700, 0o400][i]), meineUid));
+        const kFalsch = ['k644', 'k640', 'k660', 'k700', 'k200', 'k500'].map((n, i) => bau.schluesselDateiPruefen(sk(n, [0o644, 0o640, 0o660, 0o700, 0o200, 0o500][i]), meineUid));
+        const k400 = bau.schluesselDateiPruefen(sk('k400', 0o400), meineUid);
         const kUid = bau.schluesselDateiPruefen(sk('k-uid', 0o600), meineUid + 1);
         fs.symlinkSync(path.join(ctx.basis, 'k600'), path.join(ctx.basis, 'k-link'));
         const kLink = bau.schluesselDateiPruefen(path.join(ctx.basis, 'k-link'), meineUid);
@@ -677,9 +782,30 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         const kDir = bau.schluesselDateiPruefen(ctx.basis, meineUid);
         const kFehlt = bau.schluesselDateiPruefen(path.join(ctx.basis, 'gibt-es-nicht'), meineUid);
         const alleMeldungen = [kUid, kLink, kLeer, kDir, kFehlt, ...kFalsch].map((r) => r.grund).join('\n');
-        pruefen('A4 SCHLUESSELDATEI (Exit 15): Rechte 600 und der verlangte Eigentuemer gehen (der Schluessel kommt zurueck); 644, 640, 660, 700, 400, ein fremder Eigentuemer, ein Symlink, eine leere Datei, ein Verzeichnis und eine fehlende Datei brechen ab; KEINE Meldung enthaelt den Schluessel',
-            k600.ok === true && k600.schluessel === SCHLUESSEL && kFalsch.every((r) => r.ok === false && r.exit === 15 && /Rechte \d+, verlangt sind 600/.test(r.grund)) && kUid.exit === 15 && /gehoert uid/.test(kUid.grund)
+        pruefen('A4 SCHLUESSELDATEI (Exit 15): Rechte 600 UND 400 (X11) und der verlangte Eigentuemer gehen (der Schluessel kommt zurueck); 644, 640, 660, 700, 200, 500, ein fremder Eigentuemer, ein Symlink, eine leere Datei, ein Verzeichnis und eine fehlende Datei brechen ab; KEINE Meldung enthaelt den Schluessel',
+            k600.ok === true && k600.schluessel === SCHLUESSEL && k400.ok === true && k400.schluessel === SCHLUESSEL && kFalsch.every((r) => r.ok === false && r.exit === 15 && /Rechte \d+, verlangt sind 600 oder 400/.test(r.grund)) && kUid.exit === 15 && /gehoert uid/.test(kUid.grund)
             && kLink.exit === 15 && kLeer.exit === 15 && /leer/.test(kLeer.grund) && kDir.exit === 15 && kFehlt.exit === 15 && !alleMeldungen.includes(SCHLUESSEL) && !alleMeldungen.includes('abcdefg'));
+        // X11 (Nacharbeit 1): eine FIFO als Schluesseldatei haengt das Oeffnen ohne O_NONBLOCK fuer immer — deshalb in einem KIND-Prozess mit hartem Zeitlimit.
+        const fifo = path.join(ctx.basis, 'k-fifo');
+        const mk = spawnSync('mkfifo', [fifo]);
+        const fifoKind = spawnSync(process.execPath, ['-e', `const b = require(${JSON.stringify(path.join(__dirname, 'bau-spur.js'))}); const r = b.schluesselDateiPruefen(${JSON.stringify(fifo)}, process.getuid()); console.log(JSON.stringify({ ok: r.ok, exit: r.exit }));`], { encoding: 'utf8', timeout: 20000, killSignal: 'SIGKILL' });
+        const fifoErgebnis = (() => { try { return JSON.parse(fifoKind.stdout); } catch (e) { return null; } })();
+        pruefen(`X11 SCHLUESSELDATEI ALS FIFO (O_NONBLOCK): eine benannte Pipe als Schluesseldatei haengt den Start NICHT mehr — das Kind endet von selbst (Status ${fifoKind.status}, Signal ${fifoKind.signal}) mit ok=false und Exit 15, ohne Zeitlimit-Abbruch`,
+            mk.status === 0 && !fifoKind.error && fifoKind.status === 0 && fifoErgebnis !== null && fifoErgebnis.ok === false && fifoErgebnis.exit === 15);
+        // X11: --protokoll darf keine vorhandene Datei sein (Exit 13) — und bauspurLaufen oeffnet es zusaetzlich mit O_EXCL (zweiter, einzeln pruefbarer Riegel)
+        const protVorhanden = path.join(ctx.basis, 'prot-schon-da.jsonl');
+        fs.writeFileSync(protVorhanden, 'VORHANDEN-X11\n');
+        const pNeuVorh = bau.ausserhalbPruefen(protVorhanden, sBaum, '--protokoll', { neu: true });
+        const pNeuOk = bau.ausserhalbPruefen(path.join(ctx.basis, 'prot-neu-x11.jsonl'), sBaum, '--protokoll', { neu: true });
+        const pAltOk = bau.ausserhalbPruefen(protVorhanden, sBaum, 'BAU-LAEUFE.md');
+        pruefen('X11 --PROTOKOLL MUSS NEU SEIN (Exit 13): eine vorhandene Datei wird abgelehnt (Meldung "existiert bereits") und NICHT veraendert; ein neuer Pfad geht; fuer BAU-LAEUFE.md (ohne neu) ist eine vorhandene Datei dagegen richtig',
+            pNeuVorh.ok === false && pNeuVorh.exit === 13 && /existiert bereits/.test(pNeuVorh.grund) && fs.readFileSync(protVorhanden, 'utf8') === 'VORHANDEN-X11\n' && pNeuOk.ok === true && pAltOk.ok === true);
+        const exclPfad = path.join(ctx.basis, `protokoll-${ctx.zaehler + 1}.jsonl`);
+        fs.writeFileSync(exclPfad, 'VORHANDEN-O-EXCL\n');
+        let exclFehler = null;
+        try { await laufMitDrehbuch(ctx, [], { protokollPfad: exclPfad }); } catch (e) { exclFehler = e; }
+        pruefen('X11 O_EXCL IN bauspurLaufen: ohne die Vorpruefung des CLI (direkt aufgerufen) scheitert das Anlegen eines VORHANDENEN Protokolls mit EEXIST, die Datei behaelt ihren Inhalt',
+            exclFehler !== null && exclFehler.code === 'EEXIST' && fs.readFileSync(exclPfad, 'utf8') === 'VORHANDEN-O-EXCL\n');
         // Exit 17 ohne Modellkontakt und ohne Zeile
         const vorZeile = fs.readFileSync(ctx.bauZeilen, 'utf8');
         const e17 = await laufMitDrehbuch(ctx, [], { sandboxVerhalten: { einrichtenFehler: 'braucht root (Attrappe)' } });
@@ -763,6 +889,53 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
             un.ergebnis.exit === 27 && un.log.includes('Aufraeumen der Sandbox unvollstaendig') && un.sandbox.aufgeraeumt === 1);
     }
 
+    // ----- Nacharbeit 1: F2 (Zeile in BAU-LAEUFE.md nicht eingetragen), X9 (Exit 24 geht vor 27), X4 (Modellcode-Liste) -----
+    {
+        const dreh = () => [antwort([fc('f', 'fertig', { bericht: berichtOk() })], 1000, 100)];
+        const ohneMarke = path.join(ctx.basis, 'f2-ohne-marke.md');
+        fs.writeFileSync(ohneMarke, '# ohne Marke\n\n| Datum |\n');
+        const marke = '<!-- NEUE-LAUFZEILE-HIER: x -->\n';
+        const doppelt = path.join(ctx.basis, 'f2-doppelt.md');
+        fs.writeFileSync(doppelt, `# doppelt\n${marke}${marke}`);
+        const verzeichnis = path.join(ctx.basis, 'f2-verzeichnis.md');
+        fs.mkdirSync(verzeichnis);
+        const f2 = [];
+        for (const pf of [ohneMarke, doppelt, verzeichnis]) f2.push(await laufMitDrehbuch(ctx, dreh(), { laufprotokollPfad: pf }));
+        const ende = (L) => L.protokollZeilen().filter((e) => e.typ === 'ende').pop();
+        pruefen('F2 ZEILE NICHT EINGETRAGEN (Exit 28): ein sonst erfolgreicher Lauf endet mit Exit 28 / Status laufprotokoll-fehler, wenn die Datei KEINE Marke hat, die Marke ZWEIMAL traegt oder ein VERZEICHNIS ist — der Bericht nennt es als LAUTEN FEHLER, das Protokoll traegt laufprotokoll.eingetragen=false mit Grund, auf stderr steht die Warnung; die beiden Dateien bleiben unveraendert',
+            f2.every((L) => L.ergebnis.exit === 28 && L.ergebnis.status === 'laufprotokoll-fehler' && L.log.includes('LAUTER FEHLER: die Zeile in BAU-LAEUFE.md wurde NICHT eingetragen') && L.err.includes('WARNUNG: Zeile in BAU-LAEUFE.md NICHT eingetragen')
+                && ende(L).exit === 28 && ende(L).status === 'laufprotokoll-fehler' && ende(L).laufprotokoll.eingetragen === false && typeof ende(L).laufprotokoll.grund === 'string')
+            && /Marke .* fehlt/.test(ende(f2[0]).laufprotokoll.grund) && /2-mal/.test(ende(f2[1]).laufprotokoll.grund) && /nicht lesbar/.test(ende(f2[2]).laufprotokoll.grund)
+            && fs.readFileSync(ohneMarke, 'utf8') === '# ohne Marke\n\n| Datum |\n' && fs.readFileSync(doppelt, 'utf8') === `# doppelt\n${marke}${marke}`);
+        // Ein anderer Ausgang behaelt seinen Exit und meldet den Fehler laut dazu; ein Lauf OHNE Fehler bleibt Exit 0 mit eingetragener Zeile (Positivkontrolle)
+        const f2b = await laufMitDrehbuch(ctx, [antwort([fc('s', 'suche', { muster: 'wert' })], 1000, 100)], { laufprotokollPfad: ohneMarke, maxRunden: 1 });
+        const f2c = await laufMitDrehbuch(ctx, dreh());
+        pruefen('F2 GEGENRICHTUNG: ein Lauf, der ohnehin mit einem Fehler endet (Budget erschoepft, Exit 20), BEHAELT diesen Exit und meldet die fehlende Zeile laut dazu; derselbe Lauf mit gueltiger Datei traegt die Zeile ein und endet mit Exit 0',
+            f2b.ergebnis.exit === 20 && f2b.ergebnis.status === 'budget-erschoepft' && f2b.log.includes('LAUTER FEHLER: die Zeile in BAU-LAEUFE.md wurde NICHT eingetragen') && ende(f2b).laufprotokoll.eingetragen === false
+            && f2c.ergebnis.exit === 0 && f2c.bauZeile() !== null && ende(f2c).laufprotokoll.eingetragen === true && ende(f2c).laufprotokoll.grund === null);
+        // X9: Abweichung (24) UND Aufraeumen unvollstaendig (27) zugleich — 24 geht vor, 27 bleibt laut
+        const baumX9 = frischerBaum(ctx);
+        const sbX9 = sandboxAttrappe({ sauber: false, antwort: (name, args, s) => { fs.writeFileSync(path.join(baumX9, 'heimlich-x9.js'), 'x\n'); return { text: 'status: bestanden\nexit: 0\n', abgelehnt: false, status: 'bestanden' }; } });
+        const x9 = await laufMitDrehbuch(ctx, [antwort([fc('t', 'teste', { testdatei: 'test_alt.js' })], 1000, 100), antwort([fc('f', 'fertig', { bericht: berichtOk() })], 1000, 100)], { baum: baumX9, sandbox: sbX9 });
+        pruefen('X9 EXIT 24 GEHT VOR 27: eine Abweichung der Schreibliste UND ein unvollstaendiges Aufraeumen zugleich enden mit Exit 24 (schreibliste-abweichung, wie der Statuskatalog sagt); das Aufraeumproblem steht trotzdem als LAUTER FEHLER im Bericht und als aufraeumenSauber:false im Protokoll',
+            x9.ergebnis.exit === 24 && x9.ergebnis.status === 'schreibliste-abweichung' && x9.log.includes('LAUTER FEHLER: Abweichung zwischen git status und Schreibliste') && x9.log.includes('LAUTER FEHLER: Aufraeumen der Sandbox unvollstaendig')
+            && ende(x9).exit === 24 && ende(x9).aufraeumenSauber === false && x9.bauZeile().includes('schreibliste-abweichung, Exit 24'));
+        // X4: die Liste "Modellcode, ausserhalb der Sandbox noch ungelaufen": alles Neue oder Geaenderte unter test/ und jede test_*.js
+        const x4 = await laufMitDrehbuch(ctx, [antwort([
+            fc('n1', 'neue_datei', { pfad: 'test_x4.js', inhalt: "console.log('1 PASS / 0 FAIL');\n" }),
+            fc('n2', 'neue_datei', { pfad: 'lib/x4.js', inhalt: 'module.exports = 4;\n' }),
+            fc('n3', 'neue_datei', { pfad: 'test/helfer/x4-hilfe.js', inhalt: 'module.exports = 4;\n' }),
+            fc('n4', 'neue_datei', { pfad: 'sub/test_x4-tief.js', inhalt: "console.log('1 PASS / 0 FAIL');\n" }),
+            fc('n5', 'neue_datei', { pfad: 'docs/test-x4.md', inhalt: 'kein Testcode\n' }),
+            fc('r1', 'registriere_test', { datei: 'test_x4.js' }),
+            fc('e1', 'ersetze', { pfad: 'lib/wert.js', alt: '42', neu: '43' }),
+        ], 1000, 100), antwort([fc('f', 'fertig', { bericht: berichtOk() })], 1000, 100)]);
+        const listeSoll = 'sub/test_x4-tief.js, test/helfer/x4-hilfe.js, test/run.sh, test_x4.js';
+        pruefen('X4 MODELLCODE AUSSERHALB DER SANDBOX: der Bericht nennt "MODELLCODE, AUSSERHALB DER SANDBOX NOCH UNGELAUFEN" mit genau den neuen oder geaenderten Dateien unter test/ (test/helfer/x4-hilfe.js, test/run.sh) und jeder test_*.js (test_x4.js, sub/test_x4-tief.js) — NICHT lib/x4.js, lib/wert.js und docs/test-x4.md; dieselbe Liste steht im Protokoll; ein Lauf ohne solche Dateien nennt "(keine)"',
+            x4.ergebnis.exit === 0 && x4.log.includes(`NOCH UNGELAUFEN (vor dem ersten Lauf dort lesen: Netz, Prozesse, Dateien ausserhalb der Wegwerfwurzeln, Umgebungsvariablen, Zugangsdaten): ${listeSoll}\n`)
+            && JSON.stringify(ende(x4).modellcodeUngelaufen) === JSON.stringify(listeSoll.split(', ')) && f2c.log.includes('NOCH UNGELAUFEN (vor dem ersten Lauf dort lesen: Netz, Prozesse, Dateien ausserhalb der Wegwerfwurzeln, Umgebungsvariablen, Zugangsdaten): (keine)'));
+    }
+
     // ----- Netz- und HTTP-Fehler, unvollstaendige Antwort, kein fertig, kaputte Argumente, Laengendeckel -----
     {
         const eins = () => antwort([fc('a', 'lies', { pfad: 'lib/wert.js', von: 1, bis: 1 })], 250000, 25000);
@@ -808,6 +981,66 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         pruefen('B4 RIEGEL AUF JEDEM MODELLTEXT: Bericht aus fertig(), Zweck und alles im Protokoll und in BAU-LAEUFE.md tragen weder das Token noch den exakten Schluessel (dessen Format der Riegel nicht erkennt) — an ihrer Stelle die Marker; ein ESC im Bericht wird zu U+FFFD neutralisiert',
             !alles.includes(TOKEN) && !alles.includes('AAAAAAAAAAAA') && !alles.includes(SCHLUESSEL) && !alles.includes('abcdefg') && !alles.includes('SSSSSSSSSS') && L.log.includes('Der Schluessel war [SCHLUESSEL ENTFERNT], dazu') && L.log.includes('[ZEILE ENTFERNT — Geheimnis-Riegel: GitHub-Token]')
             && !/\u001b/.test(alles) && L.log.includes('\uFFFD[31mESC') && L.bauZeile().includes('Zweck mit [SCHLUESSEL ENTFERNT]'));
+    }
+
+    // ----- Nacharbeit 1: X8 (Riegel kennt die Qwen-Form), F5 (Fangnetz von main), X2 (suche mit hartem Zeitlimit) -----
+    {
+        const nurRiegel = bau.bereinigerBauen([])(`const k = "${SCHLUESSEL_QWEN}";`);
+        const nurExakt = bau.bereinigerBauen([SCHLUESSEL])(`const k = "${SCHLUESSEL}";`);
+        pruefen('X8 RIEGEL UND EXAKTER ABZUG SIND ZWEI SCHICHTEN: der Bereiniger ohne bekannten Schluessel entfernt die Qwen-Form ("sk-" + Punkte, vom Riegel erkannt: ' + (pruefeGeheimnisse(SCHLUESSEL_QWEN).sauber === false) + ') — der Rest des Schluessels kommt nicht mehr vor; ein Schluessel, den der Riegel NICHT kennt (dsk-…, ' + (pruefeGeheimnisse(SCHLUESSEL).sauber === true) + '), faellt nur durch den exakten Abzug',
+            pruefeGeheimnisse(SCHLUESSEL_QWEN).sauber === false && !nurRiegel.includes('K6K6K6K6') && !nurRiegel.includes('Cd3Ef4G') && pruefeGeheimnisse(SCHLUESSEL).sauber === true
+            && !nurExakt.includes(SCHLUESSEL) && !nurExakt.includes('abcdefg') && nurExakt.includes('[SCHLUESSEL ENTFERNT]') && bau.bereinigerBauen([])(`const k = "${SCHLUESSEL}";`).includes('abcdefg'));
+    }
+    {
+        const eErr = console.error;
+        const meldungen = [];
+        console.error = (m) => meldungen.push(String(m));
+        let codeLeck; let codeHarmlos;
+        try {
+            codeLeck = await bau.main(['--irgendwas'], async (argv, zustand) => { zustand.schluessel = [SCHLUESSEL]; throw new Error(`HTTP 401: {"error":"ungueltiger Schluessel ${SCHLUESSEL}"}`); });
+            const nachLeck = meldungen.join('\n');
+            meldungen.length = 0;
+            codeHarmlos = await bau.main(['--irgendwas'], async () => { throw new Error('kaputt ohne Geheimnis'); });
+            meldungen.push(`#LECK#${nachLeck}`);
+        } finally { console.error = eErr; }
+        const ausgabe = meldungen.join('\n');
+        const leck = ausgabe.slice(ausgabe.indexOf('#LECK#'));
+        pruefen('F5 FANGNETZ VON main(): wirft der Lauf mit einem Fehlertext, der den Schluessel enthaelt (HTTP != 200 bringt Anbietertext mit), steht auf stderr "FEHLER: HTTP 401 …" mit dem Marker statt des Schluessels (Exit 1); ein harmloser Fehler kommt unveraendert durch',
+            codeLeck === 1 && leck.includes('FEHLER: HTTP 401') && !leck.includes(SCHLUESSEL) && !leck.includes('abcdefg') && !leck.includes('SSSSSSSSSS') && leck.includes('[SCHLUESSEL ENTFERNT]')
+            && codeHarmlos === 1 && ausgabe.startsWith('FEHLER: kaputt ohne Geheimnis'));
+    }
+    {
+        // X2: suche mit Muster des Modells ist zeitlich begrenzt. Die Datei redos.txt traegt 40 mal "a" und "!" (Messreihe der Angriffsspur).
+        const baum = frischerBaum(ctx);
+        fs.writeFileSync(path.join(baum, 'redos.txt'), `${'a'.repeat(40)}!\n`);
+        fs.writeFileSync(path.join(baum, 'klein.txt'), `${'a'.repeat(27)}!\n`);
+        fs.writeFileSync(path.join(baum, 'harmlos.txt'), 'a b c\n');
+        ctx.g(baum, 'add', '-A');
+        ctx.g(baum, 'commit', '-q', '-m', 'x2');
+        const kindScript = `const g = require(${JSON.stringify(path.join(__dirname, 'spur-gemeinsam.js'))}); const l = g.leseWerkzeugeBauen({ sucheFristMs: 1000 }); l.wurzelEinrichten(${JSON.stringify(baum)});`
+            + ` const t0 = Date.now(); const r = l.werkzeugSuche('^(a+)+$'); const ms = Date.now() - t0; const danach = l.werkzeugSuche('a b');`
+            + ` console.log(JSON.stringify({ ms, abgelehnt: r.abgelehnt, text: r.text.slice(0, 160), danach: danach.text }));`;
+        const kind = spawnSync(process.execPath, ['-e', kindScript], { encoding: 'utf8', timeout: 25000, killSignal: 'SIGKILL' });
+        const k = (() => { try { return JSON.parse(kind.stdout); } catch (e) { return null; } })();
+        pruefen(`X2 KATASTROPHALE RUECKVERFOLGUNG (Messreihe der Angriffsspur): "^(a+)+$" gegen 40 mal "a" und "!" ist in einem KIND-Prozess mit hartem Zeitlimit von 25 s nach ${k ? k.ms : 'n/a'} ms (Limit 1000 ms) ABGELEHNT mit "Zeitlimit", kein Absturz, kein Haengen (Status ${kind.status}, Signal ${kind.signal}); der Prozess lebt weiter: die naechste Suche liefert ihren Treffer`,
+            !kind.error && kind.status === 0 && k !== null && k.abgelehnt === true && /Suchmuster zu langsam — Zeitlimit von 1000 ms/.test(k.text) && k.ms >= 900 && k.ms < 8000 && k.danach.includes('harmlos.txt:1:a b c'));
+        // schneller, im Prozess: n = 27 braucht (ohne Limit) rund eine Sekunde; mit 150 ms Frist wird abgelehnt — ohne Limit liefe die Suche durch (die Gegenprobe haengt so nie)
+        const tKlein = werkzeugeAuf(ctx, baum, { lese: { sucheFristMs: 150 } });
+        const t0 = Date.now();
+        const rKlein = tKlein.lese.werkzeugSuche('^(a+)+$', 'klein.txt');
+        const msKlein = Date.now() - t0;
+        const rPos = tKlein.lese.werkzeugSuche('^(a+)+$', 'harmlos.txt');
+        const rNormal = tKlein.lese.werkzeugSuche('a b c');
+        pruefen(`X2 ZEITLIMIT IM PROZESS: dasselbe Muster gegen 27 mal "a" und "!" wird mit 150 ms Frist nach ${msKlein} ms abgelehnt (abgelehnt true, Text nennt das Zeitlimit); Positivkontrollen: dasselbe Muster auf einer harmlosen Datei liefert "(keine Treffer)" und ein gewoehnliches Muster seinen Treffer — das Limit lehnt nicht alles ab`,
+            rKlein.abgelehnt === true && /Zeitlimit von 150 ms/.test(rKlein.text) && msKlein < 1500 && rPos.abgelehnt === false && rPos.text === '(keine Treffer)' && rNormal.abgelehnt === false && rNormal.text === 'harmlos.txt:1:a b c');
+        const lang300 = 'a'.repeat(300);
+        const rLang = tKlein.lese.werkzeugSuche('a'.repeat(301));
+        const rGrenze = tKlein.lese.werkzeugSuche(lang300);
+        const rDatei = tKlein.lese.werkzeugSuche('a', '*'.repeat(301));
+        const rUngueltig = tKlein.lese.werkzeugSuche('(');
+        pruefen('X2 MUSTERLAENGE UND UNGUELTIGE MUSTER: 301 Zeichen Suchmuster und 301 Zeichen Dateimuster werden abgelehnt (abgelehnt true, "zu lang"), 300 Zeichen gehen durch; ein ungueltiges Muster "(" bleibt eine gewoehnliche Meldung ("ungueltiges Suchmuster", abgelehnt false) und ist kein Zeitlimit',
+            rLang.abgelehnt === true && /Suchmuster zu lang \(301 Zeichen, hoechstens 300\)/.test(rLang.text) && rDatei.abgelehnt === true && /Dateimuster zu lang/.test(rDatei.text) && rGrenze.abgelehnt === false && rGrenze.text === '(keine Treffer)'
+            && rUngueltig.abgelehnt === false && /ungueltiges Suchmuster/.test(rUngueltig.text) && !/Zeitlimit/.test(rUngueltig.text));
     }
 
     // ----- Schreibliste gegen git status: Abweichung, Netto-Unveraendert, Fertig mit falschem Bericht -----
@@ -858,7 +1091,7 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         pruefen('FERTIG BEENDET SOFORT: folgen in derselben Antwort weitere Aufrufe, werden sie nicht mehr ausgefuehrt; genau ein Modellaufruf',
             fertigUndMehr.ergebnis.exit === 0 && fertigUndMehr.anfragenAnzahl === 1 && fertigUndMehr.ergebnis.zustand.lesungen === 0);
         const unerwartet = await laufMitDrehbuch(ctx, [antwort([fc('f', 'fertig', { bericht: bo })], 1000, 100)], { /* aus.log wirft unten */ }).catch((e) => e);
-        pruefen('ZEILE AUCH BEI UNERWARTETEM FEHLER NACH MODELLKONTAKT: wirft die Ausgabe mitten im Abschluss, schreibt das Sicherheitsnetz trotzdem eine Zeile "**abgebrochen** (unerwarteter Fehler nach Modellkontakt)" — und die Ausnahme geht weiter (kein stilles Schlucken)',
+        pruefen('ZEILE AUCH BEI UNERWARTETEM FEHLER NACH MODELLKONTAKT: wirft das Aufraeumen der Sandbox VOR dem Eintragen der Zeile (seit F2 wird die Zeile vor dem Bericht eingetragen, ein Wurf danach braucht das Netz nicht mehr), schreibt das Sicherheitsnetz trotzdem eine Zeile "**abgebrochen** (unerwarteter Fehler nach Modellkontakt)" — und die Ausnahme geht weiter (kein stilles Schlucken)',
             (await (async () => {
                 const baum = frischerBaum(ctx);
                 const protokollPfad = path.join(ctx.basis, 'prot-unerwartet.jsonl');
@@ -866,7 +1099,7 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
                 let wurf = null;
                 try {
                     await bau.bauspurLaufen({ auftragText: 'A', baum, zweig: 'x', modell: 'qwen3.8-max', maxRunden: 60, maxKosten: 3, erlaubt: [], zweck: 'Wurf', protokollPfad, laufprotokollPfad: ctx.bauZeilen, kanarie: null },
-                        { anfragen: async () => antwort([fc('f', 'fertig', { bericht: bo })], 1000, 100), sandbox: sandboxAttrappe(), geheimnisse: [], aus: { log: (t) => { if (String(t).startsWith('Status:')) throw new Error('Ausgabe gerissen'); }, err: () => {} } });
+                        { anfragen: async () => antwort([fc('f', 'fertig', { bericht: bo })], 1000, 100), sandbox: Object.assign(sandboxAttrappe(), { aufraeumen() { throw new Error('Ausgabe gerissen'); } }), geheimnisse: [], aus: { log: () => {}, err: () => {} } });
                 } catch (e) { wurf = e; }
                 const nach = fs.readFileSync(ctx.bauZeilen, 'utf8');
                 return !!wurf && wurf.message === 'Ausgabe gerissen' && nach.length > vor.length && nach.split('\n').some((l) => l.includes('**abgebrochen** (unerwarteter Fehler nach Modellkontakt)') && l.includes('mind. 0,00'));
@@ -1015,6 +1248,22 @@ async function faelleMitRoot(pruefen, ctx) {
                 && vorSandbox === 0 && fs.readFileSync(ctx.bauZeilen, 'utf8') === zeilenVorher && protokollNochNichtDa);
             pruefen('CLI POSITIVKONTROLLE: mit allen Angaben in Ordnung laeuft der Aufruf durch ALLE Vorbedingungen bis zur Sandbox (Attrappe: nicht einrichtbar -> Exit 17, Sandbox genau einmal angefasst), ohne Modellkontakt und ohne Zeile in BAU-LAEUFE.md',
                 codes.positiv === 17 && einrichtenAufrufe === 1 && /Sandbox nicht einrichtbar/.test(positiv.meldungen) && fs.readFileSync(ctx.bauZeilen, 'utf8') === zeilenVorher);
+            // F5 (Nacharbeit 1): HTTP 401 mit einem Body, der den Schluessel enthaelt (bis zu 800 Bytes Anbietertext gehen in die Fehlermeldung). Die Sandbox ist
+            // hier eine Attrappe (einrichten liefert eine Antwort), der Strompfad echt (https gestubbt): der Schluessel darf in KEINER Senke stehen.
+            const baum401 = frischerBaum(ctx, 'cli-401');
+            const prot401 = path.join(ctx.basis, 'cli-protokoll-401.jsonl');
+            sandboxModul.einrichten = async () => ({ cluster: 'dsv1attrappe', port: 1, tests: 3, kanarie: 'test_kanarie_static.js', head: 'a'.repeat(40) });
+            const aufgez401 = [];
+            const echtesHttps401 = https.request;
+            https.request = httpsAttrappe(`{"error":{"message":"Incorrect API key provided: ${SCHLUESSEL}","code":"invalid_api_key"}}`, aufgez401, 401);
+            let r401;
+            try { r401 = await stumm([`--auftrag=${auftrag}`, `--baum=${baum401}`, '--modell=qwen3.8-max', `--protokoll=${prot401}`, '--zweck=CLI-Selbsttest F5']); } finally { https.request = echtesHttps401; }
+            const protText401 = fs.readFileSync(prot401, 'utf8');
+            const zeilenText401 = fs.readFileSync(ctx.bauZeilen, 'utf8');
+            const alles401 = `${r401.meldungen}\n${protText401}\n${zeilenText401}`;
+            pruefen(`F5 HTTP 401 MIT SCHLUESSEL IM BODY: der Lauf endet mit Exit ${r401.code} (21 = Netz-/HTTP-Abbruch), der Schluessel (und sein Rest "abcdefg") steht weder in der Ausgabe (stdout und stderr) noch im Protokoll noch in BAU-LAEUFE.md — dort steht der Marker; die Positivkontrolle: der Schluessel WAR im Authorization-Kopf der Anfrage (der Lauf kannte ihn) und der Fehlertext nennt HTTP 401`,
+                aufgez401.length === 1 && aufgez401[0].optionen.headers.Authorization === `Bearer ${SCHLUESSEL}` && r401.code === 21 && r401.meldungen.includes('HTTP 401') && !alles401.includes(SCHLUESSEL) && !alles401.includes('abcdefg') && !alles401.includes('SSSSSSSSSS')
+                && r401.meldungen.includes('[SCHLUESSEL ENTFERNT]') && protText401.includes('[SCHLUESSEL ENTFERNT]') && zeilenText401.includes('[SCHLUESSEL ENTFERNT]'));
         } finally {
             sandboxModul.einrichten = einrichtenEcht;
             for (const [k, v] of Object.entries(alteEnv)) { if (v !== undefined) process.env[k] = v; else delete process.env[k]; }
@@ -1084,6 +1333,42 @@ async function faelleMitRoot(pruefen, ctx) {
             pruefen('GANZER LAUF: die Anfragen trugen store:false, stream:true, den Schluessel nur im Authorization-Kopf und nie im Koerper; der Schluessel steht weder in der Ausgabe noch im Protokoll noch in BAU-LAEUFE.md; die Zeile nennt Runden 3 und Token 6000 / 900',
                 aufgezeichnet.length === 3 && gesendet.every((k) => k.store === false && k.stream === true && k.model === 'qwen3.8-max') && aufgezeichnet.every((a) => a.optionen.headers.Authorization === `Bearer ${SCHLUESSEL}` && !a.koerper.includes(SCHLUESSEL))
                 && !`${text}\n${fs.readFileSync(protokollPfad, 'utf8')}\n${fs.readFileSync(bauZeilenE, 'utf8')}`.includes(SCHLUESSEL) && fs.readFileSync(bauZeilenE, 'utf8').split('\n').some((l) => l.includes('| qwen3.8-max | 3 | 6000 / 900 |') && l.includes('fertig, Exit 0; netto geaendert 3, neu 2, registriert 1')));
+            // F4 (Nacharbeit 1): derselbe Weg, aber registriere_test -> mutiere_und_teste OHNE teste dazwischen (die TESTS-Liste der Sandbox wird in
+            // mutiere_und_teste selbst neu gelesen). Zweiter Baum, neues Protokoll, dieselbe Fixtur und derselbe Strompfad.
+            const baum2 = path.join(arbeitE, 'baum2');
+            ctx.g(fx.wurzel, 'worktree', 'add', '-q', '-b', 'bauspur-e2e-2', baum2);
+            fs.mkdirSync(path.join(baum2, 'node_modules'));
+            fs.writeFileSync(path.join(baum2, 'node_modules', 'README'), 'leer\n');
+            const protokollPfad2 = path.join(basisE, 'e2e-protokoll-2.jsonl');
+            const drehbuch2 = [
+                antwort([fc('m1', 'neue_datei', { pfad: 'lib/neu_f4.js', inhalt: 'module.exports = 9;\n' }), fc('m2', 'neue_datei', { pfad: 'test_f4.js', inhalt: testE2e.replace('./lib/neu_e2e', './lib/neu_f4').replace("'neu_e2e liefert 7'", "'neu_f4 liefert 9'").replace('=== 7', '=== 9') }), fc('m3', 'registriere_test', { datei: 'test_f4.js' })], 1000, 200),
+                antwort([fc('m4', 'mutiere_und_teste', { datei: 'lib/neu_f4.js', alt: '9', neu: '10', testdatei: 'test_f4.js' })], 2000, 300),
+                antwort([fc('f2', 'fertig', { bericht: { ...berichtOk(), geaenderte_dateien: [], neue_dateien: ['lib/neu_f4.js', 'test_f4.js'], neue_testdateien: ['test_f4.js'], registrierungen: ['test_f4.js'], tests: [] } })], 3000, 400),
+            ];
+            const aufgezeichnet2 = [];
+            let naechste2 = 0;
+            https.request = (url, optionen, cb) => {
+                const req = new EventEmitter();
+                req.destroy = () => {};
+                req.end = (koerper) => {
+                    aufgezeichnet2.push({ url: String(url), optionen, koerper: String(koerper) });
+                    const res = new EventEmitter();
+                    res.statusCode = 200;
+                    const a2 = drehbuch2[naechste2++];
+                    const sse2 = `event:response.completed\ndata:${JSON.stringify({ type: 'response.completed', response: { status: 'completed', output: a2.output, usage: a2.usage } })}\n\n`;
+                    setImmediate(() => { cb(res); res.emit('data', Buffer.from(sse2)); res.emit('end'); });
+                };
+                return req;
+            };
+            const meldungen2 = [];
+            console.log = (m) => meldungen2.push(String(m)); console.error = (m) => meldungen2.push(String(m));
+            let code2;
+            try { code2 = await bau.main([`--auftrag=${auftrag}`, `--baum=${baum2}`, '--modell=qwen3.8-max', `--protokoll=${protokollPfad2}`, '--zweck=GANZER LAUF 2 Selbsttest', '--max-runden=10']); } finally { console.log = eLog; console.error = eErr; https.request = echtesHttps; }
+            const protokoll2 = fs.readFileSync(protokollPfad2, 'utf8').split('\n').filter(Boolean).map((z) => JSON.parse(z));
+            const antworten2 = (id) => (protokoll2.find((p) => p.typ === 'funktionsantwort' && p.call_id === id) || {}).text || '';
+            pruefen(`F4 GANZER LAUF 2 (registriere_test, DANN mutiere_und_teste ohne teste dazwischen): Exit ${code2} (0); die neu registrierte Testdatei test_f4.js wird vom ERSTEN Sandbox-Aufruf (mutiere_und_teste) erkannt, der Grundlauf wird in diesem Aufruf gefahren ("in diesem Aufruf gefahren", bestanden) und die Mutation 9 -> 10 scheitert an der Zusicherung; keine Datei im Baum ist mutiert`,
+                code2 === 0 && antworten2('m3').startsWith('registriert: test_f4.js') && antworten2('m4').startsWith('status: gescheitert') && antworten2('m4').includes('grundlauf: bestanden, gueltig (in diesem Aufruf gefahren)') && antworten2('m4').includes('✗ FAIL: neu_f4 liefert 9')
+                && protokoll2.filter((p) => p.typ === 'ausfuehrung').map((p) => p.zweck).join() === 'kanarie,grundlauf,mutation' && inhaltVon(baum2, 'lib/neu_f4.js') === 'module.exports = 9;\n' && protokoll2[protokoll2.length - 1].status === 'fertig');
             const cluster = spawnSync('pg_lsclusters', ['-h'], { encoding: 'utf8' });
             const sperre = spawnSync('flock', ['-n', '-E', '75', '/var/lock/dsv1.lock', 'true']);
             pruefen('GANZER LAUF: danach ist die Sandbox restlos weg — kein dsv1-Cluster, Sperre /var/lock/dsv1.lock frei, /var/lib/dsv1 leer oder nicht vorhanden',

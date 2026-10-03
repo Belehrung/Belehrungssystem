@@ -22,12 +22,18 @@
 const fs = require('node:fs');
 const https = require('node:https');
 const path = require('node:path');
+const vm = require('node:vm');
 const { execFileSync } = require('node:child_process');
 const { StringDecoder } = require('node:string_decoder');
 const { entferneGeheimnisse, pruefeGeheimnisse, zeileEntferntMarker } = require('./geheimnis-riegel');
 
 const MAX_SUCHE_ZEILEN = 80;
 const MAX_LIES_ZEILEN = 400;
+// suche() wertet ein MUSTER DES MODELLS aus (Nacharbeit 1, X2, Angriffsspur 03.10.2026: ^(a+)+$ gegen eine selbst
+// angelegte Datei fror den Hauptprozess ein, SIGTERM wirkte nicht). Deshalb: Laenge des Musters (und des Dateimusters)
+// gedeckelt, und JEDE Auswertung laeuft in einem vm-Kontext mit hartem Zeitlimit fuer den ganzen Aufruf.
+const MAX_MUSTER_ZEICHEN = 300;
+const SUCHE_FRIST_MS = 5000;
 
 // Preise pro 1 Mio. Token (USD), Stand 10.09.2026 -- das ist ein STAND, kein
 // Naturgesetz, und er VERALTET: bei jeder neuen Modellstufe hier nachtragen,
@@ -130,10 +136,13 @@ class GeheimnisAbbruch extends Error {
 }
 
 // Hart gesperrt, AUCH wenn versioniert (Schritt 5 der Erlaubnispruefung).
+// OHNE Ruecksicht auf Gross-/Kleinschreibung (Nacharbeit 1, X10, Angriffsspur 03.10.2026: "SECRET.PEM" und ".ENV.local"
+// waren lesbar, die Schreibseite der Bauspur sperrte sie schon). Gilt fuer BEIDE Werkzeuge, weil es EINE Funktion ist.
 function istHartGesperrt(relPfad) {
-    return path.basename(relPfad).startsWith('.env')
-        || relPfad.endsWith('.key')
-        || relPfad.endsWith('.pem');
+    const klein = String(relPfad).toLowerCase();
+    return path.basename(klein).startsWith('.env')
+        || klein.endsWith('.key')
+        || klein.endsWith('.pem');
 }
 
 // Fast jede Textdatei endet mit einem Zeilenumbruch — ein blosses split()
@@ -162,7 +171,9 @@ function glob2regex(glob) {
 // Verhalten: laufNeueDateienAufnehmen() erweitert die Erlaubnisliste um
 // Dateien, die der Lauf selbst angelegt hat (Bauspur); ohne diesen Aufruf ist
 // die Fabrik byteweise das Verhalten von vor dem Herausziehen.
-function leseWerkzeugeBauen() {
+function leseWerkzeugeBauen(optionen = {}) {
+    const sucheFristMs = optionen.sucheFristMs === undefined ? SUCHE_FRIST_MS : optionen.sucheFristMs;
+    if (!Number.isFinite(sucheFristMs) || sucheFristMs <= 0) throw new Error('leseWerkzeugeBauen: sucheFristMs muss eine positive Zahl sein');
     // Modul-Zustand fuer EINEN Lauf, von wurzelEinrichten() gesetzt. Der
     // Selbsttest ruft wurzelEinrichten() mehrfach mit unterschiedlichen
     // Wegwerf-Wurzeln auf; das ist gewollt, jeder CLI-Lauf richtet nur einmal ein.
@@ -220,19 +231,49 @@ function leseWerkzeugeBauen() {
     function* alleErlaubten() { yield* versionierteDateien; yield* laufNeueDateien; }
 
     function werkzeugSuche(muster, dateimuster) {
-        let re;
+        const musterText = muster === undefined ? '' : String(muster);
+        if (musterText.length > MAX_MUSTER_ZEICHEN) {
+            return { text: `abgelehnt: Suchmuster zu lang (${musterText.length} Zeichen, hoechstens ${MAX_MUSTER_ZEICHEN})`, abgelehnt: true };
+        }
+        if (dateimuster && String(dateimuster).length > MAX_MUSTER_ZEICHEN) {
+            return { text: `abgelehnt: Dateimuster zu lang (${String(dateimuster).length} Zeichen, hoechstens ${MAX_MUSTER_ZEICHEN})`, abgelehnt: true };
+        }
+        // Alles, was ein Muster des Modells auswertet (Uebersetzen, Dateifilter, Zeilentreffer), laeuft in EINEM leeren
+        // vm-Kontext (kein require, kein process) mit hartem Zeitlimit fuer den GANZEN Aufruf. Eine katastrophale
+        // Rueckverfolgung bricht V8 dort ab (gemessen: ^(a+)+$ gegen 40 mal "a" und "!" -> ERR_SCRIPT_EXECUTION_TIMEOUT
+        // nach dem Limit, der Prozess lebt weiter). Ein Zeitlimit ist eine ABLEHNUNG, kein Absturz.
+        const ende = Date.now() + sucheFristMs;
+        const kontext = vm.createContext({});
+        const imKontext = (code, daten) => {
+            Object.assign(kontext, daten);
+            return vm.runInContext(code, kontext, { timeout: Math.max(1, ende - Date.now()) });
+        };
+        const zeitlimit = () => ({
+            text: `abgelehnt: Suchmuster zu langsam — Zeitlimit von ${sucheFristMs} ms ueberschritten (verschachtelte Wiederholungen wie (a+)+ koennen katastrophal zurueckverfolgen). Es wurde nichts geliefert; ein einfacheres Muster verwenden.`,
+            abgelehnt: true,
+        });
+        const istZeitlimit = (e) => !!e && e.code === 'ERR_SCRIPT_EXECUTION_TIMEOUT';
         try {
-            re = new RegExp(muster);
+            imKontext('globalThis.re = new RegExp(musterText); undefined', { musterText });
         } catch (e) {
+            if (istZeitlimit(e)) return zeitlimit();
             return { text: `abgelehnt: ungueltiges Suchmuster (${e.message})`, abgelehnt: false };
         }
-        const dateiRe = dateimuster ? glob2regex(dateimuster) : null;
+        let kandidaten = [...alleErlaubten()];
+        if (dateimuster) {
+            try {
+                imKontext('globalThis.dateiRe = new RegExp(dateiQuelle); undefined', { dateiQuelle: glob2regex(String(dateimuster)).source });
+                kandidaten = Array.from(imKontext('namen.filter(function (n) { return dateiRe.test(n); })', { namen: kandidaten }));
+            } catch (e) {
+                if (istZeitlimit(e)) return zeitlimit();
+                return { text: `abgelehnt: ungueltiges Dateimuster (${e.message})`, abgelehnt: false };
+            }
+        }
 
         const treffer = [];
         const geschwaerzt = [];
         let gesamtTreffer = 0;
-        for (const relPfad of alleErlaubten()) {
-            if (dateiRe && !dateiRe.test(relPfad)) continue;
+        for (const relPfad of kandidaten) {
             const pruefung = pfadPruefen(relPfad);
             if (!pruefung.ok) continue; // z. B. Symlink aus dem Repo hinaus — interner Schutz, keine Modell-Ablehnung
             let inhalt;
@@ -242,8 +283,14 @@ function leseWerkzeugeBauen() {
                 continue;
             }
             const zeilen = zeilenAus(inhalt);
-            for (let i = 0; i < zeilen.length; i++) {
-                if (!re.test(zeilen[i])) continue;
+            let trefferIndizes;
+            try {
+                trefferIndizes = Array.from(imKontext('(function () { var r = []; for (var i = 0; i < zeilen.length; i++) { if (re.test(zeilen[i])) r.push(i); } return r; })()', { zeilen }));
+            } catch (e) {
+                if (istZeitlimit(e)) return zeitlimit();
+                throw e;
+            }
+            for (const i of trefferIndizes) {
                 gesamtTreffer++;
                 if (treffer.length >= MAX_SUCHE_ZEILEN) continue;
                 // Riegel PRO gefundener Zeile: nur was tatsaechlich zurueckgeht, wird

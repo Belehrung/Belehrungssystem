@@ -78,6 +78,14 @@
 // Baustands gebunden (A2): ein alter Grundlauf gilt nie fuer einen neuen Stand.
 // Der Modus ist ein Schalter in einrichten(), keine Lockerung des Vorgabe-Modus:
 // ein unbekannter Modus wirft, und "sauber-klon" lehnt neueDateien ab.
+// NACHARBEIT 1 (03.10.2026, Angriffsspur, plaene/diffpruefung-bauspur.md):
+//   X1  Die KANARIE laeuft auch im Baustand-Modus auf einem Klon von HEAD, nie auf dem Stand des Modells
+//       (eine neue, noch nicht registrierte Testdatei machte sie rot und hiess "Isolationsabbruch").
+//   X6  Ein Symlink der Kopie mit einem ".."-Segment im Ziel oder mit absolutem Ziel wird abgelehnt.
+//   X7  Vor jedem Kind-Lauf im Baustand-Modus sind test/umgebung.sh und test/db-vorbereiten.js gleich HEAD, und
+//       test/run.sh ist HEAD plus genau die Zeilen der in diesem Lauf registrierten Dateien; sonst Isolationsabbruch.
+//   P-1 Registrierte Testnamen: sichere Form statt Ausnahmeliste (relativ, Segmente A-Za-z0-9_.-, Endung .js).
+//   P-3 ERWARTETE_NAMEN in ausfuehr-aufbau.sh um die drei Namen ergaenzt, die test/umgebung.sh des Zielrepos setzt.
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
@@ -100,13 +108,17 @@ const PFLICHTDATEIEN = ['test/run.sh', 'test/umgebung.sh', 'test/db-vorbereiten.
 const ZWEITE_DATEI_GRUNDLAUF = 'test/umgebung.sh';   // zweiter sha256-Vergleich im Kind, wenn nichts mutiert ist
 // Benannte Modi von einrichten() (siehe Kopf, BAUSTAND-MODUS).
 const MODI = ['sauber-klon', 'baustand'];
-// Testdateinamen (Planpruefung B1, 03.10.2026): test/run.sh ist eine bash-Datei, und
+// Testdateinamen (Planpruefung B1, 03.10.2026; Nacharbeit 1 P-1): test/run.sh ist eine bash-Datei, und
 // ein Name wird hier in Pfade und Kommandozeilen eingesetzt (path.join(kopie, name),
-// sha256Datei, Konfiguration des Kindes). Gemessen am Zielrepo 03.10.2026: von 431
-// Eintraegen traegt genau EINER nicht die Form test_<Name>.js, naemlich
-// ops/boot-smoke.js — er steht deshalb namentlich in der Ausnahmeliste.
-const TESTNAME_MUSTER = /^test_[A-Za-z0-9_-]+\.js$/;
-const TESTNAME_AUSNAHMEN = ['ops/boot-smoke.js'];
+// sha256Datei, Konfiguration des Kindes). Fuer einen REGISTRIERTEN Namen (Pruef- UND Bauspur) gilt eine SICHERE
+// FORM statt einer Ausnahmeliste: relativ, Segmente nur A-Za-z0-9_.- (kein Leerzeichen, kein $, Backtick, ;, '),
+// kein Segment "." oder ".." (und keines namens node_modules oder .git), kein fuehrendes "-", Endung .js. Gemessen
+// am Zielrepo: von 431 Eintraegen (03.10.2026) traegt genau EINER nicht die Form test_<Name>.js (ops/boot-smoke.js),
+// und am Stand master (Nacharbeit 1) kam test/e2e-durchlauf.js dazu — die Literalliste ops/boot-smoke.js war schon
+// beim naechsten Zielrepo-Stand veraltet. Die enge Form test_<Name>.js bleibt allein bei registriere_test der
+// Bauspur (REGISTRIER_MUSTER dort): was das MODELL registriert, ist enger als was das Zielrepo hat.
+const TESTNAME_SEGMENT = /^[A-Za-z0-9_.-]+$/;
+const TESTNAME_VERBOTENE_SEGMENTE = ['.', '..', 'node_modules', '.git'];
 const SPERRDATEI = '/var/lock/dsv1.lock';
 const LAUFWURZEL = '/var/lib/dsv1';
 const CLUSTER_PRAEFIX = 'dsv1';
@@ -168,7 +180,7 @@ const WERKZEUGE_AUSFUEHRUNG = [
         parameters: {
             type: 'object',
             properties: {
-                testdatei: { type: 'string', description: 'Pfad relativ zur Repo-Wurzel, genau wie in test/run.sh registriert, z. B. "test_feature_x.js" oder "ops/boot-smoke.js".' },
+                testdatei: { type: 'string', description: 'Pfad relativ zur Repo-Wurzel, genau wie in test/run.sh registriert, z. B. "test_feature_x.js", "test/e2e-durchlauf.js" oder "ops/boot-smoke.js" (Segmente A-Za-z0-9_.-, Endung .js).' },
             },
             required: ['testdatei'],
         },
@@ -717,8 +729,9 @@ function baustandKopieren(wurzel, neueDateien, kopie) {
         fs.mkdirSync(path.dirname(ziel), { recursive: true, mode: 0o755 });
         if (st.isSymbolicLink()) {
             const linkZiel = fs.readlinkSync(quelle);
-            const aufgeloest = path.posix.normalize(path.posix.join(path.posix.dirname(rel), linkZiel));
-            if (path.isAbsolute(linkZiel) || aufgeloest === '..' || aufgeloest.startsWith('../')) {
+            // X6 (Angriffsspur): die lexikalische Pruefung allein reichte nicht (d/up -> .. und lnk -> d/up/.. fuehren
+            // ueber eine KETTE aus der Kopie heraus). Jedes ".."-Segment im Ziel und jedes absolute Ziel wird abgelehnt.
+            if (path.isAbsolute(linkZiel) || linkZiel.split('/').includes('..')) {
                 throw new Error(`Baustand: Symlink ${rel} zeigt aus der Kopie heraus (${JSON.stringify(linkZiel).slice(0, 80)})`);
             }
             fs.symlinkSync(linkZiel, ziel);
@@ -728,6 +741,54 @@ function baustandKopieren(wurzel, neueDateien, kopie) {
         } else {
             throw new Error(`Baustand: ${rel} ist weder Datei noch Symlink (Gitlink oder Verzeichnis?)`);
         }
+    }
+}
+
+// X7 (Nacharbeit 1, Angriffsspur 7): im Baustand-Modus kommen die Pflichtdateien der Sandbox aus dem ARBEITSBAUM, nicht
+// aus HEAD (die Bauspur sperrt sie beim Schreiben, das ist die erste Schicht; hier die zweite). Vor jedem Kind-Lauf:
+//  - test/umgebung.sh und test/db-vorbereiten.js sind regulaere Dateien, gleich dem Inhalt in HEAD (git show HEAD:<pfad>, vom
+//    Index unabhaengig) UND "git diff --quiet HEAD" meldet nichts (faengt Modus und Typ);
+//  - test/run.sh ist HEAD plus GENAU die Zeilen der in diesem Lauf registrierten Dateien: werden die Zeilen der neuen
+//    Eintraege (ganze Zeile = Name) entfernt, bleibt der HEAD-Text BYTEGLEICH uebrig, und jeder neue Eintrag steht
+//    genau einmal da und ist eine in diesem Lauf angelegte Datei.
+// Liefert null oder den Grund (Isolationsabbruch).
+function baustandPflichtdateienPruefen(l) {
+    const roh = (args) => spawnSync('git', ['-c', `safe.directory=${l.wurzel}`, ...args], { cwd: l.wurzel, env: { PATH: KIND_PATH }, maxBuffer: 64 * 1024 * 1024 });
+    const headInhalt = (rel) => {
+        const r = roh(['show', `HEAD:${rel}`]);
+        if (r.error || r.status !== 0) throw new Error(`git show HEAD:${rel} endete mit ${r.status}`);
+        return r.stdout;
+    };
+    const regulaer = (rel) => {
+        let st = null;
+        try { st = fs.lstatSync(path.join(l.wurzel, rel)); } catch (e) { /* fehlt */ }
+        return !!st && st.isFile() && !st.isSymbolicLink();
+    };
+    try {
+        for (const rel of ['test/umgebung.sh', 'test/db-vorbereiten.js']) {
+            if (!regulaer(rel)) return `Pflichtdatei ${rel} ist im Arbeitsbaum keine regulaere Datei mehr`;
+            if (!fs.readFileSync(path.join(l.wurzel, rel)).equals(headInhalt(rel))) return `Pflichtdatei ${rel} weicht im Inhalt von HEAD ab`;
+            const d = roh(['diff', '--quiet', 'HEAD', '--', rel]);
+            if (d.status !== 0) return `Pflichtdatei ${rel} weicht von HEAD ab (git diff --quiet HEAD: Exit ${d.status}; Modus oder Typ geaendert)`;
+        }
+        const rel = 'test/run.sh';
+        if (!regulaer(rel)) return `Pflichtdatei ${rel} ist im Arbeitsbaum keine regulaere Datei mehr`;
+        const jetztBuf = fs.readFileSync(path.join(l.wurzel, rel));
+        const jetzt = jetztBuf.toString('utf8');
+        const head = headInhalt(rel).toString('utf8');
+        if (!Buffer.from(jetzt, 'utf8').equals(jetztBuf)) return `Pflichtdatei ${rel} ist kein reines UTF-8`;
+        const kopfListe = testsAusRunShText(head);
+        const jetztListe = testsAusRunShText(jetzt);
+        const neueNamen = jetztListe.filter((t) => !kopfListe.includes(t));
+        if (new Set(neueNamen).size !== neueNamen.length) return `Pflichtdatei ${rel}: ein neuer Eintrag steht mehrfach in der TESTS-Liste`;
+        const imLauf = new Set(l.neueDateien());
+        const fremd = neueNamen.find((n) => !imLauf.has(n));
+        if (fremd !== undefined) return `Pflichtdatei ${rel}: der neue Eintrag ${JSON.stringify(fremd).slice(0, 80)} ist keine in diesem Lauf angelegte Datei`;
+        const entfernt = jetzt.split('\n').filter((zeile) => !neueNamen.includes(zeile.trim()));
+        if (entfernt.join('\n') !== head) return `Pflichtdatei ${rel} ist nicht HEAD plus genau die Zeilen der registrierten Dateien (${neueNamen.length} Registrierung(en))`;
+        return null;
+    } catch (e) {
+        return `Pflichtdateien nicht gegen HEAD pruefbar: ${String(e && e.message || e).slice(0, 200)}`;
     }
 }
 
@@ -862,7 +923,7 @@ function stufenDateiLesen(ergebnisDir, name) {
     try { return fs.readFileSync(path.join(ergebnisDir, name), 'utf8'); } catch (e) { return null; }
 }
 
-async function kindLaufen({ testdatei, mutation = null, zweck }) {
+async function kindLaufen({ testdatei, mutation = null, zweck, kopieVonHead = false }) {
     const l = lauf;
     // HEAD des Zielbaums unveraendert (Befund B12): sonst Abbruch, keine Kopie.
     const headJetzt = laufen('git', ['rev-parse', 'HEAD'], { cwd: l.wurzel }).trim();
@@ -879,8 +940,17 @@ async function kindLaufen({ testdatei, mutation = null, zweck }) {
     // Alles Weitere in try/finally (Befund 6, Runde 2): Kopie, Ergebnis
     // und Einhaengepunkt verschwinden auch im Fehlerweg.
     try {
-        if (l.modus === 'baustand') baustandKopieren(l.wurzel, l.neueDateien(), kopie);
-        else laufen('git', ['clone', '-q', '--no-local', '--depth', '1', l.wurzel, kopie]);
+        // X1: kopieVonHead (nur die KANARIE) heisst auch im Baustand-Modus: Klon von HEAD, nie der Stand des Modells.
+        if (l.modus === 'baustand' && !kopieVonHead) {
+            // X7: vor JEDEM Kind-Lauf auf dem Baustand sind die Pflichtdateien der Sandbox gleich HEAD (run.sh: plus die
+            // Registrierungen dieses Laufs). Abweichung = Isolationsabbruch, keine Kopie.
+            const pflichtGrund = baustandPflichtdateienPruefen(l);
+            if (pflichtGrund) {
+                isolationAbbrechen(pflichtGrund);
+                throw new Error(`Baustand: ${pflichtGrund}`);
+            }
+            baustandKopieren(l.wurzel, l.neueDateien(), kopie);
+        } else laufen('git', ['clone', '-q', '--no-local', '--depth', '1', l.wurzel, kopie]);
         fs.mkdirSync(path.join(kopie, 'node_modules'), { mode: 0o755 });
         let shaZweite;
         let zweiteDatei;
@@ -1089,18 +1159,19 @@ function deckelPruefen() {
 // haben, bevor er in einen Pfad oder eine Kommandozeile geht — er steht VOR
 // sha256Datei und vor dem Kind-Lauf. Gilt fuer beide Modi (auch die Pruefspur).
 function testNameGueltig(name) {
-    return typeof name === 'string' && (TESTNAME_MUSTER.test(name) || TESTNAME_AUSNAHMEN.includes(name));
+    if (typeof name !== 'string' || !name.endsWith('.js')) return false;
+    return name.split('/').every((segment) => TESTNAME_SEGMENT.test(segment) && !segment.startsWith('-') && !TESTNAME_VERBOTENE_SEGMENTE.includes(segment));
 }
 
 function testdateiPruefen(testdatei) {
     if (typeof testdatei !== 'string' || !testdatei) return 'keine Testdatei angegeben';
     if (!lauf.tests.includes(testdatei)) return `"${testdatei}" ist nicht in der TESTS=(-Liste von test/run.sh registriert`;
-    if (!testNameGueltig(testdatei)) return `unzulaessiger Testdateiname (erlaubt: test_<Name>.js ohne Pfad, Zeichen A-Za-z0-9_- , oder ${TESTNAME_AUSNAHMEN.join(', ')}): ${JSON.stringify(testdatei)}`;
-    if (lauf.modus === 'baustand') {
-        let st = null;
-        try { st = fs.lstatSync(path.join(lauf.wurzel, testdatei)); } catch (e) { /* fehlt */ }
-        if (!st || !st.isFile() || st.isSymbolicLink()) return `Testdatei "${testdatei}" ist registriert, existiert aber nicht als regulaere Datei im Arbeitsbaum`;
-    }
+    if (!testNameGueltig(testdatei)) return `unzulaessiger Testdateiname (erlaubt: relativer Pfad, Segmente A-Za-z0-9_.- ohne "." und "..", Endung .js): ${JSON.stringify(testdatei).slice(0, 100)}`;
+    // P-1: die registrierte Datei muss als REGULAERE Datei im Arbeitsbaum existieren (beide Modi; im Modus sauber-klon
+    // ist der Baum sauber, also gleich HEAD). Ein Symlink zaehlt nicht.
+    let st = null;
+    try { st = fs.lstatSync(path.join(lauf.wurzel, testdatei)); } catch (e) { /* fehlt */ }
+    if (!st || !st.isFile() || st.isSymbolicLink()) return `Testdatei "${testdatei}" ist registriert, existiert aber nicht als regulaere Datei im Arbeitsbaum`;
     return null;
 }
 
@@ -1131,7 +1202,10 @@ async function kanarieSicherstellen() {
     if (k.gefahren) return k.gruen;
     k.gefahren = true;
     console.error(`[ausfuehr-spur] Kanarie: Selbstmessung + ${k.datei}`);
-    const r = await kindLaufenSicher({ testdatei: k.datei, zweck: 'kanarie' });
+    // X1: die Kanarie laeuft immer auf einem Klon von HEAD (im Modus sauber-klon ist das ohnehin jede Kopie). Eine rote Kanarie
+    // darf nie am Stand des Modells haengen (eine neue, nicht registrierte Testdatei hiess vorher "Isolationsabbruch"); Isolation
+    // belegt die Selbstmessung im Kind, die Kanarie belegt, dass ein bekannt gruener Test auf HEAD in dieser Sandbox gruen laeuft.
+    const r = await kindLaufenSicher({ testdatei: k.datei, zweck: 'kanarie', kopieVonHead: true });
     k.ergebnis = r;
     k.gruen = r.gueltigerGrundlauf;
     if (!k.gruen && (r.werkzeugBefund || (r.status === 'umgebung-fehler' && !r.isolationGebrochen))) {
@@ -1295,13 +1369,16 @@ function fixtureAnlegen(basis) {
         'if grep -q "schalter: 1" test/umgebung-schalter.js; then echo "  ✗ Schalter verlangt Abbruch"; return 1; fi',
         'export PUBLIC_BASE_DOMAIN="gymdocu.de,gymdocu.test"',
         'export GYMDOCU_BOOT_SMOKE_STARTPFAD=1',
-        'for _v in PDF_ROOT BELEHRUNGEN_UPLOAD_DIR DOKUMENTE_DIR LAGEPLAN_UPLOAD_DIR EINWEISUNG_NACHWEIS_DIR PRUEFBERICHT_DIR DEFECT_PHOTO_DIR EXPORT_DIR OFFBOARDING_QUEUE_DIR; do',
+        'for _v in PDF_ROOT BELEHRUNGEN_UPLOAD_DIR DOKUMENTE_DIR LAGEPLAN_UPLOAD_DIR EINWEISUNG_NACHWEIS_DIR PRUEFBERICHT_DIR DEFECT_PHOTO_DIR EXPORT_DIR OFFBOARDING_QUEUE_DIR DATEI_LOESCHQUEUE_SPOOL_DIR; do',
         '  _d=$(mktemp -d /tmp/gymdocu-suite-fixture.XXXXXX) || { echo "  ✗ mktemp"; return 1; }',
         '  export "$_v=$_d"',
         'done',
         'unset _v _d',
         '_q=$(mktemp -d /tmp/gymdocu-suite-qr.XXXXXX) || return 1',
         'export QR_VERBRAUCH="$_q/qr-verbrauch.jsonl"; unset _q',
+        '# P-3: wie test/umgebung.sh des Zielrepos (GYMDOCU_TG_BOT_TOKEN/CHAT_ID sind dort eine ATTRAPPE, echte GYMDOCU_TG_* werden entfernt)',
+        'for _t in $(compgen -e | grep "^GYMDOCU_TG_"); do unset "$_t"; done; unset _t',
+        'export GYMDOCU_TG_BOT_TOKEN=attrappe GYMDOCU_TG_CHAT_ID=attrappe',
         'export NODE_OPTIONS="--require $PWD/test/vorlade.js${NODE_OPTIONS:+ $NODE_OPTIONS}"',
         'if grep -q "extra: 1" test/umgebung-schalter.js; then export EXTRA_DSV1=1; fi',
         '# Befund W-E3, Stufe Umgebung: ein abgekoppelter Prozess, der nach der Waechterdatei die Kopie beschreibt',
@@ -1333,7 +1410,7 @@ function fixtureAnlegen(basis) {
     schreiben('test_exit124.js', "console.log('  ✓ x');\nprocess.exit(124);\n");
     schreiben('test_exit127.js', "process.exit(127);\n");
     schreiben('test_zustand.js', ok + "const fs = require('node:fs');\nconst { spawnSync } = require('node:child_process');\nconst spuren = ['zustand-in-der-kopie.txt', '/var/tmp/dsv1-zustand.txt', '/tmp/dsv1-zustand.txt', '/dev/shm/dsv1-zustand.txt'];\nfor (const s of spuren) ok('keine Spur aus einem frueheren Lauf: ' + s, !fs.existsSync(s));\nconst z = (sql) => spawnSync('psql', [process.env.DATABASE_URL, '-X', '-tA', '-c', sql], { encoding: 'utf8' });\nok('keine Tabelle zustand aus einem frueheren Lauf', z(\"SELECT count(*) FROM pg_tables WHERE tablename = 'zustand'\").stdout.trim() === '0');\nok('keine Nebendatenbank dsv1_neben aus einem frueheren Lauf', z(\"SELECT count(*) FROM pg_database WHERE datname = 'dsv1_neben'\").stdout.trim() === '0');\nok('keine Rollenvorgabe (ALTER ROLE … SET) aus einem frueheren Lauf', z('SELECT count(*) FROM pg_db_role_setting').stdout.trim() === '0');\nok('keine Datenbank \"Foo\" (Grossbuchstabe) oder dsv1_vorlage (Template) aus einem frueheren Lauf', z(\"SELECT count(*) FROM pg_database WHERE datname IN ('Foo','dsv1_vorlage')\").stdout.trim() === '0');\nok('keine Datenbank mit Zeilenumbruch im Namen (\"template1\\\\nx\", \"postgres\\\\nx\") aus einem frueheren Lauf, template1 und postgres unberuehrt', z(\"SELECT count(*) FROM pg_database WHERE datname LIKE E'%\\\\n%'\").stdout.trim() === '0' && z(\"SELECT count(*) FROM pg_database WHERE datname IN ('template1','postgres')\").stdout.trim() === '2');\nconst zp = (sql) => spawnSync('psql', [process.env.DATABASE_URL.replace('/gymdocu_test?', '/postgres?'), '-X', '-tA', '-c', sql], { encoding: 'utf8' });\nok('kein Large Object in postgres aus einem frueheren Lauf', zp('SELECT count(*) FROM pg_largeobject_metadata').stdout.trim() === '0');\nfor (const s of spuren) fs.writeFileSync(s, 'dsv1');\nok('Tabelle zustand angelegt', z('CREATE TABLE zustand(a int)').status === 0);\nok('Nebendatenbank dsv1_neben angelegt (Rolle hat CREATEDB)', z('CREATE DATABASE dsv1_neben').status === 0);\nok('Rollenvorgabe gesetzt', z(\"ALTER ROLE nobody SET work_mem = '7MB'\").status === 0);\nok('Datenbank \"Foo\" angelegt (Bezeichner mit Grossbuchstabe)', z('CREATE DATABASE \"Foo\"').status === 0);\nok('Datenbank dsv1_vorlage als Template angelegt (die Rolle darf das: gemessen 30.09.2026 auf PG 16)', z('CREATE DATABASE dsv1_vorlage IS_TEMPLATE true').status === 0);\nok('Datenbank \"template1\\\\nx\" (Zeilenumbruch im Namen) angelegt', z('CREATE DATABASE \"template1\\nx\"').status === 0);\nok('Datenbank \"postgres\\\\nx\" angelegt', z('CREATE DATABASE \"postgres\\nx\"').status === 0);\nok('Large Object in postgres angelegt (lo_create als Rolle)', zp('SELECT lo_create(0)').status === 0);\nok('Positivkontrolle: im selben Lauf sind die Spuren jetzt da', spuren.every((s) => fs.existsSync(s)) && z(\"SELECT count(*) FROM pg_tables WHERE tablename = 'zustand'\").stdout.trim() === '1' && z(\"SELECT count(*) FROM pg_database WHERE datname = 'dsv1_neben'\").stdout.trim() === '1' && z('SELECT count(*) FROM pg_db_role_setting').stdout.trim() === '1' && z(\"SELECT count(*) FROM pg_database WHERE datname IN ('Foo','dsv1_vorlage')\").stdout.trim() === '2' && z(\"SELECT count(*) FROM pg_database WHERE datname LIKE E'%\\\\n%'\").stdout.trim() === '2' && zp('SELECT count(*) FROM pg_largeobject_metadata').stdout.trim() === '1');\nschluss();\n");
-    schreiben('test_umgebung.js', ok + "const namen = Object.keys(process.env).sort();\nconst soll = ['BELEHRUNGEN_UPLOAD_DIR','CI','DATABASE_URL','DEFECT_PHOTO_DIR','DOKUMENTE_DIR','EINWEISUNG_NACHWEIS_DIR','EXPORT_DIR','GYMDOCU_BOOT_SMOKE_STARTPFAD','HOME','LAGEPLAN_UPLOAD_DIR','NODE_OPTIONS','OFFBOARDING_QUEUE_DIR','PATH','PDF_ROOT','PLAYWRIGHT_BROWSERS_PATH','PRUEFBERICHT_DIR','PUBLIC_BASE_DOMAIN','QR_VERBRAUCH','SESSION_SECRET','TZ'];\nok('Umgebungsnamen = Literalliste', JSON.stringify(namen) === JSON.stringify(soll), namen);\nok('CI=true, TZ=UTC, HOME=/tmp', process.env.CI === 'true' && process.env.TZ === 'UTC' && process.env.HOME === '/tmp');\nok('SESSION_SECRET ist das CI-Literal', process.env.SESSION_SECRET === 'ci-isolation-session-secret-0123456789abcdef');\nok('DATABASE_URL zeigt auf den Socket-Ordner /dsv1/pg und gymdocu_test und ist fuer new URL() gueltig', /^postgresql:\\/\\/nobody@localhost\\/gymdocu_test\\?host=\\/dsv1\\/pg&port=\\d+$/.test(process.env.DATABASE_URL) && new URL(process.env.DATABASE_URL).pathname === '/gymdocu_test', process.env.DATABASE_URL);\nok('Vorladung ueber NODE_OPTIONS wirkt', globalThis.dsv1Vorgeladen === true);\nok('PDF_ROOT liegt unter /tmp/gymdocu-suite-', String(process.env.PDF_ROOT).startsWith('/tmp/gymdocu-suite-'));\nok('cwd ist /dsv1/kopie', process.cwd() === '/dsv1/kopie');\nschluss();\n");
+    schreiben('test_umgebung.js', ok + "const namen = Object.keys(process.env).sort();\nconst soll = ['BELEHRUNGEN_UPLOAD_DIR','CI','DATABASE_URL','DATEI_LOESCHQUEUE_SPOOL_DIR','DEFECT_PHOTO_DIR','DOKUMENTE_DIR','EINWEISUNG_NACHWEIS_DIR','EXPORT_DIR','GYMDOCU_BOOT_SMOKE_STARTPFAD','GYMDOCU_TG_BOT_TOKEN','GYMDOCU_TG_CHAT_ID','HOME','LAGEPLAN_UPLOAD_DIR','NODE_OPTIONS','OFFBOARDING_QUEUE_DIR','PATH','PDF_ROOT','PLAYWRIGHT_BROWSERS_PATH','PRUEFBERICHT_DIR','PUBLIC_BASE_DOMAIN','QR_VERBRAUCH','SESSION_SECRET','TZ'];\nok('Umgebungsnamen = Literalliste', JSON.stringify(namen) === JSON.stringify(soll), namen);\nok('CI=true, TZ=UTC, HOME=/tmp', process.env.CI === 'true' && process.env.TZ === 'UTC' && process.env.HOME === '/tmp');\nok('SESSION_SECRET ist das CI-Literal', process.env.SESSION_SECRET === 'ci-isolation-session-secret-0123456789abcdef');\nok('DATABASE_URL zeigt auf den Socket-Ordner /dsv1/pg und gymdocu_test und ist fuer new URL() gueltig', /^postgresql:\\/\\/nobody@localhost\\/gymdocu_test\\?host=\\/dsv1\\/pg&port=\\d+$/.test(process.env.DATABASE_URL) && new URL(process.env.DATABASE_URL).pathname === '/gymdocu_test', process.env.DATABASE_URL);\nok('Vorladung ueber NODE_OPTIONS wirkt', globalThis.dsv1Vorgeladen === true);\nok('PDF_ROOT liegt unter /tmp/gymdocu-suite-', String(process.env.PDF_ROOT).startsWith('/tmp/gymdocu-suite-'));\nok('cwd ist /dsv1/kopie', process.cwd() === '/dsv1/kopie');\nschluss();\n");
     schreiben('test_geheimnis.js', ok + "console.log('token = \"' + 'gh' + 'p_' + 'X'.repeat(36) + '\"');\nok('eine Zeile mit Attrappe ausgegeben', true);\nschluss();\n");
     // PEM-Rahmen zur Laufzeit zusammengesetzt (kein Literal im Quelltext).
     // 25 Fuellzeilen davor: der Riegel verwirft die GESAMTE Ausgabe, sobald
@@ -1943,8 +2020,10 @@ async function selbsttestSpur(pruefen) {
 async function selbsttestBaustand(pruefen) {
     const basisA = fs.mkdtempSync(path.join(os.tmpdir(), 'ausfuehr-spur-selbsttest-'));
     const basisB = fs.mkdtempSync(path.join(os.tmpdir(), 'ausfuehr-spur-selbsttest-'));
+    const basisC = fs.mkdtempSync(path.join(os.tmpdir(), 'ausfuehr-spur-selbsttest-'));
     fs.chmodSync(basisA, 0o755);
     fs.chmodSync(basisB, 0o755);
+    fs.chmodSync(basisC, 0o755);
     const alteUmgebung = process.env.PLAYWRIGHT_BROWSERS_PATH;
     const istHartGesperrt = (p) => path.basename(p).startsWith('.env') || p.endsWith('.key') || p.endsWith('.pem');
     const T_KURZ = 8;
@@ -1970,20 +2049,29 @@ async function selbsttestBaustand(pruefen) {
             /Modus baustand braucht neueDateien/.test(f3 || '') && lauf === null);
 
         // ----- B1: Testnamen (Pruefspur-Modus, sauberer Baum A) -----
-        pruefen('TESTNAME-FORM: test_<Name>.js und die Ausnahme ops/boot-smoke.js gelten, "../x.js", "/etc/passwd", "sub/test_x.js", "test_a b.js", "test_$(id).js", Backtick, Strichpunkt, Zeilenumbruch, Anfuehrungszeichen, "test_x.js\\n" und ein Name ohne .js gelten NICHT',
-            testNameGueltig('test_gruen.js') && testNameGueltig('test_feature_x-1_2.js') && testNameGueltig('ops/boot-smoke.js')
-            && ['../x.js', '/etc/passwd', 'sub/test_x.js', 'test_a b.js', 'test_$(id).js', 'test_`id`.js', 'test_x.js;', 'test_x.js\nfoo', "test_'x.js", 'test_x.js\n', 'test_x', 'ops/boot-smoke.js/../x.js', 'ops/anders.js', ''].every((n) => !testNameGueltig(n)));
+        const gueltigeNamen = ['test_gruen.js', 'test_feature_x-1_2.js', 'ops/boot-smoke.js', 'test/e2e-durchlauf.js', 'sub/test_x.js', 'a.b-c_d/e.js'];
+        const ungueltigeNamen = ['../x.js', 'a/../b.js', '$(id).js', '/etc/passwd', 'test_a b.js', 'test_$(id).js', 'test_`id`.js', 'test_x.js;', 'test_x.js\nfoo', "test_'x.js", 'test_x.js\n', 'test_x', './x.js', 'a/./b.js',
+            '-x.js', 'a/-b.js', 'a//b.js', 'node_modules/x.js', '.git/x.js', 'ops/boot-smoke.js/../x.js', ' x.js', 'x.js/', ''];
+        pruefen(`TESTNAME-FORM (P-1): ${gueltigeNamen.length} Namen gelten (test_<Name>.js, ops/boot-smoke.js, test/e2e-durchlauf.js, Unterverzeichnisse mit A-Za-z0-9_.-); ${ungueltigeNamen.length} gelten NICHT ("../x.js", "a/../b.js", "$(id).js", absolut, Leerzeichen, Backtick, Strichpunkt, Zeilenumbruch, Anfuehrungszeichen, "." und ".." als Segment, fuehrendes "-", leeres Segment, node_modules, .git, ohne .js, leer)`,
+            gueltigeNamen.every((n) => testNameGueltig(n)) && ungueltigeNamen.every((n) => !testNameGueltig(n)) && testNameGueltig(123) === false && testNameGueltig(null) === false);
         await einrichten({ wurzel: fxA.wurzel, istHartGesperrt, tSekunden: T_KURZ });
-        const boese = ['../test_x.js', '/etc/passwd', 'sub/test_x.js', 'test_a b.js', 'test_$(id).js', 'test_`id`.js', 'test_x.js\nfoo', 'ops/anders.js'];
+        const boese = ['../test_x.js', '/etc/passwd', 'a/../b.js', 'test_a b.js', 'test_$(id).js', 'test_`id`.js', 'test_x.js\nfoo', './x.js'];
         lauf.tests.push(...boese);   // wie eine eingeschleuste Zeile in test/run.sh: sie STEHT in der TESTS-Liste
         const vorherAusfuehrungen = zaehler().ausfuehrungen;
         const bAbl = [];
         for (const name of boese) bAbl.push(await werkzeugAufrufen('teste', { testdatei: name }));
         const bAblM = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/wert.js', alt: '42', neu: '43', testdatei: 'test_$(id).js' });
-        pruefen(`B1 PRUEFSPUR: acht REGISTRIERTE Namen mit Pfadsegment, Leerzeichen, $(…), Backtick, Zeilenumbruch oder fremdem Unterverzeichnis werden VOR sha256Datei und Kind-Lauf abgelehnt (teste und mutiere_und_teste), kein Kind-Lauf (Ausfuehrungen ${zaehler().ausfuehrungen} = ${vorherAusfuehrungen})`,
+        pruefen(`B1 PRUEFSPUR: acht REGISTRIERTE Namen mit "..", ".", absolutem Pfad, Leerzeichen, $(…), Backtick oder Zeilenumbruch werden VOR sha256Datei und Kind-Lauf abgelehnt (teste und mutiere_und_teste), kein Kind-Lauf (Ausfuehrungen ${zaehler().ausfuehrungen} = ${vorherAusfuehrungen})`,
             bAbl.every((r) => r.abgelehnt === true && r.text.includes('unzulaessiger Testdateiname')) && bAblM.abgelehnt === true && bAblM.text.includes('unzulaessiger Testdateiname')
             && zaehler().ausfuehrungen === vorherAusfuehrungen);
         lauf.tests.length -= boese.length;
+        lauf.tests.push('sub/test_fehlt_im_klon.js', 'test/e2e-durchlauf.js');
+        const pFehlt = await werkzeugAufrufen('teste', { testdatei: 'sub/test_fehlt_im_klon.js' });
+        const pFehlt2 = await werkzeugAufrufen('teste', { testdatei: 'test/e2e-durchlauf.js' });
+        lauf.tests.length -= 2;
+        pruefen(`P-1 FORM GUELTIG, DATEI FEHLT (Pruefspur, Modus sauber-klon): ein registrierter Name in sicherer Form (sub/test_fehlt_im_klon.js, test/e2e-durchlauf.js), den es als regulaere Datei nicht gibt, wird VOR dem Kind-Lauf mit "existiert aber nicht als regulaere Datei" abgelehnt, nicht als Namensfehler und nicht als ENOENT-Umgebungsfehler (Ausfuehrungen ${zaehler().ausfuehrungen} = ${vorherAusfuehrungen})`,
+            pFehlt.abgelehnt === true && pFehlt.text.includes('existiert aber nicht als regulaere Datei') && !pFehlt.text.includes('unzulaessiger Testdateiname')
+            && pFehlt2.abgelehnt === true && pFehlt2.text.includes('existiert aber nicht als regulaere Datei') && zaehler().ausfuehrungen === vorherAusfuehrungen);
         const bPos = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
         pruefen('B1 POSITIVKONTROLLE: derselbe Aufruf mit einem gueltigen Namen laeuft (bestanden)', bPos.status === 'bestanden');
         aufraeumen();
@@ -2023,14 +2111,14 @@ async function selbsttestBaustand(pruefen) {
         pruefen('A1 VOR DER REGISTRIERUNG: test_kopie.js steht (noch) nicht in test/run.sh des Baums -> abgelehnt',
             nichtRegistriert.abgelehnt === true && nichtRegistriert.text.includes('nicht in der TESTS=(-Liste'));
         const runShAlt = fs.readFileSync(wB('test/run.sh'), 'utf8');
-        const runShNeu = runShAlt.replace('  test_flut.js\n)\n', '  test_flut.js\n  test_kopie.js\n  test_neu.js\n  test_fehlt.js\n)\n');
+        const runShNeu = runShAlt.replace('  test_flut.js\n)\n', '  test_flut.js\n  test_kopie.js\n  test_neu.js\n)\n');   // nur die zwei Registrierungen dieses Laufs (X7: jeder neue Eintrag muss eine Lauf-Datei sein)
         pruefen('GEGENPROBE-VORBEREITUNG (Baustand): der Anker "test_flut.js + )" kommt in der Fixtur-run.sh genau einmal vor', runShAlt.split('  test_flut.js\n)\n').length - 1 === 1 && runShNeu !== runShAlt);
         fs.writeFileSync(wB('test/run.sh'), runShNeu);
         neu = ['test_kopie.js', 'test_neu.js', 'lib/neu_im_lauf.js'];
         const k1 = await werkzeugAufrufen('teste', { testdatei: 'test_kopie.js' });
         const i1 = kopieInfo(k1.text);
         pruefen(`A1 NACH DER REGISTRIERUNG: die neu eingetragene, in diesem Lauf angelegte Testdatei laeuft ohne Neustart (B3c: bestanden) — die Liste wurde aus test/run.sh des Baums neu gelesen (${lauf.tests.length} Eintraege)`,
-            k1.status === 'bestanden' && lauf.tests.length === 21 && lauf.tests.includes('test_kopie.js') && i1 !== null);
+            k1.status === 'bestanden' && lauf.tests.length === 20 && lauf.tests.includes('test_kopie.js') && i1 !== null);
         pruefen('B3b UNGETRACKT: nur_ungetrackt.js (ungetrackt, NICHT in der Liste des Laufs) und nicht_versioniert.js (verdeckt) sind in der Kopie NICHT vorhanden; lib/neu_im_lauf.js (in der Liste) IST vorhanden',
             i1 !== null && i1.ungetrackt === false && i1.verdeckt === false && i1.imLauf === true);
         neu = ['test_kopie.js', 'test_neu.js'];
@@ -2047,6 +2135,7 @@ async function selbsttestBaustand(pruefen) {
         const m2 = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/neu_im_lauf.js', alt: '7', neu: '8', testdatei: 'test_neu.js' });
         pruefen('MUTATION GEGENRICHTUNG: ist lib/neu_im_lauf.js NICHT in der Liste des Laufs, ist es kein Mutationsziel (nicht versioniert)',
             m2.abgelehnt === true && m2.text.includes('nicht versioniert'));
+        fs.writeFileSync(wB('test/run.sh'), runShNeu.replace('  test_neu.js\n)\n', '  test_neu.js\n  test_fehlt.js\n)\n'));
         const fehlt = await werkzeugAufrufen('teste', { testdatei: 'test_fehlt.js' });
         pruefen('REGISTRIERT, ABER NICHT VORHANDEN: test_fehlt.js steht in test/run.sh, die Datei gibt es nicht -> abgelehnt ohne Kind-Lauf (kein ENOENT-Umgebungsfehler)',
             fehlt.abgelehnt === true && fehlt.text.includes('existiert aber nicht als regulaere Datei'));
@@ -2086,13 +2175,138 @@ async function selbsttestBaustand(pruefen) {
         const sInnen = symlinkFehler('innen', 'lib/wert.js');
         pruefen('A8 SYMLINK AUS DER KOPIE: ein Symlink mit Ziel "../draussen.js", "/etc/passwd" oder "lib/../../draussen.js" wird abgelehnt (Baustand: Symlink … zeigt aus der Kopie heraus); ein Symlink auf lib/wert.js wird kopiert',
             /Symlink aus-rel\.js zeigt aus der Kopie heraus/.test(sRaus || '') && /Symlink aus-abs\.js zeigt aus der Kopie heraus/.test(sAbs || '') && /Symlink aus-tief\.js zeigt aus der Kopie heraus/.test(sTief || '') && sInnen === null);
+        // X6 (Angriffsspur): die KETTE d/up -> .. und lnk -> d/up/.. fuehrte lexikalisch nie aus der Kopie, physisch aber doch. Jedes
+        // ".."-Segment im Ziel wird abgelehnt — auch ein Ziel, das lexikalisch innen bliebe (lib/../lib/wert.js).
+        fs.mkdirSync(path.join(fxB.wurzel, 'd'), { recursive: true });
+        fs.symlinkSync('..', path.join(fxB.wurzel, 'd', 'up'));
+        fs.symlinkSync('d/up/..', path.join(fxB.wurzel, 'lnk'));
+        const ketteFehler = (liste, nr) => { try { baustandKopieren(fxB.wurzel, liste, path.join(basisB, `kopie-kette-${nr}`)); return null; } catch (e) { return e.message; } };
+        const kUp = ketteFehler(['d/up'], 1);
+        const kLnk = ketteFehler(['lnk'], 2);
+        const kBeide = ketteFehler(['d/up', 'lnk'], 3);
+        const sMitPP = symlinkFehler('innen-pp', 'lib/../lib/wert.js');
+        const sPunkt = symlinkFehler('innen-punkt', './lib/wert.js');
+        fs.rmSync(path.join(fxB.wurzel, 'd'), { recursive: true, force: true });
+        fs.unlinkSync(path.join(fxB.wurzel, 'lnk'));
+        pruefen('X6 KETTE: "d/up -> .." und "lnk -> d/up/.." werden JE FUER SICH abgelehnt ("zeigt aus der Kopie heraus"), die Kette als Ganzes ebenso; "lib/../lib/wert.js" (lexikalisch innen) wird abgelehnt, "./lib/wert.js" (ohne ..) wird kopiert',
+            /Symlink d\/up zeigt aus der Kopie heraus/.test(kUp || '') && /Symlink lnk zeigt aus der Kopie heraus/.test(kLnk || '') && /zeigt aus der Kopie heraus/.test(kBeide || '')
+            && /Symlink innen-pp\.js zeigt aus der Kopie heraus/.test(sMitPP || '') && sPunkt === null);
         pruefen('A8 DATEIEN-LISTE: baustandDateien nennt ls-files plus Listendateien sortiert und ohne node_modules/.git; ein Name mit ".." wirft',
             (() => { const d = baustandDateien(fxB.wurzel, ['test_kopie.js', 'node_modules/x.js', '.git/config', 'node_modules']); let wirft = false; try { baustandDateien(fxB.wurzel, ['../x.js']); } catch (e) { wirft = /unzulaessiger Dateiname/.test(e.message); } return d.includes('lib/wert.js') && d.includes('test_kopie.js') && !d.some((n) => n.startsWith('node_modules') || n.startsWith('.git/')) && d.join('\0') === [...d].sort().join('\0') && wirft; })());
+
+        // ----- NACHARBEIT 1: Kanarie auf HEAD (X1), Pflichtdateien gegen HEAD (X7), Testname test/e2e-durchlauf.js (P-1) -----
+        // Eigene Fixtur C: ein Registrierungs-Kanarie (test_registrierung_static.js, wie test_feature_run_sh_registrierung_static.js des
+        // Zielrepos: rot, sobald eine test_*.js im Baum nicht in test/run.sh steht) und test/e2e-durchlauf.js, beide registriert.
+        const fxC = fixtureAnlegen(basisC);
+        const wC = (rel) => path.join(fxC.wurzel, rel);
+        const gC = (...a) => laufen('git', a, { cwd: fxC.wurzel });
+        const KANARIE_C = 'test_registrierung_static.js';
+        const kanarieCode = "const fs = require('node:fs');\nconst run = fs.readFileSync('test/run.sh', 'utf8');\nconst fehlt = fs.readdirSync('.').filter((n) => /^test_.*\\.js$/.test(n) && !run.includes('  ' + n));\nif (fehlt.length) { console.log('  ✗ FAIL: nicht in test/run.sh registriert: ' + fehlt.join(', ')); console.log('──────────── 0 PASS / 1 FAIL ────────────'); process.exit(1); }\nconsole.log('  ✓ alle test_*.js sind registriert');\nconsole.log('──────────── 1 PASS / 0 FAIL ────────────');\n";
+        const e2eCode = "console.log('  ✓ e2e-durchlauf');\nconsole.log('──────────── 1 PASS / 0 FAIL ────────────');\n";
+        fs.writeFileSync(wC(KANARIE_C), kanarieCode);
+        fs.writeFileSync(wC('test/e2e-durchlauf.js'), e2eCode);
+        const runShC0 = fs.readFileSync(wC('test/run.sh'), 'utf8');
+        const runShC = runShC0.replace('  test_flut.js\n)\n', `  test_flut.js\n  ${KANARIE_C}\n  test/e2e-durchlauf.js\n)\n`);
+        fs.writeFileSync(wC('test/run.sh'), runShC);
+        pruefen('NACHARBEIT-1-VORBEREITUNG: Fixtur C traegt den Registrierungs-Kanarie und test/e2e-durchlauf.js registriert (Anker "test_flut.js + )" genau einmal)', runShC0.split('  test_flut.js\n)\n').length - 1 === 1 && runShC !== runShC0);
+        gC('add', '-A');
+        gC('commit', '-q', '-m', 'Nacharbeit 1 Fixtur');
+        const textC = (r) => String(r && r.text);
+        const sitzungC = async (neuListe, eintraege) => einrichten({ wurzel: fxC.wurzel, istHartGesperrt, tSekunden: T_KURZ, modus: 'baustand', neueDateien: () => neuListe, kanarie: KANARIE_C, protokoll: (e) => eintraege.push(e) });
+
+        // X1 (Reproduktion der Angriffsspur): eine NEUE, noch nicht registrierte Testdatei vor dem ersten teste. Die Kanarie laeuft auf HEAD,
+        // der erste teste ist "bestanden", kein Isolationsabbruch. Positivkontrolle: derselbe Registrierungs-Kanarie, als gewoehnlicher
+        // Test auf dem Baustand gefahren, WIRD rot — der Fall ist also ein echter (die Kanarie ist am Modell-Stand empfindlich).
+        {
+            const eintraege = [];
+            fs.writeFileSync(wC('test_unregistriert.js'), "console.log('  ✓ x');\nconsole.log('1 PASS / 0 FAIL');\n");
+            await sitzungC(['test_unregistriert.js'], eintraege);
+            const x1 = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
+            const x1Kanarie = lauf.kanarie.gruen === true && lauf.kanarie.gefahren === true;
+            const x1Pos = await werkzeugAufrufen('teste', { testdatei: KANARIE_C });
+            pruefen(`X1 KANARIE AUF HEAD: eine neue, nicht registrierte test_unregistriert.js im Baustand — der erste teste ist "${x1.status}" (nicht abgelehnt), die Kanarie gruen, KEIN Isolationsabbruch (${istAbgebrochen()}); Positivkontrolle: dieselbe Kanarie-Datei als gewoehnlicher Test auf dem Baustand ist "${x1Pos.status}" und nennt die Datei`,
+                x1.status === 'bestanden' && x1.abgelehnt === false && x1Kanarie && !istAbgebrochen() && x1Pos.status === 'gescheitert' && textC(x1Pos).includes('test_unregistriert.js'));
+            aufraeumen();
+            // X1b: die Kanarie-Datei im Baum ist verfaelscht (immer rot) — die Kanarie liest HEAD, nicht den Baum
+            fs.writeFileSync(wC(KANARIE_C), "console.log('  ✗ FAIL: im Baum verfaelscht');\nprocess.exit(1);\n");
+            const e2 = [];
+            await sitzungC(['test_unregistriert.js'], e2);
+            const x1b = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
+            pruefen(`X1 KANARIE-DATEI IM BAUM VERFAELSCHT: der Baum traegt eine immer rote ${KANARIE_C}, die Kanarie laeuft trotzdem auf HEAD — erster teste "${x1b.status}", Kanarie gruen (${lauf.kanarie.gruen}), kein Isolationsabbruch (${istAbgebrochen()})`,
+                x1b.status === 'bestanden' && lauf.kanarie.gruen === true && !istAbgebrochen());
+            aufraeumen();
+            gC('checkout', '--', KANARIE_C);
+            fs.unlinkSync(wC('test_unregistriert.js'));
+        }
+
+        // X7 (Angriffsspur 7): jede Abweichung der Pflichtdateien von HEAD ist ein Isolationsabbruch VOR der Kopie; der Marker der
+        // Manipulation steht in KEINEM Protokolleintrag (es lief nichts). Je Fall ein Aufbau, der genau EINEN Riegel allein trifft.
+        const MARKER_X7 = 'DSV1-TAMPER-X7';
+        const x7Fall = async (beschreibung, vorbereiten, zuruecknehmen, neuListe, erwartetText) => {
+            const eintraege = [];
+            vorbereiten();
+            await sitzungC(neuListe, eintraege);
+            const r = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
+            const marker = abbruchMarker() || '';
+            const ok = istAbgebrochen() && marker.includes(erwartetText) && r.status === 'umgebung-fehler' && !JSON.stringify(eintraege).includes(MARKER_X7) && zaehler().ausfuehrungen === 1;
+            const info = `${beschreibung} -> abgebrochen ${istAbgebrochen()}, Grund "${marker.slice(0, 90)}", Status ${r.status}, Ausfuehrungen ${zaehler().ausfuehrungen} (nur die Kanarie)`;
+            aufraeumen();
+            zuruecknehmen();
+            return { ok, info };
+        };
+        const humus = { umgebung: fs.readFileSync(wC('test/umgebung.sh')), vorbereiten: fs.readFileSync(wC('test/db-vorbereiten.js')) };
+        const stellen = (rel, buf) => fs.writeFileSync(wC(rel), buf);
+        const x7a = await x7Fall('umgebung.sh um eine Zeile erweitert', () => stellen('test/umgebung.sh', Buffer.concat([humus.umgebung, Buffer.from(`echo ${MARKER_X7} >&2\n`)])), () => gC('checkout', '--', 'test/umgebung.sh'), [], 'test/umgebung.sh weicht im Inhalt von HEAD ab');
+        const x7b = await x7Fall('db-vorbereiten.js um eine Zeile erweitert', () => stellen('test/db-vorbereiten.js', Buffer.concat([Buffer.from(`console.error('${MARKER_X7}');\n`), humus.vorbereiten])), () => gC('checkout', '--', 'test/db-vorbereiten.js'), [], 'test/db-vorbereiten.js weicht im Inhalt von HEAD ab');
+        const x7c = await x7Fall('umgebung.sh NUR im Modus geaendert (chmod 755)', () => fs.chmodSync(wC('test/umgebung.sh'), 0o755), () => { fs.chmodSync(wC('test/umgebung.sh'), 0o644); gC('checkout', '--', 'test/umgebung.sh'); }, [], 'git diff --quiet HEAD');
+        const x7d = await x7Fall('umgebung.sh veraendert UND per assume-unchanged vor git diff versteckt', () => { stellen('test/umgebung.sh', Buffer.concat([humus.umgebung, Buffer.from(`echo ${MARKER_X7} >&2\n`)])); gC('update-index', '--assume-unchanged', 'test/umgebung.sh'); }, () => { gC('update-index', '--no-assume-unchanged', 'test/umgebung.sh'); gC('checkout', '--', 'test/umgebung.sh'); }, [], 'test/umgebung.sh weicht im Inhalt von HEAD ab');
+        const x7e = await x7Fall('run.sh um eine fremde Zeile NACH der Klammer erweitert', () => stellen('test/run.sh', Buffer.from(runShC + `echo ${MARKER_X7}\n`)), () => stellen('test/run.sh', Buffer.from(runShC)), [], 'nicht HEAD plus genau die Zeilen der registrierten Dateien');
+        const x7f = await x7Fall('run.sh traegt einen NEUEN Eintrag, der keine Datei dieses Laufs ist', () => stellen('test/run.sh', Buffer.from(runShC.replace(`  test/e2e-durchlauf.js\n)\n`, `  test/e2e-durchlauf.js\n  test_fremd.js\n)\n`))), () => stellen('test/run.sh', Buffer.from(runShC)), [], 'keine in diesem Lauf angelegte Datei');
+        const x7g = await x7Fall('run.sh traegt denselben neuen Eintrag ZWEIMAL', () => { fs.writeFileSync(wC('test_doppelt.js'), "console.log('  ✓ x');\n"); stellen('test/run.sh', Buffer.from(runShC.replace(`  test/e2e-durchlauf.js\n)\n`, `  test/e2e-durchlauf.js\n  test_doppelt.js\n  test_doppelt.js\n)\n`))); }, () => { stellen('test/run.sh', Buffer.from(runShC)); fs.unlinkSync(wC('test_doppelt.js')); }, ['test_doppelt.js'], 'mehrfach in der TESTS-Liste');
+        pruefen(`X7 INHALT: ${x7a.info}; ${x7b.info}`, x7a.ok && x7b.ok);
+        pruefen(`X7 MODUS UND VERSTECKTES: ${x7c.info}; ${x7d.info}`, x7c.ok && x7d.ok);
+        pruefen(`X7 RUN.SH: ${x7e.info}; ${x7f.info}; ${x7g.info}`, x7e.ok && x7f.ok && x7g.ok);
+        // Positivkontrolle: eine ECHTE Registrierung dieses Laufs (Datei angelegt, eine Zeile vor der Klammer) wird angenommen und laeuft;
+        // dasselbe fuer das Zielrepo-Muster test/e2e-durchlauf.js (P-1: gueltiger Name mit Unterverzeichnis).
+        {
+            const eintraege = [];
+            fs.writeFileSync(wC('test_im_lauf.js'), "console.log('  ✓ im Lauf');\nconsole.log('1 PASS / 0 FAIL');\n");
+            stellen('test/run.sh', Buffer.from(runShC.replace(`  test/e2e-durchlauf.js\n)\n`, `  test/e2e-durchlauf.js\n  test_im_lauf.js\n)\n`)));
+            await sitzungC(['test_im_lauf.js'], eintraege);
+            const p1 = await werkzeugAufrufen('teste', { testdatei: 'test_im_lauf.js' });
+            const p2 = await werkzeugAufrufen('teste', { testdatei: 'test/e2e-durchlauf.js' });
+            pruefen(`X7 POSITIVKONTROLLE UND P-1: eine echte Registrierung dieses Laufs (test_im_lauf.js, eine Zeile vor der Klammer) wird angenommen — "${p1.status}"; test/e2e-durchlauf.js (Name mit Unterverzeichnis, wie auf master) laeuft ebenfalls — "${p2.status}"; kein Abbruch (${istAbgebrochen()})`,
+                p1.status === 'bestanden' && p2.status === 'bestanden' && !istAbgebrochen());
+            aufraeumen();
+            stellen('test/run.sh', Buffer.from(runShC));
+            fs.unlinkSync(wC('test_im_lauf.js'));
+        }
+        // F4 (Nacharbeit 1): registrieren, DANN mutiere_und_teste OHNE teste dazwischen. Die Liste wird in mutiere_und_teste SELBST neu
+        // gelesen (A1) — der Fall oben "A1 NACH DER REGISTRIERUNG" belegt das nur fuer teste, und ein vorheriges teste haette die
+        // Liste ohnehin aufgefrischt. Hier ist mutiere_und_teste der ERSTE Aufruf nach der Registrierung.
+        {
+            const eintraege = [];
+            const neuF4 = [];
+            await sitzungC(neuF4, eintraege);
+            fs.writeFileSync(wC('lib/f4-wert.js'), 'module.exports = 5;\n');
+            fs.writeFileSync(wC('test_f4.js'), "const w = require('./lib/f4-wert');\nif (w !== 5) { console.log('  ✗ FAIL: f4-wert ' + w); process.exit(1); }\nconsole.log('  ✓ f4-wert liefert 5');\nconsole.log('1 PASS / 0 FAIL');\n");
+            stellen('test/run.sh', Buffer.from(runShC.replace(`  test/e2e-durchlauf.js\n)\n`, `  test/e2e-durchlauf.js\n  test_f4.js\n)\n`)));
+            neuF4.push('lib/f4-wert.js', 'test_f4.js');
+            const listeVorher = lauf.tests.includes('test_f4.js');
+            const f4 = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/f4-wert.js', alt: '5', neu: '6', testdatei: 'test_f4.js' });
+            pruefen(`F4 REGISTRIEREN, DANN MUTIERE_UND_TESTE OHNE TESTE DAZWISCHEN: die Liste kannte test_f4.js beim Einrichten NICHT (${listeVorher}); der erste Aufruf nach der Registrierung ist mutiere_und_teste und laeuft — Grundlauf in diesem Aufruf gefahren (bestanden), Mutation 5 -> 6 "${f4.status}"`,
+                listeVorher === false && f4.abgelehnt === false && f4.status === 'gescheitert' && textC(f4).includes('grundlauf: bestanden, gueltig (in diesem Aufruf gefahren)') && textC(f4).includes('✗ FAIL: f4-wert 6'));
+            aufraeumen();
+            stellen('test/run.sh', Buffer.from(runShC));
+            fs.unlinkSync(wC('test_f4.js'));
+            fs.unlinkSync(wC('lib/f4-wert.js'));
+        }
     } finally {
         if (lauf) aufraeumen();
         if (alteUmgebung !== undefined) process.env.PLAYWRIGHT_BROWSERS_PATH = alteUmgebung; else delete process.env.PLAYWRIGHT_BROWSERS_PATH;
         fs.rmSync(basisA, { recursive: true, force: true });
         fs.rmSync(basisB, { recursive: true, force: true });
+        fs.rmSync(basisC, { recursive: true, force: true });
     }
 }
 

@@ -103,7 +103,7 @@ const fs = require('node:fs');
 const https = require('node:https');
 const path = require('node:path');
 const os = require('node:os');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 const { pruefeGeheimnisse, entferneGeheimnisse, zeileEntferntMarker } = require('./geheimnis-riegel');
 // Was dieses Werkzeug und tools/bau-spur.js gemeinsam brauchen (Preise, Dateiname-Sperre,
 // Lesewerkzeuge, streamende Anfrage, Laufprotokoll-Tabelle), steht in EINEM Modul — eine
@@ -502,7 +502,8 @@ function wurzelEinrichten(wurzelArg) { return lese.wurzelEinrichten(wurzelArg); 
 // in tools/spur-gemeinsam.js.
 function pfadPruefen(angefragterPfad) { return lese.pfadPruefen(angefragterPfad); }
 
-// zeilenAus() und glob2regex() stehen in tools/spur-gemeinsam.js (importiert oben).
+// zeilenAus() steht in tools/spur-gemeinsam.js (oben importiert). glob2regex() steht ebenfalls dort, wird aber HIER NICHT importiert: der Gegenleser
+// braucht es nicht selbst, es wirkt nur innerhalb von werkzeugSuche() der Fabrik (Dateimuster) und in tools/bau-spur.js (--erlaubt).
 
 // werkzeugSuche() steht in der Fabrik leseWerkzeugeBauen() (tools/spur-gemeinsam.js).
 function werkzeugSuche(muster, dateimuster) { return lese.werkzeugSuche(muster, dateimuster); }
@@ -1485,7 +1486,7 @@ async function selbsttest() {
     // unlesbare Schluesseldatei x2, B11 Kopfzeilen exakt x1 (B1/B2/B3/B10
     // korrigieren bestehende Faelle bzw. Kommentare, ohne die Zahl zu
     // aendern) = 138.
-    const ERWARTETE_FAELLE = 138;
+    const ERWARTETE_FAELLE = 141;   // 138 + 3 (Nacharbeit 1: X10, X2 Zeitlimit, X2 Musterlaenge)
     let gelaufen = 0;
     let fehler = 0;
     const pruefen = (bezeichnung, bedingung) => {
@@ -1528,6 +1529,12 @@ async function selbsttest() {
         fs.symlinkSync('/etc', path.join(klon, 'zeiger_auf_etc'));
 
         fs.writeFileSync(path.join(klon, '.env.beispiel'), 'BEISPIEL=1\n');
+        // Nacharbeit 1 (X10): gross geschriebene Sperrnamen (versioniert) und eine harmlose Datei mit demselben Suchwort; fuer X2 eine Datei mit
+        // 40 mal "a" und "!" (katastrophale Rueckverfolgung bei ^(a+)+$)
+        fs.writeFileSync(path.join(klon, 'GROSS.PEM'), 'GEHEIM-X10-PEM\n');
+        fs.writeFileSync(path.join(klon, '.ENV.gross'), 'GEHEIM-X10-ENV\n');
+        fs.writeFileSync(path.join(klon, 'harmlos-x10.txt'), 'GEHEIM-X10-HARMLOS\n');
+        fs.writeFileSync(path.join(klon, 'redos-x2.txt'), `${'a'.repeat(40)}!\n`);
 
         // Zusammengesetzt, kein Literal im Quelltext — wie in geheimnis-riegel.js.
         const geheimZeile = 'const schluessel = "' + 'sk' + '-proj-' + 'D'.repeat(40) + '";\n';
@@ -1581,7 +1588,7 @@ async function selbsttest() {
         const diffMitGeheimnisPfad = path.join(klon, 'diff-mit-geheimnis.txt');
         fs.writeFileSync(diffMitGeheimnisPfad, `+const token = "${telegramWert}";\n`);
 
-        execFileSync('git', ['add', 'harmlos.txt', '.env.beispiel', 'zeiger_auf_etc', 'geheim.js',
+        execFileSync('git', ['add', 'harmlos.txt', '.env.beispiel', 'GROSS.PEM', '.ENV.gross', 'harmlos-x10.txt', 'redos-x2.txt', 'zeiger_auf_etc', 'geheim.js',
             'schwaerzen-openai.js', 'schwaerzen-github.js', 'schwaerzen-telegram.js', 'schwaerzen-platzhalter.js',
             'schwaerzen-pem.txt', 'schwaerzen-viele.js', 'schwaerzen-anteil.js', 'schwaerzen-riesig.js'], { cwd: klon });
         execFileSync('git', ['commit', '-q', '-m', 'Testdaten'], { cwd: klon });
@@ -1816,6 +1823,32 @@ async function selbsttest() {
             const r = werkzeugSuche('Zeile B', 'harmlos.txt');
             pruefen('POSITIVKONTROLLE 30 (suche "Zeile B" in harmlos.txt liefert die Zeile woertlich und unveraendert, nichts geschwaerzt)',
                 r.text === 'harmlos.txt:2:Zeile B' && r.geschwaerzt.length === 0);
+        }
+
+        {
+            // X10 (Nacharbeit 1): die Namenssperre unterscheidet Gross-/Kleinschreibung NICHT mehr — lies UND suche
+            const p1 = pfadPruefen('GROSS.PEM');
+            const p2 = pfadPruefen('.ENV.gross');
+            const l1 = werkzeugLies('GROSS.PEM', 1, 3);
+            const su = werkzeugSuche('GEHEIM-X10');
+            pruefen('X10 LESESPERRE OHNE GROSS-/KLEINSCHREIBUNG (Gegenleser): GROSS.PEM und .ENV.gross (versioniert) werden von pfadPruefen und lies abgelehnt und tauchen in suche NICHT auf; die harmlose Datei mit demselben Suchwort wird gefunden (Positivkontrolle)',
+                p1.ok === false && p2.ok === false && l1.abgelehnt === true && !l1.text.includes('GEHEIM-X10') && su.text === 'harmlos-x10.txt:1:GEHEIM-X10-HARMLOS' && istHartGesperrt('Server.PEM') && istHartGesperrt('.Env') && !istHartGesperrt('environment.md'));
+        }
+        {
+            // X2 (Nacharbeit 1): suche mit hartem Zeitlimit. Die Messreihe der Angriffsspur (^(a+)+$ gegen 40 mal "a" und "!") laeuft in einem KIND-Prozess
+            // mit hartem Zeitlimit (kill) — ohne Limit im Werkzeug haengt dieses Kind, der Selbsttest nicht. Das Kind baut die Fabrik wie dieses Modul
+            // (leseWerkzeugeBauen() ohne Option = die Vorgabefrist), das Muster laeuft ueber DIESELBE Fabrik, die der Gegenleser benutzt.
+            const kindScript = `const g = require(${JSON.stringify(path.join(__dirname, 'spur-gemeinsam.js'))}); const l = g.leseWerkzeugeBauen(); l.wurzelEinrichten(${JSON.stringify(klon)});`
+                + ` const t0 = Date.now(); const r = l.werkzeugSuche('^(a+)+$', 'redos-x2.txt'); const ms = Date.now() - t0; const danach = l.werkzeugSuche('Zeile B', 'harmlos.txt');`
+                + ` console.log(JSON.stringify({ ms, abgelehnt: r.abgelehnt, text: r.text.slice(0, 160), danach: danach.text }));`;
+            const kind = spawnSync(process.execPath, ['-e', kindScript], { encoding: 'utf8', timeout: 40000, killSignal: 'SIGKILL' });
+            let k = null;
+            try { k = JSON.parse(kind.stdout); } catch (e) { /* bleibt null */ }
+            pruefen(`X2 KATASTROPHALE RUECKVERFOLGUNG (Gegenleser): "^(a+)+$" gegen 40 mal "a" und "!" wird im Kind-Prozess (hartes Limit 40 s) nach ${k ? k.ms : 'n/a'} ms ABGELEHNT ("Zeitlimit von 5000 ms"), kein Absturz, kein Haengen (Status ${kind.status}); der Prozess lebt weiter und die naechste Suche liefert "Zeile B"`,
+                !kind.error && kind.status === 0 && k !== null && k.abgelehnt === true && /Suchmuster zu langsam — Zeitlimit von 5000 ms/.test(k.text) && k.ms >= 4500 && k.ms < 20000 && k.danach === 'harmlos.txt:2:Zeile B');
+            const lang = werkzeugSuche('a'.repeat(301));
+            pruefen('X2 MUSTERLAENGE (Gegenleser): ein Suchmuster mit 301 Zeichen wird ueber die Huelle werkzeugSuche abgelehnt ("zu lang", abgelehnt true), 300 Zeichen gehen durch',
+                lang.abgelehnt === true && /Suchmuster zu lang \(301 Zeichen, hoechstens 300\)/.test(lang.text) && werkzeugSuche('b'.repeat(300), 'harmlos.txt').text === '(keine Treffer)');
         }
 
         // ===== FALL 31: eingegebener Diff mit Geheimnis bricht WEITERHIN ab =====
@@ -3814,7 +3847,7 @@ async function selbsttestAusfuehrung() {
     // Vorbereitung, B3b x2, A8 Symlink/Modus, Mutation an Lauf-Datei x2, registriert
     // aber fehlend, Testliste unlesbar, Deckel-Marke, A8 Kopie-Einheit, Symlink aus
     // der Kopie, Dateien-Liste) = 171. Unten durch den tatsaechlichen Lauf bestaetigt.
-    const ERWARTETE_FAELLE = 171;
+    const ERWARTETE_FAELLE = 181;   // 145 + 26 (Baustand, Bauspur) + 10 (Nacharbeit 1: X1 x2, X6, X7 x4, P-1 x2, F4); die Faelle TESTNAME-FORM und B1 PRUEFSPUR wurden umgeschrieben, nicht ergaenzt
     if (process.getuid() !== 0) {
         if (process.env.CI === 'true') {
             console.log(`  ✗ FEHLT: --selbsttest-ausfuehrung braucht root (uid 0, gefunden ${process.getuid()}) -- unter CI=true ist das ROT, kein SKIP.`);
