@@ -64,6 +64,20 @@
 // Nur mit --modell=deepseek-flash (Betreiber-Vorgabe 27.09.2026; die Pruefung
 // steht in gegenleser-repo.js, main()) und nur als root (Namensraeume,
 // pivot_root, pg_createcluster).
+//
+// BAUSTAND-MODUS (Bauspur, 03.10.2026, Planpruefung B3/A1/A2/A8): einrichten()
+// kennt ZWEI benannte Modi. "sauber-klon" (Vorgabe, die Pruefspur): sauberer
+// Zielbaum, Kopie per "git clone --depth 1" — nur HEAD. "baustand" (nur
+// tools/bau-spur.js): der Zielbaum darf Aenderungen tragen; kopiert werden alle
+// Dateien aus "git ls-files" PLUS die Dateien, die der Lauf selbst angelegt hat
+// (neueDateien()), mit Dateimodus; Symlinks als Symlinks (zeigt einer aus der
+// Kopie heraus: Umgebungsfehler "Baustand"), node_modules und .git nie. Eine
+// ungetrackte Datei ausserhalb dieser Liste kommt NICHT in die Kopie. Im
+// Baustand-Modus wird die TESTS-Liste vor JEDEM Aufruf neu aus test/run.sh des
+// Baums gelesen (A1), und der Grundlauf-Zwischenspeicher ist an einen Hash des
+// Baustands gebunden (A2): ein alter Grundlauf gilt nie fuer einen neuen Stand.
+// Der Modus ist ein Schalter in einrichten(), keine Lockerung des Vorgabe-Modus:
+// ein unbekannter Modus wirft, und "sauber-klon" lehnt neueDateien ab.
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
@@ -84,6 +98,15 @@ const MUTIERBARE_ENDUNGEN = ['.js', '.cjs', '.json', '.sh', '.sql'];
 const NICHT_MUTIERBAR = ['test/run.sh', 'test/umgebung.sh', 'test/db-vorbereiten.js'];
 const PFLICHTDATEIEN = ['test/run.sh', 'test/umgebung.sh', 'test/db-vorbereiten.js'];
 const ZWEITE_DATEI_GRUNDLAUF = 'test/umgebung.sh';   // zweiter sha256-Vergleich im Kind, wenn nichts mutiert ist
+// Benannte Modi von einrichten() (siehe Kopf, BAUSTAND-MODUS).
+const MODI = ['sauber-klon', 'baustand'];
+// Testdateinamen (Planpruefung B1, 03.10.2026): test/run.sh ist eine bash-Datei, und
+// ein Name wird hier in Pfade und Kommandozeilen eingesetzt (path.join(kopie, name),
+// sha256Datei, Konfiguration des Kindes). Gemessen am Zielrepo 03.10.2026: von 431
+// Eintraegen traegt genau EINER nicht die Form test_<Name>.js, naemlich
+// ops/boot-smoke.js — er steht deshalb namentlich in der Ausnahmeliste.
+const TESTNAME_MUSTER = /^test_[A-Za-z0-9_-]+\.js$/;
+const TESTNAME_AUSNAHMEN = ['ops/boot-smoke.js'];
 const SPERRDATEI = '/var/lock/dsv1.lock';
 const LAUFWURZEL = '/var/lib/dsv1';
 const CLUSTER_PRAEFIX = 'dsv1';
@@ -247,7 +270,12 @@ function sqlBezeichner(name) { return '"' + name.replace(/"/g, '""') + '"'; }
 // TESTS=( ... ) aus test/run.sh — GELESEN, nicht gestartet. Kommentare
 // (# …) fallen weg, ein Eintrag je Zeile oder mehrere je Zeile.
 function testsAusRunSh(wurzel) {
-    const zeilen = fs.readFileSync(path.join(wurzel, 'test/run.sh'), 'utf8').split('\n');
+    return testsAusRunShText(fs.readFileSync(path.join(wurzel, 'test/run.sh'), 'utf8'));
+}
+// Dieselbe Auswertung auf einem TEXT (die Bauspur prueft damit die Datei, die
+// registriere_test erzeugen wuerde, bevor und nachdem sie geschrieben ist).
+function testsAusRunShText(text) {
+    const zeilen = text.split('\n');
     const start = zeilen.findIndex((z) => /^TESTS=\(\s*$/.test(z));
     if (start === -1) throw new Error('test/run.sh: keine Zeile "TESTS=(" gefunden');
     const ende = zeilen.findIndex((z, i) => i > start && /^\)\s*$/.test(z));
@@ -481,9 +509,18 @@ async function einrichten(optionen) {
     for (const skript of [optionen.aufbauSkript || AUFBAU_SKRIPT, SELBSTMESSUNG_SKRIPT, MANIFEST_SKRIPT]) {
         if (!fs.existsSync(skript)) throw new Error(`--ausfuehren: ${skript} fehlt`);
     }
+    const modus = optionen.modus === undefined ? 'sauber-klon' : optionen.modus;
+    if (!MODI.includes(modus)) throw new Error(`ausfuehr-spur: unbekannter Modus ${JSON.stringify(modus)} (erlaubt: ${MODI.join(', ')})`);
+    if (modus === 'baustand' && typeof optionen.neueDateien !== 'function') throw new Error('ausfuehr-spur: Modus baustand braucht neueDateien() (die in diesem Lauf angelegten Dateien)');
+    if (modus === 'sauber-klon' && optionen.neueDateien !== undefined) throw new Error('ausfuehr-spur: neueDateien gilt nur im Modus baustand — der Modus sauber-klon kopiert nur HEAD');
     const wurzel = fs.realpathSync(optionen.wurzel);
-    const status = laufen('git', ['status', '--porcelain'], { cwd: wurzel });
-    if (status.trim()) throw new Error(`--ausfuehren: Zielbaum ${wurzel} ist nicht sauber (git status --porcelain):\n${status.trim().slice(0, 800)}`);
+    // Nur der Vorgabe-Modus verlangt einen sauberen Baum; der Baustand-Modus ist
+    // dafuer da, einen Baum mit Aenderungen zu pruefen (die Bauspur sichert den
+    // sauberen START selbst, A3).
+    if (modus === 'sauber-klon') {
+        const status = laufen('git', ['status', '--porcelain'], { cwd: wurzel });
+        if (status.trim()) throw new Error(`--ausfuehren: Zielbaum ${wurzel} ist nicht sauber (git status --porcelain):\n${status.trim().slice(0, 800)}`);
+    }
     const head = laufen('git', ['rev-parse', 'HEAD'], { cwd: wurzel }).trim();
     if (!/^[0-9a-f]{40}$/.test(head)) throw new Error(`--ausfuehren: HEAD des Zielbaums nicht lesbar (${head})`);
     const versioniert = new Set(laufen('git', ['ls-files', '-z'], { cwd: wurzel }).split('\0').filter(Boolean));
@@ -508,6 +545,7 @@ async function einrichten(optionen) {
         fs.mkdirSync(dir, { mode: 0o755 });
         lauf = {
             id, dir, version, wurzel, head, browser, nodeBin, nodeBaum, versioniert, tests, kanarie: { datei: kanarie, gefahren: false, gruen: false },
+            modus, neueDateien: modus === 'baustand' ? optionen.neueDateien : () => [],
             halter, cluster: null, port: null, pgDir: null, proxy, reste,
             tSekunden: optionen.tSekunden || T_SEKUNDEN,
             aufbauSkript: optionen.aufbauSkript || AUFBAU_SKRIPT,
@@ -563,7 +601,7 @@ function mutationsZielPruefen(datei, testdatei) {
     if (/[\u0000-\u001F\u007F-\u009F]/.test(datei)) throw new Ablehnung('unzulaessiger Pfad (Steuerzeichen oder Zeilenumbruch)');
     if (path.isAbsolute(datei) || datei.split('/').includes('..')) throw new Ablehnung(`unzulaessiger Pfad: ${datei}`);
     const relativ = path.posix.normalize(datei);
-    if (!lauf.versioniert.has(relativ)) throw new Ablehnung(`nicht von "git ls-files" erfasst (nicht versioniert): ${relativ}`);
+    if (!lauf.versioniert.has(relativ) && !(lauf.modus === 'baustand' && new Set(lauf.neueDateien()).has(relativ))) throw new Ablehnung(`nicht von "git ls-files" erfasst (nicht versioniert): ${relativ}`);
     if (lauf.istHartGesperrt(relativ)) throw new Ablehnung(`gesperrter Dateiname (.env*/.key/.pem): ${relativ}`);
     if (!MUTIERBARE_ENDUNGEN.includes(path.extname(relativ))) throw new Ablehnung(`Endung nicht mutierbar (erlaubt ${MUTIERBARE_ENDUNGEN.join(' ')}): ${relativ}`);
     if (NICHT_MUTIERBAR.includes(relativ)) throw new Ablehnung(`nicht mutierbar (Teil des Laufgeruests): ${relativ}`);
@@ -642,6 +680,71 @@ function manifestSchreiben(kopie, ergebnisDir) {
     fs.writeFileSync(path.join(ergebnisDir, 'manifest.liste'), liste, { mode: 0o644 });
     fs.writeFileSync(path.join(ergebnisDir, 'manifest.sha256'), summen, { mode: 0o644 });
     return { eintraege: liste.split('\0').length - 1, dateien: summen.trim().split('\n').length };
+}
+
+// ===================== Baustand (nur Modus "baustand") =====================
+// Die Menge der Dateien eines Baustands: alles aus "git ls-files" des Baums
+// (der AKTUELLE Index, nicht HEAD) plus die Dateien, die der Lauf selbst angelegt
+// hat. node_modules und .git sind nie dabei. Jeder Name wird geprueft (relativ,
+// kein "..", keine Steuerzeichen), ein Name, der das nicht besteht, laesst den
+// ganzen Aufruf scheitern — er stammt aus git oder vom Werkzeug, nie ungeprueft
+// vom Modell.
+function baustandDateien(wurzel, neueDateien) {
+    const roh = laufen('git', ['ls-files', '-z'], { cwd: wurzel });
+    const namen = new Set(roh.split('\0').filter(Boolean));
+    for (const n of neueDateien) namen.add(n);
+    const ergebnis = [];
+    for (const rel of [...namen].sort()) {
+        if (typeof rel !== 'string' || !rel || rel.startsWith('/') || rel.split('/').some((s) => s === '..' || s === '') || /[\u0000-\u001F\u007F-\u009F]/.test(rel)) {
+            throw new Error(`Baustand: unzulaessiger Dateiname ${JSON.stringify(String(rel)).slice(0, 100)}`);
+        }
+        if (rel === '.git' || rel.startsWith('.git/') || rel === 'node_modules' || rel.startsWith('node_modules/')) continue;
+        ergebnis.push(rel);
+    }
+    return ergebnis;
+}
+
+// Kopiert den Baustand nach kopie (ein neues Verzeichnis): Dateien mit ihrem
+// Modus, Symlinks als Symlinks. Ein Symlink, dessen Ziel absolut ist oder aus der
+// Kopie herauszeigt, ist ein Fehler (Kategorie "Baustand der Kopie").
+function baustandKopieren(wurzel, neueDateien, kopie) {
+    fs.mkdirSync(kopie, { mode: 0o755 });
+    for (const rel of baustandDateien(wurzel, neueDateien)) {
+        const quelle = path.join(wurzel, rel);
+        const ziel = path.join(kopie, rel);
+        let st;
+        try { st = fs.lstatSync(quelle); } catch (e) { throw new Error(`Baustand: ${rel} steht in git ls-files bzw. in der Schreibliste, fehlt aber im Arbeitsbaum`); }
+        fs.mkdirSync(path.dirname(ziel), { recursive: true, mode: 0o755 });
+        if (st.isSymbolicLink()) {
+            const linkZiel = fs.readlinkSync(quelle);
+            const aufgeloest = path.posix.normalize(path.posix.join(path.posix.dirname(rel), linkZiel));
+            if (path.isAbsolute(linkZiel) || aufgeloest === '..' || aufgeloest.startsWith('../')) {
+                throw new Error(`Baustand: Symlink ${rel} zeigt aus der Kopie heraus (${JSON.stringify(linkZiel).slice(0, 80)})`);
+            }
+            fs.symlinkSync(linkZiel, ziel);
+        } else if (st.isFile()) {
+            fs.copyFileSync(quelle, ziel);
+            fs.chmodSync(ziel, st.mode & 0o777);
+        } else {
+            throw new Error(`Baustand: ${rel} ist weder Datei noch Symlink (Gitlink oder Verzeichnis?)`);
+        }
+    }
+}
+
+// Hash des Baustands (A2): Pfad, Art, Modus-Bit "ausfuehrbar" und Inhalt (bzw.
+// Symlink-Ziel) aller Dateien der Kopie. Ein Grundlauf gilt NUR fuer genau
+// diesen Hash.
+function baustandHash(wurzel, neueDateien) {
+    const h = crypto.createHash('sha256');
+    for (const rel of baustandDateien(wurzel, neueDateien)) {
+        const quelle = path.join(wurzel, rel);
+        let st;
+        try { st = fs.lstatSync(quelle); } catch (e) { throw new Error(`Baustand: ${rel} fehlt im Arbeitsbaum`); }
+        if (st.isSymbolicLink()) h.update(`L\0${rel}\0${fs.readlinkSync(quelle)}\0`);
+        else if (st.isFile()) h.update(`F\0${rel}\0${st.mode & 0o111 ? 'x' : '-'}\0${sha256Datei(quelle)}\0`);
+        else h.update(`?\0${rel}\0`);
+    }
+    return h.digest('hex');
 }
 
 // ===================== Ein Kind-Lauf =====================
@@ -776,7 +879,8 @@ async function kindLaufen({ testdatei, mutation = null, zweck }) {
     // Alles Weitere in try/finally (Befund 6, Runde 2): Kopie, Ergebnis
     // und Einhaengepunkt verschwinden auch im Fehlerweg.
     try {
-        laufen('git', ['clone', '-q', '--no-local', '--depth', '1', l.wurzel, kopie]);
+        if (l.modus === 'baustand') baustandKopieren(l.wurzel, l.neueDateien(), kopie);
+        else laufen('git', ['clone', '-q', '--no-local', '--depth', '1', l.wurzel, kopie]);
         fs.mkdirSync(path.join(kopie, 'node_modules'), { mode: 0o755 });
         let shaZweite;
         let zweiteDatei;
@@ -894,6 +998,7 @@ async function kindLaufen({ testdatei, mutation = null, zweck }) {
 // auf stderr.
 function infrastrukturKategorie(text) {
     if (/HEAD des Zielbaums/.test(text)) return 'HEAD des Zielbaums veraendert';
+    if (/^Baustand/.test(text)) return 'Baustand der Kopie';
     if (/\bgit\b/.test(text)) return 'Klon des Zielbaums';
     if (/runuser|psql|pg_ctlcluster|Cluster|Datenbank/.test(text)) return 'Datenbankverwaltung';
     if (/chown/.test(text)) return 'Rechte der Kopie';
@@ -937,7 +1042,10 @@ const ECHTE_TESTERGEBNISSE = ['bestanden', 'gescheitert'];
 function ablehnen(text) {
     lauf.zaehler.ablehnungen++;
     const grund = steuerzeichenNeutralisieren(String(text || 'unbekannter Grund')).replace(/\n/g, ' ');
-    return { text: bytesKuerzenHinten(`abgelehnt: ${grund}`, MAX_ERGEBNIS_BYTES).replace(/\n/g, ' '), abgelehnt: true, status: 'abgelehnt' };
+    // deckel: die Bauspur beendet den Lauf als "Budget erschoepft (Sandbox)", wenn einer
+    // der beiden Deckel dieses Moduls greift (Aufrufzahl, Ausfuehrungszeit) — beide Texte
+    // beginnen mit "Deckel: ", kein anderer Ablehnungsgrund.
+    return { text: bytesKuerzenHinten(`abgelehnt: ${grund}`, MAX_ERGEBNIS_BYTES).replace(/\n/g, ' '), abgelehnt: true, status: 'abgelehnt', deckel: grund.startsWith('Deckel: ') };
 }
 
 // Ein Aufruf mit unlesbaren Argumenten zaehlt trotzdem gegen den Deckel
@@ -977,10 +1085,45 @@ function deckelPruefen() {
     return null;
 }
 
+// B1 (Planpruefung 03.10.2026): auch ein REGISTRIERTER Name muss die enge Form
+// haben, bevor er in einen Pfad oder eine Kommandozeile geht — er steht VOR
+// sha256Datei und vor dem Kind-Lauf. Gilt fuer beide Modi (auch die Pruefspur).
+function testNameGueltig(name) {
+    return typeof name === 'string' && (TESTNAME_MUSTER.test(name) || TESTNAME_AUSNAHMEN.includes(name));
+}
+
 function testdateiPruefen(testdatei) {
     if (typeof testdatei !== 'string' || !testdatei) return 'keine Testdatei angegeben';
     if (!lauf.tests.includes(testdatei)) return `"${testdatei}" ist nicht in der TESTS=(-Liste von test/run.sh registriert`;
+    if (!testNameGueltig(testdatei)) return `unzulaessiger Testdateiname (erlaubt: test_<Name>.js ohne Pfad, Zeichen A-Za-z0-9_- , oder ${TESTNAME_AUSNAHMEN.join(', ')}): ${JSON.stringify(testdatei)}`;
+    if (lauf.modus === 'baustand') {
+        let st = null;
+        try { st = fs.lstatSync(path.join(lauf.wurzel, testdatei)); } catch (e) { /* fehlt */ }
+        if (!st || !st.isFile() || st.isSymbolicLink()) return `Testdatei "${testdatei}" ist registriert, existiert aber nicht als regulaere Datei im Arbeitsbaum`;
+    }
     return null;
+}
+
+// A1 (Planpruefung): im Baustand-Modus aendert sich test/run.sh zwischen zwei
+// Aufrufen (registriere_test) — die Liste wird vor JEDEM Aufruf neu gelesen.
+// Liefert null oder den Ablehnungsgrund. Im Modus sauber-klon bleibt die Liste
+// die von einrichten().
+function testlisteAktualisieren() {
+    if (lauf.modus !== 'baustand') return null;
+    let tests;
+    try { tests = testsAusRunSh(lauf.wurzel); } catch (e) { return `test/run.sh nicht lesbar: ${e.message}`; }
+    const unzulaessig = tests.find((t) => t.includes('\'') || t.includes('\n'));
+    if (unzulaessig !== undefined) return `unzulaessiger Testdateiname in test/run.sh: ${JSON.stringify(unzulaessig)}`;
+    lauf.tests = tests;
+    return null;
+}
+
+// A2 (Planpruefung): im Modus sauber-klon ist der Schluessel der Dateiname (wie
+// bisher); im Baustand-Modus gehoert der Hash des Baustands dazu, damit ein alter
+// Grundlauf nie fuer einen neuen Stand gilt. Wirft bei unlesbarem Baustand.
+function grundlaufSchluessel(testdatei) {
+    if (lauf.modus !== 'baustand') return testdatei;
+    return `${testdatei}\0${baustandHash(lauf.wurzel, lauf.neueDateien())}`;
 }
 
 async function kanarieSicherstellen() {
@@ -1022,11 +1165,15 @@ async function werkzeugTeste(argumente) {
     lauf.zaehler.aufrufe++;
     const deckel = deckelPruefen();
     if (deckel) return ablehnen(deckel);
+    const listenFehler = testlisteAktualisieren();
+    if (listenFehler) return ablehnen(listenFehler);
     const fehler = testdateiPruefen(argumente.testdatei);
     if (fehler) return ablehnen(fehler);
     if (!await kanarieSicherstellen()) return ablehnen(keineAusfuehrungGrund());
+    let gk;
+    try { gk = grundlaufSchluessel(argumente.testdatei); } catch (e) { return ablehnen(`Baustand nicht lesbar: ${e.message}`); }
     const r = await kindLaufenSicher({ testdatei: argumente.testdatei, zweck: 'teste' });
-    if (ECHTE_TESTERGEBNISSE.includes(r.status) && !lauf.grundlauf.has(argumente.testdatei)) lauf.grundlauf.set(argumente.testdatei, r);
+    if (ECHTE_TESTERGEBNISSE.includes(r.status) && !lauf.grundlauf.has(gk)) lauf.grundlauf.set(gk, r);
     return ergebnisObjekt(r, [`pass-zeilen: ${r.passZahl}${r.hatSkip ? ' (Uebersprungen-Zeile vorhanden)' : ''}`]);
 }
 
@@ -1034,6 +1181,8 @@ async function werkzeugMutiereUndTeste(argumente) {
     lauf.zaehler.aufrufe++;
     const deckel = deckelPruefen();
     if (deckel) return ablehnen(deckel);
+    const listenFehler = testlisteAktualisieren();
+    if (listenFehler) return ablehnen(listenFehler);
     const fehler = testdateiPruefen(argumente.testdatei);
     if (fehler) return ablehnen(fehler);
     let mutation;
@@ -1044,13 +1193,15 @@ async function werkzeugMutiereUndTeste(argumente) {
         throw e;
     }
     if (!await kanarieSicherstellen()) return ablehnen(keineAusfuehrungGrund());
-    let grundlauf = lauf.grundlauf.get(argumente.testdatei);
+    let gk;
+    try { gk = grundlaufSchluessel(argumente.testdatei); } catch (e) { return ablehnen(`Baustand nicht lesbar: ${e.message}`); }
+    let grundlauf = lauf.grundlauf.get(gk);
     let grundlaufHerkunft = 'aus dem Zwischenspeicher dieses Laufs';
     if (!grundlauf) {
         const deckelGrundlauf = deckelPruefen();
         if (deckelGrundlauf) return ablehnen(deckelGrundlauf);
         grundlauf = await kindLaufenSicher({ testdatei: argumente.testdatei, zweck: 'grundlauf' });
-        if (ECHTE_TESTERGEBNISSE.includes(grundlauf.status)) lauf.grundlauf.set(argumente.testdatei, grundlauf);
+        if (ECHTE_TESTERGEBNISSE.includes(grundlauf.status)) lauf.grundlauf.set(gk, grundlauf);
         grundlaufHerkunft = 'in diesem Aufruf gefahren';
         if (grundlauf.isolationGebrochen) return ablehnen(abbruchMarker());
     }
@@ -1783,9 +1934,171 @@ async function selbsttestSpur(pruefen) {
     }
 }
 
+// ===================== SELBSTTEST DES BAUSTAND-MODUS (root, eigener Cluster) =====================
+// Planpruefung der Bauspur (03.10.2026): B1 (Testnamen), B3 (a-d), A1, A2, A8 und
+// die Deckel-Marke fuer "Budget erschoepft (Sandbox)". Zwei Fixtur-Baeume: A bleibt
+// sauber (Modus sauber-klon, Namenspruefung der Pruefspur), B wird wie ein Baum der
+// Bauspur veraendert (nicht committet). Sollwerte sind von Hand eingetragene
+// Literale; jeder Fall hat seine Gegenrichtung (siehe Bezeichnung).
+async function selbsttestBaustand(pruefen) {
+    const basisA = fs.mkdtempSync(path.join(os.tmpdir(), 'ausfuehr-spur-selbsttest-'));
+    const basisB = fs.mkdtempSync(path.join(os.tmpdir(), 'ausfuehr-spur-selbsttest-'));
+    fs.chmodSync(basisA, 0o755);
+    fs.chmodSync(basisB, 0o755);
+    const alteUmgebung = process.env.PLAYWRIGHT_BROWSERS_PATH;
+    const istHartGesperrt = (p) => path.basename(p).startsWith('.env') || p.endsWith('.key') || p.endsWith('.pem');
+    const T_KURZ = 8;
+    const sperreFrei = () => spawnSync('flock', ['-n', '-E', '75', SPERRDATEI, 'true'], { env: { PATH: KIND_PATH } }).status === 0;
+    try {
+        const fxA = fixtureAnlegen(basisA);
+        const fxB = fixtureAnlegen(basisB);
+        process.env.PLAYWRIGHT_BROWSERS_PATH = fxB.browser;
+        const wB = (rel) => path.join(fxB.wurzel, rel);
+        const schreibeB = (rel, inhalt, modus) => { fs.mkdirSync(path.dirname(wB(rel)), { recursive: true }); fs.writeFileSync(wB(rel), inhalt, modus ? { mode: modus } : undefined); };
+        const kopieInfo = (text) => { const m = /KOPIE-INFO:(\{.*\})/.exec(text); return m ? JSON.parse(m[1]) : null; };
+
+        // ----- Modus-Vertrag (einrichten wirft VOR Sperre und Cluster) -----
+        let f1 = null; let f2 = null; let f3 = null;
+        try { await einrichten({ wurzel: fxA.wurzel, istHartGesperrt, modus: 'quatsch' }); } catch (e) { f1 = e.message; }
+        try { await einrichten({ wurzel: fxA.wurzel, istHartGesperrt, neueDateien: () => [] }); } catch (e) { f2 = e.message; }
+        try { await einrichten({ wurzel: fxA.wurzel, istHartGesperrt, modus: 'baustand' }); } catch (e) { f3 = e.message; }
+        pruefen(`MODUS UNBEKANNT: einrichten mit modus "quatsch" wirft (${(f1 || '').slice(0, 60)}), nichts eingerichtet, Sperre frei`,
+            /unbekannter Modus "quatsch"/.test(f1 || '') && lauf === null && sperreFrei());
+        pruefen('MODUS sauber-klon LEHNT neueDateien AB: keine stille Lockerung der Pruefspur durch einen Schalter, der nur im Baustand-Modus gilt',
+            /neueDateien gilt nur im Modus baustand/.test(f2 || '') && lauf === null);
+        pruefen('MODUS baustand VERLANGT neueDateien(): ohne die Liste der Lauf-Dateien wirft einrichten',
+            /Modus baustand braucht neueDateien/.test(f3 || '') && lauf === null);
+
+        // ----- B1: Testnamen (Pruefspur-Modus, sauberer Baum A) -----
+        pruefen('TESTNAME-FORM: test_<Name>.js und die Ausnahme ops/boot-smoke.js gelten, "../x.js", "/etc/passwd", "sub/test_x.js", "test_a b.js", "test_$(id).js", Backtick, Strichpunkt, Zeilenumbruch, Anfuehrungszeichen, "test_x.js\\n" und ein Name ohne .js gelten NICHT',
+            testNameGueltig('test_gruen.js') && testNameGueltig('test_feature_x-1_2.js') && testNameGueltig('ops/boot-smoke.js')
+            && ['../x.js', '/etc/passwd', 'sub/test_x.js', 'test_a b.js', 'test_$(id).js', 'test_`id`.js', 'test_x.js;', 'test_x.js\nfoo', "test_'x.js", 'test_x.js\n', 'test_x', 'ops/boot-smoke.js/../x.js', 'ops/anders.js', ''].every((n) => !testNameGueltig(n)));
+        await einrichten({ wurzel: fxA.wurzel, istHartGesperrt, tSekunden: T_KURZ });
+        const boese = ['../test_x.js', '/etc/passwd', 'sub/test_x.js', 'test_a b.js', 'test_$(id).js', 'test_`id`.js', 'test_x.js\nfoo', 'ops/anders.js'];
+        lauf.tests.push(...boese);   // wie eine eingeschleuste Zeile in test/run.sh: sie STEHT in der TESTS-Liste
+        const vorherAusfuehrungen = zaehler().ausfuehrungen;
+        const bAbl = [];
+        for (const name of boese) bAbl.push(await werkzeugAufrufen('teste', { testdatei: name }));
+        const bAblM = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/wert.js', alt: '42', neu: '43', testdatei: 'test_$(id).js' });
+        pruefen(`B1 PRUEFSPUR: acht REGISTRIERTE Namen mit Pfadsegment, Leerzeichen, $(…), Backtick, Zeilenumbruch oder fremdem Unterverzeichnis werden VOR sha256Datei und Kind-Lauf abgelehnt (teste und mutiere_und_teste), kein Kind-Lauf (Ausfuehrungen ${zaehler().ausfuehrungen} = ${vorherAusfuehrungen})`,
+            bAbl.every((r) => r.abgelehnt === true && r.text.includes('unzulaessiger Testdateiname')) && bAblM.abgelehnt === true && bAblM.text.includes('unzulaessiger Testdateiname')
+            && zaehler().ausfuehrungen === vorherAusfuehrungen);
+        lauf.tests.length -= boese.length;
+        const bPos = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
+        pruefen('B1 POSITIVKONTROLLE: derselbe Aufruf mit einem gueltigen Namen laeuft (bestanden)', bPos.status === 'bestanden');
+        aufraeumen();
+
+        // ----- Baustand-Modus auf Baum B -----
+        schreibeB('lib/wert.js', 'module.exports = 43;\n');
+        let fSchmutz = null;
+        try { await einrichten({ wurzel: fxB.wurzel, istHartGesperrt }); } catch (e) { fSchmutz = e.message; }
+        pruefen(`B3d PRUEFSPUR VERWEIGERT UNSAUBEREN BAUM weiter: Baum B traegt eine nicht committete Aenderung, der Vorgabe-Modus wirft ("${(fSchmutz || '').slice(0, 50)}")`,
+            /nicht sauber/.test(fSchmutz || '') && lauf === null && sperreFrei());
+        let neu = [];
+        await einrichten({ wurzel: fxB.wurzel, istHartGesperrt, tSekunden: T_KURZ, modus: 'baustand', neueDateien: () => neu });
+        pruefen('BAUSTAND-EINRICHTEN: derselbe unsaubere Baum B wird im Modus baustand angenommen (Cluster online, Modus baustand)',
+            lauf.modus === 'baustand' && clusterListe().some((c) => c.name === lauf.cluster && c.status === 'online'));
+        const a1 = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
+        pruefen(`B3a BAUSTAND WIRKT: lib/wert.js steht NUR im Arbeitsstand auf 43 (HEAD: 42) — test_gruen.js scheitert in der Kopie an genau dieser Aenderung (${a1.status})`,
+            a1.status === 'gescheitert' && a1.text.includes('✗ FAIL: lib/wert.js liefert 42 43'));
+        schreibeB('lib/wert.js', 'module.exports = 42;\n');
+        const a2 = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/wert.js', alt: '42', neu: '43', testdatei: 'test_gruen.js' });
+        pruefen(`A2 GRUNDLAUF-HASH (Richtung 1): Test gebrochen -> teste gescheitert -> repariert -> mutiere_und_teste meldet NICHT grundlauf-rot, sondern faehrt den Grundlauf frisch (bestanden) und die Mutation scheitert (${a2.status})`,
+            a2.status === 'gescheitert' && a2.text.includes('grundlauf: bestanden, gueltig (in diesem Aufruf gefahren)') && !a2.text.includes('grundlauf-rot'));
+        schreibeB('lib/wert.js', 'module.exports = 44;\n');
+        const a3 = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/wert.js', alt: '44', neu: '45', testdatei: 'test_gruen.js' });
+        pruefen(`A2 GRUNDLAUF-HASH (Richtung 2): der gemerkte GRUENE Grundlauf von Stand 42 gilt nicht fuer Stand 44 — mutiere_und_teste faehrt frisch und meldet grundlauf-rot, nimmt NICHT den alten Zwischenspeicher (${a3.status})`,
+            a3.status === 'grundlauf-rot' && a3.text.includes('Grundlauf (in diesem Aufruf gefahren) war gescheitert'));
+        schreibeB('lib/wert.js', 'module.exports = 42;\n');
+        const a4 = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/wert.js', alt: '42', neu: '43', testdatei: 'test_gruen.js' });
+        pruefen(`A2 POSITIVKONTROLLE: zurueck auf Stand 42 trifft der Zwischenspeicher wieder (derselbe Hash) — Grundlauf "aus dem Zwischenspeicher dieses Laufs" (${a4.status})`,
+            a4.status === 'gescheitert' && a4.text.includes('grundlauf: bestanden, gueltig (aus dem Zwischenspeicher dieses Laufs)'));
+
+        // (b)/(c)/A1/A8: ungetrackte Dateien, neue Testdatei, neu registrierter Test, Modus und Symlinks in der Kopie
+        schreibeB('nur_ungetrackt.js', 'module.exports = 1;\n');
+        schreibeB('lib/neu_im_lauf.js', 'module.exports = 7;\n');
+        schreibeB('test_kopie.js', "const fs = require('node:fs');\nconst st = (p) => { try { return fs.lstatSync(p); } catch (e) { return null; } };\nconst info = { ungetrackt: fs.existsSync('nur_ungetrackt.js'), verdeckt: fs.existsSync('nicht_versioniert.js'), imLauf: fs.existsSync('lib/neu_im_lauf.js'), symlink: !!st('zeiger.js') && st('zeiger.js').isSymbolicLink(), ziel: st('zeiger.js') && st('zeiger.js').isSymbolicLink() ? fs.readlinkSync('zeiger.js') : null, exec: !!st('ops/skript.sh') && (st('ops/skript.sh').mode & 0o111) !== 0, nichtExec: !!st('lib/wert.js') && (st('lib/wert.js').mode & 0o111) === 0 };\nconsole.log('KOPIE-INFO:' + JSON.stringify(info));\nconsole.log('  ✓ Info ausgegeben');\nconsole.log('1 PASS / 0 FAIL');\n");
+        schreibeB('test_neu.js', "const w = require('./lib/neu_im_lauf');\nlet pass = 0, fail = 0;\nconst ok = (n, c) => { if (c) { pass++; console.log('  ✓ ' + n); } else { fail++; console.log('  ✗ FAIL: ' + n); } };\nok('neu_im_lauf liefert 7', w === 7);\nconsole.log(`──────────── ${pass} PASS / ${fail} FAIL ────────────`);\nprocess.exitCode = fail ? 1 : 0;\n");
+        const nichtRegistriert = await werkzeugAufrufen('teste', { testdatei: 'test_kopie.js' });
+        pruefen('A1 VOR DER REGISTRIERUNG: test_kopie.js steht (noch) nicht in test/run.sh des Baums -> abgelehnt',
+            nichtRegistriert.abgelehnt === true && nichtRegistriert.text.includes('nicht in der TESTS=(-Liste'));
+        const runShAlt = fs.readFileSync(wB('test/run.sh'), 'utf8');
+        const runShNeu = runShAlt.replace('  test_flut.js\n)\n', '  test_flut.js\n  test_kopie.js\n  test_neu.js\n  test_fehlt.js\n)\n');
+        pruefen('GEGENPROBE-VORBEREITUNG (Baustand): der Anker "test_flut.js + )" kommt in der Fixtur-run.sh genau einmal vor', runShAlt.split('  test_flut.js\n)\n').length - 1 === 1 && runShNeu !== runShAlt);
+        fs.writeFileSync(wB('test/run.sh'), runShNeu);
+        neu = ['test_kopie.js', 'test_neu.js', 'lib/neu_im_lauf.js'];
+        const k1 = await werkzeugAufrufen('teste', { testdatei: 'test_kopie.js' });
+        const i1 = kopieInfo(k1.text);
+        pruefen(`A1 NACH DER REGISTRIERUNG: die neu eingetragene, in diesem Lauf angelegte Testdatei laeuft ohne Neustart (B3c: bestanden) — die Liste wurde aus test/run.sh des Baums neu gelesen (${lauf.tests.length} Eintraege)`,
+            k1.status === 'bestanden' && lauf.tests.length === 21 && lauf.tests.includes('test_kopie.js') && i1 !== null);
+        pruefen('B3b UNGETRACKT: nur_ungetrackt.js (ungetrackt, NICHT in der Liste des Laufs) und nicht_versioniert.js (verdeckt) sind in der Kopie NICHT vorhanden; lib/neu_im_lauf.js (in der Liste) IST vorhanden',
+            i1 !== null && i1.ungetrackt === false && i1.verdeckt === false && i1.imLauf === true);
+        neu = ['test_kopie.js', 'test_neu.js'];
+        const k2 = await werkzeugAufrufen('teste', { testdatei: 'test_kopie.js' });
+        const i2 = kopieInfo(k2.text);
+        pruefen('B3b GEGENRICHTUNG: steht lib/neu_im_lauf.js NICHT in der Liste des Laufs, fehlt es in der Kopie (ungetrackt = nicht kopiert)', i2 !== null && i2.imLauf === false && i2.ungetrackt === false);
+        pruefen('A8 SYMLINK UND MODUS: zeiger.js (versionierter Symlink) ist in der Kopie ein Symlink mit Ziel lib/wert.js, ops/skript.sh behaelt das Ausfuehrbit, lib/wert.js hat keines',
+            i1 !== null && i1.symlink === true && i1.ziel === 'lib/wert.js' && i1.exec === true && i1.nichtExec === true);
+        neu = ['test_kopie.js', 'test_neu.js', 'lib/neu_im_lauf.js'];
+        const m1 = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/neu_im_lauf.js', alt: '7', neu: '8', testdatei: 'test_neu.js' });
+        pruefen(`MUTATION AN EINER DATEI DIESES LAUFS: lib/neu_im_lauf.js (ungetrackt, aber in der Liste) ist Mutationsziel — der Test scheitert an 7 -> 8 (${m1.status})`,
+            m1.status === 'gescheitert' && m1.text.includes('✗ FAIL: neu_im_lauf liefert 7') && m1.text.includes('mutation: lib/neu_im_lauf.js'));
+        neu = ['test_kopie.js', 'test_neu.js'];
+        const m2 = await werkzeugAufrufen('mutiere_und_teste', { datei: 'lib/neu_im_lauf.js', alt: '7', neu: '8', testdatei: 'test_neu.js' });
+        pruefen('MUTATION GEGENRICHTUNG: ist lib/neu_im_lauf.js NICHT in der Liste des Laufs, ist es kein Mutationsziel (nicht versioniert)',
+            m2.abgelehnt === true && m2.text.includes('nicht versioniert'));
+        const fehlt = await werkzeugAufrufen('teste', { testdatei: 'test_fehlt.js' });
+        pruefen('REGISTRIERT, ABER NICHT VORHANDEN: test_fehlt.js steht in test/run.sh, die Datei gibt es nicht -> abgelehnt ohne Kind-Lauf (kein ENOENT-Umgebungsfehler)',
+            fehlt.abgelehnt === true && fehlt.text.includes('existiert aber nicht als regulaere Datei'));
+        fs.writeFileSync(wB('test/run.sh'), runShAlt.replace('\nTESTS=(\n', '\nTESTSX=(\n'));   // die ERSTE "TESTS=(" steht im Kommentar der Fixtur — nur die Zeile am Zeilenanfang trifft
+        const kaputt = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
+        pruefen('TESTLISTE UNLESBAR: ohne TESTS=(-Zeile in test/run.sh des Baums wird abgelehnt (test/run.sh nicht lesbar), nicht mit der alten Liste weitergefahren',
+            kaputt.abgelehnt === true && kaputt.text.includes('test/run.sh nicht lesbar'));
+        fs.writeFileSync(wB('test/run.sh'), runShAlt);
+        const deckelVorher = lauf.zaehler.aufrufe;
+        lauf.zaehler.aufrufe = 30;
+        const dk = await werkzeugAufrufen('teste', { testdatei: 'test_gruen.js' });
+        lauf.zaehler.aufrufe = deckelVorher;
+        const keinDeckel = await werkzeugAufrufen('teste', { testdatei: 'nicht_registriert.js' });
+        pruefen('DECKEL-MARKE: ein erreichter Deckel traegt deckel:true im Ergebnis, jede andere Ablehnung deckel:false — die Bauspur beendet nur den ersten als "Budget erschoepft (Sandbox)"',
+            dk.abgelehnt === true && dk.deckel === true && dk.text.includes('hoechstens 30') && keinDeckel.abgelehnt === true && keinDeckel.deckel === false);
+        aufraeumen();
+
+        // ----- Einheiten der Baustand-Kopie (A8) ohne Kind-Lauf -----
+        const kopieDir = path.join(basisB, 'kopie-einheit');
+        baustandKopieren(fxB.wurzel, ['test_kopie.js', 'lib/neu_im_lauf.js', 'node_modules/x.js', '.git/config'], kopieDir);
+        const mode = (rel) => fs.lstatSync(path.join(kopieDir, rel)).mode & 0o777;
+        pruefen('A8 KOPIE-EINHEIT: lib/wert.js (aus ls-files) und die Listendateien sind da, ungetrackte Dateien ausserhalb der Liste nicht; node_modules/ und .git/ werden auch dann NICHT kopiert, wenn die Liste sie nennt; Modi 0644 und 0755 bleiben',
+            fs.existsSync(path.join(kopieDir, 'lib/wert.js')) && fs.existsSync(path.join(kopieDir, 'test_kopie.js')) && fs.existsSync(path.join(kopieDir, 'lib/neu_im_lauf.js'))
+            && !fs.existsSync(path.join(kopieDir, 'nur_ungetrackt.js')) && !fs.existsSync(path.join(kopieDir, 'node_modules')) && !fs.existsSync(path.join(kopieDir, '.git'))
+            && mode('lib/wert.js') === 0o644 && mode('ops/skript.sh') === 0o755 && fs.readlinkSync(path.join(kopieDir, 'zeiger.js')) === 'lib/wert.js');
+        const symlinkFehler = (name, ziel) => {
+            const d = path.join(basisB, `kopie-symlink-${name}`);
+            fs.symlinkSync(ziel, path.join(fxB.wurzel, `${name}.js`));
+            try { baustandKopieren(fxB.wurzel, [`${name}.js`], d); return null; } catch (e) { return e.message; } finally { fs.unlinkSync(path.join(fxB.wurzel, `${name}.js`)); }
+        };
+        const sRaus = symlinkFehler('aus-rel', '../draussen.js');
+        const sAbs = symlinkFehler('aus-abs', '/etc/passwd');
+        const sTief = symlinkFehler('aus-tief', 'lib/../../draussen.js');
+        const sInnen = symlinkFehler('innen', 'lib/wert.js');
+        pruefen('A8 SYMLINK AUS DER KOPIE: ein Symlink mit Ziel "../draussen.js", "/etc/passwd" oder "lib/../../draussen.js" wird abgelehnt (Baustand: Symlink … zeigt aus der Kopie heraus); ein Symlink auf lib/wert.js wird kopiert',
+            /Symlink aus-rel\.js zeigt aus der Kopie heraus/.test(sRaus || '') && /Symlink aus-abs\.js zeigt aus der Kopie heraus/.test(sAbs || '') && /Symlink aus-tief\.js zeigt aus der Kopie heraus/.test(sTief || '') && sInnen === null);
+        pruefen('A8 DATEIEN-LISTE: baustandDateien nennt ls-files plus Listendateien sortiert und ohne node_modules/.git; ein Name mit ".." wirft',
+            (() => { const d = baustandDateien(fxB.wurzel, ['test_kopie.js', 'node_modules/x.js', '.git/config', 'node_modules']); let wirft = false; try { baustandDateien(fxB.wurzel, ['../x.js']); } catch (e) { wirft = /unzulaessiger Dateiname/.test(e.message); } return d.includes('lib/wert.js') && d.includes('test_kopie.js') && !d.some((n) => n.startsWith('node_modules') || n.startsWith('.git/')) && d.join('\0') === [...d].sort().join('\0') && wirft; })());
+    } finally {
+        if (lauf) aufraeumen();
+        if (alteUmgebung !== undefined) process.env.PLAYWRIGHT_BROWSERS_PATH = alteUmgebung; else delete process.env.PLAYWRIGHT_BROWSERS_PATH;
+        fs.rmSync(basisA, { recursive: true, force: true });
+        fs.rmSync(basisB, { recursive: true, force: true });
+    }
+}
+
 module.exports = {
     ERLAUBTES_MODELL, WERKZEUGE_AUSFUEHRUNG, MAX_ERGEBNIS_BYTES, MAX_AUFRUFE, T_SEKUNDEN,
     einrichten, aufraeumen, werkzeugAufrufen, ungueltigerAufruf, istAktiv, istAbgebrochen, abbruchMarker, istWerkzeugBefund, werkzeugBefundMarker, zaehler,
     vorspannAbsatz, zusammenfassungZeilen, protokollMaterialZusatz, statusAusExit,
-    selbsttestSpur, fixtureAnlegen,
+    selbsttestSpur, selbsttestBaustand, fixtureAnlegen,
+    // Fuer tools/bau-spur.js (keine zweite Kopie): Neutralisierung, Kuerzung, Testliste, Namenspruefung.
+    STEUERZEICHEN, steuerzeichenNeutralisieren, bytesKuerzenHinten, testsAusRunShText, testNameGueltig,
+    PFLICHTDATEIEN, MODI,
 };

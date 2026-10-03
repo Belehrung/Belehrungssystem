@@ -599,6 +599,22 @@ function sseAnfrage({ url, schluessel, koerper, timeoutMs = 20 * 60 * 1000 }) {
     });
 }
 
+// Liest den Text eines Berichts aus output[] heraus (/v1/responses): der
+// Endtext steckt in einem oder mehreren Eintraegen {type:"message",
+// role:"assistant", content:[{type:"output_text", text}]} -- gemessen am
+// echten Konto 12.09.2026 (siehe Endpunkt-Kommentar oben), NICHT mehr in
+// choices[0].message.content wie bei /v1/chat/completions.
+function textAusAusgabe(ausgabeElemente) {
+    const teile = [];
+    for (const element of ausgabeElemente) {
+        if (element.type !== 'message' || element.role !== 'assistant' || !Array.isArray(element.content)) continue;
+        for (const teil of element.content) {
+            if (teil.type === 'output_text' && typeof teil.text === 'string') teile.push(teil.text);
+        }
+    }
+    return teile.join('\n');
+}
+
 const LAUFPROTOKOLL_MARKE = '<!-- NEUE-LAUFZEILE-HIER:';
 
 // Deutsches Datum TT.MM.JJJJ, Zeitzone Europe/Berlin. NICHT toISOString()
@@ -767,6 +783,6 @@ function laufprotokollEinfuegen(pfad, zeileText) {
 
 module.exports = {
     MAX_SUCHE_ZEILEN, MAX_LIES_ZEILEN, PREISTABELLE, kostenSchaetzen, GeheimnisAbbruch, istHartGesperrt,
-    zeilenAus, glob2regex, leseWerkzeugeBauen, sseAnfrage,
+    zeilenAus, glob2regex, leseWerkzeugeBauen, sseAnfrage, textAusAusgabe,
     LAUFPROTOKOLL_MARKE, laufprotokollDatum, laufprotokollZelle, laufprotokollEinfuegen,
 };

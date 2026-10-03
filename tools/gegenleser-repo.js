@@ -110,7 +110,7 @@ const { pruefeGeheimnisse, entferneGeheimnisse, zeileEntferntMarker } = require(
 // zweite Kopie waere eine Verletzung von CLAUDE.md Abschnitt 11.
 const {
     MAX_SUCHE_ZEILEN, MAX_LIES_ZEILEN, kostenSchaetzen, GeheimnisAbbruch, istHartGesperrt, zeilenAus,
-    leseWerkzeugeBauen, sseAnfrage,
+    leseWerkzeugeBauen, sseAnfrage, textAusAusgabe,
     LAUFPROTOKOLL_MARKE, laufprotokollDatum, laufprotokollZelle, laufprotokollEinfuegen,
 } = require('./spur-gemeinsam');
 // Die ausfuehrende Spur (teste/mutiere_und_teste) lebt in einem eigenen
@@ -694,21 +694,7 @@ function rundenHinweisBauen(runde, maxRunden, istLetzteZweiRunden, ist70Prozent)
     return text;
 }
 
-// Liest den Text eines Berichts aus output[] heraus (/v1/responses): der
-// Endtext steckt in einem oder mehreren Eintraegen {type:"message",
-// role:"assistant", content:[{type:"output_text", text}]} -- gemessen am
-// echten Konto 12.09.2026 (siehe Endpunkt-Kommentar oben), NICHT mehr in
-// choices[0].message.content wie bei /v1/chat/completions.
-function textAusAusgabe(ausgabeElemente) {
-    const teile = [];
-    for (const element of ausgabeElemente) {
-        if (element.type !== 'message' || element.role !== 'assistant' || !Array.isArray(element.content)) continue;
-        for (const teil of element.content) {
-            if (teil.type === 'output_text' && typeof teil.text === 'string') teile.push(teil.text);
-        }
-    }
-    return teile.join('\n');
-}
+// textAusAusgabe() steht in tools/spur-gemeinsam.js (importiert oben).
 
 // ===================== TEIL D: LAUF-PROTOKOLL (ASTRA-LAEUFE.md) ============
 //
@@ -3822,9 +3808,13 @@ async function selbsttestAusfuehrung() {
     // dazu LAUF E6 (Werkzeug-Befund durch den ganzen Lauf) x3 und in
     // selbsttestSpur() LO in template1, Manifest-Skript find-Exit, ro-Mount
     // mit Leerzeichen = 142; Runde 5 dazu Kanarie mit Infrastrukturfehler,
-    // Mountziel mit Zeilenumbruch, Manifest nicht ermittelbar = 145. Unten durch den
-    // tatsaechlichen Lauf bestaetigt.
-    const ERWARTETE_FAELLE = 145;
+    // Mountziel mit Zeilenumbruch, Manifest nicht ermittelbar = 145. Bauspur
+    // (Planpruefung 03.10.2026) dazu 26 Faelle in selbsttestBaustand() (Modus-
+    // Vertrag x3, Testnamen B1 x3, B3d, Baustand-Einrichten, B3a, A2 x3, A1 x2 +
+    // Vorbereitung, B3b x2, A8 Symlink/Modus, Mutation an Lauf-Datei x2, registriert
+    // aber fehlend, Testliste unlesbar, Deckel-Marke, A8 Kopie-Einheit, Symlink aus
+    // der Kopie, Dateien-Liste) = 171. Unten durch den tatsaechlichen Lauf bestaetigt.
+    const ERWARTETE_FAELLE = 171;
     if (process.getuid() !== 0) {
         if (process.env.CI === 'true') {
             console.log(`  ✗ FEHLT: --selbsttest-ausfuehrung braucht root (uid 0, gefunden ${process.getuid()}) -- unter CI=true ist das ROT, kein SKIP.`);
@@ -4051,6 +4041,8 @@ async function selbsttestAusfuehrung() {
 
         // ----- Mechanik der Spur (Kind-Laeufe, Status-Vertrag, Ablehnungen, Deckel, Aufraeumen) -----
         await spur().selbsttestSpur(pruefen);
+        // ----- Baustand-Modus der Spur (Bauspur, Planpruefung 03.10.2026: B1, B3, A1, A2, A8) -----
+        await spur().selbsttestBaustand(pruefen);
     } catch (e) {
         console.log(`  ✗ FEHLT: unerwarteter Fehler im Selbsttest der ausfuehrenden Spur: ${e.stack || e.message}`);
         fehler++;
