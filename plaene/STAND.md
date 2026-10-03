@@ -908,3 +908,6 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
 - 03.10.2026 05:10 UTC:
   - Vorgabe für das A/B Qwen gegen Executer: In `BAU-LAEUFE.md` stehen je Beitrag die Claude-Token beider Wege (Executer laut Agentenmeldung `subagent_tokens`; beim Qwen-Weg mein Mehraufwand für die Prüfung). Dazu die Qwen-Kosten.
   - Auftrag Kimi-Lesezugriff ist plangeprüft (`plaene/auftrag-kimi-lesezugriff.md`) und wartet auf das Ende der Bauspur-Nacharbeit, gleicher Zweig.
+- 03.10.2026 06:45 UTC:
+  - C6-E Nacharbeit 2 fertig (`c6e-offline` `b212be5`, Suite EXIT 0, 520 = 520, Harness 290). Produktionsdiff selbst gelesen: zwei Befunde (Live-Weg mit Foto-Rest ohne Merker „Fotos nicht gesichert“; Wettlauf, der den Merker fälschlich stehen lässt). Lesespuren laufen (Kimi ×2; flash erneut mit SSE-Abbruch).
+  - Bauspur Nacharbeit 1 fertig (`bauspur-qwen` `34f56e7`, Probelauf 3 Exit 0, 0,07 $). Produktionsdiff selbst gelesen: nichts Blockierendes; Exit 27/28 im `finally` wird von `main()` überschrieben (Sammelliste). Lesespur Runde 2 (Kimi) läuft. Qwens Testdatei aus Probelauf 3 gelesen: harmlos (liest eine Datei, zwei `includes`), nicht committet.

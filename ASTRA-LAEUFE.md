@@ -480,6 +480,7 @@ sondern falsch.
 | 03.10.2026 | Planprüfung C6-E Automatik Spur B (kimi-k3, Bündel Auftrag + offline-queue.js + service-worker.js + csrf-schutz.js, effort high) | 595 s, Antwort 18.953 Zeichen | 9 | **8** (K1 = flash F1; K2 Unterschrift in der Notkopie, K3 Notkopie unsichtbar, K4 „automatisch“ nur bei offener Seite, K5 Doppelmeldung, K6 = F3, K8/K9 übernommen). K7 (falsches Studio) trägt nicht: der Speicher ist je Studio-Subdomain getrennt | 1 (K1) |
 | 03.10.2026 | Planpruefung Kimi-Lesezugriff Spur A (deepseek-flash) | Diff 63 Zeilen, Suchen 27, Lesungen 22, Token rein 2897616, Token raus 64022, Runden 27 | 10 | **10** (A1 truncation und A2 effort am Code nachgemessen; Rest als Planlücke übernommen) | 1 (A1) | 0,95 $ |
 | 03.10.2026 | Planprüfung Kimi-Lesezugriff Spur B (kimi-k3, Bündel Auftrag + Eignungspapier + 18.4 + spur-gemeinsam.js, effort high) | 647 s, Antwort 18.216 Zeichen | 8 | **8** (B2 = A2, B3/B6/B7 Kosten, B1 Probelauf nicht im Gate, B4 SSE-Leser, B5 Datengrenze, B8 Signatur; verdichtet von deepseek-flash) | 0 |
+| 03.10.2026 | Diffpruefung C6-E N2 Lesespur (deepseek-flash) | **abgebrochen** (unerwarteter Fehler nach Modellkontakt (Exit 1)): Diff 1962 Zeilen, Suchen 3, Lesungen 6, Token rein 288951, Token raus 13643, Runden 5 | — | — | — | mind. 0,10 $ |
 <!-- NEUE-LAUFZEILE-HIER: tools/gegenleser-repo.js traegt jede neue Zeile
      UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder
      verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und bricht
