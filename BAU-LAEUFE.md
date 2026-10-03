@@ -28,4 +28,6 @@ nacheinander, ein zweiter Lauf bricht mit Exit 17 ab.
 
 | Datum | Zweck | Modell | Runden | Token rein / raus | Kosten | Ergebnis | Prüfung bestanden | Nacharbeiten |
 |---|---|---|---|---|---|---|---|---|
+| 03.10.2026 | Probelauf Bauspur (Kommentar, teste, Gegenprobe) | qwen3.8-max | 3 | 11594 / 361 | mind. 0,03 $ | **abgebrochen** isolation-abgebrochen (AUSFÜHRUNG ABGEBROCHEN — Belege nach Aufruf 1 fehlen (Umgebungsnamen weichen von der Literalliste ab — Werkzeug-Befund (Stufe 24))), Exit 25; netto geaendert 1, neu 0, registriert 0 | — | — |
+| 03.10.2026 | Probelauf Bauspur 2 (Kommentar, teste, Gegenprobe; Baustand 9ad8acd) | qwen3.8-max | 6 | 29007 / 1398 | 0,07 $ | fertig, Exit 0; netto geaendert 1, neu 0, registriert 0 | — | — |
 <!-- NEUE-LAUFZEILE-HIER: tools/bau-spur.js traegt jede neue Zeile UNMITTELBAR UEBER dieser Marke ein. Sie darf nicht entfernt oder verschoben werden; fehlt sie, meldet das Werkzeug das LAUT und traegt nichts ein. -->
