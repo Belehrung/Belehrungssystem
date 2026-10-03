@@ -31,3 +31,14 @@ nachgezogen, jeweils mit Gegenprobe.
 
 Der Plan-Gegenleser für Nacharbeit 1 entfällt: Sie behebt Geschwisterstellen derselben Klasse, deren Auftrag schon geprüft
 war, und ändert keine Architektur.
+
+## Nacharbeit 1 (Stand `6a926ba`)
+
+Suite des Bauenden: SUITE_EXIT=0, 1134 s, 518 = 518, 0 ✗, Lint 0, Marker 6 (Prosa). N1–N7 sind umgesetzt, jeweils mit
+Gegenprobe; die Zahlen stehen im Bericht des Agenten. Den Produktionsdiff (7 Dateien) habe ich selbst gelesen:
+`vormonatKey()` und `monatsNameDe()` in `core/datum.js` sind die EINE Quelle für `getLastMonthRange`, das Badge und
+das Dashboard. Die Achse in `core/wiederholung.js` läuft über `plusMonate`. `bezirk-magicline` meldet jetzt. Das
+Verbandbuch-Formular bildet die Zeit mit demselben Ausdruck wie die Offline-Warteschlange.
+
+Keine zweite Prüfrunde: Die Behebungen sind Ersetzungen derselben Klasse, deren Muster in Runde 1 geprüft wurde. Jede hat
+eine Gegenprobe mit ROT in den betroffenen Zonen. Neu auf der Sammelliste: C6D3-4 und C6D3-5.
