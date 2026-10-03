@@ -559,7 +559,7 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         const tA = werkzeugeAuf(ctx, baumA, { haken: { vorOeffnen: (abs) => { fs.unlinkSync(abs); fs.symlinkSync(aussen, abs); } } });
         const rA = sicher(() => tA.w.ersetze({ pfad: 'lib/wert.js', alt: '42', neu: '43' }));
         pruefen('F3 ERSETZE MIT SYMLINK-TAUSCH (O_NOFOLLOW): wird lib/wert.js zwischen Pruefung und open durch einen Symlink auf eine Datei AUSSERHALB des Baums ersetzt, ist ersetze abgelehnt, die Aussendatei ist bytegleich (nichts durch den Link geschrieben, nichts gekuerzt), keine Schreibliste',
-            rA.abgelehnt === true && bleibt() && tA.w.schreibliste.size === 0 && fs.lstatSync(path.join(baumA, 'lib/wert.js')).isSymbolicLink());
+            rA.abgelehnt === true && bleibt() && tA.w.schreibliste.size === 0 && (() => { try { return fs.lstatSync(path.join(baumA, 'lib/wert.js')).isSymbolicLink(); } catch (e) { return false; } })());
         frisch();
         const baumB = frischerBaum(ctx);
         const tB = werkzeugeAuf(ctx, baumB, { haken: { vorOeffnen: (abs) => { fs.unlinkSync(abs); fs.linkSync(aussen, abs); } } });
@@ -576,7 +576,7 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         const tD = werkzeugeAuf(ctx, baumD, { haken: { vorOeffnen: (abs) => { fs.symlinkSync(aussen, abs); } } });
         const rD = sicher(() => tD.w.neueDatei({ pfad: 'lib/link-f3.js', inhalt: 'ueber den Link geschrieben\n' }));
         pruefen('F3 NEUE_DATEI MIT SYMLINK IM FENSTER (O_EXCL und O_NOFOLLOW): entsteht zwischen Pruefung und open ein Symlink auf eine Aussendatei, ist neue_datei abgelehnt und die Aussendatei bytegleich',
-            rD.abgelehnt === true && bleibt() && tD.w.laufNeuListe().length === 0 && fs.lstatSync(path.join(baumD, 'lib/link-f3.js')).isSymbolicLink());
+            rD.abgelehnt === true && bleibt() && tD.w.laufNeuListe().length === 0 && (() => { try { return fs.lstatSync(path.join(baumD, 'lib/link-f3.js')).isSymbolicLink(); } catch (e) { return false; } })());
         const aussenLink = path.join(ctx.basis, 'f3-hardlink-neu.txt');
         fs.rmSync(aussenLink, { force: true });
         const baumE = frischerBaum(ctx);
