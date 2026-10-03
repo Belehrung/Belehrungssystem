@@ -396,3 +396,16 @@ Limit laufen ist Schluss bis Reset“.
 Folge: Es geht normal weiter. Meldet ein Aufruf erneut ein Limit, gilt die Regel aus CLAUDE.md §2 ohne Rückfrage: anhalten,
 Stand sichern, bis zum automatischen Reset nichts weiter. Bis dahin sparsam: Lesen, Prüfen und Verdichten gehen an
 DeepSeek/Kimi, Bauen wo möglich an Qwen; der Executer nur, wo es gebraucht wird (A/B-Weg E, Rückfall).
+
+## 03.10.2026 — Kimi übernimmt mehr, um Claude-Token zu sparen
+
+Betreiber, wörtlich: „Okay, wenn Kimi nicht schlecht abgeschnitten hat, dann lass uns das zum Token sparen verwenden“. Anlass:
+Kimi lief heute zuverlässig (alle Läufe kamen durch, zwei Antworten am Längendeckel abgeschnitten) und fand unabhängig die
+tragenden Befunde (C6-E P1/P2, blinde A/B-Bewertung); deepseek-flash brach viermal im Antwortstrom ab.
+
+Folge:
+- Lesespuren (Plan- und Diffprüfung) laufen über Kimi. flash bleibt zweite Spur, sobald der Aufruf ohne Streaming gemessen hält.
+- Lange Berichte verdichtet Kimi (oder flash) auf die Befundtabelle, bevor der Haupt-Agent liest. Der Haupt-Agent liest nur
+  noch den Produktionsdiff selbst und misst die tragenden Befunde nach (F2 bleibt).
+- Kimis Repo-Lesezugriff (`plaene/auftrag-kimi-lesezugriff.md`) wird gebaut: erst damit kann Kimi selbst im Baum suchen statt
+  vorbereitete Bündel zu brauchen.
