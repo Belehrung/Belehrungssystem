@@ -51,6 +51,12 @@ Für die Bauspur gilt:
   `qwen3.8-max`, `qwen3.7-plus`, `qwen3-coder-plus` und `qwen3.5-plus`; Positivkontrolle `qwen9-quatschmodell` → 404.
 - Welches Modell baut, entscheidet ein A/B mit wörtlich gleichem Auftrag (Abschnitt 5), nicht der Name.
 - Die Prüfregeln (Abschnitte 6 und 7) gelten unverändert: Ein Qwen-Diff wird geprüft wie ein Executer-Diff.
+- **Testcode aus der Bauspur ist ungeprüfter Fremdcode** (Angriffsspur 03.10.2026, `plaene/diffpruefung-bauspur.md` X4): Er
+  läuft nach dem Lauf ausserhalb der Sandbox, in der vollen Suite (als root), in der CI und im Deploy-Gate.
+  - Vor dem ersten Lauf ausserhalb der Sandbox werden alle neuen und geänderten Testdateien gelesen. Das übernimmt eine
+    Lesespur mit der Frage, ob der Code etwas tut, das sein Zweck nicht verlangt (Netz, Prozesse, Dateien ausserhalb der
+    Wegwerfwurzeln, Umgebungsvariablen, Zugangsdaten). Der Haupt-Agent misst ihre tragenden Befunde nach.
+  - Ein Test, den Qwen geschrieben hat, belegt nichts, bevor seine Gegenprobe von uns nachgemessen ist.
 
 ## 2. Ausgabetext und Token
 
