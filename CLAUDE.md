@@ -22,6 +22,31 @@ Vorgabe des Betreibers (10.08.2026): Der Haupt-Agent baut selbst nichts.
 der Haupt-Agent selbst; Code und alles Echte baut der Executer. Die Bagatellgrenze (Abschnitt 8.1) gilt damit als
 ausdrückliche Ausnahme zur Vorgabe vom 10.08.2026.
 
+**Betreiber-Vorgabe 03.10.2026 (Kosten), wörtlich:** „das ist eine api für qwen3.5 erlaube dieser ki zu bauen, deepseak prüft
+und du bist der Entwickler und Chef. Aufgrund der Kosten müssen andere Ki Modelle mehr übernehmen. Welches Model was macht
+überlasse ich dir aber mehr auf andere auslagern.“ Die Freigabe für eine Bauspur mit Werkzeugen hat der Betreiber am selben Tag
+ausdrücklich erteilt („Berechtigung erteilen“).
+
+Daraus folgt die Aufgabenteilung:
+
+| Rolle | Wer |
+|---|---|
+| Bauen (Code, Tests, Migrationen) | Qwen über die Bauspur (`tools/bau-spur.js`); bis sie steht, der Executer |
+| Prüfen (Plan und Diff) | `deepseek-flash`, als zweite Planspur Kimi; Abschnitt 7 bleibt |
+| Recht, Doku, Recherche mit Websuche | `gpt-6.1-sol` |
+| Verdichten langer Berichte | `deepseek-flash` |
+| Entwickler und Chef | Haupt-Agent: Aufträge, Entscheidungen, Produktionsdiff lesen, volle Suite, Git, Merge, Deploy-Check |
+| Rückfall | Executer (Sonnet), wenn die Bauspur zweimal am selben Auftrag scheitert, und für den Bau der Bauspur selbst |
+
+Für die Bauspur gilt:
+- Qwen bekommt nur feste Werkzeuge in einem eigenen Arbeitsbaum. Es gibt keine freie Shell und keine Git-Befehle.
+- Tests laufen in der Sandbox von `tools/ausfuehr-spur.js`, gesperrte Pfade sind gesperrt, und der Geheimnis-Riegel liegt auf
+  jedem Ergebnis.
+- Das Modell ist am Endpunkt `dashscope-intl.aliyuncs.com` gemessen (03.10.2026). Mit Werkzeugaufruf antworten
+  `qwen3.8-max`, `qwen3.7-plus`, `qwen3-coder-plus` und `qwen3.5-plus`; Positivkontrolle `qwen9-quatschmodell` → 404.
+- Welches Modell baut, entscheidet ein A/B mit wörtlich gleichem Auftrag (Abschnitt 5), nicht der Name.
+- Die Prüfregeln (Abschnitte 6 und 7) gelten unverändert: Ein Qwen-Diff wird geprüft wie ein Executer-Diff.
+
 ## 2. Ausgabetext und Token
 
 Betreiber-Vorgabe 23.09.2026: „reduziere deinen ausgabetext in zukunft auf das nötige minimum."

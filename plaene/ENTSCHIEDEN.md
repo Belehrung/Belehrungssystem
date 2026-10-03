@@ -360,3 +360,10 @@ Lauf-Protokoll.
 mittragen (ein Lauf kam mit HTTP 200 und LEERER Antwort zurück, weil das
 ganze Budget ins Nachdenken ging); und die Argumente eines Werkzeugaufrufs
 kommen in Stücken und müssen je `index` zusammengesetzt werden.
+
+## 03.10.2026 — Qwen baut, DeepSeek prüft, Claude ist Entwickler und Chef
+
+Der Betreiber hat entschieden: Aus Kostengründen übernehmen andere KI-Modelle mehr. Qwen (DashScope, Schlüssel in
+`/tmp/claude-0/.qwen-key`) baut, DeepSeek prüft, der Haupt-Agent ist Entwickler und Chef; die Aufteilung im Einzelnen liegt
+beim Haupt-Agenten. Die Freigabe für eine Bauspur mit Werkzeugen ist ausdrücklich erteilt. Die Umsetzung steht in CLAUDE.md
+Abschnitt 1.
