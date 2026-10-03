@@ -183,6 +183,66 @@ als Planlücken übernommen. Diese Ergänzungen gehen den Abschnitten oben VOR.
     - Ein Abbruch endet mit Teilbericht und eigenem Exit-Code.
     - Jedes Werkzeugergebnis hat einen Längendeckel.
 
+### Spur A (Kimi, Mechanik): weitere Pflichtergänzungen
+
+Spur A lief mit Kimi, nachdem flash zweimal am Antwortstrom abgebrochen war. Sie lieferte 8 Befunde und 5 kleinere. A1, A2
+und A5 sind am Bestand nachgemessen; der Rest ist als Planlücke übernommen. Auch diese Punkte gehen den Abschnitten oben VOR.
+
+- **A1 Testliste ist eingefroren (blockierend).** `testsAusRunSh` läuft nur einmal (`ausfuehr-spur.js:493`).
+  `testdateiPruefen` prüft gegen diese Liste (`:982`). Ein per `registriere_test` eingetragener Test wäre deshalb mit
+  `teste` NICHT fahrbar.
+  - Im Baustand-Modus wird die Liste vor jedem `teste`/`mutiere_und_teste` neu aus dem aktuellen `test/run.sh` des Baums
+    gelesen.
+  - Selbsttestfall: `neue_datei` → `registriere_test` → `teste` läuft. Gegenprobe: Ohne die Aktualisierung wird der Fall
+    abgelehnt.
+- **A2 Grundlauf-Zwischenspeicher.** `lauf.grundlauf` wird nie geleert (nur `has`/`get`/`set`, `:1029`/`:1047`/`:1053`).
+  In der Bauspur ändert sich der Baum zwischen zwei Aufrufen. Damit gilt ein alter Grundlauf für einen neuen Stand, und
+  ROT/GRÜN einer Gegenprobe wäre falsch beschriftet.
+  - Nach jedem erfolgreichen `ersetze`/`neue_datei`/`registriere_test` wird der Zwischenspeicher geleert, oder er wird an
+    einen Hash des Baustands gebunden.
+  - Selbsttest beide Richtungen:
+    - Test brechen → `teste` (gescheitert) → reparieren → `mutiere_und_teste` meldet NICHT `grundlauf-rot`.
+    - Grün gemerkt → Produktivcode verschlechtern → `mutiere_und_teste` nimmt NICHT den alten Grundlauf.
+- **A3 Sauberer Start.** Vor dem ersten Modellaufruf muss `git status --porcelain` des Baums leer sein, sonst Abbruch mit
+  eigenem Exit-Code. `--protokoll` muss AUSSERHALB des Baums liegen, sonst ebenfalls Abbruch. Erst damit ist der
+  Endvergleich „Schreibliste gegen `git status`“ wohldefiniert.
+- **A4 Benutzer und Rechte.** Das Werkzeug läuft als root, weil die Sandbox root braucht (`:469`).
+  - Jede geschriebene Datei und jedes neu angelegte Verzeichnis bekommt Eigentümer und Gruppe der Baumwurzel
+    (`stat(--baum)`). In diesem Container ist das root, Selbsttest trotzdem mit einer Fixtur eines anderen Eigentümers.
+  - Die Schlüsseldatei muss Rechte 600 haben und root gehören, sonst Abbruch (Vorbild `gegenleser-repo.js:1499`).
+- **A5 Kostendeckel schliesst bei unbekanntem Preis.** `kostenSchaetzen` liefert `null` ohne Preiseintrag
+  (`gegenleser-repo.js:384-388`).
+  - Hat das gewählte Modell keinen belegten Preiseintrag, bricht die Bauspur VOR dem ersten Aufruf ab, mit eigenem
+    Exit-Code. „UNBESTÄTIGT“ heisst: kein Eintrag, nicht ein Kommentar.
+  - Selbsttestfall „Preis unbekannt“.
+  - Für den Probelauf muss deshalb mindestens der Preis von `qwen3.8-max` belegt sein (Quelle und Datum im Kommentar).
+- **A6 `registriere_test` gehört in die abschliessende Werkzeugliste** als Punkt 6, mit der Spezifikation aus B1.
+  - Zusätzlich nach dem Einfügen: `bash -n test/run.sh` muss 0 liefern, und `testsAusRunSh` muss auf der neuen Datei die
+    alte Liste plus genau diesen Eintrag ergeben, sonst wird zurückgenommen und abgelehnt.
+  - Selbsttest: Eine Zeile `)` und eine Zeile mit Kommentar oder Anführungszeichen werden abgelehnt.
+- **A7 `ersetze` gilt auch für in diesem Lauf neu angelegte Dateien.** Selbsttest: `neue_datei` → `ersetze` → `lies`
+  zeigt den neuen Inhalt.
+- **A8 Baustand-Modus der Sandbox als Vertrag.**
+  - Kopiert werden die Dateien aus `git ls-files` plus die Lauf-neuen Dateien, mit Dateimodus. Symlinks aus `ls-files`
+    werden als Symlinks kopiert und zeigen nicht aus der Kopie heraus, sonst Ablehnung. `node_modules` wird ausgelassen
+    (es wird wie heute aus dem Baum gebunden), ebenso `.git`.
+  - `ERWARTETE_FAELLE` des Sandbox-Selbsttests wächst als Literal mit.
+  - Der Attrappen-Selbsttest der Bauspur braucht weder root noch Cluster: eigener CI-Job ohne `sudo`. Die Sandbox-Fälle
+    des neuen Modus laufen im bestehenden Job `ausfuehr-spur`.
+- **Kleinere Punkte:**
+  - Die Deckel der Sandbox (`MAX_AUFRUFE = 30`, `MAX_AUSFUEHRUNGSZEIT_MS` 45 min, `:78-79`) bleiben. Ihr Erreichen endet
+    als „Budget erschöpft (Sandbox)“ mit Teilbericht, wie die Bauspur-Deckel.
+  - `package.json` und `package-lock.json` sind für die Bauspur IMMER gesperrt, auch mit `--erlaubt`. Die Kopie bindet die
+    alten `node_modules`; Abhängigkeiten ändert der Haupt-Agent.
+  - Der Probelauf-Baum braucht vorher `npm ci` (macht der Haupt-Agent bzw. der Executer beim Probelauf).
+  - Der Geheimnis-Riegel liegt auch auf dem Schreibweg: `pruefeGeheimnisse` auf `inhalt` (`neue_datei`) und `neu`
+    (`ersetze`), ein Treffer führt zur Ablehnung.
+  - `ersetze` hat einen Längendeckel für `neu` (200 KB wie `neue_datei`). Nach dem Schreiben läuft bei `.js`/`.cjs`
+    `node --check`. Ein Syntaxfehler sperrt nicht, er geht als Hinweis ins Werkzeugergebnis, denn Zwischenstände dürfen
+    kaputt sein.
+  - Die Sandbox-Sperre `/var/lock/dsv1.lock` teilt sich die Bauspur mit der Prüfspur. Sie laufen also nacheinander;
+    das steht im Kopf von `bau-spur.js`.
+
 ## Bericht
 
 - je Abschnitt: Diff-Kern, Messungen am Endpunkt (wörtlich), Gegenproben ROT/GRÜN wörtlich;
