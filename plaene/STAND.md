@@ -926,3 +926,8 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - **C6-E gemergt** (#515, Squash `ac9bdaa`, CI 6/6 grün, kein Bot-Kommentar, Botschaft endet auf der Schlusszeile). Deploy-Check steht aus (Migration 0070: Health-Check 7/8 ist der Beleg).
   - A/B entschieden: Weg E (Executer) besser, Qwen nicht billiger (`BAU-LAEUFE.md`). Weg E als **C6-Restpunkte** (#516, Zweig `c6-restpunkte`, master gemergt, nur Registrierungskonflikt); Suite auf `bb7e7bc`+Änderung EXIT 0, 519 = 519; zweite Suite auf dem gemergten Stand läuft.
   - Betreiber: Kimi übernimmt mehr (ENTSCHIEDEN.md). Kimi-Lesezugriff im Bau (Executer, `/workspace/belehrung-kimi`, Zweig `kimi-lese`).
+- 03.10.2026 08:35 UTC:
+  - **C6-E ausgeliefert:** Deploy 484 `success` auf `ac9bdaa`, live-check EXIT 0 (2× ℹ wie immer); das Health-Gate 7/8 ist der Beleg für Migration 0070.
+  - **C6-Restpunkte gemergt** (#516, Squash `de15f6b`, CI 6/6 grün, kein Bot-Kommentar, Botschaft sauber). Lokale Suite auf dem gemergten Stand EXIT 0, 521 = 521. C6D3-4 und C6D2-5 auf den Sammellisten erledigt. Deploy-Check steht aus.
+  - Aufgeräumt: Arbeitsbäume `gymdocu-ab-q`, `gymdocu-ab-e`, `gymdocu-c6e-lese`, `gymdocu-master-lese`, Zweige `ab-q`/`ab-e`, DB `gymdocu_abe_test`.
+  - Läuft: Kimi-Lesezugriff (Executer).
