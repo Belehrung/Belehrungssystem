@@ -15,3 +15,8 @@ ASTRA-LAEUFE.md.tmp-*
 # daneben (dokumente/it-unterlagen/bauen.js). Zwei Orte fuer dieselbe
 # Aussage; massgeblich ist die HTML-Quelle.
 dokumente/it-unterlagen/*.pdf
+
+# Datenbank der Anwendung (server.js, DB_PATH) — enthält Mitarbeiternamen und Unterschriften. Seit 03.10.2026 nicht mehr
+# versioniert (Betreiber-Entscheidung, plaene/ENTSCHIEDEN.md); in der Git-Historie steht sie weiter (seit 83514b1).
+database.db
+database.db-*

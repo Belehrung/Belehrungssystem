@@ -409,3 +409,13 @@ Folge:
   noch den Produktionsdiff selbst und misst die tragenden Befunde nach (F2 bleibt).
 - Kimis Repo-Lesezugriff (`plaene/auftrag-kimi-lesezugriff.md`) wird gebaut: erst damit kann Kimi selbst im Baum suchen statt
   vorbereitete Bündel zu brauchen.
+
+## 03.10.2026 — `database.db` aus dem Repo genommen
+
+Anlass: beim Bau des Kimi-Lesezugriffs gefunden: `database.db` (SQLite der Anwendung, `server.js` `DB_PATH`) ist seit Commit
+`83514b1` (24.02.2026) versioniert und enthält 9 Mitarbeiternamen, anscheinend echte, und 17 Unterschriften. Über
+`tools/gegenleser-repo.js` war sie für alle externen Prüfmodelle lesbar.
+
+Entscheidung des Betreibers (Auswahl „Aus dem Repo nehmen“): `git rm --cached` plus `.gitignore`; die Datei bleibt lokal erhalten. In
+der Git-Historie bleibt sie stehen — sie dort zu entfernen bräuchte einen Force-Push auf master und ist ausdrücklich NICHT gewählt.
+Unabhängig davon sperrt `istHartGesperrt` (tools/spur-gemeinsam.js) seit 03.10.2026 jede Datenbankdatei für Lesen und Suchen.
