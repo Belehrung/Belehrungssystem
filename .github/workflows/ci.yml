@@ -101,3 +101,32 @@ jobs:
         # PATH mitgeben: sudo setzt secure_path, node des Runners liegt
         # womoeglich ausserhalb davon.
         run: sudo -n env CI=true PATH="$PATH" node tools/gegenleser-repo.js --selbsttest-ausfuehrung
+
+      - name: Selbsttest der Bauspur mit root (Eigentuemer-Fixtur, CLI-Vorbedingungen, GANZER Lauf gegen die echte Sandbox)
+        # Gehoert in diesen Job, weil er root und den Wegwerf-Cluster hat: der ganze Lauf nimmt
+        # die Sandbox im Modus "baustand" (Auftrag Bauspur, Planpruefung B3/A8) mit einem
+        # Attrappen-Modell (https gestubbt, KEIN Netz). Ohne root meldet der Selbsttest unter
+        # CI=true ROT, nie SKIP.
+        run: sudo -n env CI=true PATH="$PATH" node tools/bau-spur.js --selbsttest-root
+
+  # Selbsttest der BAUSPUR (tools/bau-spur.js, Auftrag Bauspur Qwen, 03.10.2026): Attrappen-Modell
+  # mit festem Drehbuch von Werkzeugaufrufen, KEIN Netz, KEIN root, KEIN Cluster — deshalb ein
+  # eigener Job ohne sudo (die Fälle mit root laufen im Job ausfuehr-spur oben).
+  bau-spur:
+    name: Bauspur Selbsttest (Attrappen-Modell, ohne root)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Syntax-Check tools/bau-spur.js und Selbsttest
+        run: |
+          node --check tools/bau-spur.js
+          node --check tools/bau-spur-selbsttest.js
+          node --check tools/spur-gemeinsam.js
+
+      - name: Selbsttest der Bauspur (Pfadregeln, Schreibwerkzeuge, Budget, Riegel, Endvergleich)
+        # Jede Regel in beide Richtungen, Sollwerte als Literale, Sollzahl der Faelle von Hand.
+        run: node tools/bau-spur.js --selbsttest

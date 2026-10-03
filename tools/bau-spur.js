@@ -240,6 +240,9 @@ function kappen(text, maxBytes = MAX_ERGEBNIS_BYTES) {
 function sha256Puffer(puffer) { return crypto.createHash('sha256').update(puffer).digest('hex'); }
 function zaehleVorkommen(inhalt, alt) {
     // UEBERLAPPENDE Fundstellen: "aa" in "aaa" sind zwei, nicht eine (strenger als die Sandbox, mit Absicht).
+    // Ein leerer Suchtext hat keine Fundstellen: indexOf('', i + 1) liefert nie -1 (gemessen: Endlosschleife, als die
+    // Regel "alt darf nicht leer sein" in der Gegenprobe entfernt war) — die Schleife darf nie ohne diese Wache laufen.
+    if (!alt) return 0;
     let n = 0;
     for (let i = inhalt.indexOf(alt); i !== -1; i = inhalt.indexOf(alt, i + 1)) n++;
     return n;
@@ -554,7 +557,7 @@ function schreibWerkzeugeBauen(kontext) {
         for (let i = ende - 1; i > start; i--) {
             if (zeilen[i].replace(/#.*$/, '').trim()) { einzug = /^[ \t]*/.exec(zeilen[i])[0]; break; }
         }
-        const neueZeile = einzug + datei;
+        const neueZeile = kontext.haken && typeof kontext.haken.einfuegeZeile === 'function' ? kontext.haken.einfuegeZeile(einzug + datei) : einzug + datei;   // der Haken ist NUR fuer den Selbsttest
         const neuZeilen = [...zeilen.slice(0, ende), neueZeile, ...zeilen.slice(ende)];
         const neuText = neuZeilen.join('\n');
         const pruefe = (neu, label) => {
@@ -1165,7 +1168,7 @@ async function main(argv) {
 
 module.exports = {
     EXIT, STATUS_KATALOG, ERLAUBTE_MODELLE, ENDPUNKT, VORGABE_MAX_RUNDEN, VORGABE_MAX_KOSTEN_USD, MAX_ANTWORT_TOKEN, MAX_ERGEBNIS_BYTES, MAX_DATEI_BYTES,
-    bereinigerBauen, tiefBereinigen, pfadRegeln, kettePruefen, schreibWerkzeugeBauen, modellPruefen, baumArtPruefen, zielrepoPruefen, baumSauberPruefen,
+    bereinigerBauen, tiefBereinigen, zaehleVorkommen, pfadRegeln, kettePruefen, schreibWerkzeugeBauen, modellPruefen, baumArtPruefen, zielrepoPruefen, baumSauberPruefen,
     ausserhalbPruefen, schluesselDateiPruefen, zahlOptionPruefen, argumenteLesen, erlaubtMusterLesen, werkzeugDefinitionen, vorspannBauen, rundenHinweisBauen,
     berichtPruefen, anfrageKoerperBauen, anfragenEchtBauen, bauspurLaufen, bauLaufprotokollPfad, gitStatusDateien, gitLs, git, main,
 };

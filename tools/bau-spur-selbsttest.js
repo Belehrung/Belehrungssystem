@@ -25,7 +25,7 @@ const sandboxModul = require('./ausfuehr-spur');
 const { leseWerkzeugeBauen, kostenSchaetzen, laufprotokollDatum } = require('./spur-gemeinsam');
 const { pruefeGeheimnisse } = require('./geheimnis-riegel');
 
-const ERWARTETE_FAELLE_OHNE_ROOT = 92;   // von Hand gezaehlt, am 03.10.2026 durch den Lauf bestaetigt
+const ERWARTETE_FAELLE_OHNE_ROOT = 95;   // von Hand gezaehlt, am 03.10.2026 durch den Lauf bestaetigt
 const ERWARTETE_FAELLE_ROOT = 8;        // A4 x2, CLI-Vorbedingungen x2, ganzer Lauf x4
 
 const sha = (text) => crypto.createHash('sha256').update(text).digest('hex');
@@ -335,8 +335,8 @@ async function faelleOhneRoot(pruefen, ctx) {
             && eintrag.shaVorher === sha0 && eintrag.shaNachher === sha(erwartet) && eintrag.groesse === Buffer.byteLength(erwartet) && statusVon(ctx, t.baum) === 'M lib/doppelt.js' && t.protokoll.length === 1);
         const t2 = werkzeugeAuf(ctx, frischerBaum(ctx));
         const ueberl = t2.w.ersetze({ pfad: 'aaa.js', alt: 'aa', neu: 'b' });
-        pruefen('ersetze UEBERLAPPEND: "aa" in "aaa" sind ZWEI Fundstellen (nicht eine) -> abgelehnt, nichts geaendert',
-            ueberl.abgelehnt === true && ueberl.text.includes('2-mal vor') && inhaltVon(t2.baum, 'aaa.js') === 'aaa\n');
+        pruefen('ersetze UEBERLAPPEND: "aa" in "aaa" sind ZWEI Fundstellen (nicht eine) -> abgelehnt, nichts geaendert; ein LEERER Suchtext hat keine Fundstellen (Wache gegen die Endlosschleife von indexOf mit leerem Text)',
+            ueberl.abgelehnt === true && ueberl.text.includes('2-mal vor') && inhaltVon(t2.baum, 'aaa.js') === 'aaa\n' && bau.zaehleVorkommen('aaa', 'aa') === 2 && bau.zaehleVorkommen('abc', '') === 0 && bau.zaehleVorkommen('abab', 'ab') === 2 && bau.zaehleVorkommen('abc', 'x') === 0);
         const args = [[{ pfad: 'lib/wert.js', alt: '', neu: 'x' }, 'nicht leer'], [{ pfad: 'lib/wert.js', alt: '42' }, 'Texte'], [{ pfad: 5, alt: '4', neu: '5' }, 'Texte'], [undefined, 'Texte'], [{ pfad: 'nicht/da.js', alt: 'a', neu: 'b' }, 'nicht von "git ls-files"']];
         pruefen('ersetze ARGUMENTFEHLER: leeres alt, fehlendes neu, Nicht-Text-Pfad, fehlende Argumente und eine nicht versionierte Datei sind Ablehnungen (kein Wurf), Baum sauber',
             args.every(([a, grund]) => { const r = t2.w.ersetze(a); return r.abgelehnt === true && r.text.includes(grund); }) && statusVon(ctx, t2.baum) === '' && t2.w.zaehler.ablehnungen === 6);
@@ -345,6 +345,17 @@ async function faelleOhneRoot(pruefen, ctx) {
         const rU = t3.w.ersetze({ pfad: 'roh.js', alt: 'x', neu: 'y' });
         pruefen('ersetze AUF UNVERSIONIERTE DATEI: eine vorhandene, aber ungetrackte Datei (nicht per neue_datei dieses Laufs angelegt) ist kein Ziel — abgelehnt, unveraendert',
             rU.abgelehnt === true && rU.text.includes('nicht von "git ls-files" erfasst und nicht in diesem Lauf angelegt') && inhaltVon(t3.baum, 'roh.js') === 'x = 1;\n');
+        const t4 = werkzeugeAuf(ctx, frischerBaum(ctx));
+        fs.writeFileSync(path.join(t4.baum, 'README.md'), Buffer.from([0x23, 0x20, 0xE4, 0x0A]));   // "# ä" in Latin-1: kein UTF-8
+        const u1 = t4.w.ersetze({ pfad: 'README.md', alt: '#', neu: '##' });
+        const bytesNachU1 = fs.readFileSync(path.join(t4.baum, 'README.md'));
+        fs.writeFileSync(path.join(t4.baum, 'README.md'), 'x'.repeat(2 * 1024 * 1024 + 1));
+        const u2 = t4.w.ersetze({ pfad: 'README.md', alt: 'x', neu: 'y' });
+        fs.writeFileSync(path.join(t4.baum, 'README.md'), 'x'.repeat(2 * 1024 * 1024 - 1) + 'Z');
+        const u3 = t4.w.ersetze({ pfad: 'README.md', alt: 'Z', neu: 'W' });
+        pruefen('ersetze NUR AUF REINEN UTF-8-TEXT BIS 2 MiB: eine Datei mit einem Latin-1-Byte (0xE4) wird abgelehnt und bleibt bytegleich (sonst wuerde ersetze sie beim Zurueckschreiben verfaelschen); eine Datei mit 2 MiB + 1 Byte wird abgelehnt, mit genau 2 MiB (2097152 Bytes) geht ersetze',
+            u1.abgelehnt === true && u1.text.includes('kein reines UTF-8') && bytesNachU1.equals(Buffer.from([0x23, 0x20, 0xE4, 0x0A])) && u2.abgelehnt === true && u2.text.includes('groesser als 2097152 Bytes')
+            && u3.abgelehnt === false && fs.statSync(path.join(t4.baum, 'README.md')).size === 2097152 && inhaltVon(t4.baum, 'README.md').endsWith('xW'));
         const rN = t3.w.neueDatei({ pfad: 'roh.js', inhalt: 'z' });
         const rN2 = t3.w.neueDatei({ pfad: 'lib/wert.js', inhalt: 'z' });
         pruefen('neue_datei AUF EXISTIERENDEN PFAD: eine bestehende (auch ungetrackte) Datei wird nicht angelegt/ueberschrieben -> abgelehnt "existiert bereits", beide Inhalte unveraendert',
@@ -442,6 +453,12 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         const o4 = t.w.ersetze({ pfad: '/etc/hostname', alt: 'a', neu: 'b' });
         pruefen('PFAD AUSSERHALB: absolute Pfade und ".." werden fuer neue_datei und ersetze abgelehnt; ausserhalb des Baums entsteht nichts',
             [o1, o2, o3, o4].every((r) => r.abgelehnt === true) && /absoluter Pfad/.test(o1.text) && /"\.\."/.test(o2.text) && !fs.existsSync(aussen) && !fs.existsSync(path.join(baum, '..', 'draussen.js')));
+        const kt1 = bau.kettePruefen(baum, '../x.js');
+        const kt2 = bau.kettePruefen(baum, 'lib/wert.js');
+        const kt3 = bau.kettePruefen(baum, 'lib/wert.js/x.js');
+        const kt4 = bau.kettePruefen(baum, 'neu/tief/x.js');
+        pruefen('B6 KETTE EINZELN: kettePruefen lehnt "../x.js" ueber realpath ab (der Pfad fuehrt aus dem Baum hinaus — zweiter Riegel hinter der ".."-Regel), lehnt eine Zwischenebene ab, die eine Datei ist (lib/wert.js/x.js: "kein Verzeichnis"), nennt bei einem neuen Pfad die drei fehlenden Ebenen und liefert fuer eine vorhandene Datei den lstat',
+            kt1.ok === false && /realpath/.test(kt1.grund) && kt2.ok === true && kt2.stFinal.isFile() && kt2.fehlend.length === 0 && kt3.ok === false && /kein Verzeichnis/.test(kt3.grund) && kt4.ok === true && kt4.stFinal === null && JSON.stringify(kt4.fehlend) === '["neu","neu/tief","neu/tief/x.js"]');
         const git1 = t.w.ersetze({ pfad: '.git', alt: 'gitdir', neu: 'x' });
         pruefen('B7 .git ALS DATEI: im verknuepften Arbeitsbaum ist .git eine DATEI mit "gitdir: …"; ersetze auf ".git" ist abgelehnt (immer gesperrt), die Datei bleibt, Positivkontrolle: sie existiert als Datei',
             git1.abgelehnt === true && git1.text.includes('immer gesperrt') && fs.statSync(path.join(baum, '.git')).isFile() && fs.readFileSync(path.join(baum, '.git'), 'utf8').startsWith('gitdir: '));
@@ -510,10 +527,14 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         pruefen('B1 DOPPELREGISTRIERUNG: dieselbe Datei ein zweites Mal wird abgelehnt, test/run.sh bleibt bytegleich zum Stand nach der ersten Registrierung',
             d.abgelehnt === true && d.text.includes('Doppelregistrierung') && shaVon(baum, 'test/run.sh') === nachReg);
         const boese = ['test_$(touch pwn).js', 'test_`id`.js', '../test_x.js', '/etc/test_x.js', 'test_x.js\nrm -rf x', 'sub/test_x.js', 'test_x.js # kommentar', 'test_a b.js', ')', 'test_x".js', "test_x'.js", 'test_x.js;', 'test_x.js\n', 'test_ä.js', 'test_x.JS', 'x.js', '', 'ops/boot-smoke.js', '..', 5, null];
+        // Jeden Namen, den neue_datei anlegen KANN, legen wir VORHER an (dann ist er "in diesem Lauf angelegt"): so stoppt ihn
+        // nur noch die Namensregel — ohne diesen Schritt haette die Regel "nur Dateien dieses Laufs" ihn gestoppt (zwei Riegel).
+        const angelegt = boese.filter((name) => typeof name === 'string' && t.w.neueDatei({ pfad: name, inhalt: "console.log('1 PASS');\n" }).abgelehnt === false);
+        const nachReg2 = shaVon(baum, 'test/run.sh');
         const falschB = [];
-        for (const name of boese) { const x = t.w.registriereTest({ datei: name }); if (!x.abgelehnt || shaVon(baum, 'test/run.sh') !== nachReg) falschB.push(JSON.stringify(name)); }
-        pruefen(`B1 NAMEN ABGELEHNT: ${boese.length} Namen ($(…), Backtick, "..", fuehrendes /, Zeilenumbruch, Unterverzeichnis, Kommentar, Leerzeichen, eine Zeile ")", Anfuehrungszeichen, Strichpunkt, Umlaut, .JS, ops/boot-smoke.js, Nicht-Texte) werden abgelehnt, test/run.sh bleibt bytegleich, es entsteht keine Datei "pwn"`,
-            falschB.length === 0 && boese.length === 21 && !fs.existsSync(path.join(baum, 'pwn')) && !fs.existsSync(path.join(baum, 'x')));
+        for (const name of boese) { const x = t.w.registriereTest({ datei: name }); if (!x.abgelehnt || shaVon(baum, 'test/run.sh') !== nachReg2 || (angelegt.includes(name) && !x.text.includes('ungueltig'))) falschB.push(JSON.stringify(name)); }
+        pruefen(`B1 NAMEN ABGELEHNT: ${boese.length} Namen ($(…), Backtick, "..", fuehrendes /, Zeilenumbruch, Unterverzeichnis, Kommentar, Leerzeichen, eine Zeile ")", Anfuehrungszeichen, Strichpunkt, Umlaut, .JS, ops/boot-smoke.js, Nicht-Texte) werden abgelehnt — die ${angelegt.length} davon, die neue_datei vorher ANLEGEN konnte (so dass nur die Namensregel sie stoppt), mit der Meldung "ungueltig"; test/run.sh bleibt bytegleich, es entsteht keine Datei "pwn"`,
+            falschB.length === 0 && boese.length === 21 && angelegt.length >= 7 && angelegt.includes('test_$(touch pwn).js') && angelegt.includes('test_`id`.js') && !fs.existsSync(path.join(baum, 'pwn')) && !fs.existsSync(path.join(baum, 'x')));
         fs.writeFileSync(path.join(baum, 'test_roh.js'), 'x\n');
         const a1 = t.w.registriereTest({ datei: 'test_alt.js' });
         const a2 = t.w.registriereTest({ datei: 'test_roh.js' });
@@ -533,6 +554,16 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         const r2 = t2.w.registriereTest({ datei: 'test_c.js' });
         pruefen('A6 ZURUECKNAHME: schlaegt die Pruefung NACH dem Einfuegen an, wird test/run.sh zurueckgeschrieben und abgelehnt ("zurueckgenommen", sha = Ausgangsinhalt); keine Registrierung, keine Schreibliste fuer test/run.sh',
             r2.abgelehnt === true && r2.text.includes('zurueckgenommen') && r2.text.includes('= Ausgangsinhalt') && shaVon(baum2, 'test/run.sh') === sha(RUN_SH) && t2.w.registrierungen.length === 0 && !t2.w.schreibliste.has('test/run.sh'));
+        const baum5 = frischerBaum(ctx);
+        const t5a = werkzeugeAuf(ctx, baum5, { haken: { einfuegeZeile: (z) => `${z} extra.js` } });
+        t5a.w.neueDatei({ pfad: 'test_f.js', inhalt: "console.log('1 PASS');\n" });
+        const r6 = t5a.w.registriereTest({ datei: 'test_f.js' });
+        const baum6 = frischerBaum(ctx);
+        const t5b = werkzeugeAuf(ctx, baum6, { haken: { einfuegeZeile: (z) => `${z}\n  # eingeschleust` } });
+        t5b.w.neueDatei({ pfad: 'test_g.js', inhalt: "console.log('1 PASS');\n" });
+        const r7 = t5b.w.registriereTest({ datei: 'test_g.js' });
+        pruefen('A6 LISTE UND BYTEGLEICHHEIT EINZELN: eine Einfuegung, die zwei Namen in die TESTS-Liste bringt (bash -n und Bytes bleiben unauffaellig), wird ueber die Listenpruefung abgelehnt; eine, die zusaetzlich eine Kommentarzeile einschleust (Liste unveraendert), ueber die Bytegleichheit der alten Datei — beide vor dem Schreiben, test/run.sh bleibt bytegleich',
+            r6.abgelehnt === true && r6.text.includes('die Liste ist nicht die alte plus genau test_f.js') && shaVon(baum5, 'test/run.sh') === sha(RUN_SH) && r7.abgelehnt === true && r7.text.includes('die alte Datei ohne die neue Zeile ist NICHT bytegleich') && shaVon(baum6, 'test/run.sh') === sha(RUN_SH));
         const baum3 = frischerBaum(ctx);
         const t3 = werkzeugeAuf(ctx, baum3);
         t3.w.neueDatei({ pfad: 'test_d.js', inhalt: "console.log('1 PASS');\n" });
