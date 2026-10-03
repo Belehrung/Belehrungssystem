@@ -1035,18 +1035,20 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         const tG0 = Date.now();
         const rGlob = tKlein.lese.werkzeugSuche('GLOBX', '*a'.repeat(5) + '*b');
         const msGlob = Date.now() - tG0;
-        const rGlobHarmlos = tKlein.lese.werkzeugSuche('GLOBX', '*a'.repeat(2) + '*');
-        const rPos = tKlein.lese.werkzeugSuche('^(a+)+$', 'harmlos.txt');
-        const rNormal = tKlein.lese.werkzeugSuche('a b c');
+        // Positivkontrollen mit der VORGABEFRIST (5 s): mit 150 ms waere der Selbsttest bei hoher Last unzuverlaessig (gemessen: 4 parallele Laeufe)
+        const tNormal = werkzeugeAuf(ctx, baum);
+        const rGlobHarmlos = tNormal.lese.werkzeugSuche('GLOBX', '*a'.repeat(2) + '*');
+        const rPos = tNormal.lese.werkzeugSuche('^(a+)+$', 'harmlos.txt');
+        const rNormal = tNormal.lese.werkzeugSuche('a b c');
         pruefen(`X2 ZEITLIMIT IM PROZESS: dasselbe Muster gegen 27 mal "a" und "!" wird mit 150 ms Frist nach ${msKlein} ms abgelehnt (abgelehnt true, Text nennt das Zeitlimit), ebenso ein katastrophales DATEIMUSTER ("*a" mal 5 und "*b" gegen einen Namen aus 60 mal "a", ${msGlob} ms); Positivkontrollen: ein harmloses Dateimuster findet die Datei, dasselbe Muster auf einer harmlosen Datei liefert "(keine Treffer)" und ein gewoehnliches Muster seinen Treffer — das Limit lehnt nicht alles ab`,
             rKlein.abgelehnt === true && /Zeitlimit von 150 ms/.test(rKlein.text) && msKlein < 1500
             && rGlob.abgelehnt === true && /Zeitlimit von 150 ms/.test(rGlob.text) && msGlob < 1500 && rGlobHarmlos.abgelehnt === false && rGlobHarmlos.text === `${'a'.repeat(60)}:1:GLOBX`
             && rPos.abgelehnt === false && rPos.text === '(keine Treffer)' && rNormal.abgelehnt === false && rNormal.text === 'harmlos.txt:1:a b c');
         const lang300 = 'a'.repeat(300);
-        const rLang = tKlein.lese.werkzeugSuche('a'.repeat(301));
-        const rGrenze = tKlein.lese.werkzeugSuche(lang300);
-        const rDatei = tKlein.lese.werkzeugSuche('a', '*'.repeat(301));
-        const rUngueltig = tKlein.lese.werkzeugSuche('(');
+        const rLang = tNormal.lese.werkzeugSuche('a'.repeat(301));
+        const rGrenze = tNormal.lese.werkzeugSuche(lang300);
+        const rDatei = tNormal.lese.werkzeugSuche('a', '*'.repeat(301));
+        const rUngueltig = tNormal.lese.werkzeugSuche('(');
         pruefen('X2 MUSTERLAENGE UND UNGUELTIGE MUSTER: 301 Zeichen Suchmuster und 301 Zeichen Dateimuster werden abgelehnt (abgelehnt true, "zu lang"), 300 Zeichen gehen durch; ein ungueltiges Muster "(" bleibt eine gewoehnliche Meldung ("ungueltiges Suchmuster", abgelehnt false) und ist kein Zeitlimit',
             rLang.abgelehnt === true && /Suchmuster zu lang \(301 Zeichen, hoechstens 300\)/.test(rLang.text) && rDatei.abgelehnt === true && /Dateimuster zu lang/.test(rDatei.text) && rGrenze.abgelehnt === false && rGrenze.text === '(keine Treffer)'
             && rUngueltig.abgelehnt === false && /ungueltiges Suchmuster/.test(rUngueltig.text) && !/Zeitlimit/.test(rUngueltig.text));

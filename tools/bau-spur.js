@@ -831,7 +831,7 @@ function werkzeugDefinitionen() {
         },
         {
             type: 'function', name: 'suche',
-            description: `Volltextsuche (regulaerer Ausdruck, JavaScript-Syntax, je Zeile) ueber dieselben Dateien. Treffer als "pfad:zeile:inhalt", hoechstens ${MAX_SUCHE_ZEILEN} Zeilen.`,
+            description: `Volltextsuche (regulaerer Ausdruck, JavaScript-Syntax, je Zeile) ueber dieselben Dateien. Treffer als "pfad:zeile:inhalt", hoechstens ${MAX_SUCHE_ZEILEN} Zeilen. Das Muster hat hoechstens 300 Zeichen und wird mit einem Zeitlimit ausgewertet: verschachtelte Wiederholungen wie (a+)+ werden abgelehnt.`,
             parameters: { type: 'object', properties: { muster: { type: 'string', description: 'Regulaerer Ausdruck.' }, dateimuster: { type: 'string', description: 'Optionaler Glob (* und ?) gegen den Pfad, z. B. "*.js".' } }, required: ['muster'] },
         },
         {
@@ -841,7 +841,7 @@ function werkzeugDefinitionen() {
         },
         {
             type: 'function', name: 'neue_datei',
-            description: `Legt eine NEUE Datei an (der Pfad darf noch nicht existieren; fehlende Verzeichnisse werden angelegt). Erlaubte Endungen: ${NEUE_ENDUNGEN.join(' ')}. Hoechstens 200 KB. Eine Datei, die .gitignore erfasst, wird abgelehnt.`,
+            description: `Legt eine NEUE Datei an (der Pfad darf noch nicht existieren; fehlende Verzeichnisse werden angelegt). Erlaubte Endungen: ${NEUE_ENDUNGEN.join(' ')}. Hoechstens 200 KB. Dateinamen nur aus A-Za-z0-9._/- (kein Segment beginnt mit "-" oder endet auf "."). Eine Datei, die .gitignore erfasst, wird abgelehnt.`,
             parameters: { type: 'object', properties: { pfad: { type: 'string' }, inhalt: { type: 'string' } }, required: ['pfad', 'inhalt'] },
         },
         {
@@ -886,8 +886,8 @@ function vorspannBauen(opt) {
         + 'REGELN, die das Werkzeug erzwingt (ein Verstoss ist eine Ablehnung, kein Absturz):\n'
         + '- Pfade sind relativ zur Baumwurzel, ohne "..", ohne Backslash, ohne Symlinks. Immer gesperrt: .git, node_modules, .claude/, .github/, .env*, *.key, *.pem, '
         + 'package.json, package-lock.json, test/run.sh (nur ueber registriere_test), test/umgebung.sh, test/db-vorbereiten.js. Ohne ausdrueckliche Freigabe des '
-        + `Auftraggebers gesperrt: ops/, migrations/, server.js, eslint.config.js, ecosystem.config.js, Dockerfile*, Procfile*${opt.erlaubt.length ? `. FREIGEGEBEN fuer diesen Lauf: ${opt.erlaubt.join(', ')}` : ' (in diesem Lauf nichts freigegeben)'}.\n`
-        + '- ersetze braucht einen woertlichen Text, der GENAU EINMAL vorkommt. neue_datei legt nur Neues an. Nichts, was wie ein Geheimnis aussieht (Schluessel, Tokens, '
+        + `Auftraggebers gesperrt: ops/, migrations/, server.js, eslint.config.js, ecosystem.config.js, Dockerfile*, Procfile*, CLAUDE.md, .gitignore, .semgrepignore, golive-studio.sh, setup-staging.sh, playwright.config.js, e2e/${opt.erlaubt.length ? `. FREIGEGEBEN fuer diesen Lauf: ${opt.erlaubt.join(', ')}` : ' (in diesem Lauf nichts freigegeben)'}.\n`
+        + '- ersetze braucht einen woertlichen Text, der GENAU EINMAL vorkommt. neue_datei legt nur Neues an, mit Dateinamen aus A-Za-z0-9._/-. Nichts, was wie ein Geheimnis aussieht (Schluessel, Tokens, '
         + 'Verbindungszeichenfolgen mit Passwort), wird geschrieben.\n'
         + '- Tests laufen NUR ueber teste und mutiere_und_teste, in einer Sandbox auf einer Kopie deines aktuellen Arbeitsstands. Eine neue Testdatei: neue_datei, dann '
         + 'registriere_test, dann teste. Jede neue Zusicherung braucht eine GEGENPROBE: mit mutiere_und_teste den bewachten Wert so aendern, dass der Test ROT wird '
