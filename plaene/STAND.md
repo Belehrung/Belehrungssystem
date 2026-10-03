@@ -922,3 +922,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Bauspur Prüfrunde 2 fertig (nichts Blockierendes, BS-6 bis BS-11 auf der Sammelliste), `bauspur-qwen` in den Arbeitszweig gemergt, CI grün (Lauf 1480/1481).
   - A/B gebaut: Weg Q (Qwen) am Kostendeckel abgebrochen (6,02 $, 39 Runden, 2,8 Mio. Token rein, 1707 s, kein `fertig`); Weg E (Executer) fertig (339.337 Subagent-Token, 1110 s, 58 PASS, 17 Gegenproben). Produktionsdiffs beide selbst gelesen: in der Logik gleich. Blinde Bewertung (Kimi) läuft; danach volle Suiten beider Bäume (Qwens Testcode erst nach der Lesespur, §1).
   - C6-E Nacharbeit 3 läuft (fünf Punkte, `plaene/diffpruefung-c6e.md`); der Agent fährt gerade die volle Suite.
+- 03.10.2026 08:15 UTC:
+  - **C6-E gemergt** (#515, Squash `ac9bdaa`, CI 6/6 grün, kein Bot-Kommentar, Botschaft endet auf der Schlusszeile). Deploy-Check steht aus (Migration 0070: Health-Check 7/8 ist der Beleg).
+  - A/B entschieden: Weg E (Executer) besser, Qwen nicht billiger (`BAU-LAEUFE.md`). Weg E als **C6-Restpunkte** (#516, Zweig `c6-restpunkte`, master gemergt, nur Registrierungskonflikt); Suite auf `bb7e7bc`+Änderung EXIT 0, 519 = 519; zweite Suite auf dem gemergten Stand läuft.
+  - Betreiber: Kimi übernimmt mehr (ENTSCHIEDEN.md). Kimi-Lesezugriff im Bau (Executer, `/workspace/belehrung-kimi`, Zweig `kimi-lese`).
