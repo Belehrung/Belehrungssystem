@@ -886,3 +886,13 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Sammelliste `plaene/offene-befunde-c6d3.md`: C6D3-1 bis -5. C6D3-5 ist in C6-E aufgenommen.
   - C6-E ist im Bau (Executer, `/workspace/gymdocu-c6e`, Zweig `c6e-offline`).
   - Die Bauspur ist im Bau (Executer, `/workspace/belehrung-bauspur`).
+- 03.10.2026 03:45 UTC:
+  - Bauspur gebaut (`bauspur-qwen` `a5fe850`, lokal): Selbsttests grün, Probelauf 2 mit Qwen Exit 0 für 0,07 $.
+  - Diffprüfung (`plaene/diffpruefung-bauspur.md`):
+    - Produktionsdiff selbst gelesen.
+    - flash: 6 Befunde.
+    - Angriffsspur (Claude, ausführend): keine Grenze durchbrochen, 11 Befunde.
+    - 18 Punkte gehen als Nacharbeit 1 an denselben Agenten, danach Probelauf 3 gegen master.
+  - Neue Regel in CLAUDE.md §1: Testcode aus der Bauspur wird vor dem ersten Lauf ausserhalb der Sandbox gelesen.
+  - Sammelliste `plaene/offene-befunde-bauspur.md`.
+  - C6-E läuft (Executer, eigene Suite).
