@@ -861,3 +861,6 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - **qr_journal-Fehlschlag behoben und gemergt** (#513, `58eb380`, CI grün, nur Testdateien).
   - Deploy 481 (#512) war der erste Lauf, der das neue `ops/deploy.sh` aus #511 AUSGEFÜHRT hat, mit `success`. Der Normalzweig von Schritt 3/8 ist damit belegt. Die Fehlerzweige (git diff scheitert, npm ci scheitert) sind nur über die Tests belegt.
   - Als nächstes: C6-D3 ist im Bau, danach C6-E (`auftrag-c6e-offline.md`).
+- 03.10.2026 00:10 UTC:
+  - Am 02.10. gegen 16:30 UTC lief der C6-D3-Agent ins Nutzungslimit („monthly spend limit“), danach war Ruhe. Die Takte bis 23:40 haben nichts getan (CLAUDE.md §2).
+  - Der Betreiber hat „Weiter“ geschrieben. C6-D3 ist fortgesetzt: Zweig `c6d3-zeit`, `497177f`, gepusht, Baum sauber, Zwischenstände A–G; offen sind Gegenproben, Suite und Lint.
