@@ -874,3 +874,9 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
     - Die Verdichtung der Abschnitte 5–17 (sol-Entwurf, 79 → 57 KB) wartet auf das Regelinventar (Kimi).
   - Rücknahmeregel Qwen eingetragen (CLAUDE.md §1, ENTSCHIEDEN.md).
   - C6-D3 läuft noch.
+- 03.10.2026 01:45 UTC:
+  - C6-D3 ist gebaut (`c6d3-zeit` `d7d3956`): Suite EXIT 0, 518 = 518, Lint 0.
+  - Diffprüfung: Produktionsdiff selbst gelesen, ohne blockierenden Befund. Lesespur flash: 8 Befunde, alle tragend (`plaene/diffpruefung-c6d3.md`). Sammelliste `plaene/offene-befunde-c6d3.md`.
+  - Nacharbeit 1 (N1–N7) läuft beim selben Agenten.
+  - Bauspur: Planprüfung beider Spuren eingearbeitet. Die zweite Spur lief mit Kimi, weil flash am Antwortstrom abbrach. Der Executer baut in `/workspace/belehrung-bauspur` (Zweig `bauspur-qwen`, lokal).
+  - CLAUDE.md ist verdichtet: 101 → 66 KB, alte Fassung im Archiv `plaene/claude-md-archiv-2026-10-03.md`.
