@@ -931,3 +931,7 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - **C6-Restpunkte gemergt** (#516, Squash `de15f6b`, CI 6/6 grün, kein Bot-Kommentar, Botschaft sauber). Lokale Suite auf dem gemergten Stand EXIT 0, 521 = 521. C6D3-4 und C6D2-5 auf den Sammellisten erledigt. Deploy-Check steht aus.
   - Aufgeräumt: Arbeitsbäume `gymdocu-ab-q`, `gymdocu-ab-e`, `gymdocu-c6e-lese`, `gymdocu-master-lese`, Zweige `ab-q`/`ab-e`, DB `gymdocu_abe_test`.
   - Läuft: Kimi-Lesezugriff (Executer).
+- 03.10.2026 09:05 UTC (Container-Neustart um ~08:40; Arbeitsbäume sauber, Marker-Scan leer, nichts halb zurückgenommen):
+  - **C6-Restpunkte ausgeliefert:** Deploy 485 `success` auf `de15f6b`, live-check EXIT 0 (2× ℹ).
+  - **Kimi-Lesezugriff gebaut** (`kimi-lese` `141f3af`, lokal): Kimi-Weg über `/v1/responses` mit Werkzeugen, gemessen; Selbsttest 184 ✓, Gegenproben M1–M26 ROT (M13 äquivalent). Fund dabei: `database.db` (getrackt seit 83514b1) enthält 9 Mitarbeiternamen und 17 Unterschriften und war für alle drei Prüfmodelle lesbar → Datenbankdateien jetzt hart gesperrt (G7). Produktionsdiff selbst gelesen, kein Befund. Lesespur: Kimi mit dem neuen Werkzeug läuft.
+  - Offen beim Betreiber: `database.db` aus dem Repo nehmen?
