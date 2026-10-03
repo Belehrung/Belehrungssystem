@@ -99,6 +99,22 @@ Widerspricht der Code, abbrechen und melden.
      Kasten enthält „sobald Verbindung besteht“.
    - Positivkontrolle: Ohne Herkunftsfehler steht der alte Text da.
 
+7. **C6D3-5 — `hourCycle: 'h23'` in den Client-Zeitausdrücken (Anmerkung, aus `plaene/offene-befunde-c6d3.md`).**
+   - `public/offline-queue.js` (`jetztBerlin()`) und das Absende-Skript in `routes/verbandbuch.js` (seit #514) bilden die
+     Berliner Wandzeit mit `toLocaleString('sv-SE', {timeZone:'Europe/Berlin', hour12:false})`.
+   - Manche Laufzeiten liefern mit `hour12:false` für Mitternacht „24“. Der Server lehnt das über `berlinZeitZuMs` ab
+     (NaN), und die Kennzeichnung „nachgetragen“ fällt still weg. Der Server-Helfer in `core/datum.js` nimmt dafür
+     ausdrücklich `hourCycle:'h23'`.
+   - Behebung: In beiden Client-Ausdrücken `hourCycle:'h23'` statt `hour12:false`. Die Ausgabe bleibt im Format
+     „YYYY-MM-DD HH:MM:SS“; das prüfen der Verhaltenstest im vm (`test/helfer/c6d3-zeit-lauf.js`, Abschnitt 9) und der
+     Chromium-Harness.
+   - Test: eine statische Zusicherung, dass kein Client-Zeitausdruck `hour12:false` ohne `hourCycle` trägt. Dazu
+     Gegenprobe und Positivkontrolle (eine Fixtur mit `hour12:false` wird erkannt).
+
+**Stand der Fundstellen:** Seit Fassung 2 sind C6-B, C6-D2, C6-H, die qrj-Behebung und C6-D3 (#514, `bb7e7bc`) gemergt.
+Alle Zeilennummern oben sind deshalb Fundorte von `9dfe522` und müssen neu gemessen werden. Der Arbeitsbaum geht ab
+`origin/master` (`bb7e7bc` oder neuer).
+
 ## Bericht
 
 - Je Punkt: die neue Messung der Fundstelle, der Diff, die Gegenproben wörtlich.
