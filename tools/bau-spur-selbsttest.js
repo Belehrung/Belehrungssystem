@@ -966,7 +966,11 @@ async function faelleMitRoot(pruefen, ctx) {
             Object.assign(process.env, { QWEN_KEY_DATEI: key, ...ctx.umgebung, BAU_LAUFPROTOKOLL: ctx.bauZeilen, ...env });
             const eLog = console.log; const eErr = console.error; const meldungen = [];
             console.log = (m) => meldungen.push(String(m)); console.error = (m) => meldungen.push(String(m));
-            try { return { code: await bau.main(argv), meldungen: meldungen.join('\n') }; } finally { console.log = eLog; console.error = eErr; }
+            // Ein Absturz von main() (z. B. weil ein Riegel fehlt und der Lauf mit leeren Werten weiterfaehrt) soll als EIGENER Exit-Wert
+            // im Fall landen und diesen Fall benennbar rot machen, statt den ganzen Selbsttest ohne Fallnamen abzubrechen.
+            try { return { code: await bau.main(argv), meldungen: meldungen.join('\n') }; }
+            catch (e) { return { code: `Ausnahme: ${e.message}`, meldungen: meldungen.join('\n') }; }
+            finally { console.log = eLog; console.error = eErr; }
         };
         const gut = (extra = []) => [`--auftrag=${auftrag}`, `--baum=${baum}`, '--modell=qwen3.8-max', `--protokoll=${prot}`, '--zweck=CLI-Selbsttest', ...extra];
         const ohne = (name) => gut().filter((a) => !a.startsWith(`--${name}=`));

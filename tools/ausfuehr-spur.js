@@ -2066,10 +2066,13 @@ async function selbsttestBaustand(pruefen) {
 
         // ----- Einheiten der Baustand-Kopie (A8) ohne Kind-Lauf -----
         const kopieDir = path.join(basisB, 'kopie-einheit');
-        baustandKopieren(fxB.wurzel, ['test_kopie.js', 'lib/neu_im_lauf.js', 'node_modules/x.js', '.git/config'], kopieDir);
+        // Faellt die Auslassregel fuer node_modules/.git weg, scheitert die Kopie an der nicht vorhandenen node_modules/x.js — das soll als
+        // benannter Fall rot werden, nicht als Abbruch des ganzen Selbsttests.
+        let kopieFehler = null;
+        try { baustandKopieren(fxB.wurzel, ['test_kopie.js', 'lib/neu_im_lauf.js', 'node_modules/x.js', '.git/config'], kopieDir); } catch (e) { kopieFehler = e.message; }
         const mode = (rel) => fs.lstatSync(path.join(kopieDir, rel)).mode & 0o777;
         pruefen('A8 KOPIE-EINHEIT: lib/wert.js (aus ls-files) und die Listendateien sind da, ungetrackte Dateien ausserhalb der Liste nicht; node_modules/ und .git/ werden auch dann NICHT kopiert, wenn die Liste sie nennt; Modi 0644 und 0755 bleiben',
-            fs.existsSync(path.join(kopieDir, 'lib/wert.js')) && fs.existsSync(path.join(kopieDir, 'test_kopie.js')) && fs.existsSync(path.join(kopieDir, 'lib/neu_im_lauf.js'))
+            kopieFehler === null && fs.existsSync(path.join(kopieDir, 'lib/wert.js')) && fs.existsSync(path.join(kopieDir, 'test_kopie.js')) && fs.existsSync(path.join(kopieDir, 'lib/neu_im_lauf.js'))
             && !fs.existsSync(path.join(kopieDir, 'nur_ungetrackt.js')) && !fs.existsSync(path.join(kopieDir, 'node_modules')) && !fs.existsSync(path.join(kopieDir, '.git'))
             && mode('lib/wert.js') === 0o644 && mode('ops/skript.sh') === 0o755 && fs.readlinkSync(path.join(kopieDir, 'zeiger.js')) === 'lib/wert.js');
         const symlinkFehler = (name, ziel) => {
