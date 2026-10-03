@@ -419,3 +419,7 @@ Anlass: beim Bau des Kimi-Lesezugriffs gefunden: `database.db` (SQLite der Anwen
 Entscheidung des Betreibers (Auswahl „Aus dem Repo nehmen“): `git rm --cached` plus `.gitignore`; die Datei bleibt lokal erhalten. In
 der Git-Historie bleibt sie stehen — sie dort zu entfernen bräuchte einen Force-Push auf master und ist ausdrücklich NICHT gewählt.
 Unabhängig davon sperrt `istHartGesperrt` (tools/spur-gemeinsam.js) seit 03.10.2026 jede Datenbankdatei für Lesen und Suchen.
+
+**Achtung beim Ausrollen:** Jede Arbeitskopie, die diesen Stand per `git pull` holt, LÖSCHT ihre lokale `database.db` (git entfernt
+eine Datei, die upstream aus der Versionierung genommen wurde). Läuft die Belehrungssystem-Anwendung irgendwo aus einem Git-Checkout,
+dort VOR dem Pull `database.db` sichern und danach zurücklegen. Ob es eine solche Installation gibt, ist von hier nicht prüfbar.
