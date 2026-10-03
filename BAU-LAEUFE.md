@@ -14,14 +14,16 @@ Hand (Diff gelesen, volle Suite, Gegenleser): bis dahin steht dort „—“. Ei
 **Ergebnis lesen.** `fertig, Exit 0` heißt: das Modell hat `fertig()` gerufen UND der Endvergleich (Schreibliste des Werkzeugs
 gegen `git status` des Baums) stimmt. Ein Lauf mit `**abgebrochen**` ist ein TEILBERICHT und nie eine Fertigmeldung
 (`budget-erschoepft`, `abbruch-netz`, `abbruch-antwort`, `kein-fertig`, `schreibliste-abweichung`, `isolation-abgebrochen`,
-`werkzeug-befund`). Die Statuskataloge stehen im Kopf von `tools/bau-spur.js`.
+`werkzeug-befund`). Die Statuskataloge stehen im Kopf von `tools/bau-spur.js`. `laufprotokoll-fehler` (Exit 28) steht NICHT in dieser Tabelle,
+weil es genau der Fall ist, dass die Zeile nicht eingetragen werden konnte: ein Lauf, der sonst fertig ist, aber im Bericht und im JSONL-Protokoll
+als nicht abgelegt gemeldet wird; seine Zeile ist von Hand nachzutragen (Nacharbeit 1, F2).
 
 **Benannte Grenze: Aufbewahrung beim Anbieter (Planprüfung B5, gemessen 03.10.2026).** Das Feld `store` existiert am
 DashScope-Endpunkt und wirkt: eine Antwort ohne `store` ist hinterher über `GET /responses/<id>` abrufbar (HTTP 200), mit
 `store:false` liefert derselbe Abruf HTTP 400 „not found“. Jeder Lauf setzt `store:false`. NICHT messbar bleibt, ob der Anbieter
 Anfragen unabhängig davon vorhält (Betriebsprotokolle, Missbrauchserkennung). Quelltext aus dem Arbeitsbaum geht damit an einen
 Anbieter in Singapur; die Datengrenze (keine Zugangsdaten, keine Kundendaten) gilt unverändert, der Geheimnis-Riegel stützt sie nur
-als zweite Schicht (er erkennt das Format des Qwen-Schlüssels nicht, deshalb zieht die Bauspur den Schlüssel zusätzlich exakt ab).
+als zweite Schicht (er erkennt das Qwen-Format seit Nacharbeit 1, X8; trotzdem zieht die Bauspur den Schlüssel zusätzlich exakt ab, für jedes Format, das der Riegel nicht kennt).
 
 **Sperre.** Die Sandbox der Bauspur nimmt `/var/lock/dsv1.lock`, dieselbe wie die ausführende Prüfspur: Bauspur und Prüfspur laufen
 nacheinander, ein zweiter Lauf bricht mit Exit 17 ab.
