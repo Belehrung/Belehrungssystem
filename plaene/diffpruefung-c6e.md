@@ -1,0 +1,26 @@
+# Diffprüfung C6-E Offline-Warteschlange (03.10.2026)
+
+Zweig `c6e-offline`, Stand `74a3881`, 5 Commits ab `bb7e7bc`, 12 Dateien (+598/−38).
+
+**Suite des Bauenden, Lauf 2:**
+- SUITE_EXIT=0, 1173 s, 519 = 519 (`diff` EXIT 0).
+- Lint 0, Harness 239 PASS, Marker 6 (Prosa).
+
+**Lauf 1:** rot an zwei fremden Wächtern (ein Zeilenanker, eine Abschnittsgrenze); beide nachgezogen.
+
+**R4-3:** gemessen gegenstandslos. Bestätigt von flash am Code: `e.sitzung_ok = true` steht vor dem Write
+(`public/offline-queue.js:899`).
+
+**Spuren:**
+- Den Produktionsdiff (378 Zeilen) habe ich selbst gelesen; dazu die Screenshots `badge-merker-widerspruch-820.png` und
+  `formfehler-herkunft-speicher-820.png`.
+- flash, Bündel „Umkreis und Zusicherungen“: 11 Runden, 0,75 $.
+
+| Kennung | Befund | Nachgemessen | Entscheidung |
+|---|---|---|---|
+| E1 | Beim Konflikt `merker_widerspruch` sagt der Kopf „konnte nicht übernommen werden“, darunter steht „wurde bereits übertragen“. | trägt (Screenshot; eigener Befund und flash 1) | Nacharbeit 1: eigener Kopf, B16b prüft ihn |
+| E2 | `merker_widerspruch` nennt keinen nächsten Schritt nach der Klärung; einziger Knopf ist „Verwerfen“. | trägt | Nacharbeit 1: zweiter Satz „Bestätigt die Leitung, dass sie fehlt: Eintrag verwerfen und die Prüfung neu erfassen.“ Kein „Erneut versuchen“ (bei einem Studiowechsel ginge die Prüfung sonst an das falsche Studio). |
+| E3 | Der Live-Submit setzt `zwischenseiteFehler` nicht. Bis zu 60 s steht „sobald wieder Verbindung besteht“, obwohl das Portal antwortet. | trägt (gelesen) | Nacharbeit 1 |
+| E4 | `test_feature_c6d2_idempotenz_schema.js` endet jetzt an der nächsten Überschrift. Eine fünfte Anweisung ohne Überschrift fiele heraus. | trägt (logisch) | Nacharbeit 1: kein weiteres `;` bis zum Abschnittsende |
+| E5 | Der Hourcycle-Wächter erkennt `hour12:false` zusammen mit `hourCycle` und `hourCycle:'h24'` nicht. | trägt (Regex gelesen) | Nacharbeit 1 |
+| E6 | `routes/module.js:1129/1140` (Seil-Foto, Seil-Freigabe) behandeln eine 200-Antwort mit HTML als „Verbindungsfehler“ und kennen den Begriff Zwischenseite nicht. | trägt (gelesen); sie zählen nichts und berühren die Warteschlange nicht | Sammelliste C6E-1 |
