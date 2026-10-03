@@ -880,3 +880,9 @@ Kimi-Guthaben weiter offen (Betreiber gefragt).
   - Nacharbeit 1 (N1–N7) läuft beim selben Agenten.
   - Bauspur: Planprüfung beider Spuren eingearbeitet. Die zweite Spur lief mit Kimi, weil flash am Antwortstrom abbrach. Der Executer baut in `/workspace/belehrung-bauspur` (Zweig `bauspur-qwen`, lokal).
   - CLAUDE.md ist verdichtet: 101 → 66 KB, alte Fassung im Archiv `plaene/claude-md-archiv-2026-10-03.md`.
+- 03.10.2026 02:40 UTC:
+  - **C6-D3 gemergt und ausgeliefert:** #514, Squash `bb7e7bc`, CI 6/6 grün, kein Bot-Kommentar, Deploy 483 `success` auf `bb7e7bc`, live-check EXIT 0 (2× ℹ).
+  - Den Arbeitsbaum `gymdocu-c6d3` habe ich entfernt.
+  - Sammelliste `plaene/offene-befunde-c6d3.md`: C6D3-1 bis -5. C6D3-5 ist in C6-E aufgenommen.
+  - C6-E ist im Bau (Executer, `/workspace/gymdocu-c6e`, Zweig `c6e-offline`).
+  - Die Bauspur ist im Bau (Executer, `/workspace/belehrung-bauspur`).
