@@ -2265,7 +2265,9 @@ async function selbsttestBaustand(pruefen) {
         const x7g = await x7Fall('run.sh traegt denselben neuen Eintrag ZWEIMAL', () => { fs.writeFileSync(wC('test_doppelt.js'), "console.log('  ✓ x');\n"); stellen('test/run.sh', Buffer.from(runShC.replace(`  test/e2e-durchlauf.js\n)\n`, `  test/e2e-durchlauf.js\n  test_doppelt.js\n  test_doppelt.js\n)\n`))); }, () => { stellen('test/run.sh', Buffer.from(runShC)); fs.unlinkSync(wC('test_doppelt.js')); }, ['test_doppelt.js'], 'mehrfach in der TESTS-Liste');
         pruefen(`X7 INHALT: ${x7a.info}; ${x7b.info}`, x7a.ok && x7b.ok);
         pruefen(`X7 MODUS UND VERSTECKTES: ${x7c.info}; ${x7d.info}`, x7c.ok && x7d.ok);
-        pruefen(`X7 RUN.SH: ${x7e.info}; ${x7f.info}; ${x7g.info}`, x7e.ok && x7f.ok && x7g.ok);
+        // run.sh als SYMLINK auf eine inhaltsgleiche Datei: der Inhalt waere HEAD-gleich, der TYP nicht — fuer run.sh faengt das nur die Regulaer-Pruefung
+        const x7h = await x7Fall('run.sh durch einen Symlink auf eine inhaltsgleiche Datei ersetzt', () => { fs.writeFileSync(wC('test/run-echt.sh'), runShC); fs.unlinkSync(wC('test/run.sh')); fs.symlinkSync('run-echt.sh', wC('test/run.sh')); }, () => { fs.unlinkSync(wC('test/run.sh')); fs.unlinkSync(wC('test/run-echt.sh')); stellen('test/run.sh', Buffer.from(runShC)); }, [], 'test/run.sh ist im Arbeitsbaum keine regulaere Datei mehr');
+        pruefen(`X7 RUN.SH: ${x7e.info}; ${x7f.info}; ${x7g.info}; ${x7h.info}`, x7e.ok && x7f.ok && x7g.ok && x7h.ok);
         // Positivkontrolle: eine ECHTE Registrierung dieses Laufs (Datei angelegt, eine Zeile vor der Klammer) wird angenommen und laeuft;
         // dasselbe fuer das Zielrepo-Muster test/e2e-durchlauf.js (P-1: gueltiger Name mit Unterverzeichnis).
         {

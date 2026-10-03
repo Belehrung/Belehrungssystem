@@ -1015,6 +1015,7 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         fs.writeFileSync(path.join(baum, 'redos.txt'), `${'a'.repeat(40)}!\n`);
         fs.writeFileSync(path.join(baum, 'klein.txt'), `${'a'.repeat(27)}!\n`);
         fs.writeFileSync(path.join(baum, 'harmlos.txt'), 'a b c\n');
+        fs.writeFileSync(path.join(baum, 'a'.repeat(60)), 'GLOBX\n');   // Dateiname fuer das katastrophale DATEIMUSTER (siehe unten)
         ctx.g(baum, 'add', '-A');
         ctx.g(baum, 'commit', '-q', '-m', 'x2');
         const kindScript = `const g = require(${JSON.stringify(path.join(__dirname, 'spur-gemeinsam.js'))}); const l = g.leseWerkzeugeBauen({ sucheFristMs: 1000 }); l.wurzelEinrichten(${JSON.stringify(baum)});`
@@ -1029,10 +1030,18 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         const t0 = Date.now();
         const rKlein = tKlein.lese.werkzeugSuche('^(a+)+$', 'klein.txt');
         const msKlein = Date.now() - t0;
+        // auch das DATEIMUSTER des Modells ist ein Regex (glob2regex: "*" wird zu ".*"): "*a" fuenfmal und "*b" gegen einen Dateinamen aus 60 mal "a" braucht ohne
+        // Limit rund 0,3 s (sechs Wiederholungen schon 3,5 s, acht haengen): hier mit 150 ms Frist abgelehnt, das Gegenstueck mit zwei Wiederholungen laeuft normal
+        const tG0 = Date.now();
+        const rGlob = tKlein.lese.werkzeugSuche('GLOBX', '*a'.repeat(5) + '*b');
+        const msGlob = Date.now() - tG0;
+        const rGlobHarmlos = tKlein.lese.werkzeugSuche('GLOBX', '*a'.repeat(2) + '*');
         const rPos = tKlein.lese.werkzeugSuche('^(a+)+$', 'harmlos.txt');
         const rNormal = tKlein.lese.werkzeugSuche('a b c');
-        pruefen(`X2 ZEITLIMIT IM PROZESS: dasselbe Muster gegen 27 mal "a" und "!" wird mit 150 ms Frist nach ${msKlein} ms abgelehnt (abgelehnt true, Text nennt das Zeitlimit); Positivkontrollen: dasselbe Muster auf einer harmlosen Datei liefert "(keine Treffer)" und ein gewoehnliches Muster seinen Treffer — das Limit lehnt nicht alles ab`,
-            rKlein.abgelehnt === true && /Zeitlimit von 150 ms/.test(rKlein.text) && msKlein < 1500 && rPos.abgelehnt === false && rPos.text === '(keine Treffer)' && rNormal.abgelehnt === false && rNormal.text === 'harmlos.txt:1:a b c');
+        pruefen(`X2 ZEITLIMIT IM PROZESS: dasselbe Muster gegen 27 mal "a" und "!" wird mit 150 ms Frist nach ${msKlein} ms abgelehnt (abgelehnt true, Text nennt das Zeitlimit), ebenso ein katastrophales DATEIMUSTER ("*a" mal 5 und "*b" gegen einen Namen aus 60 mal "a", ${msGlob} ms); Positivkontrollen: ein harmloses Dateimuster findet die Datei, dasselbe Muster auf einer harmlosen Datei liefert "(keine Treffer)" und ein gewoehnliches Muster seinen Treffer — das Limit lehnt nicht alles ab`,
+            rKlein.abgelehnt === true && /Zeitlimit von 150 ms/.test(rKlein.text) && msKlein < 1500
+            && rGlob.abgelehnt === true && /Zeitlimit von 150 ms/.test(rGlob.text) && msGlob < 1500 && rGlobHarmlos.abgelehnt === false && rGlobHarmlos.text === `${'a'.repeat(60)}:1:GLOBX`
+            && rPos.abgelehnt === false && rPos.text === '(keine Treffer)' && rNormal.abgelehnt === false && rNormal.text === 'harmlos.txt:1:a b c');
         const lang300 = 'a'.repeat(300);
         const rLang = tKlein.lese.werkzeugSuche('a'.repeat(301));
         const rGrenze = tKlein.lese.werkzeugSuche(lang300);
@@ -1238,14 +1247,18 @@ async function faelleMitRoot(pruefen, ctx) {
             codes.baumSchmutzig = (await stumm([...ohne('baum'), `--baum=${schmutzig}`])).code;
             codes.protokollImBaum = (await stumm([...ohne('protokoll'), `--protokoll=${path.join(baum, 'p.jsonl')}`])).code;
             codes.laeufeImBaum = (await stumm(gut(), { BAU_LAUFPROTOKOLL: path.join(baum, 'BAU-LAEUFE.md') })).code;
+            const protVorhanden = path.join(ctx.basis, 'cli-protokoll-vorhanden.jsonl');
+            fs.writeFileSync(protVorhanden, 'VORHANDEN-CLI\n');
+            codes.protokollVorhanden = (await stumm([...ohne('protokoll'), `--protokoll=${protVorhanden}`])).code;
+            const protVorhandenBleibt = fs.readFileSync(protVorhanden, 'utf8') === 'VORHANDEN-CLI\n';
             const vorSandbox = einrichtenAufrufe;
             const protokollNochNichtDa = !fs.existsSync(prot);
             const positiv = await stumm(gut());
             codes.positiv = positiv.code;
-            pruefen(`CLI VOR DEM ERSTEN MODELLAUFRUF: jede Verletzung hat ihren eigenen Exit-Code und die Sandbox wird NIE angefasst — Aufruf unvollstaendig (keine Argumente, ohne --modell/--auftrag/--protokoll/--zweck/--baum, unbekannter Schalter) 2; Modell ausserhalb der Liste 2; --max-runden=0 2; --max-kosten-usd=abc 2; --erlaubt=../x 2; Auftrag fehlt/leer 2; Geheimnis im Auftrag (Token, exakter Schluessel) 16; Schluesseldatei 644 oder fehlend 15; Zweig master 10; Baum ausserhalb der Arbeitswurzel 10; Baum aus anderem Repo 11; unsauberer Baum 12; --protokoll im Baum 13; BAU-LAEUFE.md im Baum 13`,
+            pruefen(`CLI VOR DEM ERSTEN MODELLAUFRUF: jede Verletzung hat ihren eigenen Exit-Code und die Sandbox wird NIE angefasst — Aufruf unvollstaendig (keine Argumente, ohne --modell/--auftrag/--protokoll/--zweck/--baum, unbekannter Schalter) 2; Modell ausserhalb der Liste 2; --max-runden=0 2; --max-kosten-usd=abc 2; --erlaubt=../x 2; Auftrag fehlt/leer 2; Geheimnis im Auftrag (Token, exakter Schluessel) 16; Schluesseldatei 644 oder fehlend 15; Zweig master 10; Baum ausserhalb der Arbeitswurzel 10; Baum aus anderem Repo 11; unsauberer Baum 12; --protokoll im Baum 13; --protokoll existiert bereits 13 (die Datei bleibt unveraendert); BAU-LAEUFE.md im Baum 13`,
                 JSON.stringify(codes, Object.keys(codes).filter((k) => k !== 'positiv')) === JSON.stringify({ keineArgs: 2, ohneModell: 2, ohneAuftrag: 2, ohneProtokoll: 2, ohneZweck: 2, ohneBaum: 2, modellFremd: 2, runden0: 2, kostenAbc: 2, erlaubtPunkte: 2, unbekannt: 2, auftragFehlt: 2, auftragLeer: 2,
-                    auftragToken: 16, auftragSchluessel: 16, schluesselOffen: 15, schluesselFehlt: 15, baumMaster: 10, baumAussen: 10, baumFremd: 11, baumSchmutzig: 12, protokollImBaum: 13, laeufeImBaum: 13 })
-                && vorSandbox === 0 && fs.readFileSync(ctx.bauZeilen, 'utf8') === zeilenVorher && protokollNochNichtDa);
+                    auftragToken: 16, auftragSchluessel: 16, schluesselOffen: 15, schluesselFehlt: 15, baumMaster: 10, baumAussen: 10, baumFremd: 11, baumSchmutzig: 12, protokollImBaum: 13, laeufeImBaum: 13, protokollVorhanden: 13 })
+                && vorSandbox === 0 && fs.readFileSync(ctx.bauZeilen, 'utf8') === zeilenVorher && protokollNochNichtDa && protVorhandenBleibt);
             pruefen('CLI POSITIVKONTROLLE: mit allen Angaben in Ordnung laeuft der Aufruf durch ALLE Vorbedingungen bis zur Sandbox (Attrappe: nicht einrichtbar -> Exit 17, Sandbox genau einmal angefasst), ohne Modellkontakt und ohne Zeile in BAU-LAEUFE.md',
                 codes.positiv === 17 && einrichtenAufrufe === 1 && /Sandbox nicht einrichtbar/.test(positiv.meldungen) && fs.readFileSync(ctx.bauZeilen, 'utf8') === zeilenVorher);
             // F5 (Nacharbeit 1): HTTP 401 mit einem Body, der den Schluessel enthaelt (bis zu 800 Bytes Anbietertext gehen in die Fehlermeldung). Die Sandbox ist
