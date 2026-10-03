@@ -25,7 +25,7 @@ const sandboxModul = require('./ausfuehr-spur');
 const { leseWerkzeugeBauen, kostenSchaetzen, laufprotokollDatum, istHartGesperrt } = require('./spur-gemeinsam');
 const { pruefeGeheimnisse } = require('./geheimnis-riegel');
 
-const ERWARTETE_FAELLE_OHNE_ROOT = 118;  // von Hand gezaehlt: 95 + 23 (Nacharbeit 1: X3, X10 x2, X5 x2, F3 x4, F1, X11 x3, X9 Start, X8, F5 Fangnetz, X2 x3, F2 x2, X9 Vorrang, X4)
+const ERWARTETE_FAELLE_OHNE_ROOT = 119;  // von Hand gezaehlt: 95 + 24 (Nacharbeit 1: X3, X10 x2, X5 x2, F3 x5, F1, X11 x3, X9 Start, X8, F5 Fangnetz, X2 x3, F2 x2, X9 Vorrang, X4)
 const ERWARTETE_FAELLE_ROOT = 10;       // A4 x2, CLI-Vorbedingungen x2, F5 (401), ganzer Lauf x4, F4 (ganzer Lauf 2)
 
 const sha = (text) => crypto.createHash('sha256').update(text).digest('hex');
@@ -552,29 +552,38 @@ function statSizeVon(baum, rel) { return fs.statSync(path.join(baum, rel)).size;
         const AUSSEN = 'AUSSEN-INHALT-F3\n';
         const frisch = () => fs.writeFileSync(aussen, AUSSEN);
         const bleibt = () => fs.readFileSync(aussen, 'utf8') === AUSSEN;
+        // Faellt ein Riegel weg, wirft das Werkzeug womoeglich (z. B. ELOOP beim Nachlesen eines Symlinks): das soll als BENANNTER Fall rot werden
+        const sicher = (f) => { try { return f(); } catch (e) { return { abgelehnt: false, text: `Ausnahme: ${e.message}` }; } };
         frisch();
         const baumA = frischerBaum(ctx);
         const tA = werkzeugeAuf(ctx, baumA, { haken: { vorOeffnen: (abs) => { fs.unlinkSync(abs); fs.symlinkSync(aussen, abs); } } });
-        const rA = tA.w.ersetze({ pfad: 'lib/wert.js', alt: '42', neu: '43' });
+        const rA = sicher(() => tA.w.ersetze({ pfad: 'lib/wert.js', alt: '42', neu: '43' }));
         pruefen('F3 ERSETZE MIT SYMLINK-TAUSCH (O_NOFOLLOW): wird lib/wert.js zwischen Pruefung und open durch einen Symlink auf eine Datei AUSSERHALB des Baums ersetzt, ist ersetze abgelehnt, die Aussendatei ist bytegleich (nichts durch den Link geschrieben, nichts gekuerzt), keine Schreibliste',
             rA.abgelehnt === true && bleibt() && tA.w.schreibliste.size === 0 && fs.lstatSync(path.join(baumA, 'lib/wert.js')).isSymbolicLink());
         frisch();
         const baumB = frischerBaum(ctx);
         const tB = werkzeugeAuf(ctx, baumB, { haken: { vorOeffnen: (abs) => { fs.unlinkSync(abs); fs.linkSync(aussen, abs); } } });
-        const rB = tB.w.ersetze({ pfad: 'lib/wert.js', alt: '42', neu: '43' });
+        const rB = sicher(() => tB.w.ersetze({ pfad: 'lib/wert.js', alt: '42', neu: '43' }));
         pruefen('F3 ERSETZE MIT HARDLINK-TAUSCH (nlink am Deskriptor, KEIN Kuerzen vor der Pruefung): wird lib/wert.js zwischen Pruefung und open durch einen Hardlink auf eine fremde Datei ersetzt (nlink 2), ist ersetze abgelehnt, die fremde Datei ist bytegleich — auch NICHT abgeschnitten (frueher kuerzte O_TRUNC schon beim Oeffnen) und nicht mit dem Ausgangsinhalt ueberschrieben',
             rB.abgelehnt === true && bleibt() && tB.w.schreibliste.size === 0 && fs.statSync(aussen).nlink === 2 && !rB.text.includes('Ausgangsinhalt wiederhergestellt'));
         frisch();
         const baumC = frischerBaum(ctx);
         const tC = werkzeugeAuf(ctx, baumC, { haken: { vorOeffnen: (abs) => { fs.writeFileSync(abs, 'RACER-F3\n'); } } });
-        const rC = tC.w.neueDatei({ pfad: 'lib/rennen-f3.js', inhalt: 'ok\n' });
+        const rC = sicher(() => tC.w.neueDatei({ pfad: 'lib/rennen-f3.js', inhalt: 'ok\n' }));
         pruefen('F3 NEUE_DATEI GEGEN EINE REGULAERE DATEI, DIE IM FENSTER ENTSTEHT (O_EXCL): legt jemand zwischen Pruefung und open selbst eine Datei an, ist neue_datei abgelehnt, die fremde Datei behaelt ihren Inhalt und wird NICHT geloescht, sie steht nicht als Lauf-Datei in der Liste',
             rC.abgelehnt === true && inhaltVon(baumC, 'lib/rennen-f3.js') === 'RACER-F3\n' && tC.w.laufNeuListe().length === 0 && tC.w.schreibliste.size === 0);
         const baumD = frischerBaum(ctx);
         const tD = werkzeugeAuf(ctx, baumD, { haken: { vorOeffnen: (abs) => { fs.symlinkSync(aussen, abs); } } });
-        const rD = tD.w.neueDatei({ pfad: 'lib/link-f3.js', inhalt: 'ueber den Link geschrieben\n' });
+        const rD = sicher(() => tD.w.neueDatei({ pfad: 'lib/link-f3.js', inhalt: 'ueber den Link geschrieben\n' }));
         pruefen('F3 NEUE_DATEI MIT SYMLINK IM FENSTER (O_EXCL und O_NOFOLLOW): entsteht zwischen Pruefung und open ein Symlink auf eine Aussendatei, ist neue_datei abgelehnt und die Aussendatei bytegleich',
             rD.abgelehnt === true && bleibt() && tD.w.laufNeuListe().length === 0 && fs.lstatSync(path.join(baumD, 'lib/link-f3.js')).isSymbolicLink());
+        const aussenLink = path.join(ctx.basis, 'f3-hardlink-neu.txt');
+        fs.rmSync(aussenLink, { force: true });
+        const baumE = frischerBaum(ctx);
+        const tE = werkzeugeAuf(ctx, baumE, { haken: { nachOeffnen: (abs) => fs.linkSync(abs, aussenLink) } });
+        const rE = sicher(() => tE.w.neueDatei({ pfad: 'lib/hart-f3.js', inhalt: 'NICHT-DURCH-DEN-LINK\n' }));
+        pruefen('F3 NEUE_DATEI MIT HARDLINK NACH DEM ANLEGEN (nlink am Deskriptor): kommt zwischen open und fstat ein zweiter Name auf die neue Datei (nlink 2), ist neue_datei abgelehnt, der Baumpfad wieder entfernt, NICHTS geschrieben (die Datei hinter dem zweiten Namen ist leer) und die Datei steht nicht als Lauf-Datei in der Liste',
+            rE.abgelehnt === true && !fs.existsSync(path.join(baumE, 'lib/hart-f3.js')) && fs.existsSync(aussenLink) && fs.readFileSync(aussenLink, 'utf8') === '' && tE.w.laufNeuListe().length === 0 && tE.w.schreibliste.size === 0);
     }
 
     // ----- Geheimnis-Riegel auf dem Schreibweg -----

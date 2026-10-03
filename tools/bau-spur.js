@@ -566,6 +566,7 @@ function schreibWerkzeugeBauen(kontext) {
             const fd = fs.openSync(kette.absolut, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_NOFOLLOW, 0o644);
             dateiAngelegt = true;
             try {
+                if (kontext.haken && typeof kontext.haken.nachOeffnen === 'function') kontext.haken.nachOeffnen(kette.absolut);   // NUR Selbsttest (F3)
                 const st = fs.fstatSync(fd);
                 if (!st.isFile() || st.nlink !== 1) throw new Error(`nach dem Anlegen: kein regulaerer Eintrag oder nlink=${st.nlink}`);
                 fs.fchmodSync(fd, 0o644);
